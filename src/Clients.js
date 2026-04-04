@@ -21,14 +21,28 @@ function Clients() {
   const [selected, setSelected] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [statusModal, setStatusModal] = useState(null);
-  const [statusForm, setStatusForm] = useState({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '' });
+  const [statusForm, setStatusForm] = useState({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', house_id: '' });
+  const [houses, setHouses] = useState([]);
 
-  useEffect(() => { fetchClients(); }, []);
+  useEffect(() => { fetchClients(); fetchHouses(); }, []);
+
+  const fetchHouses = async () => {
+    const { data } = await supabase.from('houses').select('id, name, type').order('name');
+    setHouses(data || []);
+  };
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false });
-    setClients(data || []);
+    const { data } = await supabase
+      .from('clients')
+      .select('*, houses(name, house_manager)')
+      .order('created_at', { ascending: false });
+    const enriched = (data || []).map(c => ({
+      ...c,
+      house_name: c.houses?.name || null,
+      house_manager: c.houses?.house_manager || null,
+    }));
+    setClients(enriched);
     setLoading(false);
   };
 
@@ -53,7 +67,7 @@ function Clients() {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '' });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', house_id: '' });
   };
 
   const confirmStatusChange = async () => {
@@ -73,6 +87,18 @@ function Clients() {
       if (wlError) { alert('Error adding to waiting list: ' + wlError.message); return; }
     }
 
+    if (newStatus === 'Pending') {
+      if (!statusForm.house_id) { alert('Please select a house.'); return; }
+      updates.house_id = statusForm.house_id;
+      const { data: houseData } = await supabase
+        .from('houses').select('occupied_beds').eq('id', statusForm.house_id).single();
+      if (houseData) {
+        await supabase.from('houses')
+          .update({ occupied_beds: (houseData.occupied_beds || 0) + 1 })
+          .eq('id', statusForm.house_id);
+      }
+    }
+
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
     }
@@ -80,6 +106,15 @@ function Clients() {
     if (newStatus === 'Discharged') {
       updates.discharge_date = new Date().toISOString().split('T')[0];
       if (statusForm.discharge_reason) updates.reason_for_discharge = statusForm.discharge_reason;
+      if (client.house_id) {
+        const { data: houseData } = await supabase
+          .from('houses').select('occupied_beds').eq('id', client.house_id).single();
+        if (houseData) {
+          await supabase.from('houses')
+            .update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) })
+            .eq('id', client.house_id);
+        }
+      }
     }
 
     const { error } = await supabase.from('clients').update(updates).eq('id', client.id);
@@ -134,7 +169,7 @@ function Clients() {
                 </span>
               </span>
               <span style={{ flex: 1, color: '#aaa' }}>Level {c.level || 1}</span>
-              <span style={{ flex: 2, color: '#aaa' }}>{c.house_id || '—'}</span>
+              <span style={{ flex: 2, color: '#aaa' }}>{c.house_name || '—'}</span>
               <span style={{ flex: 1, color: '#aaa' }}>{c.start_date || '—'}</span>
             </div>
           ))}
@@ -150,7 +185,7 @@ function Clients() {
               <div style={{ flex: 1 }}>
                 <h2 style={s.modalName}>{selected.full_name}</h2>
                 <p style={s.modalSub}>
-                  {selected.house_id || 'No house assigned'} &nbsp;·&nbsp;
+                  {selected.house_name || 'No house assigned'} &nbsp;·&nbsp;
                   {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}
                 </p>
                 <div style={s.badges}>
@@ -207,7 +242,7 @@ function Clients() {
                     <Field label="Emergency contact" value={selected.emergency_contact_name} />
                   </Card>
                   <Card title="House assignment">
-                    <Field label="House" value={selected.house_id} />
+                    <Field label="House" value={selected.house_name} />
                     <Field label="Room type" value={selected.room_type} />
                     <Field label="House manager" value={selected.house_manager} />
                     <Field label="Move-in date" value={selected.start_date} />
@@ -312,9 +347,15 @@ function Clients() {
               )}
 
               {statusModal.newStatus === 'Pending' && (
-                <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 16px 0' }}>
-                  This will mark the client as pending placement. You can assign a move-in date when you move them to Active.
-                </p>
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={sf.label}>Assign to house</label>
+                  <select value={statusForm.house_id} onChange={e => setStatusForm(p => ({ ...p, house_id: e.target.value }))} style={sf.input}>
+                    <option value="">Select a house</option>
+                    {houses.map(h => (
+                      <option key={h.id} value={h.id}>{h.name} ({h.type})</option>
+                    ))}
+                  </select>
+                </div>
               )}
 
               {(statusModal.newStatus === 'Accepted' || statusModal.newStatus === 'Denied') && (
