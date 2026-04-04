@@ -1,32 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './App.css';
 import logo from './kingdom-living-logo.jpg';
 import { supabase } from './supabaseClient';
+import Dashboard from './Dashboard';
 
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      setError(error.message);
-    } else {
-      alert('Login successful! Dashboard coming soon.');
-    }
-
+    if (error) setError(error.message);
     setLoading(false);
   };
+
+  if (user) return <Dashboard user={user} />;
 
   return (
     <div style={styles.container}>
@@ -142,7 +150,6 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     marginTop: '8px',
-    opacity: 1,
   },
 };
 
