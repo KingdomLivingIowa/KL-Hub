@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import Admissions from './Admissions';
 import WaitingList from './WaitingList';
 import Clients from './Clients';
+import Houses from './Houses';
 
 function Dashboard({ user }) {
   const [activePage, setActivePage] = useState('home');
@@ -97,6 +98,7 @@ function Dashboard({ user }) {
           {activePage === 'admissions' && <Admissions />}
           {activePage === 'waitinglist' && <WaitingList />}
           {activePage === 'clients' && <Clients />}
+          {activePage === 'houses' && <Houses />}
             </div>
         </div>
       </div>
