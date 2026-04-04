@@ -1,22 +1,40 @@
 import { useState } from 'react';
 import './App.css';
 import logo from './kingdom-living-logo.jpg';
+import { supabase } from './supabaseClient';
 
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    alert('Login coming soon!');
+    setLoading(true);
+    setError('');
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      alert('Login successful! Dashboard coming soon.');
+    }
+
+    setLoading(false);
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <img src={logo} alt="Kingdom Living" style={styles.logo} />
-
         <p style={styles.subtitle}>KL Hub — Staff Portal</p>
+
+        {error && <p style={styles.error}>{error}</p>}
 
         <form onSubmit={handleLogin} style={styles.form}>
           <div style={styles.inputGroup}>
@@ -43,8 +61,8 @@ function App() {
             />
           </div>
 
-          <button type="submit" style={styles.button}>
-            Sign In
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
       </div>
@@ -82,6 +100,14 @@ const styles = {
     textAlign: 'center',
     margin: '0 0 36px 0',
   },
+  error: {
+    backgroundColor: '#3d1515',
+    color: '#f87171',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '16px',
+  },
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -116,6 +142,7 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     marginTop: '8px',
+    opacity: 1,
   },
 };
 
