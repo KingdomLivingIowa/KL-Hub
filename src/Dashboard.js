@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
+import Admissions from './Admissions';
 
 function Dashboard({ user }) {
   const [activePage, setActivePage] = useState('home');
@@ -80,13 +81,15 @@ function Dashboard({ user }) {
             </div>
           )}
 
-          {activePage !== 'home' && (
-            <div style={styles.placeholder}>
-              <p style={styles.placeholderText}>
-                {navItems.find((i) => i.id === activePage)?.label} module coming soon.
-              </p>
-            </div>
-          )}
+          {activePage === 'admissions' && <Admissions />}
+
+{activePage !== 'home' && activePage !== 'admissions' && (
+  <div style={styles.placeholder}>
+    <p style={styles.placeholderText}>
+      {navItems.find((i) => i.id === activePage)?.label} module coming soon.
+    </p>
+  </div>
+)}
         </div>
       </div>
     </div>
