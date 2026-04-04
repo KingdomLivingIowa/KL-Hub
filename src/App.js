@@ -3,6 +3,7 @@ import './App.css';
 import logo from './kingdom-living-logo.jpg';
 import { supabase } from './supabaseClient';
 import Dashboard from './Dashboard';
+import ApplicationForm from './ApplicationForm';
 
 function App() {
   const [email, setEmail] = useState('');
@@ -34,7 +35,8 @@ function App() {
     setLoading(false);
   };
 
-  if (user) return <Dashboard user={user} />;
+  if (window.location.pathname === '/apply') return <ApplicationForm />;
+if (user) return <Dashboard user={user} />;
 
   return (
     <div style={styles.container}>
