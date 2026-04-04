@@ -24,8 +24,8 @@ function ApplicationForm() {
     emergency_contact: '', collateral_contacts: '',
     on_probation: '', on_parole: '', po_name: '', po_phone: '',
     criminal_history: '', sex_offender: '', sex_offense_details: '',
-    correspondence_contact: '', form_completed_by: '', agree_to_rules: '',
-    agree_to_levels: '', client_notes: '', signature: '',
+    form_completed_by: '', agree_to_rules: '', agree_to_levels: '',
+    client_notes: '', signature: '',
   });
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
@@ -93,14 +93,67 @@ function ApplicationForm() {
     const error = validate();
     if (error) { alert(error); return; }
     setLoading(true);
-    const { error: submitError } = await supabase.from('applications').insert([{
-      ...form,
-      full_name: `${form.first_name} ${form.last_name}`,
-      status: 'pending',
-    }]);
+
+    const fullName = `${form.first_name} ${form.last_name}`;
+    const uniqueId =
+      form.first_name.slice(0, 2).toLowerCase() +
+      form.last_name.slice(0, 2).toLowerCase() +
+      (form.date_of_birth ? form.date_of_birth.replace(/-/g, '').slice(2) : '000000');
+
+    const { data: appData, error: appError } = await supabase
+      .from('applications')
+      .insert([{ ...form, full_name: fullName, status: 'pending' }])
+      .select('id')
+      .single();
+
+    if (appError) {
+      setLoading(false);
+      alert('There was an error submitting. Please try again.');
+      return;
+    }
+
+    const appId = appData?.id ?? null;
+
+    const { error: clientError } = await supabase
+      .from('clients')
+      .insert([{
+        full_name: fullName,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        date_of_birth: form.date_of_birth || null,
+        ssn: form.ssn || null,
+        gender: form.assigned_sex || null,
+        ethnicity: form.ethnicity || null,
+        marital_status: form.marital_status || null,
+        unique_id: uniqueId,
+        phone: form.phone || null,
+        email: form.email || null,
+        present_residence: form.present_residence || null,
+        emergency_contact_name: form.emergency_contact || null,
+        on_probation: form.on_probation || null,
+        on_parole: form.on_parole || null,
+        po_name: form.po_name || null,
+        po_phone: form.po_phone || null,
+        sex_offender: form.sex_offender || null,
+        criminal_history: form.criminal_history || null,
+        substance_history: form.substance_history || null,
+        treatment_history: form.attended_treatment || null,
+        recovery_meetings: form.recovery_meetings || null,
+        oud: form.oud_diagnosis || null,
+        application_type: form.program || null,
+        personal_status: form.current_situation || null,
+        client_notes: form.client_notes || null,
+        status: 'Applied',
+        level: 1,
+        application_id: appId,
+      }]);
+
     setLoading(false);
-    if (!submitError) setSubmitted(true);
-    else alert('There was an error submitting. Please try again.');
+    if (!clientError) {
+      setSubmitted(true);
+    } else {
+      alert('Profile creation failed: ' + JSON.stringify(clientError));
+    }
   };
 
   if (submitted) return (
