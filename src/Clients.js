@@ -130,7 +130,7 @@ function Clients() {
             </div>
 
             <div style={s.tabs}>
-              {['overview','payments','uas','medications','notes','timeline','application','documents'].map(t => (
+              {['overview','payments','UAs','medications','notes','timeline','application','documents'].map(t => (
                 <button key={t} onClick={() => setActiveTab(t)}
                   style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -211,7 +211,7 @@ function Clients() {
                 </Card>
               )}
 
-              {activeTab === 'uas' && (
+              {activeTab === 'UAs' && (
                 <Card title="UA records" full>
                   <p style={{ color: '#666', fontSize: '14px' }}>UA records will appear here once UA tracking is set up.</p>
                 </Card>

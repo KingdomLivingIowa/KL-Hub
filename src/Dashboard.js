@@ -95,19 +95,11 @@ function Dashboard({ user }) {
           )}
 
           {activePage === 'admissions' && <Admissions />}
-{activePage === 'waitinglist' && <WaitingList />}
-{activePage === 'clients' && <Clients />}
-
-{activePage !== 'home' && activePage !== 'admissions' && activePage !== 'waitinglist' && (
-            <div style={styles.placeholder}>
-              <p style={styles.placeholderText}>
-                {navItems.find((i) => i.id === activePage)?.label} module coming soon.
-              </p>
+          {activePage === 'waitinglist' && <WaitingList />}
+          {activePage === 'clients' && <Clients />}
             </div>
-          )}
         </div>
       </div>
-    </div>
   );
 }
 

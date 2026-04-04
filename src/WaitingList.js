@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 
 const LISTS = [
@@ -16,12 +16,7 @@ function WaitingList() {
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
-  useEffect(() => {
-    fetchList();
-    fetchAccepted();
-  }, [activeList]);
-
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('waiting_list')
@@ -31,15 +26,20 @@ function WaitingList() {
       .order('ready_date', { ascending: true, nullsFirst: false });
     if (!error) setClients(data || []);
     setLoading(false);
-  };
+  }, [activeList]);
 
-  const fetchAccepted = async () => {
+  const fetchAccepted = useCallback(async () => {
     const { data } = await supabase
       .from('applications')
       .select('id, full_name, email, phone')
       .eq('status', 'accepted');
     setAccepted(data || []);
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchList();
+    fetchAccepted();
+  }, [fetchList, fetchAccepted]);
 
   const selectAccepted = (app) => {
     setAddForm(p => ({ ...p, full_name: app.full_name, email: app.email || '', phone: app.phone || '', application_id: app.id }));
@@ -78,8 +78,7 @@ function WaitingList() {
 
   const daysDiff = (d) => {
     if (!d) return null;
-    const diff = Math.ceil((new Date(d + 'T00:00:00') - new Date()) / (1000 * 60 * 60 * 24));
-    return diff;
+    return Math.ceil((new Date(d + 'T00:00:00') - new Date()) / (1000 * 60 * 60 * 24));
   };
 
   const readyBadge = (d) => {
