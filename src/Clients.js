@@ -4,13 +4,13 @@ import { supabase } from './supabaseClient';
 const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
 
 const STATUS_FLOW = {
-  'Applied':      ['Accepted', 'Denied'],
-  'Accepted':     ['Waiting List', 'Denied'],
-  'Waiting List': ['Pending', 'Denied'],
-  'Pending':      ['Active', 'Waiting List'],
-  'Active':       ['Discharged'],
-  'Discharged':   [],
-  'Denied':       ['Accepted'],
+  'Applied':      ['Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
+  'Accepted':     ['Applied', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
+  'Waiting List': ['Applied', 'Accepted', 'Pending', 'Active', 'Discharged', 'Denied'],
+  'Pending':      ['Applied', 'Accepted', 'Waiting List', 'Active', 'Discharged', 'Denied'],
+  'Active':       ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Discharged', 'Denied'],
+  'Discharged':   ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Denied'],
+  'Denied':       ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
 };
 
 function Clients() {
@@ -206,14 +206,17 @@ function Clients() {
                 </div>
 
                 {STATUS_FLOW[selected.status]?.length > 0 && (
-                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', color: '#666', alignSelf: 'center' }}>Move to:</span>
-                    {STATUS_FLOW[selected.status].map(ns => (
-                      <button key={ns} onClick={() => openStatusModal(selected, ns)}
-                        style={{ ...s.badge, background: statusColor(ns).bg, color: statusColor(ns).color, border: 'none', cursor: 'pointer', fontSize: '11px', padding: '4px 10px' }}>
-                        {ns}
-                      </button>
-                    ))}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                    <span style={{ fontSize: '11px', color: '#666' }}>Move to:</span>
+                    <select
+                      defaultValue=""
+                      onChange={e => { if (e.target.value) openStatusModal(selected, e.target.value); e.target.value = ''; }}
+                      style={{ backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>
+                      <option value="">Select status...</option>
+                      {STATUS_FLOW[selected.status].map(ns => (
+                        <option key={ns} value={ns}>{ns}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>
