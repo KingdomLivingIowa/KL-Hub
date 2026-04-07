@@ -4,6 +4,7 @@ import Admissions from './Admissions';
 import WaitingList from './WaitingList';
 import Clients from './Clients';
 import Houses from './Houses';
+import IntakeDischarge from './IntakeDischarge';
 
 function Dashboard({ user }) {
   const [activePage, setActivePage] = useState('home');
@@ -32,7 +33,8 @@ function Dashboard({ user }) {
     { id: 'houses', label: 'Houses' },
     { id: 'clients', label: 'Clients' },
     { id: 'messages', label: 'Messages' },
-    { id: 'reports', label: 'Reports' },
+    { id: 'intake', label: 'Intake & Discharge' },
+{ id: 'reports', label: 'Reports' },
   ];
 
   return (
@@ -99,6 +101,7 @@ function Dashboard({ user }) {
           {activePage === 'waitinglist' && <WaitingList />}
           {activePage === 'clients' && <Clients />}
           {activePage === 'houses' && <Houses />}
+          {activePage === 'intake' && <IntakeDischarge />}
             </div>
         </div>
       </div>

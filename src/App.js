@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import './App.css';
-import logo from './kingdom-living-logo.jpg';
 import { supabase } from './supabaseClient';
+import logo from './kingdom-living-logo.jpg';
 import Dashboard from './Dashboard';
-import ApplicationForm from './ApplicationForm';
-import Clients from './Clients';
-import Houses from './Houses';
-import Reports from './Reports';
 
 function App() {
   const [email, setEmail] = useState('');
@@ -14,7 +10,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
-  const [activePage, setActivePage] = useState('home');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -36,19 +31,6 @@ function App() {
     if (error) setError(error.message);
     setLoading(false);
   };
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const navItems = [
-    { id: 'home', label: 'Dashboard' },
-    { id: 'admissions', label: 'Admissions' },
-    { id: 'waitinglist', label: 'Waiting List' },
-    { id: 'houses', label: 'Houses' },
-    { id: 'clients', label: 'Clients' },
-    { id: 'reports', label: 'Reports' },
-  ];
 
   if (!user) {
     return (
@@ -89,51 +71,7 @@ function App() {
     );
   }
 
-  return (
-    <div style={styles.appContainer}>
-      {/* Sidebar */}
-      <div style={styles.sidebar}>
-        <div style={styles.sidebarLogo}>
-          <img src={logo} alt="Kingdom Living" style={styles.sidebarLogoImg} />
-          <p style={styles.logoSub}>KL Hub</p>
-        </div>
-
-        <nav style={styles.nav}>
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActivePage(item.id)}
-              style={{
-                ...styles.navItem,
-                ...(activePage === item.id ? styles.navItemActive : {}),
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-
-        <div style={styles.sidebarBottom}>
-          <p style={styles.userEmail}>{user?.email}</p>
-          <button onClick={handleSignOut} style={styles.signOutBtn}>Sign Out</button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div style={styles.main}>
-        {activePage === 'home' && <Dashboard user={user} setActivePage={setActivePage} />}
-        {activePage === 'admissions' && <ApplicationForm />}
-        {activePage === 'clients' && <Clients />}
-        {activePage === 'houses' && <Houses />}
-        {activePage === 'reports' && <Reports />}
-        {activePage === 'waitinglist' && (
-          <div style={styles.placeholder}>
-            <p style={styles.placeholderText}>Waiting List module coming soon.</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <Dashboard user={user} />;
 }
 
 const styles = {
@@ -208,89 +146,6 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     marginTop: '8px',
-  },
-  appContainer: {
-    display: 'flex',
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
-    fontFamily: 'sans-serif',
-  },
-  sidebar: {
-    width: '220px',
-    backgroundColor: '#1a1a1a',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '0',
-    flexShrink: 0,
-  },
-  sidebarLogo: {
-    padding: '24px 20px 20px',
-    borderBottom: '1px solid #333',
-  },
-  sidebarLogoImg: {
-    width: '120px',
-    borderRadius: '4px',
-    display: 'block',
-    marginBottom: '8px',
-  },
-  logoSub: {
-    color: '#a0a0a0',
-    fontSize: '12px',
-    margin: 0,
-  },
-  nav: {
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '16px 12px',
-    gap: '4px',
-    flex: 1,
-  },
-  navItem: {
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#c0c0c0',
-    padding: '10px 12px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    textAlign: 'left',
-    fontSize: '14px',
-    fontWeight: '400',
-  },
-  navItemActive: {
-    backgroundColor: '#b22222',
-    color: '#ffffff',
-    fontWeight: '500',
-  },
-  sidebarBottom: {
-    padding: '16px 20px',
-    borderTop: '1px solid #333',
-  },
-  userEmail: {
-    color: '#a0a0a0',
-    fontSize: '12px',
-    margin: '0 0 10px 0',
-    wordBreak: 'break-all',
-  },
-  signOutBtn: {
-    backgroundColor: 'transparent',
-    border: '1px solid #444',
-    color: '#c0c0c0',
-    padding: '8px 14px',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    width: '100%',
-  },
-  main: {
-    flex: 1,
-    overflow: 'auto',
-  },
-  placeholder: {
-    padding: '2rem',
-  },
-  placeholderText: {
-    color: '#888',
-    fontSize: '16px',
   },
 };
 
