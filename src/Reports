@@ -1,0 +1,553 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../supabaseClient';
+
+const HOUSES = [
+  { value: 'women', label: 'Women' },
+  { value: 'men', label: 'Men' },
+];
+
+const EVENT_TYPES = [
+  { value: 'intake', label: 'Intake' },
+  { value: 'discharge', label: 'Discharge' },
+  { value: 'waitlist_add', label: 'Added to waitlist' },
+  { value: 'waitlist_remove', label: 'Removed from waitlist' },
+  { value: 'bed_update', label: 'Update avg empty beds' },
+  { value: 'los_update', label: 'Update avg length of stay' },
+];
+
+const REFERRAL_SOURCES = [
+  'Correctional facility',
+  'Treatment center',
+  'Recovery community center',
+  'Self-referral',
+  'Other',
+];
+
+const DISCHARGE_REASONS = [
+  'Move to rent/own home',
+  'Move to other recovery house',
+  'Move to other supportive housing',
+  'Return to treatment',
+  'Return to use',
+  'Asked to leave',
+  'Incarceration',
+  'Unknown',
+  'Other',
+];
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getMonthRange(ym) {
+  // ym = "YYYY-MM"
+  const start = ym + '-01';
+  const d = new Date(ym + '-01');
+  d.setMonth(d.getMonth() + 1);
+  const end = d.toISOString().split('T')[0];
+  return { start, end };
+}
+
+function statsFromEntries(entries) {
+  const intakes = entries.filter(e => e.event_type === 'intake');
+  const discharges = entries.filter(e => e.event_type === 'discharge');
+  const wlAdds = entries.filter(e => e.event_type === 'waitlist_add').length;
+  const wlRem = entries.filter(e => e.event_type === 'waitlist_remove').length;
+  const bedUpdates = entries.filter(e => e.event_type === 'bed_update');
+  const losUpdates = entries.filter(e => e.event_type === 'los_update');
+
+  const oud = intakes.filter(e => e.oud_history === 'yes').length;
+
+  const refs = {};
+  intakes.forEach(e => {
+    if (e.referral_source) refs[e.referral_source] = (refs[e.referral_source] || 0) + 1;
+  });
+
+  const exits = {};
+  discharges.forEach(e => {
+    if (e.discharge_reason) exits[e.discharge_reason] = (exits[e.discharge_reason] || 0) + 1;
+  });
+
+  const avgBeds = bedUpdates.length
+    ? Math.round(bedUpdates.reduce((a, e) => a + (e.number_value || 0), 0) / bedUpdates.length)
+    : null;
+
+  const avgLos = losUpdates.length
+    ? Math.round(losUpdates.reduce((a, e) => a + (e.number_value || 0), 0) / losUpdates.length)
+    : null;
+
+  return {
+    intakes: intakes.length,
+    discharges: discharges.length,
+    oud,
+    pctOud: intakes.length > 0 ? Math.round((oud / intakes.length) * 100) : 0,
+    waitlist: Math.max(0, wlAdds - wlRem),
+    avgBeds,
+    avgLos,
+    refs,
+    exits,
+    net: intakes.length - discharges.length,
+  };
+}
+
+export default function Reports() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [dashSeg, setDashSeg] = useState('overall');
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Selected month for filtering (YYYY-MM)
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  // Log event form
+  const [form, setForm] = useState({
+    entry_date: todayStr(),
+    house: '',
+    event_type: '',
+    referral_source: '',
+    oud_history: '',
+    discharge_reason: '',
+    number_value: '',
+    notes: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [formMsg, setFormMsg] = useState({ text: '', error: false });
+
+  // Log filter
+  const [logFilter, setLogFilter] = useState({ house: '', event_type: '' });
+
+  const fetchEntries = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('survey_entries')
+      .select('*')
+      .order('entry_date', { ascending: false });
+    if (!error) setEntries(data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
+
+  // Entries filtered to selected month
+  const monthEntries = entries.filter(e => e.entry_date && e.entry_date.startsWith(selectedMonth));
+
+  const segEntries = seg => {
+    if (seg === 'overall') return monthEntries;
+    return monthEntries.filter(e => e.house === seg);
+  };
+
+  const handleFormChange = e => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    const { entry_date, house, event_type } = form;
+    if (!entry_date || !event_type) {
+      setFormMsg({ text: 'Date and event type are required.', error: true });
+      return;
+    }
+    const needsHouse = ['intake', 'discharge', 'waitlist_add', 'waitlist_remove', 'bed_update', 'los_update'];
+    if (needsHouse.includes(event_type) && !house) {
+      setFormMsg({ text: 'Please select a house.', error: true });
+      return;
+    }
+    if (event_type === 'intake' && !form.referral_source) {
+      setFormMsg({ text: 'Referral source is required for intakes.', error: true });
+      return;
+    }
+    if (event_type === 'intake' && !form.oud_history) {
+      setFormMsg({ text: 'OUD / overdose history is required for intakes.', error: true });
+      return;
+    }
+    if (event_type === 'discharge' && !form.discharge_reason) {
+      setFormMsg({ text: 'Discharge reason is required.', error: true });
+      return;
+    }
+
+    setSaving(true);
+    const payload = {
+      entry_date,
+      house,
+      event_type,
+      referral_source: form.referral_source || null,
+      oud_history: form.oud_history || null,
+      discharge_reason: form.discharge_reason || null,
+      number_value: form.number_value !== '' ? parseFloat(form.number_value) : null,
+      notes: form.notes || null,
+    };
+
+    const { error } = await supabase.from('survey_entries').insert([payload]);
+    setSaving(false);
+
+    if (error) {
+      setFormMsg({ text: 'Error saving: ' + error.message, error: true });
+    } else {
+      setFormMsg({ text: 'Entry saved!', error: false });
+      setForm({
+        entry_date: todayStr(),
+        house: '',
+        event_type: '',
+        referral_source: '',
+        oud_history: '',
+        discharge_reason: '',
+        number_value: '',
+        notes: '',
+      });
+      fetchEntries();
+      setTimeout(() => setFormMsg({ text: '', error: false }), 3000);
+    }
+  };
+
+  const handleDelete = async id => {
+    if (!window.confirm('Delete this entry?')) return;
+    await supabase.from('survey_entries').delete().eq('id', id);
+    fetchEntries();
+  };
+
+  const filteredLog = entries.filter(e => {
+    if (logFilter.house && e.house !== logFilter.house) return false;
+    if (logFilter.event_type && e.event_type !== logFilter.event_type) return false;
+    if (!e.entry_date.startsWith(selectedMonth)) return false;
+    return true;
+  });
+
+  // ---- RENDER HELPERS ----
+
+  const StatCard = ({ label, value, color }) => (
+    <div style={{
+      background: color || 'var(--color-background-secondary)',
+      borderRadius: 8, padding: '12px 14px',
+    }}>
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 500, color: 'var(--color-text-primary)' }}>{value ?? '—'}</div>
+    </div>
+  );
+
+  const BreakdownList = ({ title, obj }) => {
+    const keys = Object.keys(obj || {});
+    if (!keys.length) return null;
+    const total = keys.reduce((a, k) => a + obj[k], 0);
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>{title}</div>
+        {keys.sort((a, b) => obj[b] - obj[a]).map(k => (
+          <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '0.5px solid var(--color-border-tertiary)', fontSize: 13 }}>
+            <span style={{ color: 'var(--color-text-primary)' }}>{k}</span>
+            <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>
+              {obj[k]} <span style={{ fontWeight: 400, color: 'var(--color-text-secondary)', fontSize: 12 }}>({total > 0 ? Math.round(obj[k] / total * 100) : 0}%)</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const HouseCard = ({ label, seg, cap }) => {
+    const s = statsFromEntries(segEntries(seg));
+    const occ = cap > 0 ? Math.min(Math.round((s.net / cap) * 100), 100) : null;
+    const occColor = occ > 90 ? '#D85A30' : occ > 70 ? '#EF9F27' : '#1D9E75';
+    return (
+      <div style={{ background: 'var(--color-background-primary)', border: '0.5px solid var(--color-border-tertiary)', borderRadius: 12, padding: '1rem 1.25rem' }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 10 }}>{label}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+          <div style={{ background: '#E1F5EE', borderRadius: 8, padding: '8px 10px' }}>
+            <div style={{ fontSize: 11, color: '#0F6E56' }}>Intakes</div>
+            <div style={{ fontSize: 20, fontWeight: 500, color: '#085041' }}>{s.intakes}</div>
+          </div>
+          <div style={{ background: '#FAECE7', borderRadius: 8, padding: '8px 10px' }}>
+            <div style={{ fontSize: 11, color: '#993C1D' }}>Discharges</div>
+            <div style={{ fontSize: 20, fontWeight: 500, color: '#712B13' }}>{s.discharges}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
+          <span style={{ color: 'var(--color-text-secondary)' }}>OUD / hx</span>
+          <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{s.oud}{s.intakes > 0 ? ` (${s.pctOud}%)` : ''}</span>
+        </div>
+        <div style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
+          <span style={{ color: 'var(--color-text-secondary)' }}>Waitlist</span>
+          <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{s.waitlist}</span>
+        </div>
+        <div style={{ fontSize: 13, display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+          <span style={{ color: 'var(--color-text-secondary)' }}>Avg LOS</span>
+          <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{s.avgLos !== null ? `${s.avgLos} days` : '—'}</span>
+        </div>
+        {occ !== null && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4 }}>Occupancy ~{Math.max(occ, 0)}%</div>
+            <div style={{ height: 7, background: 'var(--color-background-secondary)', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.max(occ, 0)}%`, background: occColor, borderRadius: 4 }} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ---- TABS ----
+
+  const tabStyle = active => ({
+    padding: '7px 16px',
+    border: '0.5px solid var(--color-border-secondary)',
+    borderRadius: 8,
+    fontSize: 13,
+    cursor: 'pointer',
+    background: active ? 'var(--color-background-secondary)' : 'transparent',
+    color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+    fontWeight: active ? 500 : 400,
+  });
+
+  const segTabStyle = active => ({
+    padding: '5px 14px',
+    border: '0.5px solid var(--color-border-secondary)',
+    borderRadius: 8,
+    fontSize: 13,
+    cursor: 'pointer',
+    background: active ? 'var(--color-background-secondary)' : 'transparent',
+    color: active ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+    fontWeight: active ? 500 : 400,
+  });
+
+  const inputStyle = {
+    width: '100%',
+    padding: '8px 10px',
+    border: '0.5px solid var(--color-border-secondary)',
+    borderRadius: 8,
+    fontSize: 14,
+    background: 'var(--color-background-primary)',
+    color: 'var(--color-text-primary)',
+  };
+
+  const labelStyle = {
+    display: 'block',
+    fontSize: 14,
+    color: 'var(--color-text-primary)',
+    marginBottom: 5,
+  };
+
+  const s = statsFromEntries(segEntries(dashSeg));
+
+  return (
+    <div style={{ padding: '1.5rem', fontFamily: 'var(--font-sans)' }}>
+
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{ fontSize: 22, fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 4 }}>Reports</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>Month:</span>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            style={{ ...inputStyle, width: 'auto' }}
+          />
+        </div>
+      </div>
+
+      {/* Nav tabs */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+        {[['dashboard', 'Dashboard'], ['add', 'Log event'], ['log', 'Event log']].map(([v, l]) => (
+          <button key={v} style={tabStyle(activeTab === v)} onClick={() => setActiveTab(v)}>{l}</button>
+        ))}
+      </div>
+
+      {loading && <p style={{ color: 'var(--color-text-secondary)', fontSize: 14 }}>Loading...</p>}
+
+      {/* ===== DASHBOARD ===== */}
+      {activeTab === 'dashboard' && !loading && (
+        <div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: '1rem', flexWrap: 'wrap' }}>
+            {[['overall', 'Overall'], ['women', 'Women'], ['men', 'Men']].map(([v, l]) => (
+              <button key={v} style={segTabStyle(dashSeg === v)} onClick={() => setDashSeg(v)}>{l}</button>
+            ))}
+          </div>
+
+          {monthEntries.length === 0 && (
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, marginBottom: '1rem' }}>
+              No entries logged for {selectedMonth} yet. Use "Log event" to get started.
+            </p>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: '1rem' }}>
+            <StatCard label="Total intakes" value={s.intakes} color="#E1F5EE" />
+            <StatCard label="Total discharges" value={s.discharges} color="#FAECE7" />
+            <StatCard label="Net (in − out)" value={s.net >= 0 ? `+${s.net}` : s.net} />
+            <StatCard label="With OUD / hx" value={`${s.oud}${s.intakes > 0 ? ` (${s.pctOud}%)` : ''}`} color="#EEEDFE" />
+            <StatCard label="On waitlist" value={s.waitlist} color="#FAEEDA" />
+            <StatCard label="Avg LOS" value={s.avgLos !== null ? `${s.avgLos} days` : '—'} />
+            <StatCard label="Avg empty beds/day" value={s.avgBeds !== null ? s.avgBeds : '—'} />
+          </div>
+
+          {dashSeg === 'overall' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: '1rem' }}>
+              <HouseCard label="Women's house" seg="women" cap={0} />
+              <HouseCard label="Men's house" seg="men" cap={0} />
+            </div>
+          )}
+
+          <div style={{ background: 'var(--color-background-primary)', border: '0.5px solid var(--color-border-tertiary)', borderRadius: 12, padding: '1.25rem', marginBottom: '1rem' }}>
+            <BreakdownList title="Referral sources" obj={s.refs} />
+            <BreakdownList title="Discharge reasons" obj={s.exits} />
+            {!Object.keys(s.refs).length && !Object.keys(s.exits).length && (
+              <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>No intake or discharge detail logged yet for this month.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== LOG EVENT ===== */}
+      {activeTab === 'add' && (
+        <div style={{ background: 'var(--color-background-primary)', border: '0.5px solid var(--color-border-tertiary)', borderRadius: 12, padding: '1.25rem', maxWidth: 520 }}>
+          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1rem' }}>New entry</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: '1rem' }}>
+            <div>
+              <label style={labelStyle}>Date <span style={{ color: 'red' }}>*</span></label>
+              <input type="date" name="entry_date" value={form.entry_date} onChange={handleFormChange} style={inputStyle} />
+            </div>
+            <div>
+              <label style={labelStyle}>House <span style={{ color: 'red' }}>*</span></label>
+              <select name="house" value={form.house} onChange={handleFormChange} style={inputStyle}>
+                <option value="">Select...</option>
+                {HOUSES.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={labelStyle}>Event type <span style={{ color: 'red' }}>*</span></label>
+            <select name="event_type" value={form.event_type} onChange={handleFormChange} style={inputStyle}>
+              <option value="">Select...</option>
+              {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+
+          {form.event_type === 'intake' && (
+            <>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={labelStyle}>Referral source <span style={{ color: 'red' }}>*</span></label>
+                <select name="referral_source" value={form.referral_source} onChange={handleFormChange} style={inputStyle}>
+                  <option value="">Select...</option>
+                  {REFERRAL_SOURCES.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={labelStyle}>OUD diagnosis or overdose history? <span style={{ color: 'red' }}>*</span></label>
+                <select name="oud_history" value={form.oud_history} onChange={handleFormChange} style={inputStyle}>
+                  <option value="">Select...</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="unknown">Unknown</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {form.event_type === 'discharge' && (
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={labelStyle}>Reason for discharge <span style={{ color: 'red' }}>*</span></label>
+              <select name="discharge_reason" value={form.discharge_reason} onChange={handleFormChange} style={inputStyle}>
+                <option value="">Select...</option>
+                {DISCHARGE_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          )}
+
+          {(form.event_type === 'bed_update' || form.event_type === 'los_update') && (
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={labelStyle}>
+                {form.event_type === 'bed_update' ? 'Avg empty beds today' : 'Avg length of stay (days)'}
+                <span style={{ color: 'red' }}> *</span>
+              </label>
+              <input type="number" name="number_value" value={form.number_value} onChange={handleFormChange} min="0" placeholder="0" style={inputStyle} />
+            </div>
+          )}
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={labelStyle}>Notes (optional)</label>
+            <textarea name="notes" value={form.notes} onChange={handleFormChange} rows={3}
+              style={{ ...inputStyle, resize: 'vertical' }} placeholder="Any additional context..." />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={handleSave} disabled={saving}
+              style={{ padding: '8px 18px', background: '#E1F5EE', color: '#085041', border: '0.5px solid #5DCAA5', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}>
+              {saving ? 'Saving...' : 'Save entry'}
+            </button>
+            <button onClick={() => setForm({ entry_date: todayStr(), house: '', event_type: '', referral_source: '', oud_history: '', discharge_reason: '', number_value: '', notes: '' })}
+              style={{ padding: '8px 18px', background: 'transparent', border: '0.5px solid var(--color-border-secondary)', borderRadius: 8, fontSize: 13, cursor: 'pointer', color: 'var(--color-text-primary)' }}>
+              Clear
+            </button>
+          </div>
+
+          {formMsg.text && (
+            <p style={{ marginTop: 10, fontSize: 13, color: formMsg.error ? 'var(--color-text-danger)' : '#085041' }}>{formMsg.text}</p>
+          )}
+        </div>
+      )}
+
+      {/* ===== EVENT LOG ===== */}
+      {activeTab === 'log' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: '1rem', flexWrap: 'wrap' }}>
+            <select value={logFilter.house} onChange={e => setLogFilter(p => ({ ...p, house: e.target.value }))} style={{ ...inputStyle, width: 'auto', minWidth: 120 }}>
+              <option value="">All houses</option>
+              <option value="women">Women</option>
+              <option value="men">Men</option>
+            </select>
+            <select value={logFilter.event_type} onChange={e => setLogFilter(p => ({ ...p, event_type: e.target.value }))} style={{ ...inputStyle, width: 'auto', minWidth: 130 }}>
+              <option value="">All events</option>
+              {EVENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+
+          <div style={{ background: 'var(--color-background-primary)', border: '0.5px solid var(--color-border-tertiary)', borderRadius: 12, padding: '1.25rem' }}>
+            {filteredLog.length === 0 ? (
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, textAlign: 'center', padding: '2rem 0' }}>No entries for this month yet.</p>
+            ) : filteredLog.map(e => {
+              const detail = e.event_type === 'intake'
+                ? `Ref: ${e.referral_source || '—'} · OUD: ${e.oud_history || '—'}`
+                : e.event_type === 'discharge'
+                ? `Reason: ${e.discharge_reason || '—'}`
+                : e.event_type === 'bed_update'
+                ? `Empty beds: ${e.number_value}`
+                : e.event_type === 'los_update'
+                ? `Avg LOS: ${e.number_value} days`
+                : '';
+
+              const typeBg = e.event_type === 'intake' ? '#E1F5EE' : e.event_type === 'discharge' ? '#FAECE7' : '#EEEDFE';
+              const typeColor = e.event_type === 'intake' ? '#085041' : e.event_type === 'discharge' ? '#712B13' : '#3C3489';
+              const houseBg = e.house === 'women' ? '#FBEAF0' : '#E6F1FB';
+              const houseColor = e.house === 'women' ? '#72243E' : '#0C447C';
+
+              return (
+                <div key={e.id} style={{ display: 'grid', gridTemplateColumns: '90px 1fr auto', gap: 8, alignItems: 'start', padding: '9px 0', borderBottom: '0.5px solid var(--color-border-tertiary)' }}>
+                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{e.entry_date}</span>
+                  <div>
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 3 }}>
+                      {e.house && <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: houseBg, color: houseColor, fontWeight: 500 }}>{e.house === 'women' ? 'Women' : 'Men'}</span>}
+                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: typeBg, color: typeColor, fontWeight: 500 }}>
+                        {EVENT_TYPES.find(t => t.value === e.event_type)?.label || e.event_type}
+                      </span>
+                    </div>
+                    {detail && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{detail}</div>}
+                    {e.notes && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>{e.notes}</div>}
+                  </div>
+                  <button onClick={() => handleDelete(e.id)}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--color-text-secondary)', padding: '2px 6px', borderRadius: 4 }}>
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
