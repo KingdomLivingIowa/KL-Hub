@@ -63,9 +63,22 @@ function Houses() {
   const openHouse = (house) => {
     setSelected(house);
     setActiveTab('residents');
+    setShowAddEntry(false);
+    setEntryType('House Check-In');
+    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '' });
     fetchResidents(house.id);
     fetchRooms(house.id);
     fetchTimeline(house.id);
+  };
+
+  const handleEntryTypeChange = (newType) => {
+    setEntryType(newType);
+    setEntryForm(prev => ({ author: prev.author, notes: '', severity: 'Low', event_name: '' }));
+    setResidentChecks(prev => {
+      const reset = {};
+      Object.keys(prev).forEach(id => { reset[id] = { name: prev[id].name, value: '' }; });
+      return reset;
+    });
   };
 
   const set = (field, val) => setForm(p => ({ ...p, [field]: val }));
@@ -101,14 +114,6 @@ function Houses() {
     fetchRooms(selected.id);
   };
 
-  const resetEntryForm = () => {
-    setEntryType('House Check-In');
-    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '' });
-    const checks = {};
-    residents.forEach(r => { checks[r.id] = { name: r.full_name, value: '' }; });
-    setResidentChecks(checks);
-  };
-
   const saveEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
     if (entryType === 'Crisis' && !entryForm.severity) { alert('Severity is required.'); return; }
@@ -116,15 +121,11 @@ function Houses() {
 
     const resData = Object.entries(residentChecks).map(([id, v]) => ({ id, name: v.name, value: v.value }));
 
-    if ((entryType === 'House Check-In' || entryType === 'Batch UA') &&
-      resData.every(r => !r.value)) {
-      alert('Please fill in at least one resident.');
-      return;
+    if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) {
+      alert('Please fill in at least one resident.'); return;
     }
-    if (entryType === 'Event Attendance' &&
-      resData.every(r => r.value !== 'Attended')) {
-      alert('Please select at least one resident.');
-      return;
+    if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) {
+      alert('Please select at least one resident.'); return;
     }
 
     const { error } = await supabase.from('house_timeline').insert([{
@@ -137,8 +138,33 @@ function Houses() {
       resident_data: resData.length ? resData : null,
     }]);
     if (error) { alert('Error: ' + error.message); return; }
+
+    if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
+      const relevantResidents = resData.filter(r => r.value);
+      for (const res of relevantResidents) {
+        const { data: clientData } = await supabase
+          .from('clients').select('id').eq('full_name', res.name).single();
+        if (clientData) {
+          await supabase.from('client_timeline').insert([{
+            client_id: clientData.id,
+            entry_type: entryType === 'Batch UA' ? 'UA' : entryType,
+            author: entryForm.author,
+            notes: entryForm.notes || null,
+            event_name: entryType === 'Event Attendance' ? entryForm.event_name : res.value,
+            source: 'house',
+          }]);
+        }
+      }
+    }
+
     setShowAddEntry(false);
-    resetEntryForm();
+    setEntryType('House Check-In');
+    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '' });
+    setResidentChecks(prev => {
+      const reset = {};
+      Object.keys(prev).forEach(id => { reset[id] = { name: prev[id].name, value: '' }; });
+      return reset;
+    });
     fetchTimeline(selected.id);
   };
 
@@ -161,20 +187,19 @@ function Houses() {
     return '#888';
   };
 
-  const severityColor = (s) => {
-    if (s === 'High')   return { bg: '#3a1e1e', color: '#f87171' };
-    if (s === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
+  const severityColor = (sv) => {
+    if (sv === 'High')   return { bg: '#3a1e1e', color: '#f87171' };
+    if (sv === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
     return { bg: '#1e3a2f', color: '#4ade80' };
   };
 
-  const statusColor = (s) => {
-    if (s === 'Active')  return { bg: '#2d1e3a', color: '#c084fc' };
-    if (s === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
+  const statusColor = (st) => {
+    if (st === 'Active')  return { bg: '#2d1e3a', color: '#c084fc' };
+    if (st === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
     return { bg: '#2a2a2a', color: '#aaa' };
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
-
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
@@ -277,6 +302,12 @@ function Houses() {
                       ))}
                     </div>
                   )}
+                  {selected.notes && (
+                    <>
+                      <p style={{ ...s.sectionLabel, marginTop: '20px' }}>House notes</p>
+                      <p style={{ color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>{selected.notes}</p>
+                    </>
+                  )}
                 </>
               )}
 
@@ -284,7 +315,7 @@ function Houses() {
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <p style={{ ...s.sectionLabel, margin: 0 }}>Timeline</p>
-                    <button onClick={() => { setShowAddEntry(!showAddEntry); resetEntryForm(); }} style={s.smallAddBtn}>
+                    <button onClick={() => setShowAddEntry(!showAddEntry)} style={s.smallAddBtn}>
                       {showAddEntry ? 'Cancel' : '+ Add Entry'}
                     </button>
                   </div>
@@ -293,15 +324,8 @@ function Houses() {
                     <div style={s.miniForm}>
                       <div style={{ marginBottom: '12px' }}>
                         <label style={s.label}>Entry Type *</label>
-                        <select value={entryType} onChange={e => { 
-  const newType = e.target.value;
-  setEntryType(newType);
-  setEntryForm({ author: entryForm.author, notes: '', severity: 'Low', event_name: '' });
-  const checks = {};
-  residents.forEach(r => { checks[r.id] = { name: r.full_name, value: '' }; });
-  setResidentChecks(checks);
-}} style={s.input}>
-                          {ENTRY_TYPES.map(t => <option key={t}>{t}</option>)}
+                        <select value={entryType} onChange={e => handleEntryTypeChange(e.target.value)} style={s.input}>
+                          {ENTRY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
 
@@ -311,8 +335,7 @@ function Houses() {
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
                               <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv}
-                                  onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />
+                                <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />
                                 {sv}
                               </label>
                             ))}
@@ -327,7 +350,7 @@ function Houses() {
                         </div>
                       )}
 
-                      {(entryType === 'House Check-In') && residents.length > 0 && (
+                      {entryType === 'House Check-In' && residents.length > 0 && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Residents</label>
                           {residents.map(r => (
@@ -336,9 +359,7 @@ function Houses() {
                               <div style={{ display: 'flex', gap: '12px' }}>
                                 {['Here', 'Not Here'].map(opt => (
                                   <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '12px', cursor: 'pointer' }}>
-                                    <input type="radio" name={`checkin-${r.id}`} value={opt}
-                                      checked={residentChecks[r.id]?.value === opt}
-                                      onChange={() => setResCheck(r.id, opt)} />
+                                    <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />
                                     {opt}
                                   </label>
                                 ))}
@@ -357,9 +378,7 @@ function Houses() {
                               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
                                   <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '12px', cursor: 'pointer' }}>
-                                    <input type="radio" name={`ua-${r.id}`} value={opt}
-                                      checked={residentChecks[r.id]?.value === opt}
-                                      onChange={() => setResCheck(r.id, opt)} />
+                                    <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />
                                     {opt}
                                   </label>
                                 ))}
@@ -375,8 +394,7 @@ function Houses() {
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                             {residents.map(r => (
                               <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'}
-                                  onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />
+                                <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'} onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />
                                 {r.full_name}
                               </label>
                             ))}
@@ -406,11 +424,7 @@ function Houses() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: entryColor(entry.entry_type), flexShrink: 0 }} />
                               <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{entry.entry_type}</span>
-                              {entry.severity && (
-                                <span style={{ ...s.typeBadge, background: severityColor(entry.severity).bg, color: severityColor(entry.severity).color, fontSize: '11px' }}>
-                                  {entry.severity}
-                                </span>
-                              )}
+                              {entry.severity && <span style={{ ...s.typeBadge, background: severityColor(entry.severity).bg, color: severityColor(entry.severity).color }}>{entry.severity}</span>}
                               {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -498,7 +512,7 @@ function Houses() {
                 <div>
                   <p style={s.sectionLabel}>Forms</p>
                   <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
-                    Forms submitted by residents of {selected.name} will appear here. This section will be built out as forms are added to the system.
+                    Forms submitted by residents of {selected.name} will appear here once the forms system is built out.
                   </p>
                 </div>
               )}
