@@ -10,19 +10,29 @@ function Dashboard({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
 
-  useEffect(() => { fetchCounts(); }, []);
+  useEffect(() => { 
+  fetchCounts(); 
+  const interval = setInterval(fetchCounts, 5000);
+  return () => clearInterval(interval);
+}, []);
 
   const fetchCounts = async () => {
-    const [pending, active] = await Promise.all([
-      supabase.from('applications').select('id', { count: 'exact' }).eq('status', 'pending'),
-      supabase.from('applications').select('id', { count: 'exact' }).eq('status', 'accepted'),
-    ]);
-    setCounts(prev => ({
-      ...prev,
-      pending: pending.count || 0,
-      active: active.count || 0,
-    }));
-  };
+  const { count: pendingCount } = await supabase
+    .from('applications')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+
+  const { count: activeCount } = await supabase
+    .from('applications')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'accepted');
+
+  setCounts(prev => ({
+    ...prev,
+    pending: pendingCount || 0,
+    active: activeCount || 0,
+  }));
+};
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
