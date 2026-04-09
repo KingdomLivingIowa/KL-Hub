@@ -7,10 +7,12 @@ function IntakeDischarge() {
   const [records, setRecords] = useState([]);
   const [filter, setFilter] = useState('all');
   const [reportMonth, setReportMonth] = useState('');
+  const [reportHouse, setReportHouse] = useState('combined');
+  const [activeClients, setActiveClients] = useState([]);
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [intakeForm, setIntakeForm] = useState({ first_name: '', last_name: '', date: '', dob: '', oud: '', referral_source: '', referral_other: '', notes: '' });
+  const [intakeForm, setIntakeForm] = useState({ first_name: '', last_name: '', date: '', oud: '', referral_source: '', referral_other: '', notes: '' });
   const [dischargeForm, setDischargeForm] = useState({ first_name: '', last_name: '', intake_date: '', discharge_date: '', exit_reason: '', exit_reason_other: '', notes: '' });
 
   useEffect(() => { fetchRecords(); }, []);
@@ -18,6 +20,7 @@ function IntakeDischarge() {
   const fetchRecords = async () => {
     const { data } = await supabase.from('survey_entries').select('*').order('created_at', { ascending: false });
     if (data) setRecords(data);
+const { data: clients } = await supabase.from('clients').select('id, start_date, discharge_date, status, house_id, gender, oud').not('start_date', 'is', null);    if (clients) setActiveClients(clients);
   };
 
   const showSuccess = (msg) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000); };
@@ -28,13 +31,13 @@ function IntakeDischarge() {
     const { error } = await supabase.from('survey_entries').insert({
       type: 'intake', house, entry_date: intakeForm.date,
       first_name: intakeForm.first_name, last_name: intakeForm.last_name,
-      dob: intakeForm.dob || null, oud: intakeForm.oud,
-      referral_source: intakeForm.referral_source, referral_other: intakeForm.referral_other,
-      notes: intakeForm.notes, intake_date: intakeForm.date,
+      oud: intakeForm.oud, referral_source: intakeForm.referral_source,
+      referral_other: intakeForm.referral_other, notes: intakeForm.notes,
+      intake_date: intakeForm.date,
     });
     setLoading(false);
     if (error) { alert('Error saving: ' + error.message); return; }
-    setIntakeForm({ first_name: '', last_name: '', date: '', dob: '', oud: '', referral_source: '', referral_other: '', notes: '' });
+    setIntakeForm({ first_name: '', last_name: '', date: '', oud: '', referral_source: '', referral_other: '', notes: '' });
     fetchRecords();
     showSuccess('Intake saved!');
   };
@@ -63,16 +66,47 @@ function IntakeDischarge() {
   const months = [...new Set(records.map(r => r.entry_date?.slice(0, 7)).filter(Boolean))].sort().reverse();
   const curMonth = new Date().toISOString().slice(0, 7);
   const allMonths = months.includes(curMonth) ? months : [curMonth, ...months];
-
   const activeMonth = reportMonth || allMonths[0] || curMonth;
+
+  const monthStart = activeMonth + '-01';
+  const monthEnd = new Date(parseInt(activeMonth.slice(0, 4)), parseInt(activeMonth.slice(5, 7)), 0).toISOString().slice(0, 10);
+
+  const uniqueHoused = activeClients.filter(c => {
+    const moveIn = c.start_date;
+    const moveOut = c.discharge_date;
+    return moveIn <= monthEnd && (!moveOut || moveOut >= monthStart);
+  });
+
+  const uniqueHousedCount = reportHouse === 'combined'
+    ? uniqueHoused.length
+    : reportHouse === 'men'
+      ? uniqueHoused.filter(c => c.gender === 'Male').length
+      : uniqueHoused.filter(c => c.gender === 'Female').length;
+
   const monthRecords = records.filter(r => r.entry_date?.slice(0, 7) === activeMonth);
-  const intakes = monthRecords.filter(r => r.type === 'intake');
-  const exits = monthRecords.filter(r => r.type === 'discharge');
-  const oudCount = intakes.filter(r => r.oud === 'yes').length;
-  const losArr = exits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
+  const filteredByHouse = reportHouse === 'combined' ? monthRecords : monthRecords.filter(r => r.house === reportHouse);
+  const intakes = filteredByHouse.filter(r => r.type === 'intake');
+  const exits = filteredByHouse.filter(r => r.type === 'discharge');
+  const oudCount = reportHouse === 'combined'
+    ? uniqueHoused.filter(c => c.oud === 'Yes').length
+    : reportHouse === 'men'
+      ? uniqueHoused.filter(c => c.gender === 'Male' && c.oud === 'Yes').length
+      : uniqueHoused.filter(c => c.gender === 'Female' && c.oud === 'Yes').length;  const losArr = exits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
   const avgLos = losArr.length ? Math.round(losArr.reduce((a, b) => a + b, 0) / losArr.length) : 0;
 
-  const refLabels = { correctional: 'Correctional facility', treatment: 'Treatment center', recovery: 'Recovery community center', self: 'Self-referral', other: 'Other' };
+  const menIntakes = monthRecords.filter(r => r.type === 'intake' && r.house === 'men');
+  const womenIntakes = monthRecords.filter(r => r.type === 'intake' && r.house === 'women');
+  const menExits = monthRecords.filter(r => r.type === 'discharge' && r.house === 'men');
+  const womenExits = monthRecords.filter(r => r.type === 'discharge' && r.house === 'women');
+  const menLos = menExits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
+  const womenLos = womenExits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
+  const avgMenLos = menLos.length ? Math.round(menLos.reduce((a, b) => a + b, 0) / menLos.length) : 0;
+  const avgWomenLos = womenLos.length ? Math.round(womenLos.reduce((a, b) => a + b, 0) / womenLos.length) : 0;
+
+  const menUniqueHoused = uniqueHoused.filter(c => c.gender === 'Male').length;
+  const womenUniqueHoused = uniqueHoused.filter(c => c.gender === 'Female').length;
+
+  const refLabels = { correctional: 'Correctional facility', treatment: 'Treatment center', recovery: 'Recovery community center', self: 'Self-referral', homeless: 'Homeless', other: 'Other' };
   const exitLabels = { personal_home: 'Move to personal home', other_recovery: 'Other recovery house', supportive: 'Supportive housing', treatment: 'Return to treatment', return_use: 'Return to use', asked_leave: 'Asked to leave', incarceration: 'Incarceration', unknown: 'Unknown', other: 'Other' };
 
   const filteredRecords = records.filter(r => {
@@ -105,9 +139,9 @@ function IntakeDischarge() {
             <div><label style={s.label}>First Name</label><input style={s.input} value={intakeForm.first_name} onChange={e => setIntakeForm({ ...intakeForm, first_name: e.target.value })} /></div>
             <div><label style={s.label}>Last Name</label><input style={s.input} value={intakeForm.last_name} onChange={e => setIntakeForm({ ...intakeForm, last_name: e.target.value })} /></div>
           </div>
-          <div style={s.grid2}>
-            <div><label style={s.label}>Date of Intake</label><input type="date" style={s.input} value={intakeForm.date} onChange={e => setIntakeForm({ ...intakeForm, date: e.target.value })} /></div>
-            <div><label style={s.label}>Date of Birth</label><input type="date" style={s.input} value={intakeForm.dob} onChange={e => setIntakeForm({ ...intakeForm, dob: e.target.value })} /></div>
+          <div style={s.grid1}>
+            <label style={s.label}>Date of Intake</label>
+            <input type="date" style={s.input} value={intakeForm.date} onChange={e => setIntakeForm({ ...intakeForm, date: e.target.value })} />
           </div>
           <div style={s.grid1}>
             <label style={s.label}>OUD Diagnosis or History of Overdose?</label>
@@ -123,6 +157,7 @@ function IntakeDischarge() {
               <option value="treatment">Treatment Center</option>
               <option value="recovery">Recovery Community Center</option>
               <option value="self">Self-Referral</option>
+              <option value="homeless">Homeless</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -203,28 +238,57 @@ function IntakeDischarge() {
 
       {view === 'report' && (
         <div style={s.card}>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={s.label}>Report Month</label>
-            <select style={{ ...s.input, maxWidth: '200px' }} value={activeMonth} onChange={e => setReportMonth(e.target.value)}>
-              {allMonths.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <div>
+              <label style={s.label}>Report Month</label>
+              <select style={{ ...s.input, maxWidth: '180px' }} value={activeMonth} onChange={e => setReportMonth(e.target.value)}>
+                {allMonths.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={s.label}>View</label>
+              <select style={{ ...s.input, maxWidth: '180px' }} value={reportHouse} onChange={e => setReportHouse(e.target.value)}>
+                <option value="combined">Combined</option>
+                <option value="men">Men's House</option>
+                <option value="women">Women's House</option>
+              </select>
+            </div>
           </div>
+
           <div style={s.metricGrid}>
-            {[['New Intakes', intakes.length], ['New Exits', exits.length], ['OUD / Overdose History', oudCount], ['Avg Length of Stay (days)', avgLos || '—']].map(([label, val]) => (
+            {[
+              ['Unique Individuals Housed', uniqueHousedCount],
+              ['New Intakes', intakes.length],
+              ['New Exits', exits.length],
+              ['OUD / Overdose History', oudCount],
+              ['Avg Length of Stay (days)', avgLos || '—'],
+            ].map(([label, val]) => (
               <div key={label} style={s.metric}><div style={s.metricLabel}>{label}</div><div style={s.metricVal}>{val}</div></div>
             ))}
           </div>
-          <div style={s.sectionLabel}>Intakes by Referral Source</div>
+
+          {reportHouse === 'combined' && (
+            <>
+              <div style={s.sectionLabel}>Breakdown by House</div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Unique Individuals Housed</span><span style={s.reportVal}>{menUniqueHoused}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Intakes</span><span style={s.reportVal}>{menIntakes.length}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Exits</span><span style={s.reportVal}>{menExits.length}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Avg Length of Stay (days)</span><span style={s.reportVal}>{avgMenLos || '—'}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Unique Individuals Housed</span><span style={s.reportVal}>{womenUniqueHoused}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Intakes</span><span style={s.reportVal}>{womenIntakes.length}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Exits</span><span style={s.reportVal}>{womenExits.length}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Avg Length of Stay (days)</span><span style={s.reportVal}>{avgWomenLos || '—'}</span></div>
+            </>
+          )}
+
+          <div style={{ ...s.sectionLabel, marginTop: '20px' }}>Intakes by Referral Source</div>
           {Object.entries(refLabels).map(([key, label]) => (
             <div key={key} style={s.reportRow}><span style={s.reportLabel}>{label}</span><span style={s.reportVal}>{intakes.filter(r => r.referral_source === key).length}</span></div>
           ))}
+
           <div style={{ ...s.sectionLabel, marginTop: '20px' }}>Exits by Reason</div>
           {Object.entries(exitLabels).map(([key, label]) => (
             <div key={key} style={s.reportRow}><span style={s.reportLabel}>{label}</span><span style={s.reportVal}>{exits.filter(r => r.exit_reason === key).length}</span></div>
-          ))}
-          <div style={{ ...s.sectionLabel, marginTop: '20px' }}>By House</div>
-          {[["Men's — Intakes", intakes.filter(r=>r.house==='men').length], ["Men's — Exits", exits.filter(r=>r.house==='men').length], ["Women's — Intakes", intakes.filter(r=>r.house==='women').length], ["Women's — Exits", exits.filter(r=>r.house==='women').length]].map(([label, val]) => (
-            <div key={label} style={s.reportRow}><span style={s.reportLabel}>{label}</span><span style={s.reportVal}>{val}</span></div>
           ))}
         </div>
       )}
