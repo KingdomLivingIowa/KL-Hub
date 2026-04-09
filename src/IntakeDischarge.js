@@ -9,6 +9,7 @@ function IntakeDischarge() {
   const [reportMonth, setReportMonth] = useState('');
   const [reportHouse, setReportHouse] = useState('combined');
   const [activeClients, setActiveClients] = useState([]);
+  const [waitingListCounts, setWaitingListCounts] = useState([]);
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +21,10 @@ function IntakeDischarge() {
   const fetchRecords = async () => {
     const { data } = await supabase.from('survey_entries').select('*').order('created_at', { ascending: false });
     if (data) setRecords(data);
-const { data: clients } = await supabase.from('clients').select('id, start_date, discharge_date, status, house_id, gender, oud').not('start_date', 'is', null);    if (clients) setActiveClients(clients);
+    const { data: clients } = await supabase.from('clients').select('id, start_date, discharge_date, status, house_id, gender, oud').not('start_date', 'is', null);
+    if (clients) setActiveClients(clients);
+    const { data: waitList } = await supabase.from('waiting_list').select('list_type').eq('status', 'waiting');
+    if (waitList) setWaitingListCounts(waitList);
   };
 
   const showSuccess = (msg) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000); };
@@ -83,15 +87,17 @@ const { data: clients } = await supabase.from('clients').select('id, start_date,
       ? uniqueHoused.filter(c => c.gender === 'Male').length
       : uniqueHoused.filter(c => c.gender === 'Female').length;
 
-  const monthRecords = records.filter(r => r.entry_date?.slice(0, 7) === activeMonth);
-  const filteredByHouse = reportHouse === 'combined' ? monthRecords : monthRecords.filter(r => r.house === reportHouse);
-  const intakes = filteredByHouse.filter(r => r.type === 'intake');
-  const exits = filteredByHouse.filter(r => r.type === 'discharge');
   const oudCount = reportHouse === 'combined'
     ? uniqueHoused.filter(c => c.oud === 'Yes').length
     : reportHouse === 'men'
       ? uniqueHoused.filter(c => c.gender === 'Male' && c.oud === 'Yes').length
-      : uniqueHoused.filter(c => c.gender === 'Female' && c.oud === 'Yes').length;  const losArr = exits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
+      : uniqueHoused.filter(c => c.gender === 'Female' && c.oud === 'Yes').length;
+
+  const monthRecords = records.filter(r => r.entry_date?.slice(0, 7) === activeMonth);
+  const filteredByHouse = reportHouse === 'combined' ? monthRecords : monthRecords.filter(r => r.house === reportHouse);
+  const intakes = filteredByHouse.filter(r => r.type === 'intake');
+  const exits = filteredByHouse.filter(r => r.type === 'discharge');
+  const losArr = exits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
   const avgLos = losArr.length ? Math.round(losArr.reduce((a, b) => a + b, 0) / losArr.length) : 0;
 
   const menIntakes = monthRecords.filter(r => r.type === 'intake' && r.house === 'men');
@@ -106,6 +112,10 @@ const { data: clients } = await supabase.from('clients').select('id, start_date,
   const menUniqueHoused = uniqueHoused.filter(c => c.gender === 'Male').length;
   const womenUniqueHoused = uniqueHoused.filter(c => c.gender === 'Female').length;
 
+  const menWaitList = waitingListCounts.filter(w => w.list_type?.includes('Men')).length;
+  const womenWaitList = waitingListCounts.filter(w => w.list_type?.includes('Women')).length;
+  const totalWaitList = waitingListCounts.length;
+
   const refLabels = { correctional: 'Correctional facility', treatment: 'Treatment center', recovery: 'Recovery community center', self: 'Self-referral', homeless: 'Homeless', other: 'Other' };
   const exitLabels = { personal_home: 'Move to personal home', other_recovery: 'Other recovery house', supportive: 'Supportive housing', treatment: 'Return to treatment', return_use: 'Return to use', asked_leave: 'Asked to leave', incarceration: 'Incarceration', unknown: 'Unknown', other: 'Other' };
 
@@ -116,6 +126,8 @@ const { data: clients } = await supabase.from('clients').select('id, start_date,
     if (filter === 'women') return r.house === 'women';
     return true;
   });
+
+  const waitListCount = reportHouse === 'combined' ? totalWaitList : reportHouse === 'men' ? menWaitList : womenWaitList;
 
   return (
     <div style={s.page}>
@@ -258,10 +270,11 @@ const { data: clients } = await supabase.from('clients').select('id, start_date,
           <div style={s.metricGrid}>
             {[
               ['Unique Individuals Housed', uniqueHousedCount],
+              ['OUD / Overdose History', oudCount],
               ['New Intakes', intakes.length],
               ['New Exits', exits.length],
-              ['OUD / Overdose History', oudCount],
               ['Avg Length of Stay (days)', avgLos || '—'],
+              ['On Waiting List', waitListCount],
             ].map(([label, val]) => (
               <div key={label} style={s.metric}><div style={s.metricLabel}>{label}</div><div style={s.metricVal}>{val}</div></div>
             ))}
@@ -274,10 +287,12 @@ const { data: clients } = await supabase.from('clients').select('id, start_date,
               <div style={s.reportRow}><span style={s.reportLabel}>Men's — Intakes</span><span style={s.reportVal}>{menIntakes.length}</span></div>
               <div style={s.reportRow}><span style={s.reportLabel}>Men's — Exits</span><span style={s.reportVal}>{menExits.length}</span></div>
               <div style={s.reportRow}><span style={s.reportLabel}>Men's — Avg Length of Stay (days)</span><span style={s.reportVal}>{avgMenLos || '—'}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Men's — On Waiting List</span><span style={s.reportVal}>{menWaitList}</span></div>
               <div style={s.reportRow}><span style={s.reportLabel}>Women's — Unique Individuals Housed</span><span style={s.reportVal}>{womenUniqueHoused}</span></div>
               <div style={s.reportRow}><span style={s.reportLabel}>Women's — Intakes</span><span style={s.reportVal}>{womenIntakes.length}</span></div>
               <div style={s.reportRow}><span style={s.reportLabel}>Women's — Exits</span><span style={s.reportVal}>{womenExits.length}</span></div>
               <div style={s.reportRow}><span style={s.reportLabel}>Women's — Avg Length of Stay (days)</span><span style={s.reportVal}>{avgWomenLos || '—'}</span></div>
+              <div style={s.reportRow}><span style={s.reportLabel}>Women's — On Waiting List</span><span style={s.reportVal}>{womenWaitList}</span></div>
             </>
           )}
 

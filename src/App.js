@@ -10,10 +10,12 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setChecking(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -31,6 +33,15 @@ function App() {
     if (error) setError(error.message);
     setLoading(false);
   };
+
+  if (checking) {
+    return (
+      <div style={styles.loadingContainer}>
+        <img src={logo} alt="Kingdom Living" style={styles.loadingLogo} />
+        <div style={styles.spinner}></div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -75,6 +86,28 @@ function App() {
 }
 
 const styles = {
+  loadingContainer: {
+    minHeight: '100vh',
+    backgroundColor: '#1a1a1a',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '24px',
+  },
+  loadingLogo: {
+    width: '160px',
+    borderRadius: '4px',
+    opacity: 0.9,
+  },
+  spinner: {
+    width: '32px',
+    height: '32px',
+    border: '3px solid #333',
+    borderTop: '3px solid #b22222',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
+  },
   loginContainer: {
     minHeight: '100vh',
     backgroundColor: '#1a1a1a',
