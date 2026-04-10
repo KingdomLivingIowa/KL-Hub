@@ -10,29 +10,39 @@ function Dashboard({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
 
-  useEffect(() => { 
-  fetchCounts(); 
-  const interval = setInterval(fetchCounts, 5000);
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchCounts = async () => {
-  const { count: pendingCount } = await supabase
-    .from('applications')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'pending');
+    const { count: pendingCount } = await supabase
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
 
-  const { count: activeCount } = await supabase
-    .from('applications')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'accepted');
+    const { count: housesCount } = await supabase
+      .from('houses')
+      .select('*', { count: 'exact', head: true });
 
-  setCounts(prev => ({
-    ...prev,
-    pending: pendingCount || 0,
-    active: activeCount || 0,
-  }));
-};
+    const { count: activeClientsCount } = await supabase
+      .from('clients')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'Active');
+
+    const { count: waitingListCount } = await supabase
+      .from('waiting_list')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'waiting');
+
+    setCounts({
+      pending: pendingCount || 0,
+      active: activeClientsCount || 0,
+      houses: housesCount || 0,
+      waitingList: waitingListCount || 0,
+    });
+  };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
@@ -44,12 +54,11 @@ function Dashboard({ user }) {
     { id: 'clients', label: 'Clients' },
     { id: 'messages', label: 'Messages' },
     { id: 'intake', label: 'Intake & Discharge' },
-{ id: 'reports', label: 'Reports' },
+    { id: 'reports', label: 'Reports' },
   ];
 
   return (
     <div style={styles.container}>
-      {/* Sidebar */}
       <div style={styles.sidebar}>
         <div style={styles.sidebarLogo}>
           <p style={styles.logoText}>KL Hub</p>
@@ -77,7 +86,6 @@ function Dashboard({ user }) {
         </div>
       </div>
 
-      {/* Main Content */}
       <div style={styles.main}>
         <div style={styles.header}>
           <h1 style={styles.pageTitle}>
@@ -112,9 +120,9 @@ function Dashboard({ user }) {
           {activePage === 'clients' && <Clients />}
           {activePage === 'houses' && <Houses />}
           {activePage === 'intake' && <IntakeDischarge />}
-            </div>
         </div>
       </div>
+    </div>
   );
 }
 
