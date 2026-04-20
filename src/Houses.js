@@ -18,6 +18,8 @@ function Houses() {
   const [entryType, setEntryType] = useState('House Check-In');
   const [entryForm, setEntryForm] = useState({ author: '', notes: '', severity: 'Low', event_name: '' });
   const [residentChecks, setResidentChecks] = useState({});
+  const [mainView, setMainView] = useState('houses');
+  const [allResidents, setAllResidents] = useState([]);
   const [form, setForm] = useState({
     name: '', address: '', city: '', zip: '', type: 'Men',
     total_beds: '', house_manager: '', phone: '', notes: '',
@@ -37,11 +39,21 @@ function Houses() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchHouses(); }, [fetchHouses]);
+  const fetchAllResidents = useCallback(async () => {
+    const { data } = await supabase
+      .from('clients')
+      .select('id, full_name, status, level, start_date, phone, balance, staff_notes, house_id')
+      .in('status', ['Active', 'Pending'])
+      .order('full_name');
+    setAllResidents(data || []);
+  }, []);
+
+  useEffect(() => { fetchHouses(); fetchAllResidents(); }, [fetchHouses, fetchAllResidents]);
 
   const fetchResidents = useCallback(async (houseId) => {
     const { data } = await supabase
-      .from('clients').select('id, full_name, status, level, start_date, room_type, phone')
+      .from('clients')
+      .select('id, full_name, status, level, start_date, room_type, phone, balance, staff_notes')
       .eq('house_id', houseId).in('status', ['Active', 'Pending']);
     setResidents(data || []);
     const checks = {};
@@ -69,6 +81,24 @@ function Houses() {
     fetchResidents(house.id);
     fetchRooms(house.id);
     fetchTimeline(house.id);
+  };
+
+ const deleteHouse = async (e, houseId) => {
+    e.stopPropagation();
+    const { count } = await supabase
+      .from('clients')
+      .select('*', { count: 'exact', head: true })
+      .eq('house_id', houseId);
+    if (count > 0) {
+      alert('This house still has clients linked to it and cannot be deleted. Please reassign or discharge all residents first.');
+      return;
+    }
+    if (!window.confirm('Are you sure you want to delete this house? This cannot be undone.')) return;
+    await supabase.from('rooms').delete().eq('house_id', houseId);
+    await supabase.from('house_timeline').delete().eq('house_id', houseId);
+    const { error } = await supabase.from('houses').delete().eq('id', houseId);
+    if (error) { alert('Error deleting: ' + error.message); return; }
+    fetchHouses();
   };
 
   const handleEntryTypeChange = (newType) => {
@@ -118,45 +148,36 @@ function Houses() {
     if (!entryForm.author) { alert('Author is required.'); return; }
     if (entryType === 'Crisis' && !entryForm.severity) { alert('Severity is required.'); return; }
     if (entryType === 'Event Attendance' && !entryForm.event_name) { alert('Event name is required.'); return; }
-
     const resData = Object.entries(residentChecks).map(([id, v]) => ({ id, name: v.name, value: v.value }));
-
     if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) {
       alert('Please fill in at least one resident.'); return;
     }
     if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) {
       alert('Please select at least one resident.'); return;
     }
-
     const { error } = await supabase.from('house_timeline').insert([{
-      house_id: selected.id,
-      entry_type: entryType,
-      author: entryForm.author,
+      house_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryForm.notes || null,
       severity: entryType === 'Crisis' ? entryForm.severity : null,
       event_name: entryType === 'Event Attendance' ? entryForm.event_name : null,
       resident_data: resData.length ? resData : null,
     }]);
     if (error) { alert('Error: ' + error.message); return; }
-
     if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
       const relevantResidents = resData.filter(r => r.value);
       for (const res of relevantResidents) {
-        const { data: clientData } = await supabase
-          .from('clients').select('id').eq('full_name', res.name).single();
+        const { data: clientData } = await supabase.from('clients').select('id').eq('full_name', res.name).single();
         if (clientData) {
           await supabase.from('client_timeline').insert([{
             client_id: clientData.id,
             entry_type: entryType === 'Batch UA' ? 'UA' : entryType,
-            author: entryForm.author,
-            notes: entryForm.notes || null,
+            author: entryForm.author, notes: entryForm.notes || null,
             event_name: entryType === 'Event Attendance' ? entryForm.event_name : res.value,
             source: 'house',
           }]);
         }
       }
     }
-
     setShowAddEntry(false);
     setEntryType('House Check-In');
     setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '' });
@@ -179,28 +200,33 @@ function Houses() {
   };
 
   const entryColor = (type) => {
-    if (type === 'House Check-In')   return '#7F77DD';
-    if (type === 'Batch UA')         return '#1D9E75';
-    if (type === 'Crisis')           return '#E24B4A';
+    if (type === 'House Check-In') return '#7F77DD';
+    if (type === 'Batch UA') return '#1D9E75';
+    if (type === 'Crisis') return '#E24B4A';
     if (type === 'Event Attendance') return '#378ADD';
-    if (type === 'General Note')     return '#BA7517';
+    if (type === 'General Note') return '#BA7517';
     return '#888';
   };
 
   const severityColor = (sv) => {
-    if (sv === 'High')   return { bg: '#3a1e1e', color: '#f87171' };
+    if (sv === 'High') return { bg: '#3a1e1e', color: '#f87171' };
     if (sv === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
     return { bg: '#1e3a2f', color: '#4ade80' };
   };
 
   const statusColor = (st) => {
-    if (st === 'Active')  return { bg: '#2d1e3a', color: '#c084fc' };
+    if (st === 'Active') return { bg: '#2d1e3a', color: '#c084fc' };
     if (st === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
     return { bg: '#2a2a2a', color: '#aaa' };
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const formatBalance = (b) => {
+    if (b == null) return '—';
+    const num = parseFloat(b);
+    return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2);
+  };
 
   return (
     <div style={s.page}>
@@ -209,7 +235,13 @@ function Houses() {
           <h2 style={s.title}>Houses</h2>
           <p style={s.sub}>{houses.length} total</p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{showAdd ? 'Cancel' : '+ Add House'}</button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={s.viewToggle}>
+            <button onClick={() => setMainView('houses')} style={{ ...s.toggleBtn, ...(mainView === 'houses' ? s.toggleBtnActive : {}) }}>Houses</button>
+            <button onClick={() => setMainView('residents')} style={{ ...s.toggleBtn, ...(mainView === 'residents' ? s.toggleBtnActive : {}) }}>All Residents</button>
+          </div>
+          <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{showAdd ? 'Cancel' : '+ Add House'}</button>
+        </div>
       </div>
 
       {showAdd && (
@@ -230,30 +262,86 @@ function Houses() {
         </div>
       )}
 
-      {loading ? <p style={{ color: '#888' }}>Loading...</p> : houses.length === 0 ? (
-        <p style={{ color: '#888' }}>No houses yet.</p>
-      ) : (
-        <div style={s.houseGrid}>
-          {houses.map(house => (
-            <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
-              <div style={s.houseCardTop}>
-                <div>
-                  <p style={s.houseName}>{house.name}</p>
-                  <p style={s.houseAddress}>{house.address}{house.city ? `, ${house.city}` : ''}</p>
-                </div>
-                <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: house.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{house.type}</span>
+      {loading ? <p style={{ color: '#888' }}>Loading...</p> : (
+        <>
+          {mainView === 'houses' && (
+            houses.length === 0 ? <p style={{ color: '#888' }}>No houses yet.</p> : (
+              <div style={s.houseGrid}>
+                {houses.map(house => (
+                  <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
+                    <div style={s.houseCardTop}>
+                      <div>
+                        <p style={s.houseName}>{house.name}</p>
+                        <p style={s.houseAddress}>{house.address}{house.city ? `, ${house.city}` : ''}</p>
+                      </div>
+                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: house.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{house.type}</span>
+                    </div>
+                    <div style={s.bedBar}><div style={s.bedBarFill(house)} /></div>
+                    <div style={s.houseStats}>
+                      <span style={s.statItem}><span style={s.statNum}>{house.total_beds || 0}</span><span style={s.statLabel}>Total</span></span>
+                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#c084fc' }}>{house.occupied_beds || 0}</span><span style={s.statLabel}>Active</span></span>
+                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#facc15' }}>{house.pending_count || 0}</span><span style={s.statLabel}>Pending</span></span>
+                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#4ade80' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLabel}>Available</span></span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
+                      {house.house_manager
+                        ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p>
+                        : <span />}
+                      <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div style={s.bedBar}><div style={s.bedBarFill(house)} /></div>
-              <div style={s.houseStats}>
-                <span style={s.statItem}><span style={s.statNum}>{house.total_beds || 0}</span><span style={s.statLabel}>Total</span></span>
-                <span style={s.statItem}><span style={{ ...s.statNum, color: '#c084fc' }}>{house.occupied_beds || 0}</span><span style={s.statLabel}>Active</span></span>
-                <span style={s.statItem}><span style={{ ...s.statNum, color: '#facc15' }}>{house.pending_count || 0}</span><span style={s.statLabel}>Pending</span></span>
-                <span style={s.statItem}><span style={{ ...s.statNum, color: '#4ade80' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLabel}>Available</span></span>
-              </div>
-              {house.house_manager && <p style={s.manager}>Manager: {house.house_manager}</p>}
+            )
+          )}
+
+          {mainView === 'residents' && (
+            <div>
+              {houses.map(house => {
+                const houseResidents = allResidents.filter(r => r.house_id === house.id);
+                if (houseResidents.length === 0) return null;
+                return (
+                  <div key={house.id} style={s.houseGroup}>
+                    <div style={s.houseGroupHeader}>
+                      <span style={s.houseGroupName}>{house.name}</span>
+                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: house.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{house.type}</span>
+                      <span style={s.houseGroupCount}>{houseResidents.length} resident{houseResidents.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div style={s.residentTable}>
+                      <div style={s.residentTableHeader}>
+                        <span style={{ flex: 2 }}>Name</span>
+                        <span style={{ flex: 1 }}>Status</span>
+                        <span style={{ flex: 1 }}>Start Date</span>
+                        <span style={{ flex: 1 }}>Balance</span>
+                        <span style={{ flex: 1 }}>Phone</span>
+                        <span style={{ flex: 2 }}>Notes</span>
+                      </div>
+                      {houseResidents.map(r => (
+                        <div key={r.id} style={s.residentTableRow}>
+                          <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={s.resAvatar}>{initials(r.full_name)}</div>
+                            <div>
+                              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
+                              <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>Level {r.level || 1}</p>
+                            </div>
+                          </div>
+                          <span style={{ flex: 1 }}>
+                            <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
+                          </span>
+                          <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.start_date || '—'}</span>
+                          <span style={{ flex: 1, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
+                          <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.phone || '—'}</span>
+                          <span style={{ flex: 2, color: '#888', fontSize: '12px', lineHeight: '1.4' }}>{r.staff_notes || '—'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {allResidents.length === 0 && <p style={{ color: '#888' }}>No active residents found.</p>}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
       {selected && (
@@ -268,7 +356,7 @@ function Houses() {
                   <span style={{ ...s.typeBadge, background: '#2d1e3a', color: '#c084fc' }}>{selected.occupied_beds || 0} active</span>
                   <span style={{ ...s.typeBadge, background: '#2d2d1e', color: '#facc15' }}>{selected.pending_count || 0} pending</span>
                   <span style={{ ...s.typeBadge, background: '#1e3a2f', color: '#4ade80' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
-                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#2a2a2a', color: '#aaa' }}>Manager: {selected.house_manager}</span>}
+                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#2a2a2a', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
                 </div>
               </div>
               <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
@@ -276,28 +364,48 @@ function Houses() {
 
             <div style={s.tabs}>
               {['residents', 'timeline', 'rooms', 'forms'].map(t => (
-                <button key={t} onClick={() => setActiveTab(t)}
-                  style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
+                <button key={t} onClick={() => setActiveTab(t)} style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
             </div>
 
             <div style={s.modalBody}>
-
               {activeTab === 'residents' && (
                 <>
                   <p style={s.sectionLabel}>Current residents ({residents.length})</p>
                   {residents.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No current residents.</p> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
-                        <div key={r.id} style={s.residentRow}>
-                          <div style={s.resAvatar}>{initials(r.full_name)}</div>
-                          <div style={{ flex: 1 }}>
-                            <p style={s.resName}>{r.full_name}</p>
-                            <p style={s.resMeta}>Level {r.level || 1}{r.start_date ? ` · Move-in: ${r.start_date}` : ''}{r.phone ? ` · ${r.phone}` : ''}</p>
+                        <div key={r.id} style={s.residentCard}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                            <div style={s.resAvatar}>{initials(r.full_name)}</div>
+                            <div style={{ flex: 1 }}>
+                              <p style={s.resName}>{r.full_name}</p>
+                              <p style={s.resMeta}>Level {r.level || 1}{r.room_type ? ` · ${r.room_type}` : ''}</p>
+                            </div>
+                            <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
-                          <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
+                          <div style={s.resDetailGrid}>
+                            <div style={s.resDetailItem}>
+                              <span style={s.resDetailLabel}>Start Date</span>
+                              <span style={s.resDetailVal}>{r.start_date || '—'}</span>
+                            </div>
+                            <div style={s.resDetailItem}>
+                              <span style={s.resDetailLabel}>Balance</span>
+                              <span style={{ ...s.resDetailVal, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80' }}>{formatBalance(r.balance)}</span>
+                            </div>
+                            <div style={s.resDetailItem}>
+                              <span style={s.resDetailLabel}>Phone</span>
+                              <span style={s.resDetailVal}>{r.phone || '—'}</span>
+                            </div>
+                          </div>
+                          {r.staff_notes && (
+                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #333' }}>
+                              <span style={s.resDetailLabel}>Staff Notes</span>
+                              <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{r.staff_notes}</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -315,11 +423,8 @@ function Houses() {
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <p style={{ ...s.sectionLabel, margin: 0 }}>Timeline</p>
-                    <button onClick={() => setShowAddEntry(!showAddEntry)} style={s.smallAddBtn}>
-                      {showAddEntry ? 'Cancel' : '+ Add Entry'}
-                    </button>
+                    <button onClick={() => setShowAddEntry(!showAddEntry)} style={s.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
                   </div>
-
                   {showAddEntry && (
                     <div style={s.miniForm}>
                       <div style={{ marginBottom: '12px' }}>
@@ -328,28 +433,24 @@ function Houses() {
                           {ENTRY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                       </div>
-
                       {entryType === 'Crisis' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Severity *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
                               <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />
-                                {sv}
+                                <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
                           </div>
                         </div>
                       )}
-
                       {entryType === 'Event Attendance' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Event Name *</label>
                           <input value={entryForm.event_name} onChange={e => setEntryForm(p => ({ ...p, event_name: e.target.value }))} style={s.input} placeholder="e.g. AA Meeting, Community Dinner" />
                         </div>
                       )}
-
                       {entryType === 'House Check-In' && residents.length > 0 && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Residents</label>
@@ -359,8 +460,7 @@ function Houses() {
                               <div style={{ display: 'flex', gap: '12px' }}>
                                 {['Here', 'Not Here'].map(opt => (
                                   <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '12px', cursor: 'pointer' }}>
-                                    <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />
-                                    {opt}
+                                    <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
                               </div>
@@ -368,7 +468,6 @@ function Houses() {
                           ))}
                         </div>
                       )}
-
                       {entryType === 'Batch UA' && residents.length > 0 && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Results</label>
@@ -378,8 +477,7 @@ function Houses() {
                               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
                                   <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '12px', cursor: 'pointer' }}>
-                                    <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />
-                                    {opt}
+                                    <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
                               </div>
@@ -387,21 +485,18 @@ function Houses() {
                           ))}
                         </div>
                       )}
-
                       {entryType === 'Event Attendance' && residents.length > 0 && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Attendance</label>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                             {residents.map(r => (
                               <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'} onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />
-                                {r.full_name}
+                                <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'} onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />{r.full_name}
                               </label>
                             ))}
                           </div>
                         </div>
                       )}
-
                       <div style={{ marginBottom: '12px' }}>
                         <label style={s.label}>Author *</label>
                         <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={s.input} placeholder="Your name" />
@@ -413,10 +508,7 @@ function Houses() {
                       <button onClick={saveEntry} style={s.saveBtn}>Save Entry</button>
                     </div>
                   )}
-
-                  {timeline.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries yet.</p>
-                  ) : (
+                  {timeline.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {timeline.map(entry => (
                         <div key={entry.id} style={s.timelineCard}>
@@ -432,7 +524,6 @@ function Houses() {
                               <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '11px' }}>×</button>
                             </div>
                           </div>
-
                           {entry.resident_data && entry.resident_data.length > 0 && (
                             <div style={{ marginBottom: '8px' }}>
                               {entry.entry_type === 'House Check-In' && (
@@ -464,7 +555,6 @@ function Houses() {
                               )}
                             </div>
                           )}
-
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ color: '#555', fontSize: '12px' }}>By {entry.author}</span>
                           </div>
@@ -516,7 +606,6 @@ function Houses() {
                   </p>
                 </div>
               )}
-
             </div>
           </div>
         </div>
@@ -540,6 +629,10 @@ const s = {
   input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
+  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' },
+  viewToggle: { display: 'flex', background: '#2a2a2a', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '13px' },
+  toggleBtnActive: { background: '#444', color: '#fff' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
   houseCard: { background: '#2a2a2a', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
@@ -547,16 +640,19 @@ const s = {
   houseAddress: { color: '#666', fontSize: '12px', margin: 0 },
   typeBadge: { fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
   bedBar: { height: '4px', background: '#333', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
-  bedBarFill: (house) => ({
-    height: '100%',
-    width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`,
-    background: '#c084fc', borderRadius: '2px',
-  }),
+  bedBarFill: (house) => ({ height: '100%', width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`, background: '#c084fc', borderRadius: '2px' }),
   houseStats: { display: 'flex', gap: '16px', marginBottom: '10px' },
   statItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   statNum: { fontSize: '18px', fontWeight: '700', color: '#fff' },
   statLabel: { fontSize: '11px', color: '#666' },
-  manager: { color: '#888', fontSize: '12px', margin: '6px 0 0 0' },
+  manager: { color: '#888', fontSize: '12px', margin: 0 },
+  houseGroup: { marginBottom: '32px' },
+  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #333' },
+  houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#fff' },
+  houseGroupCount: { fontSize: '12px', color: '#666', marginLeft: 'auto' },
+  residentTable: { background: '#2a2a2a', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' },
+  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#222', fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
+  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #333', gap: '12px' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
   modal: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '680px', overflow: 'hidden' },
   modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #333' },
@@ -568,10 +664,14 @@ const s = {
   tabActive: { color: '#fff', borderBottomColor: '#fff' },
   modalBody: { padding: '20px 24px', maxHeight: '520px', overflowY: 'auto' },
   sectionLabel: { fontSize: '11px', fontWeight: '500', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  residentRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#2a2a2a', borderRadius: '10px' },
+  residentCard: { background: '#2a2a2a', borderRadius: '10px', padding: '14px 16px', border: '1px solid #333' },
   resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#2d1e3a', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '500', flexShrink: 0 },
   resName: { color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 },
   resMeta: { color: '#666', fontSize: '12px', margin: '2px 0 0 0' },
+  resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' },
+  resDetailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  resDetailLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  resDetailVal: { fontSize: '13px', color: '#ddd' },
   roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#2a2a2a', borderRadius: '10px' },
   timelineCard: { background: '#2a2a2a', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
 };
