@@ -186,6 +186,25 @@ function Clients() {
     fetchTimeline(client.id);
   };
 
+  // Avatar component — shows photo if available, otherwise initials
+  const Avatar = ({ name, photoUrl, size = 34, fontSize = 13 }) => {
+    const ini = initials(name);
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: '50%',
+        background: '#1e3a2f', color: '#4ade80',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize, fontWeight: '500', flexShrink: 0,
+        overflow: 'hidden', position: 'relative',
+      }}>
+        {photoUrl
+          ? <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: '50%' }} />
+          : ini
+        }
+      </div>
+    );
+  };
+
   return (
     <div style={s.page}>
       <div style={s.header}>
@@ -219,7 +238,7 @@ function Clients() {
           {filtered.map(c => (
             <div key={c.id} style={s.row} onClick={() => openProfile(c)}>
               <span style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={s.avatar}>{initials(c.full_name)}</div>
+                <Avatar name={c.full_name} photoUrl={c.photo_url} size={34} fontSize={13} />
                 <span style={{ color: '#fff', fontWeight: '500' }}>{c.full_name}</span>
               </span>
               <span style={{ flex: 1 }}>
@@ -237,7 +256,7 @@ function Clients() {
         <div style={s.overlay} onClick={() => setSelected(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <div style={s.modalHeader}>
-              <div style={s.modalAvatar}>{initials(selected.full_name)}</div>
+              <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={52} fontSize={16} />
               <div style={{ flex: 1 }}>
                 <h2 style={s.modalName}>{selected.full_name}</h2>
                 <p style={s.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
@@ -573,12 +592,10 @@ const s = {
   table: { background: '#2a2a2a', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' },
   tableHeader: { display: 'flex', padding: '12px 16px', borderBottom: '1px solid #333', fontSize: '12px', color: '#666', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' },
   row: { display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #222', cursor: 'pointer' },
-  avatar: { width: '34px', height: '34px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '500', flexShrink: 0 },
   badge: { fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
   modal: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '860px', overflow: 'hidden' },
   modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #333' },
-  modalAvatar: { width: '52px', height: '52px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '500', flexShrink: 0 },
   modalName: { fontSize: '18px', fontWeight: '500', margin: 0, color: '#fff' },
   modalSub: { fontSize: '13px', color: '#666', margin: '2px 0 0 0' },
   badges: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' },

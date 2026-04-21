@@ -21,25 +21,98 @@ function Admissions() {
     setLoading(false);
   };
 
+  const createClientFromApp = async (app) => {
+    const fullName = `${app.first_name} ${app.last_name}`;
+    const uniqueId =
+      (app.first_name || '').slice(0, 2).toLowerCase() +
+      (app.last_name || '').slice(0, 2).toLowerCase() +
+      (app.date_of_birth ? app.date_of_birth.replace(/-/g, '').slice(2) : '000000');
+
+    const { error } = await supabase.from('clients').insert([{
+      full_name: fullName,
+      first_name: app.first_name,
+      last_name: app.last_name,
+      date_of_birth: app.date_of_birth || null,
+      ssn: app.ssn || null,
+      gender: app.assigned_sex || app.gender || null,
+      ethnicity: app.ethnicity || null,
+      marital_status: app.marital_status || null,
+      unique_id: uniqueId,
+      phone: app.phone || null,
+      email: app.email || null,
+      present_residence: app.present_residence || null,
+      emergency_contact_name: app.emergency_contact || null,
+      on_probation: app.on_probation || null,
+      on_parole: app.on_parole || null,
+      po_name: app.po_name || null,
+      po_phone: app.po_phone || null,
+      sex_offender: app.sex_offender || null,
+      criminal_history: app.criminal_history || null,
+      substance_history: app.substance_history || null,
+      treatment_history: app.attended_treatment || null,
+      recovery_meetings: app.recovery_meetings || null,
+      oud: app.oud_diagnosis || null,
+      application_type: app.program || null,
+      personal_status: app.current_situation || null,
+      client_notes: app.client_notes || null,
+      photo_url: app.photo_url || null,
+      status: 'Accepted',
+      level: 1,
+      application_id: app.id,
+    }]);
+    return error;
+  };
+
   const updateStatus = async (id, status) => {
     const { error } = await supabase.from('applications').update({ status }).eq('id', id);
-    if (!error) fetchAll();
+    if (error) return;
+
+    if (status === 'accepted') {
+      const app = applications.find(a => a.id === id);
+      if (app) {
+        await createClientFromApp(app);
+      }
+    }
+
+    fetchAll();
   };
 
   const findDuplicate = (app) => {
-    return clients.find(c => {
-      const nameMatch = c.first_name?.toLowerCase() === app.first_name?.toLowerCase() &&
-        c.last_name?.toLowerCase() === app.last_name?.toLowerCase();
-      const dobMatch = app.date_of_birth && c.date_of_birth && c.date_of_birth === app.date_of_birth;
-      const ssnMatch = app.ssn && c.ssn && c.ssn === app.ssn;
-      return nameMatch || dobMatch || ssnMatch;
-    });
+    const firstLower = app.first_name?.toLowerCase().trim();
+    const lastLower = app.last_name?.toLowerCase().trim();
+
+    // Check against existing clients
+    const clientMatch = clients.find(c =>
+      c.first_name?.toLowerCase().trim() === firstLower &&
+      c.last_name?.toLowerCase().trim() === lastLower
+    );
+    if (clientMatch) return clientMatch;
+
+    // Check against other applications (exclude itself)
+    const appMatch = applications.find(a =>
+      a.id !== app.id &&
+      a.first_name?.toLowerCase().trim() === firstLower &&
+      a.last_name?.toLowerCase().trim() === lastLower
+    );
+    if (appMatch) return { ...appMatch, isApplication: true };
+
+    return null;
   };
 
   const handleMerge = async () => {
     if (!duplicateModal) return;
     setMerging(true);
     const { app, client } = duplicateModal;
+
+    // If duplicate is another application (not a client), just update status
+    if (client.isApplication) {
+      await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
+      setDuplicateModal(null);
+      fetchAll();
+      setMerging(false);
+      return;
+    }
+
     const { error } = await supabase.from('clients').update({
       first_name: app.first_name || client.first_name,
       last_name: app.last_name || client.last_name,
@@ -47,10 +120,11 @@ function Admissions() {
       email: app.email || null,
       date_of_birth: app.date_of_birth || client.date_of_birth,
       ssn: app.ssn || client.ssn,
-      gender: app.gender || null,
+      gender: app.assigned_sex || app.gender || null,
       present_residence: app.current_situation || null,
       application_type: app.program || null,
     }).eq('id', client.id);
+
     if (!error) {
       await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
       setDuplicateModal(null);
@@ -116,7 +190,7 @@ function Admissions() {
 
                 <div style={s.snapshot}>
                   {[
-                    ['Gender', app.gender],
+                    ['Gender', app.gender || app.assigned_sex],
                     ['Program', app.program],
                     ['Lived Here Before?', app.lived_here_before],
                     ['On Disability?', app.on_disability],
@@ -160,19 +234,21 @@ function Admissions() {
                         ['Phone', app.phone],
                         ['Date of Birth', app.date_of_birth],
                         ['SSN', app.ssn],
-                        ['Gender', app.gender],
+                        ['Gender', app.gender || app.assigned_sex],
                         ['Program', app.program],
                         ['Current Situation', app.current_situation],
                         ['Lived Here Before?', app.lived_here_before],
                         ['On Disability?', app.on_disability],
                         ['Substance History?', app.substance_history],
+                        ['Drug of Choice', app.drug_of_choice],
+                        ['Sober Date', app.sober_date],
+                        ['OUD Diagnosis', app.oud_diagnosis],
                         ['Sex Offender?', app.sex_offender],
                         ['Correspondence Contact', app.correspondence_contact],
-                        ['Emergency Contact', app.emergency_contact_name],
-                        ['Emergency Phone', app.emergency_contact_phone],
+                        ['Emergency Contact', app.emergency_contact],
                         ['Parole Officer', app.po_name],
                         ['PO Phone', app.po_phone],
-                        ['Notes', app.notes],
+                        ['Notes', app.client_notes],
                         ['Signature', app.signature],
                       ].map(([label, val]) => val ? (
                         <div key={label} style={s.fullItem}>
@@ -194,7 +270,11 @@ function Admissions() {
           <div style={s.modal}>
             <div style={s.modalHeader}>
               <h2 style={s.modalTitle}>Possible Duplicate Detected</h2>
-              <p style={s.modalSub}>A client with similar information already exists. Review and choose an action.</p>
+              <p style={s.modalSub}>
+                {duplicateModal.client.isApplication
+                  ? 'Another application with this name already exists. Review and choose an action.'
+                  : 'A client with this name already exists. Review and choose an action.'}
+              </p>
             </div>
             <div style={s.compareGrid}>
               <div style={s.compareCol}>
@@ -205,7 +285,7 @@ function Admissions() {
                   ['SSN', duplicateModal.app.ssn],
                   ['Email', duplicateModal.app.email],
                   ['Phone', duplicateModal.app.phone],
-                  ['Gender', duplicateModal.app.gender],
+                  ['Gender', duplicateModal.app.assigned_sex || duplicateModal.app.gender],
                   ['Program', duplicateModal.app.program],
                 ].map(([label, val]) => (
                   <div key={label} style={s.compareRow}>
@@ -215,7 +295,9 @@ function Admissions() {
                 ))}
               </div>
               <div style={s.compareCol}>
-                <div style={s.compareColHeader}>Existing Client</div>
+                <div style={s.compareColHeader}>
+                  {duplicateModal.client.isApplication ? 'Existing Application' : 'Existing Client'}
+                </div>
                 {[
                   ['Name', `${duplicateModal.client.first_name} ${duplicateModal.client.last_name}`],
                   ['DOB', duplicateModal.client.date_of_birth],
@@ -230,9 +312,11 @@ function Admissions() {
               </div>
             </div>
             <div style={s.modalActions}>
-              <button style={s.mergeBtn} onClick={handleMerge} disabled={merging}>
-                {merging ? 'Merging...' : 'Merge into Existing Client'}
-              </button>
+              {!duplicateModal.client.isApplication && (
+                <button style={s.mergeBtn} onClick={handleMerge} disabled={merging}>
+                  {merging ? 'Merging...' : 'Merge into Existing Client'}
+                </button>
+              )}
               <button style={s.ignoreBtn} onClick={handleIgnore}>Treat as New Person</button>
               <button style={s.cancelBtn} onClick={() => setDuplicateModal(null)}>Cancel</button>
             </div>

@@ -4,10 +4,17 @@ import logo from './kingdom-living-logo.jpg';
 
 const sections = ['General Info', 'Recovery', 'Emergency Contacts', 'Legal History', 'Information Accuracy'];
 
+const emptyMed = () => ({ name: '', dosage: '', intake: '', count: '', notes: '' });
+const emptyTreatment = () => ({ name: '', level_of_care: '', contact_name: '', contact_phone: '', contact_email: '', was_referred: '', referral_date: '', discharge_date: '' });
+
 function ApplicationForm() {
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [medications, setMedications] = useState([emptyMed()]);
+  const [treatments, setTreatments] = useState([emptyTreatment()]);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
   const [form, setForm] = useState({
     first_name: '', last_name: '', phone: '', email: '',
     correspondence_contact: '', date_of_birth: '', ssn: '',
@@ -18,9 +25,10 @@ function ApplicationForm() {
     disability_walking: '', disability_dressing: '',
     able_to_work: '', agree_to_volunteer: '',
     allergy_info: '', doctor_info: '', employment_status: '',
-    employer_name: '', substance_history: '', oud_diagnosis: '',
+    employer_name: '', substance_history: '', drug_of_choice: '',
+    sober_date: '', oud_diagnosis: '',
     recovery_meetings: '', attended_treatment: '',
-    takes_medication: '', medication_details: '',
+    takes_medication: '',
     emergency_contact: '', collateral_contacts: '',
     on_probation: '', on_parole: '', po_name: '', po_phone: '',
     criminal_history: '', sex_offender: '', sex_offense_details: '',
@@ -29,6 +37,26 @@ function ApplicationForm() {
   });
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const updateMed = (i, field, value) => {
+    const updated = [...medications];
+    updated[i] = { ...updated[i], [field]: value };
+    setMedications(updated);
+  };
+
+  const updateTreatment = (i, field, value) => {
+    const updated = [...treatments];
+    updated[i] = { ...updated[i], [field]: value };
+    setTreatments(updated);
+  };
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfilePhoto(file);
+      setProfilePhotoPreview(URL.createObjectURL(file));
+    }
+  };
 
   const validate = () => {
     if (step === 0) {
@@ -100,60 +128,40 @@ function ApplicationForm() {
       form.last_name.slice(0, 2).toLowerCase() +
       (form.date_of_birth ? form.date_of_birth.replace(/-/g, '').slice(2) : '000000');
 
-    const { data: appData, error: appError } = await supabase
-      .from('applications')
-      .insert([{ ...form, full_name: fullName, status: 'pending' }])
-      .select('id')
-      .single();
+    let photoUrl = null;
+    if (profilePhoto) {
+      const fileExt = profilePhoto.name.split('.').pop();
+      const fileName = `${uniqueId}_${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(fileName, profilePhoto);
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
+        photoUrl = urlData.publicUrl;
+      }
+    }
 
+    const medDetails = form.takes_medication === 'Yes' ? JSON.stringify(medications) : null;
+    const treatmentDetails = form.attended_treatment === 'Yes' ? JSON.stringify(treatments) : null;
+
+    const { error: appError } = await supabase
+      .from('applications')
+      .insert([{
+        ...form,
+        full_name: fullName,
+        status: 'pending',
+        medication_details: medDetails,
+        treatment_details: treatmentDetails,
+        photo_url: photoUrl,
+      }]);
+
+    setLoading(false);
     if (appError) {
-      setLoading(false);
       alert('There was an error submitting. Please try again.');
       return;
     }
 
-    const appId = appData?.id ?? null;
-
-    const { error: clientError } = await supabase
-      .from('clients')
-      .insert([{
-        full_name: fullName,
-        first_name: form.first_name,
-        last_name: form.last_name,
-        date_of_birth: form.date_of_birth || null,
-        ssn: form.ssn || null,
-        gender: form.assigned_sex || null,
-        ethnicity: form.ethnicity || null,
-        marital_status: form.marital_status || null,
-        unique_id: uniqueId,
-        phone: form.phone || null,
-        email: form.email || null,
-        present_residence: form.present_residence || null,
-        emergency_contact_name: form.emergency_contact || null,
-        on_probation: form.on_probation || null,
-        on_parole: form.on_parole || null,
-        po_name: form.po_name || null,
-        po_phone: form.po_phone || null,
-        sex_offender: form.sex_offender || null,
-        criminal_history: form.criminal_history || null,
-        substance_history: form.substance_history || null,
-        treatment_history: form.attended_treatment || null,
-        recovery_meetings: form.recovery_meetings || null,
-        oud: form.oud_diagnosis || null,
-        application_type: form.program || null,
-        personal_status: form.current_situation || null,
-        client_notes: form.client_notes || null,
-        status: 'Applied',
-        level: 1,
-        application_id: appId,
-      }]);
-
-    setLoading(false);
-    if (!clientError) {
-      setSubmitted(true);
-    } else {
-      alert('Profile creation failed: ' + JSON.stringify(clientError));
-    }
+    setSubmitted(true);
   };
 
   if (submitted) return (
@@ -184,6 +192,14 @@ function ApplicationForm() {
         <div style={s.section}>
           {step === 0 && <>
             <h3 style={s.sectionTitle}>General Info</h3>
+
+            <Row label="Profile Photo">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                {profilePhotoPreview && <img src={profilePhotoPreview} alt="Preview" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #444' }} />}
+                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ color: '#aaa', fontSize: '13px' }} />
+              </div>
+            </Row>
+
             <Row label="First Name *"><Input value={form.first_name} onChange={v => set('first_name', v)} /></Row>
             <Row label="Last Name *"><Input value={form.last_name} onChange={v => set('last_name', v)} /></Row>
             <Row label="Phone Number *"><Input value={form.phone} onChange={v => set('phone', v)} /></Row>
@@ -208,11 +224,12 @@ function ApplicationForm() {
               <Row label="Serious difficulty concentrating, remembering, or making decisions? *"><Select value={form.disability_concentrating} onChange={v => set('disability_concentrating', v)} options={['Yes', 'No']} /></Row>
               <Row label="Serious difficulty walking or climbing stairs? *"><Select value={form.disability_walking} onChange={v => set('disability_walking', v)} options={['Yes', 'No']} /></Row>
               <Row label="Difficulty dressing or bathing? *"><Select value={form.disability_dressing} onChange={v => set('disability_dressing', v)} options={['Yes', 'No']} /></Row>
-              <Row label="Are you able to work? *">
-                <Select value={form.able_to_work} onChange={v => set('able_to_work', v)} options={['Yes', 'No']} />
-                <p style={s.hint}>If No, you will be required to volunteer.</p>
-              </Row>
-              {form.able_to_work === 'No' && <Row label="Do you agree to the volunteer requirement? *"><Select value={form.agree_to_volunteer} onChange={v => set('agree_to_volunteer', v)} options={['Yes', 'No']} /></Row>}
+              <Row label="Are you able to work? *"><Select value={form.able_to_work} onChange={v => set('able_to_work', v)} options={['Yes', 'No']} /></Row>
+              {form.able_to_work === 'No' && <>
+                <Row label="If you are unable to work, you will be required to volunteer. Do you agree to this requirement? *">
+                  <Select value={form.agree_to_volunteer} onChange={v => set('agree_to_volunteer', v)} options={['Yes', 'No']} />
+                </Row>
+              </>}
             </>}
             <Row label="Allergy Information"><Textarea value={form.allergy_info} onChange={v => set('allergy_info', v)} /></Row>
             <Row label="Doctor Name & Phone Number"><Textarea value={form.doctor_info} onChange={v => set('doctor_info', v)} /></Row>
@@ -224,13 +241,57 @@ function ApplicationForm() {
           {step === 1 && <>
             <h3 style={s.sectionTitle}>Recovery</h3>
             <Row label="Do you have a past or current history of substance or alcohol misuse? *"><Select value={form.substance_history} onChange={v => set('substance_history', v)} options={['Yes', 'No']} /></Row>
+            <Row label="Drug of Choice"><Input value={form.drug_of_choice} onChange={v => set('drug_of_choice', v)} placeholder="Enter your primary drug of choice" /></Row>
+            <Row label="How long have you been sober? (Sober Date / Recovery Date)"><Input value={form.sober_date} onChange={v => set('sober_date', v)} placeholder="e.g. January 1, 2023" /></Row>
             <Row label="Are you diagnosed with opiate use disorder (OUD)? *"><Select value={form.oud_diagnosis} onChange={v => set('oud_diagnosis', v)} options={['Yes', 'No']} /></Row>
             <Row label="What type of recovery meetings do you attend? *"><Select value={form.recovery_meetings} onChange={v => set('recovery_meetings', v)} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} /></Row>
+
             <h3 style={s.sectionTitle}>Treatment</h3>
             <Row label="Have you ever attended addiction treatment, PHP, IOP, or lived in another recovery house program? *"><Select value={form.attended_treatment} onChange={v => set('attended_treatment', v)} options={['Yes', 'No']} /></Row>
+            {form.attended_treatment === 'Yes' && <>
+              <p style={{ ...s.hint, marginBottom: '12px' }}>Please provide details for each treatment program attended. Click "+ Add Treatment" to add more.</p>
+              {treatments.map((t, i) => (
+                <div key={i} style={s.treatmentBlock}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>Treatment {i + 1}</span>
+                    {treatments.length > 1 && <button onClick={() => setTreatments(treatments.filter((_, idx) => idx !== i))} style={s.removeBtn}>Remove</button>}
+                  </div>
+                  <div style={s.grid2}>
+                    <div><label style={s.fieldLabel}>Name</label><Input value={t.name} onChange={v => updateTreatment(i, 'name', v)} placeholder="Treatment center name" /></div>
+                    <div><label style={s.fieldLabel}>Level of Care</label><Input value={t.level_of_care} onChange={v => updateTreatment(i, 'level_of_care', v)} placeholder="e.g. Inpatient, IOP" /></div>
+                    <div><label style={s.fieldLabel}>Contact Name</label><Input value={t.contact_name} onChange={v => updateTreatment(i, 'contact_name', v)} /></div>
+                    <div><label style={s.fieldLabel}>Contact Phone</label><Input value={t.contact_phone} onChange={v => updateTreatment(i, 'contact_phone', v)} /></div>
+                    <div><label style={s.fieldLabel}>Contact Email</label><Input value={t.contact_email} onChange={v => updateTreatment(i, 'contact_email', v)} type="email" /></div>
+                    <div><label style={s.fieldLabel}>Were you referred?</label><Select value={t.was_referred} onChange={v => updateTreatment(i, 'was_referred', v)} options={['Yes', 'No']} /></div>
+                    <div><label style={s.fieldLabel}>Referral Date</label><Input value={t.referral_date} onChange={v => updateTreatment(i, 'referral_date', v)} type="date" /></div>
+                    <div><label style={s.fieldLabel}>Discharge Date</label><Input value={t.discharge_date} onChange={v => updateTreatment(i, 'discharge_date', v)} type="date" /></div>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => setTreatments([...treatments, emptyTreatment()])} style={s.addBtn}>+ Add Treatment</button>
+            </>}
+
             <h3 style={s.sectionTitle}>Medications</h3>
             <Row label="Do you take any prescription medication? *"><Select value={form.takes_medication} onChange={v => set('takes_medication', v)} options={['Yes', 'No']} /></Row>
-            {form.takes_medication === 'Yes' && <Row label="Please list your medications"><Textarea value={form.medication_details} onChange={v => set('medication_details', v)} /></Row>}
+            {form.takes_medication === 'Yes' && <>
+              <p style={{ ...s.hint, marginBottom: '12px' }}>Please list all medications. Click "+ Add Medication" to add more.</p>
+              {medications.map((med, i) => (
+                <div key={i} style={s.medBlock}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>Medication {i + 1}</span>
+                    {medications.length > 1 && <button onClick={() => setMedications(medications.filter((_, idx) => idx !== i))} style={s.removeBtn}>Remove</button>}
+                  </div>
+                  <div style={s.grid2}>
+                    <div><label style={s.fieldLabel}>Name</label><Input value={med.name} onChange={v => updateMed(i, 'name', v)} placeholder="Medication name" /></div>
+                    <div><label style={s.fieldLabel}>Dosage</label><Input value={med.dosage} onChange={v => updateMed(i, 'dosage', v)} placeholder="e.g. 10mg" /></div>
+                    <div><label style={s.fieldLabel}>Intake (times per day)</label><Input value={med.intake} onChange={v => updateMed(i, 'intake', v)} placeholder="e.g. 2" /></div>
+                    <div><label style={s.fieldLabel}>Count</label><Input value={med.count} onChange={v => updateMed(i, 'count', v)} placeholder="e.g. 90" /></div>
+                    <div style={{ gridColumn: 'span 2' }}><label style={s.fieldLabel}>Notes</label><Input value={med.notes} onChange={v => updateMed(i, 'notes', v)} placeholder="e.g. As needed" /></div>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => setMedications([...medications, emptyMed()])} style={s.addBtn}>+ Add Medication</button>
+            </>}
           </>}
 
           {step === 2 && <>
@@ -325,6 +386,12 @@ const s = {
   submitBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginLeft: 'auto' },
   successTitle: { color: '#fff', fontSize: '22px', textAlign: 'center', margin: '16px 0 8px 0' },
   successText: { color: '#a0a0a0', fontSize: '15px', textAlign: 'center', lineHeight: '1.6' },
+  medBlock: { background: '#1a1a1a', borderRadius: '10px', padding: '16px', marginBottom: '12px', border: '1px solid #333' },
+  treatmentBlock: { background: '#1a1a1a', borderRadius: '10px', padding: '16px', marginBottom: '12px', border: '1px solid #333' },
+  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
+  fieldLabel: { display: 'block', color: '#aaa', fontSize: '12px', marginBottom: '4px' },
+  addBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '16px' },
+  removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
 };
 
 export default ApplicationForm;
