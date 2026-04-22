@@ -5,37 +5,45 @@ import WaitingList from './WaitingList';
 import Clients from './Clients';
 import Houses from './Houses';
 import IntakeDischarge from './IntakeDischarge';
+import UserManagement from './UserManagement';
 
 function Dashboard({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
+  const [userRole, setUserRole] = useState(null);
 
   useEffect(() => {
     fetchCounts();
+    fetchUserRole();
     const interval = setInterval(fetchCounts, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchUserRole = async () => {
+    const { data } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user?.id)
+      .single();
+    if (data) setUserRole(data.role);
+  };
 
   const fetchCounts = async () => {
     const { count: pendingCount } = await supabase
       .from('applications')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
-
     const { count: housesCount } = await supabase
       .from('houses')
       .select('*', { count: 'exact', head: true });
-
     const { count: activeClientsCount } = await supabase
       .from('clients')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'Active');
-
     const { count: waitingListCount } = await supabase
       .from('waiting_list')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'waiting');
-
     setCounts({
       pending: pendingCount || 0,
       active: activeClientsCount || 0,
@@ -45,6 +53,10 @@ function Dashboard({ user }) {
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
+
+  const isAdmin = userRole === 'admin';
+  const isUpperManagement = userRole === 'upper_management';
+  const isAdminOrUpper = isAdmin || isUpperManagement;
 
   const navItems = [
     { id: 'home', label: 'Dashboard' },
@@ -57,6 +69,15 @@ function Dashboard({ user }) {
     { id: 'reports', label: 'Reports' },
   ];
 
+  const settingsItems = [
+    ...(isAdmin ? [{ id: 'users', label: 'User Management' }] : []),
+  ];
+
+  const getPageTitle = () => {
+    const all = [...navItems, ...settingsItems];
+    return all.find(i => i.id === activePage)?.label || 'Dashboard';
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.sidebar}>
@@ -66,6 +87,7 @@ function Dashboard({ user }) {
         </div>
 
         <nav style={styles.nav}>
+          {/* Main nav */}
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -78,9 +100,30 @@ function Dashboard({ user }) {
               )}
             </button>
           ))}
+
+          {/* Settings section — admin only */}
+          {isAdmin && (
+            <div style={styles.settingsSection}>
+              <p style={styles.settingsSectionLabel}>Settings</p>
+              {settingsItems.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => setActivePage(item.id)}
+                  style={{ ...styles.navItem, ...(activePage === item.id ? styles.navItemActive : {}) }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          )}
         </nav>
 
         <div style={styles.sidebarBottom}>
+          {userRole && (
+            <p style={styles.userRole}>
+              {userRole.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </p>
+          )}
           <p style={styles.userEmail}>{user?.email}</p>
           <button onClick={handleSignOut} style={styles.signOutBtn}>Sign Out</button>
         </div>
@@ -88,11 +131,8 @@ function Dashboard({ user }) {
 
       <div style={styles.main}>
         <div style={styles.header}>
-          <h1 style={styles.pageTitle}>
-            {navItems.find((i) => i.id === activePage)?.label}
-          </h1>
+          <h1 style={styles.pageTitle}>{getPageTitle()}</h1>
         </div>
-
         <div style={styles.content}>
           {activePage === 'home' && (
             <div style={styles.grid}>
@@ -114,12 +154,12 @@ function Dashboard({ user }) {
               </div>
             </div>
           )}
-
           {activePage === 'admissions' && <Admissions />}
           {activePage === 'waitinglist' && <WaitingList />}
           {activePage === 'clients' && <Clients />}
           {activePage === 'houses' && <Houses />}
           {activePage === 'intake' && <IntakeDischarge />}
+          {activePage === 'users' && isAdmin && <UserManagement currentUser={user} />}
         </div>
       </div>
     </div>
@@ -132,11 +172,14 @@ const styles = {
   sidebarLogo: { padding: '24px 20px', borderBottom: '1px solid #2a2a2a' },
   logoText: { color: '#ffffff', fontSize: '20px', fontWeight: '700', margin: '0' },
   logoSub: { color: '#a0a0a0', fontSize: '12px', margin: '2px 0 0 0' },
-  nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1 },
+  nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto' },
   navItem: { backgroundColor: 'transparent', border: 'none', color: '#a0a0a0', padding: '12px 20px', textAlign: 'left', fontSize: '14px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   navItemActive: { backgroundColor: '#1e1e1e', color: '#ffffff', borderLeft: '3px solid #b22222' },
   badge: { backgroundColor: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
+  settingsSection: { marginTop: 'auto', borderTop: '1px solid #2a2a2a', paddingTop: '8px' },
+  settingsSectionLabel: { color: '#555', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
   sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #2a2a2a' },
+  userRole: { color: '#b22222', fontSize: '11px', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' },
   userEmail: { color: '#a0a0a0', fontSize: '11px', margin: '0 0 10px 0', wordBreak: 'break-all' },
   signOutBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#a0a0a0', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
   main: { marginLeft: '220px', flex: 1, display: 'flex', flexDirection: 'column' },
