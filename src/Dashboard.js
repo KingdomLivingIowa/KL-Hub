@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { UserProvider, useUser } from './UserContext';
 import Admissions from './Admissions';
 import WaitingList from './WaitingList';
 import Clients from './Clients';
@@ -7,29 +8,26 @@ import Houses from './Houses';
 import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
 
-function Dashboard({ user }) {
+function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
-  const [userRole, setUserRole] = useState(null);
+
+  const {
+    role,
+    loadingRole,
+    canSeeAdmissions,
+    canSeeWaitingList,
+    canSeeIntake,
+    canSeeReports,
+    canSeeUserManagement,
+    isAdmin,
+  } = useUser();
 
   useEffect(() => {
     fetchCounts();
-    fetchUserRole();
     const interval = setInterval(fetchCounts, 5000);
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const fetchUserRole = async () => {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user?.id)
-    .single();
-  console.log('user id:', user?.id);
-  console.log('role data:', data);
-  console.log('role error:', error);
-  if (data) setUserRole(data.role);
-};
 
   const fetchCounts = async () => {
     const { count: pendingCount } = await supabase
@@ -57,27 +55,39 @@ function Dashboard({ user }) {
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
-  const isAdmin = userRole === 'admin' || (!userRole && user?.email === 'jasmine@kingdomlivingia.com');
-
+  // Build nav items based on role
   const navItems = [
-    { id: 'home', label: 'Dashboard' },
-    { id: 'admissions', label: 'Admissions' },
-    { id: 'waitinglist', label: 'Waiting Lists' },
-    { id: 'houses', label: 'Houses' },
-    { id: 'clients', label: 'Clients' },
-    { id: 'messages', label: 'Messages' },
-    { id: 'intake', label: 'Intake & Discharge' },
-    { id: 'reports', label: 'Reports' },
-  ];
+    { id: 'home', label: 'Dashboard', show: true },
+    { id: 'admissions', label: 'Admissions', show: canSeeAdmissions },
+    { id: 'waitinglist', label: 'Waiting Lists', show: canSeeWaitingList },
+    { id: 'houses', label: 'Houses', show: true },
+    { id: 'clients', label: 'Clients', show: true },
+    { id: 'messages', label: 'Messages', show: true },
+    { id: 'intake', label: 'Intake & Discharge', show: canSeeIntake },
+    { id: 'reports', label: 'Reports', show: canSeeReports },
+  ].filter(item => item.show);
 
   const settingsItems = [
-    ...(isAdmin ? [{ id: 'users', label: 'User Management' }] : []),
-  ];
+    { id: 'users', label: 'User Management', show: canSeeUserManagement },
+  ].filter(item => item.show);
 
   const getPageTitle = () => {
     const all = [...navItems, ...settingsItems];
     return all.find(i => i.id === activePage)?.label || 'Dashboard';
   };
+
+  const roleDisplayName = (r) => {
+    if (!r) return '';
+    return r.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  if (loadingRole) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#1a1a1a' }}>
+        <p style={{ color: '#666', fontSize: '14px' }}>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -88,7 +98,6 @@ function Dashboard({ user }) {
         </div>
 
         <nav style={styles.nav}>
-          {/* Main nav */}
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -103,7 +112,7 @@ function Dashboard({ user }) {
           ))}
 
           {/* Settings section — admin only */}
-          {isAdmin && (
+          {isAdmin && settingsItems.length > 0 && (
             <div style={styles.settingsSection}>
               <p style={styles.settingsSectionLabel}>Settings</p>
               {settingsItems.map(item => (
@@ -120,10 +129,8 @@ function Dashboard({ user }) {
         </nav>
 
         <div style={styles.sidebarBottom}>
-          {userRole && (
-            <p style={styles.userRole}>
-              {userRole.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-            </p>
+          {role && (
+            <p style={styles.userRole}>{roleDisplayName(role)}</p>
           )}
           <p style={styles.userEmail}>{user?.email}</p>
           <button onClick={handleSignOut} style={styles.signOutBtn}>Sign Out</button>
@@ -155,15 +162,24 @@ function Dashboard({ user }) {
               </div>
             </div>
           )}
-          {activePage === 'admissions' && <Admissions />}
-          {activePage === 'waitinglist' && <WaitingList />}
+          {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
+          {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList />}
           {activePage === 'clients' && <Clients />}
           {activePage === 'houses' && <Houses />}
-          {activePage === 'intake' && <IntakeDischarge />}
-          {activePage === 'users' && isAdmin && <UserManagement currentUser={user} />}
+          {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}
+          {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
       </div>
     </div>
+  );
+}
+
+// Wrap with UserProvider so context is available
+function Dashboard({ user }) {
+  return (
+    <UserProvider user={user}>
+      <DashboardInner user={user} />
+    </UserProvider>
   );
 }
 
@@ -191,8 +207,6 @@ const styles = {
   card: { backgroundColor: '#2a2a2a', borderRadius: '12px', padding: '24px', borderTop: '3px solid #b22222' },
   cardLabel: { color: '#a0a0a0', fontSize: '13px', margin: '0 0 8px 0' },
   cardValue: { color: '#ffffff', fontSize: '32px', fontWeight: '700', margin: '0' },
-  placeholder: { backgroundColor: '#2a2a2a', borderRadius: '12px', padding: '48px', textAlign: 'center' },
-  placeholderText: { color: '#a0a0a0', fontSize: '16px', margin: '0' },
 };
 
 export default Dashboard;

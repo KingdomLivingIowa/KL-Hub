@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { useUser } from './UserContext';
 
 const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
 
@@ -32,17 +33,15 @@ const reverseGeocode = async (lat, lng) => {
   } catch { return null; }
 };
 
-// Get the Monday of a given date's week
 const getWeekStart = (date) => {
   const d = new Date(date);
-  const day = d.getDay(); // 0 = Sunday
-  const diff = day === 0 ? -6 : 1 - day; // adjust to Monday
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
   return d;
 };
 
-// Format week label: "Mon Apr 14 – Sun Apr 20"
 const formatWeekLabel = (weekStart) => {
   const end = new Date(weekStart);
   end.setDate(end.getDate() + 6);
@@ -50,7 +49,6 @@ const formatWeekLabel = (weekStart) => {
   return `${weekStart.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`;
 };
 
-// Group an array of entries by week (most recent first)
 const groupByWeek = (entries) => {
   const weeks = {};
   entries.forEach(entry => {
@@ -63,6 +61,8 @@ const groupByWeek = (entries) => {
 };
 
 function Clients() {
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
+
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -83,14 +83,26 @@ function Clients() {
   const [editingField, setEditingField] = useState(null);
   const [expandedWeeks, setExpandedWeeks] = useState({});
 
-  useEffect(() => { fetchClients(); fetchHouses(); }, []);
+  useEffect(() => { fetchClients(); fetchHouses(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchClients = async () => {
     setLoading(true);
-    const { data } = await supabase
+
+    let query = supabase
       .from('clients')
       .select('*, houses(name, house_manager)')
       .order('created_at', { ascending: false });
+
+    // Filter to assigned houses for house manager roles
+    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+      query = query.in('house_id', assignedHouseIds);
+    } else if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setClients([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data } = await query;
     const enriched = (data || []).map(c => ({
       ...c,
       house_name: c.houses?.name || null,
@@ -117,7 +129,6 @@ function Clients() {
     setMeetingRecords(all.filter(e => e.entry_type === 'Meeting'));
     setChoreRecords(all.filter(e => e.entry_type === 'Chores'));
     setLocationLabels({});
-    // Auto-expand current week
     const thisWeekKey = getWeekStart(new Date()).toISOString();
     setExpandedWeeks({ [thisWeekKey]: true });
     all.forEach(async entry => {
@@ -132,11 +143,18 @@ function Clients() {
     setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // For house managers, only show active/pending clients in their houses
+  // For full access, show everything with status filter
   const filtered = clients.filter(c => {
     const matchSearch = c.full_name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'All' || c.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  // Status filters available — house managers only see active/pending
+  const statusFilters = hasFullAccess
+    ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied']
+    : ['All', 'Active', 'Pending'];
 
   const statusColor = (s) => {
     if (s === 'Applied')      return { bg: '#1e3a2f', color: '#4ade80' };
@@ -352,29 +370,22 @@ function Clients() {
     );
   };
 
-  // Weekly meeting summary card
   const MeetingWeek = ({ weekStart, entries }) => {
     const key = weekStart.toISOString();
     const isExpanded = expandedWeeks[key];
     const isThisWeek = getWeekStart(new Date()).toISOString() === key;
     const count = entries.length;
     const meetsGoal = count >= 4;
-
     return (
       <div style={{ background: '#1a1a1a', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#2a3d52' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
-        <div onClick={() => toggleWeek(key)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
+        <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
             {isThisWeek && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '600' }}>This week</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: meetsGoal ? '#4ade80' : '#f87171' }}>
-              {count} / 4 meetings
-            </span>
-            <span style={{ fontSize: '11px', color: meetsGoal ? '#4ade80' : '#f87171' }}>
-              {meetsGoal ? '✓' : '✗'}
-            </span>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: meetsGoal ? '#4ade80' : '#f87171' }}>{count} / 4 meetings</span>
+            <span style={{ fontSize: '11px', color: meetsGoal ? '#4ade80' : '#f87171' }}>{meetsGoal ? '✓' : '✗'}</span>
             <span style={{ color: '#555', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
@@ -399,7 +410,6 @@ function Clients() {
     );
   };
 
-  // Weekly chore summary card
   const ChoreWeek = ({ weekStart, entries }) => {
     const key = weekStart.toISOString();
     const isExpanded = expandedWeeks[key];
@@ -409,11 +419,9 @@ function Clients() {
     const partial = entries.filter(c => c.event_name === 'Partial').length;
     const total = entries.length;
     const allDone = total > 0 && notCompleted === 0 && partial === 0;
-
     return (
       <div style={{ background: '#1a1a1a', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#1a3a2a' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
-        <div onClick={() => toggleWeek(key)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
+        <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
             {isThisWeek && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
@@ -424,9 +432,7 @@ function Clients() {
               {partial > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
               {notCompleted > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
             </div>
-            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '11px' }}>
-              {allDone ? '✓' : '✗'}
-            </span>
+            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '11px' }}>{allDone ? '✓' : '✗'}</span>
             <span style={{ color: '#555', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
@@ -458,13 +464,16 @@ function Clients() {
     <div style={s.page}>
       <div style={s.header}>
         <h2 style={s.title}>Clients</h2>
-        <p style={s.sub}>{filtered.length} {statusFilter === 'All' ? 'total' : statusFilter.toLowerCase()}</p>
+        <p style={s.sub}>
+          {filtered.length} {statusFilter === 'All' ? 'total' : statusFilter.toLowerCase()}
+          {isHouseManagerRole ? ' in your house(s)' : ''}
+        </p>
       </div>
 
       <div style={s.toolbar}>
         <input placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} style={s.search} />
         <div style={s.filters}>
-          {['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'].map(f => (
+          {statusFilters.map(f => (
             <button key={f} onClick={() => setStatusFilter(f)} style={{ ...s.filterBtn, ...(statusFilter === f ? s.filterActive : {}) }}>{f}</button>
           ))}
         </div>
@@ -473,7 +482,9 @@ function Clients() {
       {loading ? (
         <p style={{ color: '#888', padding: '20px' }}>Loading clients...</p>
       ) : filtered.length === 0 ? (
-        <p style={{ color: '#888', padding: '20px' }}>No clients found.</p>
+        <p style={{ color: '#888', padding: '20px' }}>
+          {isHouseManagerRole ? 'No clients found in your assigned house(s).' : 'No clients found.'}
+        </p>
       ) : (
         <div style={s.table}>
           <div style={s.tableHeader}>
@@ -517,7 +528,8 @@ function Clients() {
                   </select>
                   {selected.sor_grant && <span style={{ ...s.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
                 </div>
-                {STATUS_FLOW[selected.status]?.length > 0 && (
+                {/* Only show status change for full access roles */}
+                {hasFullAccess && STATUS_FLOW[selected.status]?.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
                     <span style={{ fontSize: '11px', color: '#666' }}>Move to:</span>
                     <select defaultValue="" onChange={e => { if (e.target.value) openStatusModal(selected, e.target.value); e.target.value = ''; }}
@@ -595,7 +607,7 @@ function Clients() {
               {activeTab === 'UAs' && (
                 <Card title="UA Records" full>
                   {uaRecords.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No UA records yet. UA entries logged in the Timeline will appear here.</p>
+                    <p style={{ color: '#666', fontSize: '14px' }}>No UA records yet.</p>
                   ) : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -641,7 +653,7 @@ function Clients() {
               {activeTab === 'meetings' && (
                 <Card title="Meeting Records" full>
                   {meetingRecords.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No meeting records yet. Meeting entries logged in the Timeline will appear here.</p>
+                    <p style={{ color: '#666', fontSize: '14px' }}>No meeting records yet.</p>
                   ) : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -662,7 +674,7 @@ function Clients() {
               {activeTab === 'chores' && (
                 <Card title="Chore Records" full>
                   {choreRecords.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No chore records yet. Chore entries logged in the Timeline will appear here.</p>
+                    <p style={{ color: '#666', fontSize: '14px' }}>No chore records yet.</p>
                   ) : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>

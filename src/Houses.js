@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import { useUser } from './UserContext';
 
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note'];
 
-// Reverse geocode coordinates to a readable address
 const reverseGeocode = async (lat, lng) => {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -24,6 +24,8 @@ const reverseGeocode = async (lat, lng) => {
 };
 
 function Houses() {
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
+
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -49,7 +51,19 @@ function Houses() {
 
   const fetchHouses = useCallback(async () => {
     setLoading(true);
-    const { data: housesData } = await supabase.from('houses').select('*').order('name');
+    let query = supabase.from('houses').select('*').order('name');
+
+    // Filter to assigned houses for house manager roles
+    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+      query = query.in('id', assignedHouseIds);
+    } else if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      // No houses assigned yet
+      setHouses([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: housesData } = await query;
     const { data: clientsData } = await supabase
       .from('clients').select('house_id, status').in('status', ['Active', 'Pending']);
     const enriched = (housesData || []).map(h => ({
@@ -59,16 +73,26 @@ function Houses() {
     }));
     setHouses(enriched);
     setLoading(false);
-  }, []);
+  }, [isHouseManagerRole, assignedHouseIds]);
 
   const fetchAllResidents = useCallback(async () => {
-    const { data } = await supabase
+    let query = supabase
       .from('clients')
       .select('id, full_name, status, level, start_date, phone, balance, staff_notes, house_id')
       .in('status', ['Active', 'Pending'])
       .order('full_name');
+
+    // Filter to assigned houses for house manager roles
+    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+      query = query.in('house_id', assignedHouseIds);
+    } else if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setAllResidents([]);
+      return;
+    }
+
+    const { data } = await query;
     setAllResidents(data || []);
-  }, []);
+  }, [isHouseManagerRole, assignedHouseIds]);
 
   useEffect(() => { fetchHouses(); fetchAllResidents(); }, [fetchHouses, fetchAllResidents]);
 
@@ -91,8 +115,7 @@ function Houses() {
   const fetchTimeline = useCallback(async (houseId) => {
     const { data } = await supabase.from('house_timeline').select('*')
       .eq('house_id', houseId).order('created_at', { ascending: false });
-    const entries = data || [];
-    setTimeline(entries);
+    setTimeline(data || []);
     setLocationLabels({});
   }, []);
 
@@ -109,9 +132,10 @@ function Houses() {
 
   const deleteHouse = async (e, houseId) => {
     e.stopPropagation();
+    if (!hasFullAccess) return; // only admins/upper management can delete
     const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('house_id', houseId);
     if (count > 0) {
-      alert('This house still has clients linked to it and cannot be deleted. Please reassign or discharge all residents first.');
+      alert('This house still has clients linked to it. Please reassign or discharge all residents first.');
       return;
     }
     if (!window.confirm('Are you sure you want to delete this house? This cannot be undone.')) return;
@@ -135,6 +159,7 @@ function Houses() {
   const set = (field, val) => setForm(p => ({ ...p, [field]: val }));
 
   const addHouse = async () => {
+    if (!hasFullAccess) return;
     if (!form.name) { alert('House name is required.'); return; }
     if (!form.total_beds) { alert('Number of beds is required.'); return; }
     const { error } = await supabase.from('houses').insert([{
@@ -235,7 +260,6 @@ function Houses() {
     });
   };
 
-  // Load addresses for timeline entries with coordinates
   useEffect(() => {
     timeline.forEach(async entry => {
       if (entry.latitude && entry.longitude && !locationLabels[entry.id]) {
@@ -298,18 +322,21 @@ function Houses() {
       <div style={s.header}>
         <div>
           <h2 style={s.title}>Houses</h2>
-          <p style={s.sub}>{houses.length} total</p>
+          <p style={s.sub}>{houses.length} {isHouseManagerRole ? 'assigned' : 'total'}</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <div style={s.viewToggle}>
             <button onClick={() => setMainView('houses')} style={{ ...s.toggleBtn, ...(mainView === 'houses' ? s.toggleBtnActive : {}) }}>Houses</button>
             <button onClick={() => setMainView('residents')} style={{ ...s.toggleBtn, ...(mainView === 'residents' ? s.toggleBtnActive : {}) }}>All Residents</button>
           </div>
-          <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{showAdd ? 'Cancel' : '+ Add House'}</button>
+          {/* Only admins and upper management can add houses */}
+          {hasFullAccess && (
+            <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{showAdd ? 'Cancel' : '+ Add House'}</button>
+          )}
         </div>
       </div>
 
-      {showAdd && (
+      {showAdd && hasFullAccess && (
         <div style={s.addForm}>
           <p style={s.addTitle}>New House</p>
           <div style={s.grid2}>
@@ -330,7 +357,11 @@ function Houses() {
       {loading ? <p style={{ color: '#888' }}>Loading...</p> : (
         <>
           {mainView === 'houses' && (
-            houses.length === 0 ? <p style={{ color: '#888' }}>No houses yet.</p> : (
+            houses.length === 0 ? (
+              <p style={{ color: '#888' }}>
+                {isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}
+              </p>
+            ) : (
               <div style={s.houseGrid}>
                 {houses.map(house => (
                   <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
@@ -350,7 +381,9 @@ function Houses() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                       {house.house_manager ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p> : <span />}
-                      <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>
+                      {hasFullAccess && (
+                        <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -420,7 +453,11 @@ function Houses() {
                   </div>
                 );
               })}
-              {allResidents.length === 0 && <p style={{ color: '#888' }}>No active residents found.</p>}
+              {allResidents.length === 0 && (
+                <p style={{ color: '#888' }}>
+                  {isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}
+                </p>
+              )}
             </div>
           )}
         </>
