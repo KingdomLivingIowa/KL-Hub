@@ -10,7 +10,7 @@ const ROLES = [
 
 const ROLE_COLORS = {
   admin: { bg: '#3a1e1e', color: '#f87171' },
-  upper_management: { bg: '#1e2d3a', color: '#60a5fa' },
+  upper_management: { bg: '#3a1e1e', color: '#f87171' },
   head_house_manager: { bg: '#2d1e3a', color: '#c084fc' },
   house_manager: { bg: '#1e3a2f', color: '#4ade80' },
 };
