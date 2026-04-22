@@ -20,13 +20,16 @@ function Dashboard({ user }) {
   }, []);
 
   const fetchUserRole = async () => {
-    const { data } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user?.id)
-      .single();
-    if (data) setUserRole(data.role);
-  };
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user?.id)
+    .single();
+  console.log('user id:', user?.id);
+  console.log('role data:', data);
+  console.log('role error:', error);
+  if (data) setUserRole(data.role);
+};
 
   const fetchCounts = async () => {
     const { count: pendingCount } = await supabase
