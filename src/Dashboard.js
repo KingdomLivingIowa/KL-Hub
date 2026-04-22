@@ -58,7 +58,6 @@ function Dashboard({ user }) {
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
   const isAdmin = userRole === 'admin' || (!userRole && user?.email === 'jasmine@kingdomlivingia.com');
-const isUpperManagement = userRole === 'upper_management';
 
   const navItems = [
     { id: 'home', label: 'Dashboard' },
