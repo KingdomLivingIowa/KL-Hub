@@ -13,7 +13,54 @@ const STATUS_FLOW = {
   'Denied':       ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
 };
 
-const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Mood Check-In', 'Check-In', 'General Note'];
+const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note'];
+
+const reverseGeocode = async (lat, lng) => {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    if (data && data.display_name) {
+      const a = data.address || {};
+      const parts = [
+        a.house_number && a.road ? `${a.house_number} ${a.road}` : a.road,
+        a.city || a.town || a.village,
+        a.state,
+      ].filter(Boolean);
+      return parts.join(', ') || data.display_name;
+    }
+    return null;
+  } catch { return null; }
+};
+
+// Get the Monday of a given date's week
+const getWeekStart = (date) => {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 = Sunday
+  const diff = day === 0 ? -6 : 1 - day; // adjust to Monday
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+// Format week label: "Mon Apr 14 – Sun Apr 20"
+const formatWeekLabel = (weekStart) => {
+  const end = new Date(weekStart);
+  end.setDate(end.getDate() + 6);
+  const opts = { month: 'short', day: 'numeric' };
+  return `${weekStart.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`;
+};
+
+// Group an array of entries by week (most recent first)
+const groupByWeek = (entries) => {
+  const weeks = {};
+  entries.forEach(entry => {
+    const weekStart = getWeekStart(new Date(entry.created_at));
+    const key = weekStart.toISOString();
+    if (!weeks[key]) weeks[key] = { weekStart, entries: [] };
+    weeks[key].entries.push(entry);
+  });
+  return Object.values(weeks).sort((a, b) => b.weekStart - a.weekStart);
+};
 
 function Clients() {
   const [clients, setClients] = useState([]);
@@ -26,9 +73,15 @@ function Clients() {
   const [statusForm, setStatusForm] = useState({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', house_id: '' });
   const [houses, setHouses] = useState([]);
   const [timeline, setTimeline] = useState([]);
+  const [uaRecords, setUaRecords] = useState([]);
+  const [meetingRecords, setMeetingRecords] = useState([]);
+  const [choreRecords, setChoreRecords] = useState([]);
+  const [locationLabels, setLocationLabels] = useState({});
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [entryType, setEntryType] = useState('General Note');
-  const [entryForm, setEntryForm] = useState({ author: '', notes: '', severity: 'Low', meeting_name: '', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false });
+  const [entryForm, setEntryForm] = useState({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false });
+  const [editingField, setEditingField] = useState(null);
+  const [expandedWeeks, setExpandedWeeks] = useState({});
 
   useEffect(() => { fetchClients(); fetchHouses(); }, []);
 
@@ -58,7 +111,25 @@ function Clients() {
       .select('*')
       .eq('client_id', clientId)
       .order('created_at', { ascending: false });
-    setTimeline(data || []);
+    const all = data || [];
+    setTimeline(all);
+    setUaRecords(all.filter(e => e.entry_type === 'UA'));
+    setMeetingRecords(all.filter(e => e.entry_type === 'Meeting'));
+    setChoreRecords(all.filter(e => e.entry_type === 'Chores'));
+    setLocationLabels({});
+    // Auto-expand current week
+    const thisWeekKey = getWeekStart(new Date()).toISOString();
+    setExpandedWeeks({ [thisWeekKey]: true });
+    all.forEach(async entry => {
+      if (entry.latitude && entry.longitude) {
+        const address = await reverseGeocode(entry.latitude, entry.longitude);
+        if (address) setLocationLabels(prev => ({ ...prev, [entry.id]: address }));
+      }
+    });
+  };
+
+  const toggleWeek = (key) => {
+    setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const filtered = clients.filter(c => {
@@ -78,6 +149,21 @@ function Clients() {
     return { bg: '#2a2a2a', color: '#aaa' };
   };
 
+  const uaResultColor = (result) => {
+    if (result === 'Negative')      return { bg: '#1e3a2f', color: '#4ade80' };
+    if (result === 'Positive')      return { bg: '#3a1e1e', color: '#f87171' };
+    if (result === 'Inconclusive')  return { bg: '#3a2d1e', color: '#fb923c' };
+    if (result === 'Refused')       return { bg: '#2a2a2a', color: '#888' };
+    return { bg: '#2a2a2a', color: '#aaa' };
+  };
+
+  const choreStatusColor = (status) => {
+    if (status === 'Completed')     return { bg: '#1e3a2f', color: '#4ade80' };
+    if (status === 'Not Completed') return { bg: '#3a1e1e', color: '#f87171' };
+    if (status === 'Partial')       return { bg: '#3a2d1e', color: '#fb923c' };
+    return { bg: '#2a2a2a', color: '#aaa' };
+  };
+
   const entryColor = (type) => {
     if (type === 'House Check-In')   return '#7F77DD';
     if (type === 'Batch UA')         return '#1D9E75';
@@ -86,13 +172,15 @@ function Clients() {
     if (type === 'Meeting')          return '#60a5fa';
     if (type === 'Mood Check-In')    return '#BA7517';
     if (type === 'Check-In')         return '#c084fc';
-    if (type === 'General Note')     return '#888';
+    if (type === 'UA')               return '#f472b6';
+    if (type === 'General Note')     return '#f59e0b';
+    if (type === 'Chores')           return '#34d399';
     return '#888';
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
-
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const formatDateShort = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
@@ -102,7 +190,6 @@ function Clients() {
   const confirmStatusChange = async () => {
     const { client, newStatus } = statusModal;
     const updates = { status: newStatus };
-
     if (newStatus === 'Waiting List') {
       const { error: wlError } = await supabase.from('waiting_list').insert([{
         full_name: client.full_name, email: client.email || null, phone: client.phone || null,
@@ -111,29 +198,21 @@ function Clients() {
       }]);
       if (wlError) { alert('Error adding to waiting list: ' + wlError.message); return; }
     }
-
     if (newStatus === 'Pending') {
       if (!statusForm.house_id) { alert('Please select a house.'); return; }
       updates.house_id = statusForm.house_id;
       const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', statusForm.house_id).single();
-      if (houseData) {
-        await supabase.from('houses').update({ occupied_beds: (houseData.occupied_beds || 0) + 1 }).eq('id', statusForm.house_id);
-      }
+      if (houseData) await supabase.from('houses').update({ occupied_beds: (houseData.occupied_beds || 0) + 1 }).eq('id', statusForm.house_id);
     }
-
     if (newStatus === 'Active') updates.start_date = statusForm.move_in_date || null;
-
     if (newStatus === 'Discharged') {
       updates.discharge_date = new Date().toISOString().split('T')[0];
       if (statusForm.discharge_reason) updates.reason_for_discharge = statusForm.discharge_reason;
       if (client.house_id) {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
-        if (houseData) {
-          await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
-        }
+        if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
       }
     }
-
     const { error } = await supabase.from('clients').update(updates).eq('id', client.id);
     if (error) { alert('Error updating status: ' + error.message); return; }
     setStatusModal(null);
@@ -144,24 +223,25 @@ function Clients() {
   const dropPin = () => {
     if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setEntryForm(p => ({ ...p, latitude: pos.coords.latitude.toString(), longitude: pos.coords.longitude.toString(), pinDropped: true }));
-      },
-      () => { alert('Unable to get location. Please allow location access.'); }
+      (pos) => setEntryForm(p => ({ ...p, latitude: pos.coords.latitude.toString(), longitude: pos.coords.longitude.toString(), pinDropped: true })),
+      () => alert('Unable to get location. Please allow location access.')
     );
   };
 
   const saveTimelineEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
-
     const { error } = await supabase.from('client_timeline').insert([{
       client_id: selected.id,
       entry_type: entryType,
       author: entryForm.author,
       notes: entryForm.notes || null,
       severity: entryType === 'Crisis' ? entryForm.severity : null,
-      event_name: entryType === 'UA' ? entryForm.ua_result : null,
-      meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : null,
+      event_name: entryType === 'UA' ? entryForm.ua_result
+        : entryType === 'Chores' ? entryForm.chore_status
+        : null,
+      meeting_name: entryType === 'Meeting' ? entryForm.meeting_name
+        : entryType === 'Chores' ? entryForm.chore_name
+        : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
       latitude: entryForm.latitude ? parseFloat(entryForm.latitude) : null,
       longitude: entryForm.longitude ? parseFloat(entryForm.longitude) : null,
@@ -169,7 +249,7 @@ function Clients() {
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
     setShowAddEntry(false);
-    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false });
+    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false });
     setEntryType('General Note');
     fetchTimeline(selected.id);
   };
@@ -183,27 +263,196 @@ function Clients() {
   const openProfile = (client) => {
     setSelected(client);
     setActiveTab('overview');
+    setEditingField(null);
     fetchTimeline(client.id);
   };
 
-  // Avatar component — shows photo if available, otherwise initials
-  const Avatar = ({ name, photoUrl, size = 34, fontSize = 13 }) => {
-    const ini = initials(name);
+  const updateLevel = async (clientId, lvl) => {
+    await supabase.from('clients').update({ level: lvl }).eq('id', clientId);
+    fetchClients();
+    setSelected(prev => prev ? { ...prev, level: lvl } : prev);
+  };
+
+  const saveNotes = async (e) => {
+    const newNotes = e.target.value;
+    await supabase.from('clients').update({ client_notes: newNotes || null }).eq('id', selected.id);
+    setSelected(prev => ({ ...prev, client_notes: newNotes }));
+    setClients(prev => prev.map(c => c.id === selected.id ? { ...c, client_notes: newNotes } : c));
+  };
+
+  const startEdit = (field, currentValue) => setEditingField({ field, value: currentValue || '' });
+
+  const saveField = async () => {
+    if (!editingField) return;
+    const { field, value } = editingField;
+    await supabase.from('clients').update({ [field]: value || null }).eq('id', selected.id);
+    setSelected(prev => ({ ...prev, [field]: value }));
+    setClients(prev => prev.map(c => c.id === selected.id ? { ...c, [field]: value } : c));
+    setEditingField(null);
+  };
+
+  const EditableField = ({ label, field, value, alert: isAlert, options }) => {
+    const isEditing = editingField?.field === field;
     return (
-      <div style={{
-        width: size, height: size, borderRadius: '50%',
-        background: '#1e3a2f', color: '#4ade80',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize, fontWeight: '500', flexShrink: 0,
-        overflow: 'hidden', position: 'relative',
-      }}>
-        {photoUrl
-          ? <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: '50%' }} />
-          : ini
-        }
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
+        <span style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>{label}</span>
+        {isEditing ? (
+          options ? (
+            <select autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
+              style={{ background: '#111', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '13px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
+              <option value="">—</option>
+              {options.map(o => <option key={o} value={o}>{o}</option>)}
+            </select>
+          ) : (
+            <input autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
+              onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
+              style={{ background: '#111', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '13px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
+          )
+        ) : (
+          <span onClick={() => startEdit(field, value)} title="Click to edit"
+            style={{ fontSize: '13px', color: isAlert ? '#f87171' : (value ? '#ddd' : '#444'), textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#444'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
+            {value || '—'}
+          </span>
+        )}
       </div>
     );
   };
+
+  const ReadField = ({ label, value, alert: isAlert }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
+      <span style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: '13px', color: isAlert ? '#f87171' : (value ? '#ddd' : '#444'), textAlign: 'right', wordBreak: 'break-word' }}>{value || '—'}</span>
+    </div>
+  );
+
+  const Avatar = ({ name, photoUrl, size = 34, fontSize = 13 }) => (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize, fontWeight: '500', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+      {photoUrl ? <img src={photoUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0, borderRadius: '50%' }} /> : initials(name)}
+    </div>
+  );
+
+  const LocationPin = ({ entryId, lat, lng }) => {
+    const address = locationLabels[entryId];
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    return (
+      <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+          <span>📍</span>
+          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>
+            {address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}
+          </span>
+        </div>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>
+          View map →
+        </a>
+      </div>
+    );
+  };
+
+  // Weekly meeting summary card
+  const MeetingWeek = ({ weekStart, entries }) => {
+    const key = weekStart.toISOString();
+    const isExpanded = expandedWeeks[key];
+    const isThisWeek = getWeekStart(new Date()).toISOString() === key;
+    const count = entries.length;
+    const meetsGoal = count >= 4;
+
+    return (
+      <div style={{ background: '#1a1a1a', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#2a3d52' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
+        <div onClick={() => toggleWeek(key)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
+            {isThisWeek && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '600' }}>This week</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '700', color: meetsGoal ? '#4ade80' : '#f87171' }}>
+              {count} / 4 meetings
+            </span>
+            <span style={{ fontSize: '11px', color: meetsGoal ? '#4ade80' : '#f87171' }}>
+              {meetsGoal ? '✓' : '✗'}
+            </span>
+            <span style={{ color: '#555', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        {isExpanded && (
+          <div style={{ borderTop: '1px solid #333', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {entries.map(m => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13px', color: '#60a5fa', fontWeight: '500' }}>{m.meeting_name || 'Meeting'}</span>
+                    <span style={{ fontSize: '11px', color: '#555' }}>by {m.author}</span>
+                  </div>
+                  {m.latitude && m.longitude && <LocationPin entryId={m.id} lat={m.latitude} lng={m.longitude} />}
+                  {m.notes && <p style={{ color: '#888', fontSize: '12px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
+                </div>
+                <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Weekly chore summary card
+  const ChoreWeek = ({ weekStart, entries }) => {
+    const key = weekStart.toISOString();
+    const isExpanded = expandedWeeks[key];
+    const isThisWeek = getWeekStart(new Date()).toISOString() === key;
+    const completed = entries.filter(c => c.event_name === 'Completed').length;
+    const notCompleted = entries.filter(c => c.event_name === 'Not Completed').length;
+    const partial = entries.filter(c => c.event_name === 'Partial').length;
+    const total = entries.length;
+    const allDone = total > 0 && notCompleted === 0 && partial === 0;
+
+    return (
+      <div style={{ background: '#1a1a1a', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#1a3a2a' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
+        <div onClick={() => toggleWeek(key)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
+            {isThisWeek && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {completed > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>{completed} done</span>}
+              {partial > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
+              {notCompleted > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
+            </div>
+            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '11px' }}>
+              {allDone ? '✓' : '✗'}
+            </span>
+            <span style={{ color: '#555', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        {isExpanded && (
+          <div style={{ borderTop: '1px solid #333', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {entries.map(c => {
+              const col = choreStatusColor(c.event_name);
+              return (
+                <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
+                    <span style={{ ...s.badge, background: col.bg, color: col.color, fontSize: '11px' }}>{c.event_name}</span>
+                    {c.meeting_name && <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{c.meeting_name}</span>}
+                    <span style={{ fontSize: '11px', color: '#555' }}>by {c.author}</span>
+                    {c.notes && <span style={{ fontSize: '11px', color: '#666' }}>— {c.notes}</span>}
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(c.created_at)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'application', 'documents', 'notes'];
 
   return (
     <div style={s.page}>
@@ -216,8 +465,7 @@ function Clients() {
         <input placeholder="Search by name..." value={search} onChange={e => setSearch(e.target.value)} style={s.search} />
         <div style={s.filters}>
           {['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'].map(f => (
-            <button key={f} onClick={() => setStatusFilter(f)}
-              style={{ ...s.filterBtn, ...(statusFilter === f ? s.filterActive : {}) }}>{f}</button>
+            <button key={f} onClick={() => setStatusFilter(f)} style={{ ...s.filterBtn, ...(statusFilter === f ? s.filterActive : {}) }}>{f}</button>
           ))}
         </div>
       </div>
@@ -241,9 +489,7 @@ function Clients() {
                 <Avatar name={c.full_name} photoUrl={c.photo_url} size={34} fontSize={13} />
                 <span style={{ color: '#fff', fontWeight: '500' }}>{c.full_name}</span>
               </span>
-              <span style={{ flex: 1 }}>
-                <span style={{ ...s.badge, background: statusColor(c.status).bg, color: statusColor(c.status).color }}>{c.status || '—'}</span>
-              </span>
+              <span style={{ flex: 1 }}><span style={{ ...s.badge, background: statusColor(c.status).bg, color: statusColor(c.status).color }}>{c.status || '—'}</span></span>
               <span style={{ flex: 1, color: '#aaa' }}>Level {c.level || 1}</span>
               <span style={{ flex: 2, color: '#aaa' }}>{c.house_name || '—'}</span>
               <span style={{ flex: 1, color: '#aaa' }}>{c.start_date || '—'}</span>
@@ -253,7 +499,7 @@ function Clients() {
       )}
 
       {selected && (
-        <div style={s.overlay} onClick={() => setSelected(null)}>
+        <div style={s.overlay} onClick={() => { setSelected(null); setEditingField(null); }}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <div style={s.modalHeader}>
               <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={52} fontSize={16} />
@@ -262,14 +508,13 @@ function Clients() {
                 <p style={s.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
                 <div style={s.badges}>
                   <span style={{ ...s.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
-                  <span style={{ ...s.badge, background: '#1e2d3a', color: '#60a5fa', cursor: 'pointer' }}
-                    onClick={() => {
-                      const lvl = prompt('Enter new level (1–4):', selected.level || 1);
-                      if (lvl && ['1','2','3','4'].includes(lvl.trim())) {
-                        supabase.from('clients').update({ level: parseInt(lvl) }).eq('id', selected.id)
-                          .then(() => { fetchClients(); setSelected({ ...selected, level: parseInt(lvl) }); });
-                      }
-                    }}>Level {selected.level || 1}</span>
+                  <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
+                    style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
+                    <option value={1}>Level 1</option>
+                    <option value={2}>Level 2</option>
+                    <option value={3}>Level 3</option>
+                    <option value={4}>Level 4</option>
+                  </select>
                   {selected.sor_grant && <span style={{ ...s.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
                 </div>
                 {STATUS_FLOW[selected.status]?.length > 0 && (
@@ -283,12 +528,12 @@ function Clients() {
                   </div>
                 )}
               </div>
-              <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
+              <button onClick={() => { setSelected(null); setEditingField(null); }} style={s.closeBtn}>×</button>
             </div>
 
             <div style={s.tabs}>
-              {['overview','payments','UAs','medications','notes','timeline','application','documents'].map(t => (
-                <button key={t} onClick={() => setActiveTab(t)}
+              {TABS.map(t => (
+                <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); }}
                   style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -296,58 +541,191 @@ function Clients() {
             </div>
 
             <div style={s.modalBody}>
+
               {activeTab === 'overview' && (
-                <div style={s.grid}>
-                  <Card title="Contact info">
-                    <Field label="Phone" value={selected.phone} />
-                    <Field label="Email" value={selected.email} />
-                    <Field label="DOB" value={selected.date_of_birth} />
-                    <Field label="Gender" value={selected.gender} />
-                    <Field label="Ethnicity" value={selected.ethnicity} />
-                    <Field label="Marital status" value={selected.marital_status} />
-                    <Field label="Emergency contact" value={selected.emergency_contact_name} />
-                  </Card>
-                  <Card title="House assignment">
-                    <Field label="House" value={selected.house_name} />
-                    <Field label="Room type" value={selected.room_type} />
-                    <Field label="House manager" value={selected.house_manager} />
-                    <Field label="Move-in date" value={selected.start_date} />
-                  </Card>
-                  <Card title="PO & legal">
-                    <Field label="PO name" value={selected.po_name} />
-                    <Field label="PO phone" value={selected.po_phone} />
-                    <Field label="Personal status" value={selected.personal_status} alert={selected.personal_status === 'Currently Incarcerated'} />
-                    <Field label="Sex offense" value={selected.sex_offender} />
-                    <Field label="On probation" value={selected.on_probation} />
-                    <Field label="On parole" value={selected.on_parole} />
-                  </Card>
-                  <Card title="Sponsor">
-                    <Field label="Sponsor name" value={selected.sponsor_name} />
-                    <Field label="Sponsor phone" value={selected.sponsor_phone} />
-                    <Field label="Recovery meetings" value={selected.recovery_meetings} />
-                  </Card>
-                  <Card title="Recovery">
-                    <Field label="Substance history" value={selected.substance_history} />
-                    <Field label="Treatment history" value={selected.treatment_history} />
-                    <Field label="OUD" value={selected.oud} />
-                  </Card>
-                  <Card title="Goals">
-                    <Field label="Goal 1" value={selected.goal_1} />
-                    <Field label="Goal 2" value={selected.goal_2} />
-                    <Field label="Goal 3" value={selected.goal_3} />
-                  </Card>
-                </div>
+                <>
+                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0', fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
+                  <div style={s.grid}>
+                    <Card title="Contact info">
+                      <EditableField label="Phone" field="phone" value={selected.phone} />
+                      <EditableField label="Email" field="email" value={selected.email} />
+                      <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} />
+                      <EditableField label="Gender" field="gender" value={selected.gender} options={['Male', 'Female', 'Non-binary', 'No Response']} />
+                      <EditableField label="Ethnicity" field="ethnicity" value={selected.ethnicity} options={['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'Native Hawaiian or Other Pacific Islander', 'White', 'Two or More Races', 'No Response']} />
+                      <EditableField label="Marital status" field="marital_status" value={selected.marital_status} options={['Single', 'Married', 'Divorced', 'Widowed', 'Separated']} />
+                      <EditableField label="Emergency contact" field="emergency_contact_name" value={selected.emergency_contact_name} />
+                    </Card>
+                    <Card title="House assignment">
+                      <ReadField label="House" value={selected.house_name} />
+                      <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
+                      <ReadField label="House manager" value={selected.house_manager} />
+                      <ReadField label="Move-in date" value={selected.start_date} />
+                    </Card>
+                    <Card title="PO & legal">
+                      <EditableField label="PO name" field="po_name" value={selected.po_name} />
+                      <EditableField label="PO phone" field="po_phone" value={selected.po_phone} />
+                      <EditableField label="Personal status" field="personal_status" value={selected.personal_status}
+                        alert={selected.personal_status === 'Currently Incarcerated'}
+                        options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} />
+                      <EditableField label="Sex offense" field="sex_offender" value={selected.sex_offender} options={['Yes', 'No']} />
+                      <EditableField label="On probation" field="on_probation" value={selected.on_probation} options={['Yes', 'No']} />
+                      <EditableField label="On parole" field="on_parole" value={selected.on_parole} options={['Yes', 'No']} />
+                    </Card>
+                    <Card title="Sponsor">
+                      <EditableField label="Sponsor name" field="sponsor_name" value={selected.sponsor_name} />
+                      <EditableField label="Sponsor phone" field="sponsor_phone" value={selected.sponsor_phone} />
+                      <EditableField label="Recovery meetings" field="recovery_meetings" value={selected.recovery_meetings} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} />
+                    </Card>
+                    <Card title="Recovery">
+                      <EditableField label="Substance history" field="substance_history" value={selected.substance_history} options={['Yes', 'No']} />
+                      <EditableField label="Drug of choice" field="drug_of_choice" value={selected.drug_of_choice} />
+                      <EditableField label="Sober date" field="sober_date" value={selected.sober_date} />
+                      <EditableField label="Treatment history" field="treatment_history" value={selected.treatment_history} options={['Yes', 'No']} />
+                      <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} />
+                    </Card>
+                    <Card title="Goals">
+                      <EditableField label="Goal 1" field="goal_1" value={selected.goal_1} />
+                      <EditableField label="Goal 2" field="goal_2" value={selected.goal_2} />
+                      <EditableField label="Goal 3" field="goal_3" value={selected.goal_3} />
+                    </Card>
+                  </div>
+                </>
+              )}
+
+              {activeTab === 'UAs' && (
+                <Card title="UA Records" full>
+                  {uaRecords.length === 0 ? (
+                    <p style={{ color: '#666', fontSize: '14px' }}>No UA records yet. UA entries logged in the Timeline will appear here.</p>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                        {['Negative', 'Positive', 'Inconclusive', 'Refused'].map(result => {
+                          const count = uaRecords.filter(u => u.event_name === result).length;
+                          if (count === 0) return null;
+                          const col = uaResultColor(result);
+                          return (
+                            <div key={result} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
+                              <span style={{ color: col.color, fontSize: '11px', opacity: 0.8 }}>{result}</span>
+                            </div>
+                          );
+                        })}
+                        <div style={{ background: '#2a2a2a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{uaRecords.length}</span>
+                          <span style={{ color: '#888', fontSize: '11px' }}>Total</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {uaRecords.map(ua => {
+                          const col = uaResultColor(ua.event_name);
+                          return (
+                            <div key={ua.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ ...s.badge, background: col.bg, color: col.color, fontSize: '12px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
+                                <span style={{ color: '#aaa', fontSize: '12px' }}>By {ua.author}</span>
+                                {ua.source === 'house' && <span style={{ ...s.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '10px' }}>House</span>}
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                <span style={{ color: '#555', fontSize: '12px' }}>{formatDateShort(ua.created_at)}</span>
+                                {ua.notes && <span style={{ color: '#666', fontSize: '11px', maxWidth: '200px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ua.notes}</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </Card>
+              )}
+
+              {activeTab === 'meetings' && (
+                <Card title="Meeting Records" full>
+                  {meetingRecords.length === 0 ? (
+                    <p style={{ color: '#666', fontSize: '14px' }}>No meeting records yet. Meeting entries logged in the Timeline will appear here.</p>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                        <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#60a5fa', fontSize: '18px', fontWeight: '700' }}>{meetingRecords.length}</span>
+                          <span style={{ color: '#60a5fa', fontSize: '11px', opacity: 0.8 }}>Total Meetings</span>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0' }}>Goal: 4 meetings per week. Current week expands automatically.</p>
+                      {groupByWeek(meetingRecords).map(({ weekStart, entries }) => (
+                        <MeetingWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
+                      ))}
+                    </>
+                  )}
+                </Card>
+              )}
+
+              {activeTab === 'chores' && (
+                <Card title="Chore Records" full>
+                  {choreRecords.length === 0 ? (
+                    <p style={{ color: '#666', fontSize: '14px' }}>No chore records yet. Chore entries logged in the Timeline will appear here.</p>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                        {['Completed', 'Not Completed', 'Partial'].map(status => {
+                          const count = choreRecords.filter(c => c.event_name === status).length;
+                          if (count === 0) return null;
+                          const col = choreStatusColor(status);
+                          return (
+                            <div key={status} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
+                              <span style={{ color: col.color, fontSize: '11px', opacity: 0.8 }}>{status}</span>
+                            </div>
+                          );
+                        })}
+                        <div style={{ background: '#2a2a2a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{choreRecords.length}</span>
+                          <span style={{ color: '#888', fontSize: '11px' }}>Total</span>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0' }}>Current week expands automatically. ✓ = all chores completed that week.</p>
+                      {groupByWeek(choreRecords).map(({ weekStart, entries }) => (
+                        <ChoreWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
+                      ))}
+                    </>
+                  )}
+                </Card>
+              )}
+
+              {activeTab === 'medications' && (
+                <Card title="Medications" full>
+                  {selected.medication_details ? (
+                    (() => {
+                      try {
+                        const meds = JSON.parse(selected.medication_details);
+                        return meds.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {meds.map((med, i) => (
+                              <div key={i} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', border: '1px solid #333' }}>
+                                <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: '0 0 8px 0' }}>{med.name || 'Unnamed medication'}</p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
+                                  {med.dosage && <div><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Dosage</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.dosage}</p></div>}
+                                  {med.intake && <div><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Frequency</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.intake}x/day</p></div>}
+                                  {med.count && <div><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Count</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.count}</p></div>}
+                                  {med.notes && <div style={{ gridColumn: 'span 2' }}><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Notes</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.notes}</p></div>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>;
+                      } catch {
+                        return <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>;
+                      }
+                    })()
+                  ) : <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>}
+                </Card>
               )}
 
               {activeTab === 'timeline' && (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <p style={{ ...s.sectionLabel, margin: 0 }}>Timeline</p>
-                    <button onClick={() => setShowAddEntry(!showAddEntry)} style={s.smallAddBtn}>
-                      {showAddEntry ? 'Cancel' : '+ Add Entry'}
-                    </button>
+                    <button onClick={() => setShowAddEntry(!showAddEntry)} style={s.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
                   </div>
-
                   {showAddEntry && (
                     <div style={s.miniForm}>
                       <div style={{ marginBottom: '12px' }}>
@@ -356,73 +734,81 @@ function Clients() {
                           {ENTRY_TYPES.map(t => <option key={t}>{t}</option>)}
                         </select>
                       </div>
-
                       {entryType === 'UA' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Result</label>
                           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                             {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
                               <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="radio" name="ua_result" value={opt} checked={entryForm.ua_result === opt} onChange={() => setEntryForm(p => ({ ...p, ua_result: opt }))} />
-                                {opt}
+                                <input type="radio" name="ua_result" value={opt} checked={entryForm.ua_result === opt} onChange={() => setEntryForm(p => ({ ...p, ua_result: opt }))} />{opt}
                               </label>
                             ))}
                           </div>
                         </div>
                       )}
-
                       {entryType === 'Crisis' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Severity</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
                               <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />
-                                {sv}
+                                <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
                           </div>
                         </div>
                       )}
-
                       {entryType === 'Meeting' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Meeting Name</label>
                           <input value={entryForm.meeting_name} onChange={e => setEntryForm(p => ({ ...p, meeting_name: e.target.value }))} style={sf.input} placeholder="e.g. New Beginnings, Ground Zero" />
                         </div>
                       )}
-
+                      {entryType === 'Chores' && (
+                        <>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>Chore Name</label>
+                            <input value={entryForm.chore_name} onChange={e => setEntryForm(p => ({ ...p, chore_name: e.target.value }))} style={sf.input} placeholder="e.g. Kitchen, Bathroom, Yard" />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>Status</label>
+                            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                              {['Completed', 'Not Completed', 'Partial'].map(opt => (
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                  <input type="radio" name="chore_status" value={opt} checked={entryForm.chore_status === opt} onChange={() => setEntryForm(p => ({ ...p, chore_status: opt }))} />{opt}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
                       {entryType === 'Mood Check-In' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Mood Value (1–10): {entryForm.mood_value}</label>
                           <input type="range" min="1" max="10" value={entryForm.mood_value} onChange={e => setEntryForm(p => ({ ...p, mood_value: e.target.value }))} style={{ width: '100%' }} />
                         </div>
                       )}
-
                       {entryType === 'Check-In' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Status</label>
-                          <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', gap: '16px' }}>
                             {['Here', 'Not Here'].map(opt => (
                               <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
-                                <input type="radio" name="checkin" value={opt} checked={entryForm.checkin_status === opt} onChange={() => setEntryForm(p => ({ ...p, checkin_status: opt }))} />
-                                {opt}
+                                <input type="radio" name="checkin" value={opt} checked={entryForm.checkin_status === opt} onChange={() => setEntryForm(p => ({ ...p, checkin_status: opt }))} />{opt}
                               </label>
                             ))}
                           </div>
                         </div>
                       )}
-
                       {(entryType === 'Meeting' || entryType === 'Check-In') && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Location</label>
                           <button type="button" onClick={dropPin}
                             style={{ ...sf.input, background: entryForm.pinDropped ? '#1e3a2f' : '#1a1a1a', color: entryForm.pinDropped ? '#4ade80' : '#aaa', cursor: 'pointer', textAlign: 'left', border: entryForm.pinDropped ? '1px solid #1D9E75' : '1px solid #444' }}>
-                            {entryForm.pinDropped ? `📍 Pin dropped: ${parseFloat(entryForm.latitude).toFixed(4)}, ${parseFloat(entryForm.longitude).toFixed(4)}` : '📍 Drop pin (uses your current location)'}
+                            {entryForm.pinDropped ? '📍 Pin dropped' : '📍 Drop pin (uses your current location)'}
                           </button>
                         </div>
                       )}
-
                       <div style={{ marginBottom: '12px' }}>
                         <label style={sf.label}>Author *</label>
                         <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={sf.input} placeholder="Your name" />
@@ -434,7 +820,6 @@ function Clients() {
                       <button onClick={saveTimelineEntry} style={sf.confirmBtn}>Save Entry</button>
                     </div>
                   )}
-
                   {timeline.length === 0 ? (
                     <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries yet.</p>
                   ) : (
@@ -449,18 +834,14 @@ function Clients() {
                               {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
                               {entry.mood_value && <span style={{ ...s.badge, background: '#3a2d1e', color: '#fb923c' }}>Mood: {entry.mood_value}/10</span>}
                               {entry.severity && <span style={{ ...s.badge, background: entry.severity === 'High' ? '#3a1e1e' : entry.severity === 'Medium' ? '#3a2d1e' : '#1e3a2f', color: entry.severity === 'High' ? '#f87171' : entry.severity === 'Medium' ? '#fb923c' : '#4ade80' }}>{entry.severity}</span>}
-                              {entry.source === 'app' && <span style={{ ...s.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '10px' }}>App</span>}
+                              {entry.source === 'house' && <span style={{ ...s.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '10px' }}>House</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>{formatDate(entry.created_at)}</span>
                               <button onClick={() => deleteTimelineEntry(entry.id)} style={{ background: 'transparent', border: '1px solid #444', color: '#666', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>×</button>
                             </div>
                           </div>
-                          {entry.latitude && entry.longitude && (
-                            <div style={{ background: '#222', borderRadius: '8px', padding: '8px 10px', marginBottom: '8px', fontSize: '12px', color: '#60a5fa' }}>
-                              📍 {parseFloat(entry.latitude).toFixed(4)}, {parseFloat(entry.longitude).toFixed(4)}
-                            </div>
-                          )}
+                          {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
                           {entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
                           <p style={{ color: '#555', fontSize: '11px', margin: '6px 0 0 0' }}>By {entry.author}</p>
                         </div>
@@ -473,26 +854,26 @@ function Clients() {
               {activeTab === 'application' && (
                 <div style={s.grid}>
                   <Card title="Application details">
-                    <Field label="Application type" value={selected.application_type} />
-                    <Field label="Present residence" value={selected.present_residence} />
-                    <Field label="Has ID" value={selected.has_id} />
-                    <Field label="Has SS card" value={selected.has_ss_card} />
-                    <Field label="Employment" value={selected.employment_status} />
-                    <Field label="On disability" value={selected.on_disability} />
-                    <Field label="Criminal history" value={selected.criminal_history} />
+                    <ReadField label="Application type" value={selected.application_type} />
+                    <ReadField label="Present residence" value={selected.present_residence} />
+                    <ReadField label="Has ID" value={selected.has_id} />
+                    <ReadField label="Has SS card" value={selected.has_ss_card} />
+                    <ReadField label="Employment" value={selected.employment_status} />
+                    <ReadField label="On disability" value={selected.on_disability} />
+                    <ReadField label="Criminal history" value={selected.criminal_history} />
                   </Card>
                 </div>
               )}
+
               {activeTab === 'notes' && (
                 <Card title="Staff notes" full>
-                  <div style={{ color: selected.client_notes ? '#ddd' : '#666', fontSize: '14px', lineHeight: '1.6' }}>
-                    {selected.client_notes || 'No notes yet.'}
-                  </div>
+                  <textarea defaultValue={selected.client_notes || ''} onBlur={saveNotes} placeholder="Add staff notes here..."
+                    style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '12px 14px', color: '#fff', fontSize: '14px', lineHeight: '1.6', resize: 'vertical', boxSizing: 'border-box', minHeight: '220px', outline: 'none', fontFamily: 'sans-serif' }} />
+                  <p style={{ color: '#555', fontSize: '11px', marginTop: '8px' }}>Changes save automatically when you click away.</p>
                 </Card>
               )}
+
               {activeTab === 'payments' && <Card title="Payments" full><p style={{ color: '#666', fontSize: '14px' }}>Payment records will appear here once billing is set up.</p></Card>}
-              {activeTab === 'UAs' && <Card title="UA records" full><p style={{ color: '#666', fontSize: '14px' }}>UA records will appear here once UA tracking is set up.</p></Card>}
-              {activeTab === 'medications' && <Card title="Medications" full><p style={{ color: '#666', fontSize: '14px' }}>Medication records will appear here once medication tracking is set up.</p></Card>}
               {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#666', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
             </div>
           </div>
@@ -568,17 +949,6 @@ function Card({ title, children, full }) {
   );
 }
 
-function Field({ label, value, alert }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '4px 0', borderBottom: '1px solid #333', gap: '12px' }}>
-      <span style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: '13px', color: alert ? '#f87171' : (value ? '#ddd' : '#444'), textAlign: 'right', wordBreak: 'break-word' }}>
-        {value || '—'}
-      </span>
-    </div>
-  );
-}
-
 const s = {
   page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
   header: { marginBottom: '24px' },
@@ -598,7 +968,7 @@ const s = {
   modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #333' },
   modalName: { fontSize: '18px', fontWeight: '500', margin: 0, color: '#fff' },
   modalSub: { fontSize: '13px', color: '#666', margin: '2px 0 0 0' },
-  badges: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' },
+  badges: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px', alignItems: 'center' },
   closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#888', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'auto' },
   tab: { padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: '#666', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },

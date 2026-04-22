@@ -9,71 +9,140 @@ function Admissions() {
   const [expanded, setExpanded] = useState(null);
   const [duplicateModal, setDuplicateModal] = useState(null);
   const [merging, setMerging] = useState(false);
+  const [acceptingId, setAcceptingId] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
   const fetchAll = async () => {
     setLoading(true);
-    const { data: apps, error } = await supabase.from('applications').select('*').order('created_at', { ascending: false });
-    if (!error) setApplications(apps || []);
-    const { data: cls } = await supabase.from('clients').select('id, first_name, last_name, date_of_birth, ssn, status');
-    if (cls) setClients(cls);
+
+    const { data: apps, error: appsError } = await supabase
+      .from('applications')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (appsError) {
+      console.error('Error loading applications:', appsError);
+    } else {
+      setApplications(apps || []);
+    }
+
+    const { data: cls, error: clientsError } = await supabase
+      .from('clients')
+      .select('id, first_name, last_name, date_of_birth, ssn, status');
+
+    if (clientsError) {
+      console.error('Error loading clients:', clientsError);
+    } else {
+      setClients(cls || []);
+    }
+
     setLoading(false);
   };
 
+  const formatSupabaseError = (error) => {
+    if (!error) return '';
+    return [error.message, error.details, error.hint].filter(Boolean).join('\n');
+  };
+
   const createClientFromApp = async (app) => {
-    const fullName = `${app.first_name} ${app.last_name}`;
+    const { data: existingClient, error: existingError } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('application_id', app.id)
+      .maybeSingle();
+
+    if (existingError) return existingError;
+    if (existingClient) return null;
+
+    const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
+
     const uniqueId =
       (app.first_name || '').slice(0, 2).toLowerCase() +
       (app.last_name || '').slice(0, 2).toLowerCase() +
       (app.date_of_birth ? app.date_of_birth.replace(/-/g, '').slice(2) : '000000');
 
-    const { error } = await supabase.from('clients').insert([{
+    const payload = {
       full_name: fullName,
-      first_name: app.first_name,
-      last_name: app.last_name,
+      first_name: app.first_name || null,
+      last_name: app.last_name || null,
       date_of_birth: app.date_of_birth || null,
       ssn: app.ssn || null,
       gender: app.assigned_sex || app.gender || null,
       ethnicity: app.ethnicity || null,
       marital_status: app.marital_status || null,
       unique_id: uniqueId,
+      photo_url: app.photo_url || null,
+
+      status: 'Accepted',
+      level: 1,
+      start_date: null,
+
+      personal_status: app.current_situation || null,
+      application_type: app.program || null,
       phone: app.phone || null,
       email: app.email || null,
-      present_residence: app.present_residence || null,
+
       emergency_contact_name: app.emergency_contact || null,
-      on_probation: app.on_probation || null,
-      on_parole: app.on_parole || null,
+      present_residence: app.present_residence || app.current_situation || null,
+
       po_name: app.po_name || null,
       po_phone: app.po_phone || null,
+      on_probation: app.on_probation || null,
+      on_parole: app.on_parole || null,
       sex_offender: app.sex_offender || null,
       criminal_history: app.criminal_history || null,
+
       substance_history: app.substance_history || null,
       treatment_history: app.attended_treatment || null,
       recovery_meetings: app.recovery_meetings || null,
       oud: app.oud_diagnosis || null,
-      application_type: app.program || null,
-      personal_status: app.current_situation || null,
-      client_notes: app.client_notes || null,
-      photo_url: app.photo_url || null,
-      status: 'Accepted',
-      level: 1,
+
       application_id: app.id,
-    }]);
+      client_notes: app.client_notes || null,
+      medication_details: app.medication_details || null,
+      drug_of_choice: app.drug_of_choice || null,
+    };
+
+    const { error } = await supabase.from('clients').insert([payload]);
     return error;
   };
 
   const updateStatus = async (id, status) => {
-    const { error } = await supabase.from('applications').update({ status }).eq('id', id);
-    if (error) return;
+    const app = applications.find(a => a.id === id);
+    if (!app) {
+      alert('Application not found.');
+      return;
+    }
 
+    // If accepting, create client FIRST so we don't mark app accepted if client creation fails
     if (status === 'accepted') {
-      const app = applications.find(a => a.id === id);
-      if (app) {
-        await createClientFromApp(app);
+      setAcceptingId(id);
+      const clientError = await createClientFromApp(app);
+
+      if (clientError) {
+        setAcceptingId(null);
+        alert('Client profile was not created:\n' + formatSupabaseError(clientError));
+        console.error('createClientFromApp error:', clientError);
+        return;
       }
     }
 
+    const { error } = await supabase
+      .from('applications')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      setAcceptingId(null);
+      alert('Error updating application: ' + error.message);
+      console.error('Application update error:', error);
+      return;
+    }
+
+    setAcceptingId(null);
     fetchAll();
   };
 
@@ -81,18 +150,18 @@ function Admissions() {
     const firstLower = app.first_name?.toLowerCase().trim();
     const lastLower = app.last_name?.toLowerCase().trim();
 
-    // Check against existing clients
-    const clientMatch = clients.find(c =>
-      c.first_name?.toLowerCase().trim() === firstLower &&
-      c.last_name?.toLowerCase().trim() === lastLower
+    const clientMatch = clients.find(
+      c =>
+        c.first_name?.toLowerCase().trim() === firstLower &&
+        c.last_name?.toLowerCase().trim() === lastLower
     );
     if (clientMatch) return clientMatch;
 
-    // Check against other applications (exclude itself)
-    const appMatch = applications.find(a =>
-      a.id !== app.id &&
-      a.first_name?.toLowerCase().trim() === firstLower &&
-      a.last_name?.toLowerCase().trim() === lastLower
+    const appMatch = applications.find(
+      a =>
+        a.id !== app.id &&
+        a.first_name?.toLowerCase().trim() === firstLower &&
+        a.last_name?.toLowerCase().trim() === lastLower
     );
     if (appMatch) return { ...appMatch, isApplication: true };
 
@@ -101,60 +170,97 @@ function Admissions() {
 
   const handleMerge = async () => {
     if (!duplicateModal) return;
+
     setMerging(true);
     const { app, client } = duplicateModal;
 
-    // If duplicate is another application (not a client), just update status
     if (client.isApplication) {
-      await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
+      const { error } = await supabase
+        .from('applications')
+        .update({ status: 'accepted' })
+        .eq('id', app.id);
+
+      if (error) {
+        alert('Error updating duplicate application: ' + error.message);
+        console.error(error);
+        setMerging(false);
+        return;
+      }
+
       setDuplicateModal(null);
       fetchAll();
       setMerging(false);
       return;
     }
 
-    const { error } = await supabase.from('clients').update({
-      first_name: app.first_name || client.first_name,
-      last_name: app.last_name || client.last_name,
-      phone: app.phone || null,
-      email: app.email || null,
-      date_of_birth: app.date_of_birth || client.date_of_birth,
-      ssn: app.ssn || client.ssn,
-      gender: app.assigned_sex || app.gender || null,
-      present_residence: app.current_situation || null,
-      application_type: app.program || null,
-    }).eq('id', client.id);
+    const { error } = await supabase
+      .from('clients')
+      .update({
+        first_name: app.first_name || client.first_name,
+        last_name: app.last_name || client.last_name,
+        phone: app.phone || null,
+        email: app.email || null,
+        date_of_birth: app.date_of_birth || client.date_of_birth,
+        ssn: app.ssn || client.ssn,
+        gender: app.assigned_sex || app.gender || null,
+        present_residence: app.current_situation || null,
+        application_type: app.program || null,
+      })
+      .eq('id', client.id);
 
-    if (!error) {
-      await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
-      setDuplicateModal(null);
-      fetchAll();
+    if (error) {
+      alert('Error merging into existing client: ' + error.message);
+      console.error(error);
+      setMerging(false);
+      return;
     }
+
+    const { error: appUpdateError } = await supabase
+      .from('applications')
+      .update({ status: 'accepted' })
+      .eq('id', app.id);
+
+    if (appUpdateError) {
+      alert('Client was updated, but application status could not be changed: ' + appUpdateError.message);
+      console.error(appUpdateError);
+      setMerging(false);
+      return;
+    }
+
+    setDuplicateModal(null);
+    fetchAll();
     setMerging(false);
   };
 
-  const handleIgnore = async () => {
+  const handleIgnore = () => {
     if (!duplicateModal) return;
     setDuplicateModal(null);
   };
 
-  const filtered = filter === 'all' ? applications : applications.filter(a => a.status === filter);
+  const filtered =
+    filter === 'all'
+      ? applications
+      : applications.filter(a => a.status === filter);
 
-  const statusColor = (status) => {
+  const statusColor = status => {
     if (status === 'accepted') return '#16a34a';
     if (status === 'denied') return '#dc2626';
     return '#ca8a04';
   };
 
-  const fmt = (val) => val || '—';
+  const fmt = val => val || '—';
 
   return (
     <div style={s.page}>
       <h1 style={s.title}>Admissions</h1>
+
       <div style={s.tabs}>
         {['pending', 'all', 'accepted', 'denied'].map(tab => (
-          <button key={tab} onClick={() => setFilter(tab)}
-            style={{ ...s.tab, ...(filter === tab ? s.tabActive : {}) }}>
+          <button
+            key={tab}
+            onClick={() => setFilter(tab)}
+            style={{ ...s.tab, ...(filter === tab ? s.tabActive : {}) }}
+          >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
@@ -168,21 +274,34 @@ function Admissions() {
         <div style={s.list}>
           {filtered.map(app => {
             const duplicate = findDuplicate(app);
+
             return (
               <div key={app.id} style={s.card}>
                 <div style={s.cardHeader}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <span style={s.name}>{fmt(app.first_name)} {fmt(app.last_name)}</span>
+                      <span style={s.name}>
+                        {fmt(app.first_name)} {fmt(app.last_name)}
+                      </span>
+
                       {duplicate && app.status === 'pending' && (
-                        <button style={s.dupBadge} onClick={() => setDuplicateModal({ app, client: duplicate })}>
+                        <button
+                          style={s.dupBadge}
+                          onClick={() => setDuplicateModal({ app, client: duplicate })}
+                        >
                           ⚠ Possible Duplicate
                         </button>
                       )}
                     </div>
-                    <p style={s.meta}>{fmt(app.email)} · {fmt(app.phone)}</p>
-                    <p style={s.meta}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
+
+                    <p style={s.meta}>
+                      {fmt(app.email)} · {fmt(app.phone)}
+                    </p>
+                    <p style={s.meta}>
+                      Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}
+                    </p>
                   </div>
+
                   <span style={{ ...s.badge, backgroundColor: statusColor(app.status) }}>
                     {app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1) : 'Pending'}
                   </span>
@@ -207,25 +326,54 @@ function Admissions() {
                 </div>
 
                 <div style={s.cardActions}>
-                  <button style={s.viewBtn} onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
+                  <button
+                    style={s.viewBtn}
+                    onClick={() => setExpanded(expanded === app.id ? null : app.id)}
+                  >
                     {expanded === app.id ? 'Hide Application' : 'View Full Application'}
                   </button>
+
                   {app.status === 'pending' && (
                     <>
-                      <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')}>Accept</button>
-                      <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>Deny</button>
+                      <button
+                        style={s.acceptBtn}
+                        onClick={() => updateStatus(app.id, 'accepted')}
+                        disabled={acceptingId === app.id}
+                      >
+                        {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+                      </button>
+                      <button
+                        style={s.denyBtn}
+                        onClick={() => updateStatus(app.id, 'denied')}
+                      >
+                        Deny
+                      </button>
                     </>
                   )}
+
                   {app.status === 'accepted' && (
-                    <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>Deny</button>
+                    <button
+                      style={s.denyBtn}
+                      onClick={() => updateStatus(app.id, 'denied')}
+                    >
+                      Deny
+                    </button>
                   )}
+
                   {app.status === 'denied' && (
-                    <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')}>Accept</button>
+                    <button
+                      style={s.acceptBtn}
+                      onClick={() => updateStatus(app.id, 'accepted')}
+                      disabled={acceptingId === app.id}
+                    >
+                      {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+                    </button>
                   )}
                 </div>
 
                 {expanded === app.id && (
                   <div style={s.fullApp}>
+                    <p style={s.sectionDivider}>General Info</p>
                     <div style={s.fullGrid}>
                       {[
                         ['First Name', app.first_name],
@@ -235,27 +383,185 @@ function Admissions() {
                         ['Date of Birth', app.date_of_birth],
                         ['SSN', app.ssn],
                         ['Gender', app.gender || app.assigned_sex],
+                        ['Ethnicity', app.ethnicity],
+                        ['Marital Status', app.marital_status],
+                        ['Present Residence', app.present_residence],
+                        ['Has ID?', app.has_id],
+                        ['Has SS Card?', app.has_ss_card],
+                        ['Employment Status', app.employment_status],
+                        ['Employer Name', app.employer_name],
                         ['Program', app.program],
-                        ['Current Situation', app.current_situation],
                         ['Lived Here Before?', app.lived_here_before],
+                        ['Current Situation', app.current_situation],
                         ['On Disability?', app.on_disability],
+                        ['Difficulty Concentrating?', app.disability_concentrating],
+                        ['Difficulty Walking?', app.disability_walking],
+                        ['Difficulty Dressing?', app.disability_dressing],
+                        ['Able to Work?', app.able_to_work],
+                        ['Agree to Volunteer?', app.agree_to_volunteer],
+                        ['Allergy Info', app.allergy_info],
+                        ['Doctor Info', app.doctor_info],
+                        ['Correspondence Contact', app.correspondence_contact],
+                      ].map(([label, val]) =>
+                        val ? (
+                          <div key={label} style={s.fullItem}>
+                            <span style={s.fullLabel}>{label}</span>
+                            <span style={s.fullVal}>{val}</span>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+
+                    <p style={s.sectionDivider}>Recovery</p>
+                    <div style={s.fullGrid}>
+                      {[
                         ['Substance History?', app.substance_history],
                         ['Drug of Choice', app.drug_of_choice],
                         ['Sober Date', app.sober_date],
                         ['OUD Diagnosis', app.oud_diagnosis],
-                        ['Sex Offender?', app.sex_offender],
-                        ['Correspondence Contact', app.correspondence_contact],
+                        ['Recovery Meetings', app.recovery_meetings],
+                        ['Attended Treatment?', app.attended_treatment],
+                        ['Takes Medication?', app.takes_medication],
+                      ].map(([label, val]) =>
+                        val ? (
+                          <div key={label} style={s.fullItem}>
+                            <span style={s.fullLabel}>{label}</span>
+                            <span style={s.fullVal}>{val}</span>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+
+                    {app.medication_details &&
+                      (() => {
+                        try {
+                          const meds = JSON.parse(app.medication_details);
+                          if (meds.length === 0) return null;
+
+                          return (
+                            <>
+                              <p style={s.sectionDivider}>Medications</p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {meds.map((med, i) => (
+                                  <div key={i} style={s.subCard}>
+                                    <div style={s.fullGrid}>
+                                      {[
+                                        ['Name', med.name],
+                                        ['Dosage', med.dosage],
+                                        ['Frequency', med.intake ? `${med.intake}x/day` : null],
+                                        ['Count', med.count],
+                                        ['Notes', med.notes],
+                                      ].map(([label, val]) =>
+                                        val ? (
+                                          <div key={label} style={s.fullItem}>
+                                            <span style={s.fullLabel}>{label}</span>
+                                            <span style={s.fullVal}>{val}</span>
+                                          </div>
+                                        ) : null
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+
+                    {app.treatment_details &&
+                      (() => {
+                        try {
+                          const treatments = JSON.parse(app.treatment_details);
+                          if (treatments.length === 0) return null;
+
+                          return (
+                            <>
+                              <p style={s.sectionDivider}>Treatment History</p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {treatments.map((t, i) => (
+                                  <div key={i} style={s.subCard}>
+                                    <div style={s.fullGrid}>
+                                      {[
+                                        ['Name', t.name],
+                                        ['Level of Care', t.level_of_care],
+                                        ['Contact Name', t.contact_name],
+                                        ['Contact Phone', t.contact_phone],
+                                        ['Contact Email', t.contact_email],
+                                        ['Was Referred?', t.was_referred],
+                                        ['Referral Date', t.referral_date],
+                                        ['Discharge Date', t.discharge_date],
+                                      ].map(([label, val]) =>
+                                        val ? (
+                                          <div key={label} style={s.fullItem}>
+                                            <span style={s.fullLabel}>{label}</span>
+                                            <span style={s.fullVal}>{val}</span>
+                                          </div>
+                                        ) : null
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          );
+                        } catch {
+                          return null;
+                        }
+                      })()}
+
+                    <p style={s.sectionDivider}>Emergency Contacts</p>
+                    <div style={s.fullGrid}>
+                      {[
                         ['Emergency Contact', app.emergency_contact],
+                        ['Collateral Contacts', app.collateral_contacts],
+                      ].map(([label, val]) =>
+                        val ? (
+                          <div key={label} style={s.fullItem}>
+                            <span style={s.fullLabel}>{label}</span>
+                            <span style={s.fullVal}>{val}</span>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+
+                    <p style={s.sectionDivider}>Legal</p>
+                    <div style={s.fullGrid}>
+                      {[
+                        ['On Probation?', app.on_probation],
+                        ['On Parole?', app.on_parole],
                         ['Parole Officer', app.po_name],
                         ['PO Phone', app.po_phone],
-                        ['Notes', app.client_notes],
+                        ['Criminal History', app.criminal_history],
+                        ['Sex Offender?', app.sex_offender],
+                        ['Sex Offense Details', app.sex_offense_details],
+                      ].map(([label, val]) =>
+                        val ? (
+                          <div key={label} style={s.fullItem}>
+                            <span style={s.fullLabel}>{label}</span>
+                            <span style={s.fullVal}>{val}</span>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+
+                    <p style={s.sectionDivider}>Information Accuracy</p>
+                    <div style={s.fullGrid}>
+                      {[
+                        ['Form Completed By', app.form_completed_by],
+                        ['Agreed to Rules?', app.agree_to_rules],
+                        ['Agreed to KL Levels?', app.agree_to_levels],
+                        ['Client Notes', app.client_notes],
                         ['Signature', app.signature],
-                      ].map(([label, val]) => val ? (
-                        <div key={label} style={s.fullItem}>
-                          <span style={s.fullLabel}>{label}</span>
-                          <span style={s.fullVal}>{val}</span>
-                        </div>
-                      ) : null)}
+                      ].map(([label, val]) =>
+                        val ? (
+                          <div key={label} style={s.fullItem}>
+                            <span style={s.fullLabel}>{label}</span>
+                            <span style={s.fullVal}>{val}</span>
+                          </div>
+                        ) : null
+                      )}
                     </div>
                   </div>
                 )}
@@ -276,6 +582,7 @@ function Admissions() {
                   : 'A client with this name already exists. Review and choose an action.'}
               </p>
             </div>
+
             <div style={s.compareGrid}>
               <div style={s.compareCol}>
                 <div style={s.compareColHeader}>New Application</div>
@@ -294,6 +601,7 @@ function Admissions() {
                   </div>
                 ))}
               </div>
+
               <div style={s.compareCol}>
                 <div style={s.compareColHeader}>
                   {duplicateModal.client.isApplication ? 'Existing Application' : 'Existing Client'}
@@ -311,14 +619,19 @@ function Admissions() {
                 ))}
               </div>
             </div>
+
             <div style={s.modalActions}>
               {!duplicateModal.client.isApplication && (
                 <button style={s.mergeBtn} onClick={handleMerge} disabled={merging}>
                   {merging ? 'Merging...' : 'Merge into Existing Client'}
                 </button>
               )}
-              <button style={s.ignoreBtn} onClick={handleIgnore}>Treat as New Person</button>
-              <button style={s.cancelBtn} onClick={() => setDuplicateModal(null)}>Cancel</button>
+              <button style={s.ignoreBtn} onClick={handleIgnore}>
+                Treat as New Person
+              </button>
+              <button style={s.cancelBtn} onClick={() => setDuplicateModal(null)}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>
@@ -350,10 +663,12 @@ const s = {
   acceptBtn: { padding: '7px 14px', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
   denyBtn: { padding: '7px 14px', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
   fullApp: { marginTop: '16px', borderTop: '1px solid #333', paddingTop: '16px' },
+  sectionDivider: { fontSize: '11px', fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '16px 0 10px 0', paddingBottom: '6px', borderBottom: '1px solid #333' },
   fullGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' },
   fullItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   fullLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  fullVal: { fontSize: '13px', color: '#ddd' },
+  fullVal: { fontSize: '13px', color: '#ddd', lineHeight: '1.4' },
+  subCard: { background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', border: '1px solid #333' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' },
   modal: { background: '#2a2a2a', borderRadius: '16px', padding: '28px', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #444' },
   modalHeader: { marginBottom: '20px' },

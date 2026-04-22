@@ -7,6 +7,58 @@ const sections = ['General Info', 'Recovery', 'Emergency Contacts', 'Legal Histo
 const emptyMed = () => ({ name: '', dosage: '', intake: '', count: '', notes: '' });
 const emptyTreatment = () => ({ name: '', level_of_care: '', contact_name: '', contact_phone: '', contact_email: '', was_referred: '', referral_date: '', discharge_date: '' });
 
+const DRUG_OPTIONS = [
+  'Heroin (Smack, H)',
+  'Fentanyl',
+  'Morphine',
+  'Oxycodone (OxyContin, Percocet)',
+  'Hydrocodone (Vicodin)',
+  'Codeine',
+  'Methadone',
+  'Tramadol',
+  'Buprenorphine (Suboxone, Subutex)',
+  'Cocaine (Coke)',
+  'Crack cocaine (Crack)',
+  'Methamphetamine (Meth, Crystal)',
+  'Amphetamine (Adderall)',
+  'Methylphenidate (Ritalin, Concerta)',
+  'MDMA (Ecstasy, Molly)',
+  'Marijuana (Cannabis, Weed, Pot)',
+  'Synthetic cannabinoids (Spice or K2)',
+  'Alcohol',
+  'Nicotine (Tobacco)',
+  'LSD (Acid)',
+  'Psilocybin (Magic Mushrooms)',
+  'Mescaline (Peyote)',
+  'Phencyclidine (PCP or Angel Dust)',
+  'Salvia',
+  'Ketamine (Special K)',
+  'DXM (Dextromethorphan)',
+  'GHB (Gamma-hydroxybutyrate)',
+  'Rohypnol (Roofies)',
+  'Diazepam (Valium)',
+  'Alprazolam (Xanax)',
+  'Lorazepam (Ativan)',
+  'Clonazepam (Klonopin)',
+  'Barbiturates',
+  'Inhalants',
+  'Bath salts (Synthetic cathinones)',
+  'Kratom',
+  'Flunitrazepam (Rohypnol)',
+  'Chloral hydrate',
+  'Methaqualone (Quaalude)',
+  'DMT (Dimethyltryptamine)',
+  'Ayahuasca',
+  'Ibogaine',
+  'Khat',
+  'Mephedrone (Meow Meow)',
+  'Methylone',
+  'Benzylpiperazine (BZP)',
+  'PMA/PMMA (Death)',
+  'Xylazine',
+  'Other',
+];
+
 function ApplicationForm() {
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
@@ -240,14 +292,36 @@ function ApplicationForm() {
 
           {step === 1 && <>
             <h3 style={s.sectionTitle}>Recovery</h3>
-            <Row label="Do you have a past or current history of substance or alcohol misuse? *"><Select value={form.substance_history} onChange={v => set('substance_history', v)} options={['Yes', 'No']} /></Row>
-            <Row label="Drug of Choice"><Input value={form.drug_of_choice} onChange={v => set('drug_of_choice', v)} placeholder="Enter your primary drug of choice" /></Row>
-            <Row label="How long have you been sober? (Sober Date / Recovery Date)"><Input value={form.sober_date} onChange={v => set('sober_date', v)} placeholder="e.g. January 1, 2023" /></Row>
-            <Row label="Are you diagnosed with opiate use disorder (OUD)? *"><Select value={form.oud_diagnosis} onChange={v => set('oud_diagnosis', v)} options={['Yes', 'No']} /></Row>
-            <Row label="What type of recovery meetings do you attend? *"><Select value={form.recovery_meetings} onChange={v => set('recovery_meetings', v)} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} /></Row>
+            <Row label="Do you have a past or current history of substance or alcohol misuse? *">
+              <Select value={form.substance_history} onChange={v => set('substance_history', v)} options={['Yes', 'No']} />
+            </Row>
+
+            <Row label="Drug of Choice">
+              <select
+                value={form.drug_of_choice}
+                onChange={e => set('drug_of_choice', e.target.value)}
+                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: form.drug_of_choice ? '#fff' : '#888', fontSize: '14px' }}
+              >
+                <option value="">Select primary drug of choice</option>
+                {DRUG_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </Row>
+
+            <Row label="Sobriety / Recovery Date">
+              <Input value={form.sober_date} onChange={v => set('sober_date', v)} type="date" />
+            </Row>
+
+            <Row label="Are you diagnosed with opiate use disorder (OUD)? *">
+              <Select value={form.oud_diagnosis} onChange={v => set('oud_diagnosis', v)} options={['Yes', 'No']} />
+            </Row>
+            <Row label="What type of recovery meetings do you attend? *">
+              <Select value={form.recovery_meetings} onChange={v => set('recovery_meetings', v)} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} />
+            </Row>
 
             <h3 style={s.sectionTitle}>Treatment</h3>
-            <Row label="Have you ever attended addiction treatment, PHP, IOP, or lived in another recovery house program? *"><Select value={form.attended_treatment} onChange={v => set('attended_treatment', v)} options={['Yes', 'No']} /></Row>
+            <Row label="Have you ever attended addiction treatment, PHP, IOP, or lived in another recovery house program? *">
+              <Select value={form.attended_treatment} onChange={v => set('attended_treatment', v)} options={['Yes', 'No']} />
+            </Row>
             {form.attended_treatment === 'Yes' && <>
               <p style={{ ...s.hint, marginBottom: '12px' }}>Please provide details for each treatment program attended. Click "+ Add Treatment" to add more.</p>
               {treatments.map((t, i) => (
@@ -272,7 +346,9 @@ function ApplicationForm() {
             </>}
 
             <h3 style={s.sectionTitle}>Medications</h3>
-            <Row label="Do you take any prescription medication? *"><Select value={form.takes_medication} onChange={v => set('takes_medication', v)} options={['Yes', 'No']} /></Row>
+            <Row label="Do you take any prescription medication? *">
+              <Select value={form.takes_medication} onChange={v => set('takes_medication', v)} options={['Yes', 'No']} />
+            </Row>
             {form.takes_medication === 'Yes' && <>
               <p style={{ ...s.hint, marginBottom: '12px' }}>Please list all medications. Click "+ Add Medication" to add more.</p>
               {medications.map((med, i) => (

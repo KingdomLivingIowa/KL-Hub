@@ -3,6 +3,26 @@ import { supabase } from './supabaseClient';
 
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note'];
 
+// Reverse geocode coordinates to a readable address
+const reverseGeocode = async (lat, lng) => {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    if (data && data.display_name) {
+      const a = data.address || {};
+      const parts = [
+        a.house_number && a.road ? `${a.house_number} ${a.road}` : a.road,
+        a.city || a.town || a.village,
+        a.state,
+      ].filter(Boolean);
+      return parts.join(', ') || data.display_name;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 function Houses() {
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,6 +32,7 @@ function Houses() {
   const [activeTab, setActiveTab] = useState('residents');
   const [rooms, setRooms] = useState([]);
   const [timeline, setTimeline] = useState([]);
+  const [locationLabels, setLocationLabels] = useState({});
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [roomForm, setRoomForm] = useState({ name: '', type: 'Double', beds: '2' });
@@ -20,6 +41,7 @@ function Houses() {
   const [residentChecks, setResidentChecks] = useState({});
   const [mainView, setMainView] = useState('houses');
   const [allResidents, setAllResidents] = useState([]);
+  const [editingNotes, setEditingNotes] = useState({});
   const [form, setForm] = useState({
     name: '', address: '', city: '', zip: '', type: 'Men',
     total_beds: '', house_manager: '', phone: '', notes: '',
@@ -69,7 +91,9 @@ function Houses() {
   const fetchTimeline = useCallback(async (houseId) => {
     const { data } = await supabase.from('house_timeline').select('*')
       .eq('house_id', houseId).order('created_at', { ascending: false });
-    setTimeline(data || []);
+    const entries = data || [];
+    setTimeline(entries);
+    setLocationLabels({});
   }, []);
 
   const openHouse = (house) => {
@@ -83,12 +107,9 @@ function Houses() {
     fetchTimeline(house.id);
   };
 
- const deleteHouse = async (e, houseId) => {
+  const deleteHouse = async (e, houseId) => {
     e.stopPropagation();
-    const { count } = await supabase
-      .from('clients')
-      .select('*', { count: 'exact', head: true })
-      .eq('house_id', houseId);
+    const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('house_id', houseId);
     if (count > 0) {
       alert('This house still has clients linked to it and cannot be deleted. Please reassign or discharge all residents first.');
       return;
@@ -199,23 +220,48 @@ function Houses() {
     setResidentChecks(p => ({ ...p, [resId]: { ...p[resId], value: val } }));
   };
 
+  const startEditingNotes = (residentId, currentNotes) => {
+    setEditingNotes(prev => ({ ...prev, [residentId]: currentNotes || '' }));
+  };
+
+  const saveNotes = async (residentId) => {
+    const newNotes = editingNotes[residentId];
+    await supabase.from('clients').update({ staff_notes: newNotes || null }).eq('id', residentId);
+    setAllResidents(prev => prev.map(r => r.id === residentId ? { ...r, staff_notes: newNotes } : r));
+    setEditingNotes(prev => {
+      const updated = { ...prev };
+      delete updated[residentId];
+      return updated;
+    });
+  };
+
+  // Load addresses for timeline entries with coordinates
+  useEffect(() => {
+    timeline.forEach(async entry => {
+      if (entry.latitude && entry.longitude && !locationLabels[entry.id]) {
+        const address = await reverseGeocode(entry.latitude, entry.longitude);
+        if (address) setLocationLabels(prev => ({ ...prev, [entry.id]: address }));
+      }
+    });
+  }, [timeline]);
+
   const entryColor = (type) => {
-    if (type === 'House Check-In') return '#7F77DD';
-    if (type === 'Batch UA') return '#1D9E75';
-    if (type === 'Crisis') return '#E24B4A';
+    if (type === 'House Check-In')   return '#7F77DD';
+    if (type === 'Batch UA')         return '#1D9E75';
+    if (type === 'Crisis')           return '#E24B4A';
     if (type === 'Event Attendance') return '#378ADD';
-    if (type === 'General Note') return '#BA7517';
+    if (type === 'General Note')     return '#f59e0b';
     return '#888';
   };
 
   const severityColor = (sv) => {
-    if (sv === 'High') return { bg: '#3a1e1e', color: '#f87171' };
+    if (sv === 'High')   return { bg: '#3a1e1e', color: '#f87171' };
     if (sv === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
     return { bg: '#1e3a2f', color: '#4ade80' };
   };
 
   const statusColor = (st) => {
-    if (st === 'Active') return { bg: '#2d1e3a', color: '#c084fc' };
+    if (st === 'Active')  return { bg: '#2d1e3a', color: '#c084fc' };
     if (st === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
     return { bg: '#2a2a2a', color: '#aaa' };
   };
@@ -226,6 +272,25 @@ function Houses() {
     if (b == null) return '—';
     const num = parseFloat(b);
     return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2);
+  };
+
+  const LocationPin = ({ entryId, lat, lng }) => {
+    const address = locationLabels[entryId];
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    return (
+      <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+          <span style={{ fontSize: '14px' }}>📍</span>
+          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>
+            {address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}
+          </span>
+        </div>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>
+          View map →
+        </a>
+      </div>
+    );
   };
 
   return (
@@ -284,9 +349,7 @@ function Houses() {
                       <span style={s.statItem}><span style={{ ...s.statNum, color: '#4ade80' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLabel}>Available</span></span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                      {house.house_manager
-                        ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p>
-                        : <span />}
+                      {house.house_manager ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p> : <span />}
                       <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>
                     </div>
                   </div>
@@ -331,7 +394,26 @@ function Houses() {
                           <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.start_date || '—'}</span>
                           <span style={{ flex: 1, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
                           <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.phone || '—'}</span>
-                          <span style={{ flex: 2, color: '#888', fontSize: '12px', lineHeight: '1.4' }}>{r.staff_notes || '—'}</span>
+                          <div style={{ flex: 2 }}>
+                            {editingNotes.hasOwnProperty(r.id) ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <textarea autoFocus value={editingNotes[r.id]}
+                                  onChange={e => setEditingNotes(prev => ({ ...prev, [r.id]: e.target.value }))}
+                                  onBlur={() => saveNotes(r.id)}
+                                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes(r.id); } }}
+                                  rows={2} placeholder="Add a note..."
+                                  style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '12px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
+                                <span style={{ color: '#555', fontSize: '10px' }}>Enter to save · Shift+Enter for new line</span>
+                              </div>
+                            ) : (
+                              <div onClick={() => startEditingNotes(r.id, r.staff_notes)}
+                                style={{ color: r.staff_notes ? '#aaa' : '#444', fontSize: '12px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#444'}
+                                onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
+                                {r.staff_notes || <span style={{ fontStyle: 'italic' }}>Click to add notes...</span>}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -387,18 +469,9 @@ function Houses() {
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
                           <div style={s.resDetailGrid}>
-                            <div style={s.resDetailItem}>
-                              <span style={s.resDetailLabel}>Start Date</span>
-                              <span style={s.resDetailVal}>{r.start_date || '—'}</span>
-                            </div>
-                            <div style={s.resDetailItem}>
-                              <span style={s.resDetailLabel}>Balance</span>
-                              <span style={{ ...s.resDetailVal, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80' }}>{formatBalance(r.balance)}</span>
-                            </div>
-                            <div style={s.resDetailItem}>
-                              <span style={s.resDetailLabel}>Phone</span>
-                              <span style={s.resDetailVal}>{r.phone || '—'}</span>
-                            </div>
+                            <div style={s.resDetailItem}><span style={s.resDetailLabel}>Start Date</span><span style={s.resDetailVal}>{r.start_date || '—'}</span></div>
+                            <div style={s.resDetailItem}><span style={s.resDetailLabel}>Balance</span><span style={{ ...s.resDetailVal, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80' }}>{formatBalance(r.balance)}</span></div>
+                            <div style={s.resDetailItem}><span style={s.resDetailLabel}>Phone</span><span style={s.resDetailVal}>{r.phone || '—'}</span></div>
                           </div>
                           {r.staff_notes && (
                             <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #333' }}>
@@ -524,6 +597,9 @@ function Houses() {
                               <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '11px' }}>×</button>
                             </div>
                           </div>
+                          {entry.latitude && entry.longitude && (
+                            <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />
+                          )}
                           {entry.resident_data && entry.resident_data.length > 0 && (
                             <div style={{ marginBottom: '8px' }}>
                               {entry.entry_type === 'House Check-In' && (
@@ -601,9 +677,7 @@ function Houses() {
               {activeTab === 'forms' && (
                 <div>
                   <p style={s.sectionLabel}>Forms</p>
-                  <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
-                    Forms submitted by residents of {selected.name} will appear here once the forms system is built out.
-                  </p>
+                  <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>Forms submitted by residents of {selected.name} will appear here once the forms system is built out.</p>
                 </div>
               )}
             </div>
