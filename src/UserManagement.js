@@ -20,9 +20,14 @@ function UserManagement({ currentUser }) {
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddUser, setShowAddUser] = useState(false);
-  const [showHouseModal, setShowHouseModal] = useState(null); // user object
+  const [showHouseModal, setShowHouseModal] = useState(null);
   const [houseAssignments, setHouseAssignments] = useState({});
   const [saving, setSaving] = useState(false);
+  const [resetModal, setResetModal] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
+  const [resetting, setResetting] = useState(false);
   const [form, setForm] = useState({
     full_name: '',
     email: '',
@@ -45,7 +50,6 @@ function UserManagement({ currentUser }) {
       .order('created_at', { ascending: false });
 
     if (profiles) {
-      // Fetch house assignments for all users
       const { data: assignments } = await supabase
         .from('user_house_assignments')
         .select('*, houses(name)');
@@ -106,7 +110,7 @@ function UserManagement({ currentUser }) {
       setForm({ full_name: '', email: '', password: '', role: 'house_manager' });
       setShowAddUser(false);
       fetchUsers();
-    } catch (err) {
+    } catch {
       setFormError('Network error. Please try again.');
     }
 
@@ -114,10 +118,7 @@ function UserManagement({ currentUser }) {
   };
 
   const updateRole = async (userId, newRole) => {
-    await supabase
-      .from('user_profiles')
-      .update({ role: newRole })
-      .eq('id', userId);
+    await supabase.from('user_profiles').update({ role: newRole }).eq('id', userId);
     fetchUsers();
   };
 
@@ -137,11 +138,37 @@ function UserManagement({ currentUser }) {
     fetchUsers();
   };
 
+  const resetPassword = async () => {
+    setResetError('');
+    setResetSuccess('');
+    if (newPassword.length < 8) {
+      setResetError('Password must be at least 8 characters.');
+      return;
+    }
+    setResetting(true);
+    try {
+      const response = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: resetModal.id, newPassword }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setResetError(result.error || 'Failed to reset password.');
+      } else {
+        setResetSuccess('Password updated successfully!');
+        setNewPassword('');
+        setTimeout(() => { setResetModal(null); setResetSuccess(''); }, 2000);
+      }
+    } catch {
+      setResetError('Network error. Please try again.');
+    }
+    setResetting(false);
+  };
+
   const roleLabel = (role) => ROLES.find(r => r.value === role)?.label || role;
   const roleColor = (role) => ROLE_COLORS[role] || { bg: '#2a2a2a', color: '#aaa' };
-
-  const needsHouseAssignment = (role) =>
-    role === 'house_manager' || role === 'head_house_manager';
+  const needsHouseAssignment = (role) => role === 'house_manager' || role === 'head_house_manager';
 
   return (
     <div style={s.page}>
@@ -188,7 +215,7 @@ function UserManagement({ currentUser }) {
             </div>
           </div>
           {formError && <p style={s.errorText}>{formError}</p>}
-          <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
             <button onClick={createUser} disabled={saving} style={s.saveBtn}>
               {saving ? 'Creating...' : 'Create Account'}
             </button>
@@ -207,7 +234,7 @@ function UserManagement({ currentUser }) {
             <span style={{ flex: 2 }}>Email</span>
             <span style={{ flex: 1.5 }}>Role</span>
             <span style={{ flex: 2 }}>House Assignments</span>
-            <span style={{ flex: 1 }}>Actions</span>
+            <span style={{ flex: 1.2 }}>Actions</span>
           </div>
           {users.map(u => {
             const col = roleColor(u.role);
@@ -257,9 +284,16 @@ function UserManagement({ currentUser }) {
                     <span style={{ color: '#555', fontSize: '12px' }}>All houses</span>
                   )}
                 </span>
-                <span style={{ flex: 1 }}>
+                <span style={{ flex: 1.2 }}>
                   {!isCurrentUser && (
-                    <button onClick={() => removeUser(u.id)} style={s.removeBtn}>Remove</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <button
+                        onClick={() => { setResetModal(u); setNewPassword(''); setResetError(''); setResetSuccess(''); }}
+                        style={s.resetBtn}>
+                        Reset Password
+                      </button>
+                      <button onClick={() => removeUser(u.id)} style={s.removeBtn}>Remove</button>
+                    </div>
                   )}
                 </span>
               </div>
@@ -290,7 +324,7 @@ function UserManagement({ currentUser }) {
                     {alreadyAssigned ? (
                       <span style={{ fontSize: '12px', color: '#4ade80' }}>✓ Assigned</span>
                     ) : (
-                      <button onClick={() => { assignHouse(showHouseModal.id, h.id); fetchUsers(); }}
+                      <button onClick={() => { assignHouse(showHouseModal.id, h.id); }}
                         style={{ background: '#b22222', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
                         Assign
                       </button>
@@ -303,6 +337,39 @@ function UserManagement({ currentUser }) {
               <button onClick={() => setShowHouseModal(null)}
                 style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetModal && (
+        <div style={s.overlay} onClick={() => setResetModal(null)}>
+          <div style={s.modal} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#fff', margin: '0 0 6px 0', fontSize: '16px' }}>Reset Password</h3>
+            <p style={{ color: '#666', fontSize: '13px', margin: '0 0 16px 0' }}>
+              Set a new temporary password for <strong style={{ color: '#ddd' }}>{resetModal.full_name}</strong>.
+            </p>
+            <label style={s.label}>New Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') resetPassword(); }}
+              placeholder="Min 8 characters"
+              style={{ ...s.input, marginBottom: '12px' }}
+            />
+            {resetError && <p style={{ color: '#f87171', fontSize: '13px', margin: '0 0 12px 0' }}>{resetError}</p>}
+            {resetSuccess && <p style={{ color: '#4ade80', fontSize: '13px', margin: '0 0 12px 0' }}>{resetSuccess}</p>}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setResetModal(null)}
+                style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={resetPassword} disabled={resetting}
+                style={{ background: '#ca8a04', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                {resetting ? 'Saving...' : 'Set New Password'}
               </button>
             </div>
           </div>
@@ -324,7 +391,7 @@ const s = {
   label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
   input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
-  hint: { color: '#555', fontSize: '12px', margin: '10px 0 0 0', lineHeight: '1.5' },
+  hint: { color: '#555', fontSize: '12px', margin: 0, lineHeight: '1.5' },
   errorText: { color: '#f87171', fontSize: '13px', margin: '0 0 12px 0' },
   successBanner: { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' },
   table: { background: '#2a2a2a', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' },
@@ -335,6 +402,7 @@ const s = {
   houseTag: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: '#1e2d3a', color: '#60a5fa' },
   removeHouseBtn: { background: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '13px', padding: '0', lineHeight: 1 },
   assignHouseBtn: { fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: 'transparent', border: '1px dashed #444', color: '#666', cursor: 'pointer' },
+  resetBtn: { backgroundColor: 'transparent', border: '1px solid #ca8a04', color: '#ca8a04', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' },
   modal: { background: '#1a1a1a', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #333' },
