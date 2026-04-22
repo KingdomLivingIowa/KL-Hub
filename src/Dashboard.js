@@ -17,7 +17,7 @@ function Dashboard({ user }) {
     fetchUserRole();
     const interval = setInterval(fetchCounts, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUserRole = async () => {
   const { data, error } = await supabase
@@ -59,7 +59,6 @@ function Dashboard({ user }) {
 
   const isAdmin = userRole === 'admin' || (!userRole && user?.email === 'jasmine@kingdomlivingia.com');
 const isUpperManagement = userRole === 'upper_management';
-const isAdminOrUpper = isAdmin || isUpperManagement;
 
   const navItems = [
     { id: 'home', label: 'Dashboard' },
