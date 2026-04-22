@@ -38,6 +38,8 @@ export default async function handler(req, res) {
     }]);
 
   if (profileError) {
+    // Rollback: delete the auth user if profile creation fails
+    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     return res.status(400).json({ error: profileError.message });
   }
 
