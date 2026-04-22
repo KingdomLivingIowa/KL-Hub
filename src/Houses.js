@@ -243,7 +243,7 @@ function Houses() {
         if (address) setLocationLabels(prev => ({ ...prev, [entry.id]: address }));
       }
     });
-  }, [timeline]);
+  }, [timeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const entryColor = (type) => {
     if (type === 'House Check-In')   return '#7F77DD';
