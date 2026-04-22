@@ -1,46 +1,134 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
+
+const PAGE_SIZE = 25;
 
 function Admissions() {
   const [applications, setApplications] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [filter, setFilter] = useState('pending');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [expanded, setExpanded] = useState(null);
   const [duplicateModal, setDuplicateModal] = useState(null);
   const [merging, setMerging] = useState(false);
   const [acceptingId, setAcceptingId] = useState(null);
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  const debounceTimer = useRef(null);
 
-  const fetchAll = async () => {
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setCurrentPage(1);
+    }, 300);
+
+    return () => clearTimeout(debounceTimer.current);
+  }, [search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
+  const applyApplicationFilters = useCallback(
+    (query) => {
+      if (filter !== 'all') {
+        query = query.eq('status', filter);
+      }
+
+      if (debouncedSearch) {
+        query = query.or(
+          `first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%,phone.ilike.%${debouncedSearch}%`
+        );
+      }
+
+      return query;
+    },
+    [filter, debouncedSearch]
+  );
+
+  const fetchApplications = useCallback(async () => {
     setLoading(true);
 
-    const { data: apps, error: appsError } = await supabase
-      .from('applications')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const from = (currentPage - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-    if (appsError) {
-      console.error('Error loading applications:', appsError);
-    } else {
-      setApplications(apps || []);
+      let countQuery = supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true });
+
+      countQuery = applyApplicationFilters(countQuery);
+
+      const { count, error: countError } = await countQuery;
+
+      if (countError) {
+        console.error('Error fetching application count:', countError);
+        alert('There was a problem loading the admissions count.');
+        setApplications([]);
+        setTotalCount(0);
+        return;
+      }
+
+      setTotalCount(count || 0);
+
+      let dataQuery = supabase
+        .from('applications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      dataQuery = applyApplicationFilters(dataQuery);
+
+      const { data, error: dataError } = await dataQuery;
+
+      if (dataError) {
+        console.error('Error fetching applications:', dataError);
+        alert('There was a problem loading admissions.');
+        setApplications([]);
+        return;
+      }
+
+      setApplications(data || []);
+    } catch (error) {
+      console.error('Unexpected fetchApplications error:', error);
+      alert('Something went wrong while loading admissions.');
+      setApplications([]);
+      setTotalCount(0);
+    } finally {
+      setLoading(false);
     }
+  }, [currentPage, applyApplicationFilters]);
 
-    const { data: cls, error: clientsError } = await supabase
-      .from('clients')
-      .select('id, first_name, last_name, date_of_birth, ssn, status');
+  const fetchClients = useCallback(async () => {
+    try {
+      const { data: cls, error: clientsError } = await supabase
+        .from('clients')
+        .select('id, first_name, last_name, date_of_birth, ssn, status');
 
-    if (clientsError) {
-      console.error('Error loading clients:', clientsError);
-    } else {
-      setClients(cls || []);
+      if (clientsError) {
+        console.error('Error loading clients:', clientsError);
+      } else {
+        setClients(cls || []);
+      }
+    } catch (error) {
+      console.error('Unexpected fetchClients error:', error);
     }
+  }, []);
 
-    setLoading(false);
-  };
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
+
+  useEffect(() => {
+    fetchClients();
+  }, [fetchClients]);
 
   const formatSupabaseError = (error) => {
     if (!error) return '';
@@ -111,13 +199,12 @@ function Admissions() {
   };
 
   const updateStatus = async (id, status) => {
-    const app = applications.find(a => a.id === id);
+    const app = applications.find((a) => a.id === id);
     if (!app) {
       alert('Application not found.');
       return;
     }
 
-    // If accepting, create client FIRST so we don't mark app accepted if client creation fails
     if (status === 'accepted') {
       setAcceptingId(id);
       const clientError = await createClientFromApp(app);
@@ -143,7 +230,8 @@ function Admissions() {
     }
 
     setAcceptingId(null);
-    fetchAll();
+    fetchApplications();
+    fetchClients();
   };
 
   const findDuplicate = (app) => {
@@ -151,14 +239,14 @@ function Admissions() {
     const lastLower = app.last_name?.toLowerCase().trim();
 
     const clientMatch = clients.find(
-      c =>
+      (c) =>
         c.first_name?.toLowerCase().trim() === firstLower &&
         c.last_name?.toLowerCase().trim() === lastLower
     );
     if (clientMatch) return clientMatch;
 
     const appMatch = applications.find(
-      a =>
+      (a) =>
         a.id !== app.id &&
         a.first_name?.toLowerCase().trim() === firstLower &&
         a.last_name?.toLowerCase().trim() === lastLower
@@ -188,7 +276,7 @@ function Admissions() {
       }
 
       setDuplicateModal(null);
-      fetchAll();
+      fetchApplications();
       setMerging(false);
       return;
     }
@@ -221,14 +309,18 @@ function Admissions() {
       .eq('id', app.id);
 
     if (appUpdateError) {
-      alert('Client was updated, but application status could not be changed: ' + appUpdateError.message);
+      alert(
+        'Client was updated, but application status could not be changed: ' +
+          appUpdateError.message
+      );
       console.error(appUpdateError);
       setMerging(false);
       return;
     }
 
     setDuplicateModal(null);
-    fetchAll();
+    fetchApplications();
+    fetchClients();
     setMerging(false);
   };
 
@@ -237,104 +329,156 @@ function Admissions() {
     setDuplicateModal(null);
   };
 
-  const filtered =
-    filter === 'all'
-      ? applications
-      : applications.filter(a => a.status === filter);
-
-  const statusColor = status => {
+  const statusColor = (status) => {
     if (status === 'accepted') return '#16a34a';
     if (status === 'denied') return '#dc2626';
     return '#ca8a04';
   };
 
-  const fmt = val => val || '—';
+  const fmt = (val) => val || '—';
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalCount);
 
   return (
     <div style={s.page}>
       <h1 style={s.title}>Admissions</h1>
 
-      <div style={s.tabs}>
-        {['pending', 'all', 'accepted', 'denied'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            style={{ ...s.tab, ...(filter === tab ? s.tabActive : {}) }}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+      <div style={s.toolbar}>
+        <input
+          placeholder="Search by name, email, or phone..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={s.search}
+        />
+
+        <div style={s.tabs}>
+          {['pending', 'all', 'accepted', 'denied'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setFilter(tab)}
+              style={{ ...s.tab, ...(filter === tab ? s.tabActive : {}) }}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        <p style={s.sub}>
+          {totalCount > 0
+            ? `Showing ${rangeStart}–${rangeEnd} of ${totalCount} ${
+                filter === 'all' ? 'applications' : filter
+              }`
+            : `0 ${filter === 'all' ? 'applications' : filter}`}
+        </p>
       </div>
 
       {loading ? (
         <p style={s.empty}>Loading...</p>
-      ) : filtered.length === 0 ? (
+      ) : applications.length === 0 ? (
         <p style={s.empty}>No applications found.</p>
       ) : (
-        <div style={s.list}>
-          {filtered.map(app => {
-            const duplicate = findDuplicate(app);
+        <>
+          <div style={s.list}>
+            {applications.map((app) => {
+              const duplicate = findDuplicate(app);
 
-            return (
-              <div key={app.id} style={s.card}>
-                <div style={s.cardHeader}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <span style={s.name}>
-                        {fmt(app.first_name)} {fmt(app.last_name)}
-                      </span>
+              return (
+                <div key={app.id} style={s.card}>
+                  <div style={s.cardHeader}>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <span style={s.name}>
+                          {fmt(app.first_name)} {fmt(app.last_name)}
+                        </span>
 
-                      {duplicate && app.status === 'pending' && (
-                        <button
-                          style={s.dupBadge}
-                          onClick={() => setDuplicateModal({ app, client: duplicate })}
-                        >
-                          ⚠ Possible Duplicate
-                        </button>
-                      )}
+                        {duplicate && app.status === 'pending' && (
+                          <button
+                            style={s.dupBadge}
+                            onClick={() => setDuplicateModal({ app, client: duplicate })}
+                          >
+                            ⚠ Possible Duplicate
+                          </button>
+                        )}
+                      </div>
+
+                      <p style={s.meta}>
+                        {fmt(app.email)} · {fmt(app.phone)}
+                      </p>
+                      <p style={s.meta}>
+                        Applied:{' '}
+                        {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}
+                      </p>
                     </div>
 
-                    <p style={s.meta}>
-                      {fmt(app.email)} · {fmt(app.phone)}
-                    </p>
-                    <p style={s.meta}>
-                      Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}
-                    </p>
+                    <span
+                      style={{
+                        ...s.badge,
+                        backgroundColor: statusColor(app.status),
+                      }}
+                    >
+                      {app.status
+                        ? app.status.charAt(0).toUpperCase() + app.status.slice(1)
+                        : 'Pending'}
+                    </span>
                   </div>
 
-                  <span style={{ ...s.badge, backgroundColor: statusColor(app.status) }}>
-                    {app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1) : 'Pending'}
-                  </span>
-                </div>
+                  <div style={s.snapshot}>
+                    {[
+                      ['Gender', app.gender || app.assigned_sex],
+                      ['Program', app.program],
+                      ['Lived Here Before?', app.lived_here_before],
+                      ['On Disability?', app.on_disability],
+                      ['Substance History?', app.substance_history],
+                      ['Registered Sex Offender?', app.sex_offender],
+                      ['Correspondence Contact', app.correspondence_contact],
+                      ['Current Situation', app.current_situation],
+                    ].map(([label, val]) => (
+                      <div key={label} style={s.snapshotItem}>
+                        <span style={s.snapshotLabel}>{label}</span>
+                        <span style={s.snapshotVal}>{fmt(val)}</span>
+                      </div>
+                    ))}
+                  </div>
 
-                <div style={s.snapshot}>
-                  {[
-                    ['Gender', app.gender || app.assigned_sex],
-                    ['Program', app.program],
-                    ['Lived Here Before?', app.lived_here_before],
-                    ['On Disability?', app.on_disability],
-                    ['Substance History?', app.substance_history],
-                    ['Registered Sex Offender?', app.sex_offender],
-                    ['Correspondence Contact', app.correspondence_contact],
-                    ['Current Situation', app.current_situation],
-                  ].map(([label, val]) => (
-                    <div key={label} style={s.snapshotItem}>
-                      <span style={s.snapshotLabel}>{label}</span>
-                      <span style={s.snapshotVal}>{fmt(val)}</span>
-                    </div>
-                  ))}
-                </div>
+                  <div style={s.cardActions}>
+                    <button
+                      style={s.viewBtn}
+                      onClick={() => setExpanded(expanded === app.id ? null : app.id)}
+                    >
+                      {expanded === app.id ? 'Hide Application' : 'View Full Application'}
+                    </button>
 
-                <div style={s.cardActions}>
-                  <button
-                    style={s.viewBtn}
-                    onClick={() => setExpanded(expanded === app.id ? null : app.id)}
-                  >
-                    {expanded === app.id ? 'Hide Application' : 'View Full Application'}
-                  </button>
+                    {app.status === 'pending' && (
+                      <>
+                        <button
+                          style={s.acceptBtn}
+                          onClick={() => updateStatus(app.id, 'accepted')}
+                          disabled={acceptingId === app.id}
+                        >
+                          {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+                        </button>
+                        <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>
+                          Deny
+                        </button>
+                      </>
+                    )}
 
-                  {app.status === 'pending' && (
-                    <>
+                    {app.status === 'accepted' && (
+                      <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>
+                        Deny
+                      </button>
+                    )}
+
+                    {app.status === 'denied' && (
                       <button
                         style={s.acceptBtn}
                         onClick={() => updateStatus(app.id, 'accepted')}
@@ -342,233 +486,268 @@ function Admissions() {
                       >
                         {acceptingId === app.id ? 'Accepting...' : 'Accept'}
                       </button>
-                      <button
-                        style={s.denyBtn}
-                        onClick={() => updateStatus(app.id, 'denied')}
-                      >
-                        Deny
-                      </button>
-                    </>
-                  )}
+                    )}
+                  </div>
 
-                  {app.status === 'accepted' && (
-                    <button
-                      style={s.denyBtn}
-                      onClick={() => updateStatus(app.id, 'denied')}
-                    >
-                      Deny
-                    </button>
-                  )}
+                  {expanded === app.id && (
+                    <div style={s.fullApp}>
+                      <p style={s.sectionDivider}>General Info</p>
+                      <div style={s.fullGrid}>
+                        {[
+                          ['First Name', app.first_name],
+                          ['Last Name', app.last_name],
+                          ['Email', app.email],
+                          ['Phone', app.phone],
+                          ['Date of Birth', app.date_of_birth],
+                          ['SSN', app.ssn],
+                          ['Gender', app.gender || app.assigned_sex],
+                          ['Ethnicity', app.ethnicity],
+                          ['Marital Status', app.marital_status],
+                          ['Present Residence', app.present_residence],
+                          ['Has ID?', app.has_id],
+                          ['Has SS Card?', app.has_ss_card],
+                          ['Employment Status', app.employment_status],
+                          ['Employer Name', app.employer_name],
+                          ['Program', app.program],
+                          ['Lived Here Before?', app.lived_here_before],
+                          ['Current Situation', app.current_situation],
+                          ['On Disability?', app.on_disability],
+                          ['Difficulty Concentrating?', app.disability_concentrating],
+                          ['Difficulty Walking?', app.disability_walking],
+                          ['Difficulty Dressing?', app.disability_dressing],
+                          ['Able to Work?', app.able_to_work],
+                          ['Agree to Volunteer?', app.agree_to_volunteer],
+                          ['Allergy Info', app.allergy_info],
+                          ['Doctor Info', app.doctor_info],
+                          ['Correspondence Contact', app.correspondence_contact],
+                        ].map(([label, val]) =>
+                          val ? (
+                            <div key={label} style={s.fullItem}>
+                              <span style={s.fullLabel}>{label}</span>
+                              <span style={s.fullVal}>{val}</span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
 
-                  {app.status === 'denied' && (
-                    <button
-                      style={s.acceptBtn}
-                      onClick={() => updateStatus(app.id, 'accepted')}
-                      disabled={acceptingId === app.id}
-                    >
-                      {acceptingId === app.id ? 'Accepting...' : 'Accept'}
-                    </button>
+                      <p style={s.sectionDivider}>Recovery</p>
+                      <div style={s.fullGrid}>
+                        {[
+                          ['Substance History?', app.substance_history],
+                          ['Drug of Choice', app.drug_of_choice],
+                          ['Sober Date', app.sober_date],
+                          ['OUD Diagnosis', app.oud_diagnosis],
+                          ['Recovery Meetings', app.recovery_meetings],
+                          ['Attended Treatment?', app.attended_treatment],
+                          ['Takes Medication?', app.takes_medication],
+                        ].map(([label, val]) =>
+                          val ? (
+                            <div key={label} style={s.fullItem}>
+                              <span style={s.fullLabel}>{label}</span>
+                              <span style={s.fullVal}>{val}</span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+
+                      {app.medication_details &&
+                        (() => {
+                          try {
+                            const meds = JSON.parse(app.medication_details);
+                            if (meds.length === 0) return null;
+
+                            return (
+                              <>
+                                <p style={s.sectionDivider}>Medications</p>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '8px',
+                                  }}
+                                >
+                                  {meds.map((med, i) => (
+                                    <div key={i} style={s.subCard}>
+                                      <div style={s.fullGrid}>
+                                        {[
+                                          ['Name', med.name],
+                                          ['Dosage', med.dosage],
+                                          [
+                                            'Frequency',
+                                            med.intake ? `${med.intake}x/day` : null,
+                                          ],
+                                          ['Count', med.count],
+                                          ['Notes', med.notes],
+                                        ].map(([label, val]) =>
+                                          val ? (
+                                            <div key={label} style={s.fullItem}>
+                                              <span style={s.fullLabel}>{label}</span>
+                                              <span style={s.fullVal}>{val}</span>
+                                            </div>
+                                          ) : null
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            );
+                          } catch {
+                            return null;
+                          }
+                        })()}
+
+                      {app.treatment_details &&
+                        (() => {
+                          try {
+                            const treatments = JSON.parse(app.treatment_details);
+                            if (treatments.length === 0) return null;
+
+                            return (
+                              <>
+                                <p style={s.sectionDivider}>Treatment History</p>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '8px',
+                                  }}
+                                >
+                                  {treatments.map((t, i) => (
+                                    <div key={i} style={s.subCard}>
+                                      <div style={s.fullGrid}>
+                                        {[
+                                          ['Name', t.name],
+                                          ['Level of Care', t.level_of_care],
+                                          ['Contact Name', t.contact_name],
+                                          ['Contact Phone', t.contact_phone],
+                                          ['Contact Email', t.contact_email],
+                                          ['Was Referred?', t.was_referred],
+                                          ['Referral Date', t.referral_date],
+                                          ['Discharge Date', t.discharge_date],
+                                        ].map(([label, val]) =>
+                                          val ? (
+                                            <div key={label} style={s.fullItem}>
+                                              <span style={s.fullLabel}>{label}</span>
+                                              <span style={s.fullVal}>{val}</span>
+                                            </div>
+                                          ) : null
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </>
+                            );
+                          } catch {
+                            return null;
+                          }
+                        })()}
+
+                      <p style={s.sectionDivider}>Emergency Contacts</p>
+                      <div style={s.fullGrid}>
+                        {[
+                          ['Emergency Contact', app.emergency_contact],
+                          ['Collateral Contacts', app.collateral_contacts],
+                        ].map(([label, val]) =>
+                          val ? (
+                            <div key={label} style={s.fullItem}>
+                              <span style={s.fullLabel}>{label}</span>
+                              <span style={s.fullVal}>{val}</span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+
+                      <p style={s.sectionDivider}>Legal</p>
+                      <div style={s.fullGrid}>
+                        {[
+                          ['On Probation?', app.on_probation],
+                          ['On Parole?', app.on_parole],
+                          ['Parole Officer', app.po_name],
+                          ['PO Phone', app.po_phone],
+                          ['Criminal History', app.criminal_history],
+                          ['Sex Offender?', app.sex_offender],
+                          ['Sex Offense Details', app.sex_offense_details],
+                        ].map(([label, val]) =>
+                          val ? (
+                            <div key={label} style={s.fullItem}>
+                              <span style={s.fullLabel}>{label}</span>
+                              <span style={s.fullVal}>{val}</span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+
+                      <p style={s.sectionDivider}>Information Accuracy</p>
+                      <div style={s.fullGrid}>
+                        {[
+                          ['Form Completed By', app.form_completed_by],
+                          ['Agreed to Rules?', app.agree_to_rules],
+                          ['Agreed to KL Levels?', app.agree_to_levels],
+                          ['Client Notes', app.client_notes],
+                          ['Signature', app.signature],
+                        ].map(([label, val]) =>
+                          val ? (
+                            <div key={label} style={s.fullItem}>
+                              <span style={s.fullLabel}>{label}</span>
+                              <span style={s.fullVal}>{val}</span>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
+              );
+            })}
+          </div>
 
-                {expanded === app.id && (
-                  <div style={s.fullApp}>
-                    <p style={s.sectionDivider}>General Info</p>
-                    <div style={s.fullGrid}>
-                      {[
-                        ['First Name', app.first_name],
-                        ['Last Name', app.last_name],
-                        ['Email', app.email],
-                        ['Phone', app.phone],
-                        ['Date of Birth', app.date_of_birth],
-                        ['SSN', app.ssn],
-                        ['Gender', app.gender || app.assigned_sex],
-                        ['Ethnicity', app.ethnicity],
-                        ['Marital Status', app.marital_status],
-                        ['Present Residence', app.present_residence],
-                        ['Has ID?', app.has_id],
-                        ['Has SS Card?', app.has_ss_card],
-                        ['Employment Status', app.employment_status],
-                        ['Employer Name', app.employer_name],
-                        ['Program', app.program],
-                        ['Lived Here Before?', app.lived_here_before],
-                        ['Current Situation', app.current_situation],
-                        ['On Disability?', app.on_disability],
-                        ['Difficulty Concentrating?', app.disability_concentrating],
-                        ['Difficulty Walking?', app.disability_walking],
-                        ['Difficulty Dressing?', app.disability_dressing],
-                        ['Able to Work?', app.able_to_work],
-                        ['Agree to Volunteer?', app.agree_to_volunteer],
-                        ['Allergy Info', app.allergy_info],
-                        ['Doctor Info', app.doctor_info],
-                        ['Correspondence Contact', app.correspondence_contact],
-                      ].map(([label, val]) =>
-                        val ? (
-                          <div key={label} style={s.fullItem}>
-                            <span style={s.fullLabel}>{label}</span>
-                            <span style={s.fullVal}>{val}</span>
-                          </div>
-                        ) : null
-                      )}
-                    </div>
+          {totalPages > 1 && (
+            <div style={s.pagination}>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{ ...s.pageBtn, ...(currentPage === 1 ? s.pageBtnDisabled : {}) }}
+              >
+                ← Previous
+              </button>
 
-                    <p style={s.sectionDivider}>Recovery</p>
-                    <div style={s.fullGrid}>
-                      {[
-                        ['Substance History?', app.substance_history],
-                        ['Drug of Choice', app.drug_of_choice],
-                        ['Sober Date', app.sober_date],
-                        ['OUD Diagnosis', app.oud_diagnosis],
-                        ['Recovery Meetings', app.recovery_meetings],
-                        ['Attended Treatment?', app.attended_treatment],
-                        ['Takes Medication?', app.takes_medication],
-                      ].map(([label, val]) =>
-                        val ? (
-                          <div key={label} style={s.fullItem}>
-                            <span style={s.fullLabel}>{label}</span>
-                            <span style={s.fullVal}>{val}</span>
-                          </div>
-                        ) : null
-                      )}
-                    </div>
-
-                    {app.medication_details &&
-                      (() => {
-                        try {
-                          const meds = JSON.parse(app.medication_details);
-                          if (meds.length === 0) return null;
-
-                          return (
-                            <>
-                              <p style={s.sectionDivider}>Medications</p>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {meds.map((med, i) => (
-                                  <div key={i} style={s.subCard}>
-                                    <div style={s.fullGrid}>
-                                      {[
-                                        ['Name', med.name],
-                                        ['Dosage', med.dosage],
-                                        ['Frequency', med.intake ? `${med.intake}x/day` : null],
-                                        ['Count', med.count],
-                                        ['Notes', med.notes],
-                                      ].map(([label, val]) =>
-                                        val ? (
-                                          <div key={label} style={s.fullItem}>
-                                            <span style={s.fullLabel}>{label}</span>
-                                            <span style={s.fullVal}>{val}</span>
-                                          </div>
-                                        ) : null
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          );
-                        } catch {
-                          return null;
-                        }
-                      })()}
-
-                    {app.treatment_details &&
-                      (() => {
-                        try {
-                          const treatments = JSON.parse(app.treatment_details);
-                          if (treatments.length === 0) return null;
-
-                          return (
-                            <>
-                              <p style={s.sectionDivider}>Treatment History</p>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {treatments.map((t, i) => (
-                                  <div key={i} style={s.subCard}>
-                                    <div style={s.fullGrid}>
-                                      {[
-                                        ['Name', t.name],
-                                        ['Level of Care', t.level_of_care],
-                                        ['Contact Name', t.contact_name],
-                                        ['Contact Phone', t.contact_phone],
-                                        ['Contact Email', t.contact_email],
-                                        ['Was Referred?', t.was_referred],
-                                        ['Referral Date', t.referral_date],
-                                        ['Discharge Date', t.discharge_date],
-                                      ].map(([label, val]) =>
-                                        val ? (
-                                          <div key={label} style={s.fullItem}>
-                                            <span style={s.fullLabel}>{label}</span>
-                                            <span style={s.fullVal}>{val}</span>
-                                          </div>
-                                        ) : null
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </>
-                          );
-                        } catch {
-                          return null;
-                        }
-                      })()}
-
-                    <p style={s.sectionDivider}>Emergency Contacts</p>
-                    <div style={s.fullGrid}>
-                      {[
-                        ['Emergency Contact', app.emergency_contact],
-                        ['Collateral Contacts', app.collateral_contacts],
-                      ].map(([label, val]) =>
-                        val ? (
-                          <div key={label} style={s.fullItem}>
-                            <span style={s.fullLabel}>{label}</span>
-                            <span style={s.fullVal}>{val}</span>
-                          </div>
-                        ) : null
-                      )}
-                    </div>
-
-                    <p style={s.sectionDivider}>Legal</p>
-                    <div style={s.fullGrid}>
-                      {[
-                        ['On Probation?', app.on_probation],
-                        ['On Parole?', app.on_parole],
-                        ['Parole Officer', app.po_name],
-                        ['PO Phone', app.po_phone],
-                        ['Criminal History', app.criminal_history],
-                        ['Sex Offender?', app.sex_offender],
-                        ['Sex Offense Details', app.sex_offense_details],
-                      ].map(([label, val]) =>
-                        val ? (
-                          <div key={label} style={s.fullItem}>
-                            <span style={s.fullLabel}>{label}</span>
-                            <span style={s.fullVal}>{val}</span>
-                          </div>
-                        ) : null
-                      )}
-                    </div>
-
-                    <p style={s.sectionDivider}>Information Accuracy</p>
-                    <div style={s.fullGrid}>
-                      {[
-                        ['Form Completed By', app.form_completed_by],
-                        ['Agreed to Rules?', app.agree_to_rules],
-                        ['Agreed to KL Levels?', app.agree_to_levels],
-                        ['Client Notes', app.client_notes],
-                        ['Signature', app.signature],
-                      ].map(([label, val]) =>
-                        val ? (
-                          <div key={label} style={s.fullItem}>
-                            <span style={s.fullLabel}>{label}</span>
-                            <span style={s.fullVal}>{val}</span>
-                          </div>
-                        ) : null
-                      )}
-                    </div>
-                  </div>
-                )}
+              <div style={s.pageNumbers}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`ellipsis-${i}`} style={s.ellipsis}>
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        style={{ ...s.pageBtn, ...(currentPage === p ? s.pageBtnActive : {}) }}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
               </div>
-            );
-          })}
-        </div>
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{ ...s.pageBtn, ...(currentPage === totalPages ? s.pageBtnDisabled : {}) }}
+              >
+                Next →
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {duplicateModal && (
@@ -592,7 +771,10 @@ function Admissions() {
                   ['SSN', duplicateModal.app.ssn],
                   ['Email', duplicateModal.app.email],
                   ['Phone', duplicateModal.app.phone],
-                  ['Gender', duplicateModal.app.assigned_sex || duplicateModal.app.gender],
+                  [
+                    'Gender',
+                    duplicateModal.app.assigned_sex || duplicateModal.app.gender,
+                  ],
                   ['Program', duplicateModal.app.program],
                 ].map(([label, val]) => (
                   <div key={label} style={s.compareRow}>
@@ -604,10 +786,15 @@ function Admissions() {
 
               <div style={s.compareCol}>
                 <div style={s.compareColHeader}>
-                  {duplicateModal.client.isApplication ? 'Existing Application' : 'Existing Client'}
+                  {duplicateModal.client.isApplication
+                    ? 'Existing Application'
+                    : 'Existing Client'}
                 </div>
                 {[
-                  ['Name', `${duplicateModal.client.first_name} ${duplicateModal.client.last_name}`],
+                  [
+                    'Name',
+                    `${duplicateModal.client.first_name} ${duplicateModal.client.last_name}`,
+                  ],
                   ['DOB', duplicateModal.client.date_of_birth],
                   ['SSN', duplicateModal.client.ssn],
                   ['Status', duplicateModal.client.status],
@@ -641,49 +828,257 @@ function Admissions() {
 }
 
 const s = {
-  page: { padding: '32px', backgroundColor: '#1a1a1a', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' },
+  page: {
+    padding: '32px',
+    backgroundColor: '#1a1a1a',
+    minHeight: '100vh',
+    color: '#fff',
+    fontFamily: 'sans-serif',
+  },
   title: { fontSize: '24px', fontWeight: '600', margin: '0 0 24px 0' },
-  tabs: { display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' },
-  tab: { padding: '8px 18px', borderRadius: '20px', border: '1px solid #444', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '13px' },
+  toolbar: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' },
+  sub: { color: '#666', fontSize: '14px', margin: 0 },
+  search: {
+    width: '100%',
+    maxWidth: '360px',
+    backgroundColor: '#1a1a1a',
+    border: '1px solid #444',
+    borderRadius: '8px',
+    padding: '10px 14px',
+    color: '#fff',
+    fontSize: '14px',
+  },
+  tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
+  tab: {
+    padding: '8px 18px',
+    borderRadius: '20px',
+    border: '1px solid #444',
+    background: 'transparent',
+    color: '#888',
+    cursor: 'pointer',
+    fontSize: '13px',
+  },
   tabActive: { background: '#b22222', color: '#fff', borderColor: '#b22222' },
   empty: { color: '#666', fontSize: '14px' },
   list: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  card: { background: '#2a2a2a', borderRadius: '12px', padding: '20px', border: '1px solid #333' },
-  cardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' },
+  card: {
+    background: '#2a2a2a',
+    borderRadius: '12px',
+    padding: '20px',
+    border: '1px solid #333',
+  },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '16px',
+  },
   name: { fontSize: '18px', fontWeight: '600', color: '#fff' },
   meta: { fontSize: '13px', color: '#888', margin: '2px 0 0 0' },
-  badge: { fontSize: '12px', padding: '4px 12px', borderRadius: '20px', color: '#fff', fontWeight: '500', flexShrink: 0 },
-  dupBadge: { fontSize: '11px', padding: '3px 10px', borderRadius: '20px', background: '#78350f', color: '#fbbf24', border: '1px solid #92400e', cursor: 'pointer', fontFamily: 'sans-serif' },
-  snapshot: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: '#222', borderRadius: '8px', padding: '14px', marginBottom: '16px' },
+  badge: {
+    fontSize: '12px',
+    padding: '4px 12px',
+    borderRadius: '20px',
+    color: '#fff',
+    fontWeight: '500',
+    flexShrink: 0,
+  },
+  dupBadge: {
+    fontSize: '11px',
+    padding: '3px 10px',
+    borderRadius: '20px',
+    background: '#78350f',
+    color: '#fbbf24',
+    border: '1px solid #92400e',
+    cursor: 'pointer',
+    fontFamily: 'sans-serif',
+  },
+  snapshot: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '12px',
+    background: '#222',
+    borderRadius: '8px',
+    padding: '14px',
+    marginBottom: '16px',
+  },
   snapshotItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  snapshotLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  snapshotLabel: {
+    fontSize: '10px',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
   snapshotVal: { fontSize: '13px', color: '#fff' },
   cardActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  viewBtn: { padding: '7px 14px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#aaa', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
-  acceptBtn: { padding: '7px 14px', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#fff', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
-  denyBtn: { padding: '7px 14px', borderRadius: '8px', border: 'none', background: '#dc2626', color: '#fff', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
+  viewBtn: {
+    padding: '7px 14px',
+    borderRadius: '8px',
+    border: '1px solid #444',
+    background: 'transparent',
+    color: '#aaa',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'sans-serif',
+  },
+  acceptBtn: {
+    padding: '7px 14px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#16a34a',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'sans-serif',
+  },
+  denyBtn: {
+    padding: '7px 14px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#dc2626',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'sans-serif',
+  },
   fullApp: { marginTop: '16px', borderTop: '1px solid #333', paddingTop: '16px' },
-  sectionDivider: { fontSize: '11px', fontWeight: '600', color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '16px 0 10px 0', paddingBottom: '6px', borderBottom: '1px solid #333' },
-  fullGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' },
+  sectionDivider: {
+    fontSize: '11px',
+    fontWeight: '600',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    margin: '16px 0 10px 0',
+    paddingBottom: '6px',
+    borderBottom: '1px solid #333',
+  },
+  fullGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '12px',
+  },
   fullItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  fullLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  fullLabel: {
+    fontSize: '10px',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
   fullVal: { fontSize: '13px', color: '#ddd', lineHeight: '1.4' },
-  subCard: { background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', border: '1px solid #333' },
-  overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' },
-  modal: { background: '#2a2a2a', borderRadius: '16px', padding: '28px', maxWidth: '700px', width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #444' },
+  subCard: {
+    background: '#1a1a1a',
+    borderRadius: '8px',
+    padding: '12px 14px',
+    border: '1px solid #333',
+  },
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px',
+  },
+  modal: {
+    background: '#2a2a2a',
+    borderRadius: '16px',
+    padding: '28px',
+    maxWidth: '700px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    border: '1px solid #444',
+  },
   modalHeader: { marginBottom: '20px' },
   modalTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 6px 0', color: '#fff' },
   modalSub: { fontSize: '13px', color: '#888', margin: 0 },
-  compareGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' },
+  compareGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '16px',
+    marginBottom: '24px',
+  },
   compareCol: { background: '#1a1a1a', borderRadius: '10px', padding: '14px' },
-  compareColHeader: { fontSize: '11px', fontWeight: '600', color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' },
+  compareColHeader: {
+    fontSize: '11px',
+    fontWeight: '600',
+    color: '#888',
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    marginBottom: '12px',
+  },
   compareRow: { display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '10px' },
-  compareLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  compareLabel: {
+    fontSize: '10px',
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+  },
   compareVal: { fontSize: '13px', color: '#fff' },
   modalActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  mergeBtn: { padding: '10px 18px', borderRadius: '8px', border: 'none', background: '#b22222', color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: '600', fontFamily: 'sans-serif' },
-  ignoreBtn: { padding: '10px 18px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#aaa', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
-  cancelBtn: { padding: '10px 18px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#666', cursor: 'pointer', fontSize: '13px', fontFamily: 'sans-serif' },
+  mergeBtn: {
+    padding: '10px 18px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#b22222',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '600',
+    fontFamily: 'sans-serif',
+  },
+  ignoreBtn: {
+    padding: '10px 18px',
+    borderRadius: '8px',
+    border: '1px solid #444',
+    background: 'transparent',
+    color: '#aaa',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'sans-serif',
+  },
+  cancelBtn: {
+    padding: '10px 18px',
+    borderRadius: '8px',
+    border: '1px solid #444',
+    background: 'transparent',
+    color: '#666',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontFamily: 'sans-serif',
+  },
+  pagination: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    marginTop: '20px',
+    flexWrap: 'wrap',
+  },
+  pageBtn: {
+    padding: '6px 12px',
+    borderRadius: '8px',
+    border: '1px solid #444',
+    background: 'transparent',
+    color: '#aaa',
+    fontSize: '13px',
+    cursor: 'pointer',
+    transition: 'all 0.15s',
+  },
+  pageBtnActive: {
+    background: '#b22222',
+    borderColor: '#b22222',
+    color: '#fff',
+    fontWeight: '600',
+  },
+  pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
+  ellipsis: { color: '#555', fontSize: '13px', padding: '0 4px' },
+  pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
 
 export default Admissions;
