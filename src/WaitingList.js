@@ -28,18 +28,21 @@ function WaitingList() {
     setLoading(false);
   }, [activeList]);
 
-  const fetchAccepted = useCallback(async () => {
+  // On-demand search — only queries when user types 2+ characters
+  const fetchAccepted = useCallback(async (searchTerm) => {
+    if (!searchTerm || searchTerm.length < 2) { setAccepted([]); return; }
     const { data } = await supabase
       .from('applications')
       .select('id, full_name, email, phone')
-      .eq('status', 'accepted');
+      .eq('status', 'accepted')
+      .ilike('full_name', `%${searchTerm}%`)
+      .limit(10);
     setAccepted(data || []);
   }, []);
 
   useEffect(() => {
     fetchList();
-    fetchAccepted();
-  }, [fetchList, fetchAccepted]);
+  }, [fetchList]);
 
   const selectAccepted = (app) => {
     setAddForm(p => ({ ...p, full_name: app.full_name, email: app.email || '', phone: app.phone || '', application_id: app.id }));
@@ -110,31 +113,36 @@ function WaitingList() {
       {showAdd && (
         <div style={styles.addForm}>
           <p style={styles.addTitle}>Add to {activeList}</p>
-          {accepted.length > 0 && (
-            <div style={{ marginBottom: '16px', position: 'relative' }}>
-              <label style={styles.label}>Search accepted applications</label>
-              <input value={search}
-                onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
-                onFocus={() => setShowDropdown(true)}
-                placeholder="Type a name to search..."
-                style={styles.input} />
-              {showDropdown && search.length > 0 && (
-                <div style={styles.searchDropdown}>
-                  {accepted.filter(a => a.full_name.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                    <p style={styles.noResults}>No matches found</p>
-                  ) : (
-                    accepted.filter(a => a.full_name.toLowerCase().includes(search.toLowerCase())).map(a => (
-                      <div key={a.id} onClick={() => selectAccepted(a)} style={styles.searchItem}>
-                        <p style={styles.searchName}>{a.full_name}</p>
-                        <p style={styles.searchMeta}>{a.email}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-              <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>Or fill in manually below</p>
-            </div>
-          )}
+          <div style={{ marginBottom: '16px', position: 'relative' }}>
+            <label style={styles.label}>Search accepted applications</label>
+            <input
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setShowDropdown(true);
+                fetchAccepted(e.target.value);
+              }}
+              onFocus={() => setShowDropdown(true)}
+              placeholder="Type a name to search..."
+              style={styles.input}
+            />
+            {showDropdown && search.length >= 2 && (
+              <div style={styles.searchDropdown}>
+                {accepted.length === 0 ? (
+                  <p style={styles.noResults}>No matches found</p>
+                ) : (
+                  accepted.map(a => (
+                    <div key={a.id} onClick={() => selectAccepted(a)} style={styles.searchItem}>
+                      <p style={styles.searchName}>{a.full_name}</p>
+                      <p style={styles.searchMeta}>{a.email}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+            <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>Or fill in manually below</p>
+          </div>
+
           <div style={styles.addGrid}>
             <div>
               <label style={styles.label}>Full Name *</label>
@@ -180,7 +188,11 @@ function WaitingList() {
                 <div style={styles.info}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <p style={styles.name}>{client.full_name}</p>
-                    {badge && <span style={{ ...styles.badge, color: badge.color, borderColor: badge.color }}>{badge.label}</span>}
+                    {badge && (
+                      <span style={{ ...styles.badge, color: badge.color, borderColor: badge.color }}>
+                        {badge.label}
+                      </span>
+                    )}
                   </div>
                   <p style={styles.meta}>{client.email}{client.phone ? ` · ${client.phone}` : ''}</p>
                   {client.ready_date && <p style={styles.readyDate}>Ready: {formatDate(client.ready_date)}</p>}
