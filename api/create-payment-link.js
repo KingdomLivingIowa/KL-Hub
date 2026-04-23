@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { clientId, amount, paymentType, description, paymentId } = req.body;
+  const { clientId, amount, paymentType, description, chargeId } = req.body;
 
   if (!clientId || !amount || !paymentType) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     // Get client info
     const { data: client, error: clientError } = await supabaseAdmin
       .from('clients')
-      .select('full_name, email, phone')
+      .select('full_name, email')
       .eq('id', clientId)
       .single();
 
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Client not found' });
     }
 
-    // Create a Stripe payment link
+    // Create a Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
@@ -51,18 +51,10 @@ export default async function handler(req, res) {
       customer_email: client.email || undefined,
       metadata: {
         client_id: clientId,
-        payment_id: paymentId || '',
+        charge_id: chargeId || '',
         payment_type: paymentType,
       },
     });
-
-    // If there's an existing pending payment record, update it with the session ID
-    if (paymentId) {
-      await supabaseAdmin
-        .from('payments')
-        .update({ notes: `Stripe session: ${session.id}` })
-        .eq('id', paymentId);
-    }
 
     return res.status(200).json({
       success: true,

@@ -6,22 +6,16 @@ const supabaseAdmin = createClient(
 );
 
 export default async function handler(req, res) {
-  // Allow manual trigger via POST or scheduled cron via GET
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Security check for manual triggers
-  const authHeader = req.headers.authorization;
-  if (req.method === 'POST' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
   try {
-    // Get all active clients with their room type
+    // Get all active clients who are NOT on Level 4 (they pay Live-Out rate separately)
+    // and NOT discharged
     const { data: clients, error: clientsError } = await supabaseAdmin
       .from('clients')
-      .select('id, full_name, room_type, is_live_out, house_id')
+      .select('id, full_name, room_type, is_live_out, level, status')
       .eq('status', 'Active');
 
     if (clientsError) {
@@ -47,7 +41,7 @@ export default async function handler(req, res) {
     const skipped = [];
 
     for (const client of (clients || [])) {
-      // Determine which fee applies
+      // Determine room type — Live-Out clients pay $35/week
       const roomType = client.is_live_out ? 'Live-Out' : (client.room_type || 'Double');
       const settings = feeMap[roomType];
 
@@ -56,14 +50,14 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // Check if a weekly fee was already created this week (avoid duplicates)
+      // Check if already charged this week
       const weekStart = getWeekStart();
       const { data: existing } = await supabaseAdmin
-        .from('payments')
+        .from('charges')
         .select('id')
         .eq('client_id', client.id)
-        .eq('payment_type', 'weekly_fee')
-        .gte('payment_date', weekStart)
+        .eq('charge_type', 'weekly_fee')
+        .gte('due_date', weekStart)
         .limit(1);
 
       if (existing && existing.length > 0) {
@@ -73,19 +67,19 @@ export default async function handler(req, res) {
 
       charges.push({
         client_id: client.id,
+        charge_type: 'weekly_fee',
         amount: parseFloat(settings.weekly_fee),
-        payment_type: 'weekly_fee',
-        payment_method: 'cash',
-        payment_date: today,
-        status: 'pending',
-        notes: `Auto-generated weekly fee — ${roomType}`,
+        due_date: today,
+        description: `Weekly program fee — ${roomType}`,
+        status: 'unpaid',
+        amount_paid: 0,
         created_by: 'system',
       });
     }
 
     if (charges.length > 0) {
       const { error: insertError } = await supabaseAdmin
-        .from('payments')
+        .from('charges')
         .insert(charges);
 
       if (insertError) {
@@ -94,11 +88,13 @@ export default async function handler(req, res) {
       }
     }
 
+    console.log(`Weekly charges created: ${charges.length}, skipped: ${skipped.length}`);
+
     return res.status(200).json({
       success: true,
       charged: charges.length,
       skipped: skipped.length,
-      details: { charges: charges.map(c => c.client_id), skipped },
+      details: { skipped },
     });
   } catch (err) {
     console.error('Unexpected error in weekly-charge:', err);

@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { client_id, payment_id, payment_type } = session.metadata || {};
+    const { client_id, charge_id, payment_type } = session.metadata || {};
 
     if (!client_id) {
       console.error('No client_id in session metadata');
@@ -53,30 +53,34 @@ export default async function handler(req, res) {
     const amountPaid = session.amount_total / 100; // Convert from cents
 
     try {
-      if (payment_id) {
-        // Update existing pending payment to paid
-        await supabaseAdmin
-          .from('payments')
-          .update({
-            status: 'paid',
-            payment_method: 'online',
-            notes: `Paid online via Stripe — session ${session.id}`,
-          })
-          .eq('id', payment_id);
-      } else {
-        // Create a new payment record
-        await supabaseAdmin
-          .from('payments')
-          .insert([{
-            client_id,
-            amount: amountPaid,
-            payment_type: payment_type || 'weekly_fee',
-            payment_method: 'online',
-            payment_date: new Date().toISOString().split('T')[0],
-            status: 'paid',
-            notes: `Paid online via Stripe — session ${session.id}`,
-            created_by: 'stripe',
-          }]);
+      // Insert payment record
+      await supabaseAdmin.from('payments').insert([{
+        client_id,
+        charge_id: charge_id || null,
+        amount: amountPaid,
+        payment_method: 'online',
+        payment_date: new Date().toISOString().split('T')[0],
+        notes: `Paid online via Stripe — session ${session.id}`,
+        stripe_session_id: session.id,
+        created_by: 'stripe',
+      }]);
+
+      // Update charge balance if charge_id exists
+      if (charge_id) {
+        const { data: charge } = await supabaseAdmin
+          .from('charges')
+          .select('amount, amount_paid')
+          .eq('id', charge_id)
+          .single();
+
+        if (charge) {
+          const newAmountPaid = parseFloat(charge.amount_paid || 0) + amountPaid;
+          const newStatus = newAmountPaid >= parseFloat(charge.amount) ? 'paid' : 'partial';
+          await supabaseAdmin
+            .from('charges')
+            .update({ amount_paid: newAmountPaid, status: newStatus })
+            .eq('id', charge_id);
+        }
       }
 
       console.log(`Payment recorded for client ${client_id}: $${amountPaid}`);
