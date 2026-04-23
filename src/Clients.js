@@ -67,7 +67,7 @@ const groupByWeek = (entries) => {
 };
 
 function Clients() {
-  const { hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +84,7 @@ function Clients() {
     list_type: 'DOC Men',
     move_in_date: '',
     discharge_reason: '',
+    discharge_notes: '',
     house_id: '',
   });
 
@@ -358,6 +359,7 @@ function Clients() {
       list_type: 'DOC Men',
       move_in_date: '',
       discharge_reason: '',
+      discharge_notes: '',
       house_id: '',
     });
   };
@@ -407,10 +409,15 @@ function Clients() {
     if (newStatus === 'Active') updates.start_date = statusForm.move_in_date || null;
 
     if (newStatus === 'Discharged') {
-      updates.discharge_date = new Date().toISOString().split('T')[0];
-      if (statusForm.discharge_reason) {
-        updates.reason_for_discharge = statusForm.discharge_reason;
+      if (!statusForm.discharge_reason) {
+        alert('Please select a reason for discharge.');
+        return;
       }
+
+      updates.discharge_date = new Date().toISOString().split('T')[0];
+      updates.reason_for_discharge = statusForm.discharge_reason;
+      updates.discharge_notes = statusForm.discharge_notes || null;
+      updates.discharged_by = user?.email || user?.id || null;
 
       if (client.house_id) {
         const { data: houseData } = await supabase
@@ -2234,6 +2241,10 @@ function Clients() {
                     <ReadField label="Employment" value={selected.employment_status} />
                     <ReadField label="On disability" value={selected.on_disability} />
                     <ReadField label="Criminal history" value={selected.criminal_history} />
+                    <ReadField label="Discharge reason" value={selected.reason_for_discharge} />
+                    <ReadField label="Discharge date" value={selected.discharge_date} />
+                    <ReadField label="Discharge notes" value={selected.discharge_notes} />
+                    <ReadField label="Discharged by" value={selected.discharged_by} />
                   </Card>
                 </div>
               )}
@@ -2359,24 +2370,39 @@ function Clients() {
               )}
 
               {statusModal.newStatus === 'Discharged' && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={sf.label}>Reason for discharge</label>
-                  <select
-                    value={statusForm.discharge_reason}
-                    onChange={(e) =>
-                      setStatusForm((p) => ({ ...p, discharge_reason: e.target.value }))
-                    }
-                    style={sf.input}
-                  >
-                    <option value="">Select reason</option>
-                    <option>Completed program</option>
-                    <option>Voluntary departure</option>
-                    <option>Rule violation</option>
-                    <option>Relapse</option>
-                    <option>Medical</option>
-                    <option>Other</option>
-                  </select>
-                </div>
+                <>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Reason for discharge *</label>
+                    <select
+                      value={statusForm.discharge_reason}
+                      onChange={(e) =>
+                        setStatusForm((p) => ({ ...p, discharge_reason: e.target.value }))
+                      }
+                      style={sf.input}
+                    >
+                      <option value="">Select reason</option>
+                      <option>Completed program</option>
+                      <option>Voluntary departure</option>
+                      <option>Rule violation</option>
+                      <option>Relapse</option>
+                      <option>Medical</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Discharge notes</label>
+                    <textarea
+                      value={statusForm.discharge_notes}
+                      onChange={(e) =>
+                        setStatusForm((p) => ({ ...p, discharge_notes: e.target.value }))
+                      }
+                      style={{ ...sf.input, resize: 'vertical' }}
+                      rows={4}
+                      placeholder="Add any details about why the client was discharged..."
+                    />
+                  </div>
+                </>
               )}
 
               {!['Waiting List', 'Pending', 'Active', 'Discharged'].includes(
