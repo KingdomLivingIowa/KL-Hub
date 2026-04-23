@@ -54,6 +54,7 @@ function ClientPayments({ client }) {
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [showReceipt, setShowReceipt] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [sendingLink, setSendingLink] = useState(null);
 
   const [form, setForm] = useState({
     payment_type: 'weekly_fee',
@@ -89,7 +90,7 @@ function ClientPayments({ client }) {
     fetchFeeSettings();
   }, [fetchPayments, fetchFeeSettings]);
 
-  // Auto-fill amount when payment type changes
+  // Auto-fill amount when payment type or weeks changes
   useEffect(() => {
     const roomType = client.room_type;
     const settings = feeSettings[roomType];
@@ -157,6 +158,35 @@ function ClientPayments({ client }) {
     fetchPayments();
   };
 
+  const handlePayOnline = async (payment) => {
+    setSendingLink(payment.id);
+    try {
+      const response = await fetch('/api/create-payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: client.id,
+          amount: payment.amount,
+          paymentType: payment.payment_type,
+          description: `Kingdom Living — ${TYPE_LABELS[payment.payment_type] || 'Program Fee'}`,
+          paymentId: payment.id,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        alert('Error creating payment link: ' + result.error);
+        return;
+      }
+      // Copy link to clipboard and show it
+      await navigator.clipboard.writeText(result.url);
+      alert(`Payment link copied to clipboard!\n\nSend this to ${client.full_name}:\n${result.url}`);
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      setSendingLink(null);
+    }
+  };
+
   // Balance calculations
   const totalPaid = payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + parseFloat(p.amount), 0);
   const totalPending = payments.filter(p => p.status === 'pending').reduce((sum, p) => sum + parseFloat(p.amount), 0);
@@ -213,7 +243,11 @@ function ClientPayments({ client }) {
             <div style={{ marginBottom: '12px' }}>
               <label style={fl.label}>Number of Weeks</label>
               <select value={form.weeks_covered} onChange={e => setForm(p => ({ ...p, weeks_covered: e.target.value }))} style={fl.input}>
-                {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>{n} week{n !== 1 ? 's' : ''}{weeklyRate ? ` — ${formatCurrency(weeklyRate * n)}` : ''}</option>)}
+                {[1,2,3,4,5,6,7,8].map(n => (
+                  <option key={n} value={n}>
+                    {n} week{n !== 1 ? 's' : ''}{weeklyRate ? ` — ${formatCurrency(weeklyRate * n)}` : ''}
+                  </option>
+                ))}
               </select>
             </div>
           )}
@@ -287,6 +321,14 @@ function ClientPayments({ client }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                  {p.status === 'pending' && (
+                    <button
+                      onClick={() => handlePayOnline(p)}
+                      disabled={sendingLink === p.id}
+                      style={{ background: 'transparent', border: '1px solid #60a5fa', color: '#60a5fa', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                      {sendingLink === p.id ? 'Getting link...' : 'Pay Online'}
+                    </button>
+                  )}
                   <button onClick={() => setShowReceipt(p)}
                     style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                     Receipt
