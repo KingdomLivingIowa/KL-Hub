@@ -74,6 +74,7 @@ function Clients() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('Active');
+  const [viewMode, setViewMode] = useState('operational');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
@@ -285,7 +286,9 @@ function Clients() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   const statusFilters = hasFullAccess
-    ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied']
+    ? viewMode === 'operational'
+      ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active']
+      : ['All', 'Discharged', 'Denied']
     : ['All', 'Active', 'Pending'];
 
   const statusColor = (s) => {
@@ -1076,8 +1079,20 @@ function Clients() {
         <h2 style={st.title}>Clients</h2>
         <p style={st.sub}>
           {totalCount > 0
-            ? `Showing ${rangeStart}–${rangeEnd} of ${totalCount} ${statusFilter === 'All' ? 'total' : statusFilter.toLowerCase()}`
-            : `0 ${statusFilter === 'All' ? 'total' : statusFilter.toLowerCase()}`}
+            ? `Showing ${rangeStart}–${rangeEnd} of ${totalCount} ${
+                statusFilter === 'All'
+                  ? viewMode === 'archive'
+                    ? 'archived'
+                    : 'total'
+                  : statusFilter.toLowerCase()
+              }`
+            : `0 ${
+                statusFilter === 'All'
+                  ? viewMode === 'archive'
+                    ? 'archived'
+                    : 'total'
+                  : statusFilter.toLowerCase()
+              }`}
           {isHouseManagerRole ? ' in your house(s)' : ''}
         </p>
       </div>
@@ -1089,6 +1104,39 @@ function Clients() {
           onChange={(e) => setSearch(e.target.value)}
           style={st.search}
         />
+
+        {hasFullAccess && (
+          <div style={st.viewToggleWrap}>
+            <button
+              onClick={() => {
+                setViewMode('operational');
+                setStatusFilter('Active');
+                setCurrentPage(1);
+              }}
+              style={{
+                ...st.filterBtn,
+                ...(viewMode === 'operational' ? st.filterActive : {}),
+              }}
+            >
+              Operational
+            </button>
+
+            <button
+              onClick={() => {
+                setViewMode('archive');
+                setStatusFilter('Discharged');
+                setCurrentPage(1);
+              }}
+              style={{
+                ...st.filterBtn,
+                ...(viewMode === 'archive' ? st.filterActive : {}),
+              }}
+            >
+              Archive
+            </button>
+          </div>
+        )}
+
         <div style={st.filters}>
           {statusFilters.map((f) => (
             <button
@@ -2472,6 +2520,11 @@ const st = {
     padding: '10px 14px',
     color: '#fff',
     fontSize: '14px',
+  },
+  viewToggleWrap: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap',
   },
   filters: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   filterBtn: {
