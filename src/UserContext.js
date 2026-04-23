@@ -64,6 +64,7 @@ export function UserProvider({ user, children }) {
       role,
       loadingRole,
       assignedHouseIds,
+      user,
       isAdmin,
       isUpperManagement,
       isHeadHouseManager,
