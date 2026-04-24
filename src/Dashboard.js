@@ -9,7 +9,7 @@ import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
 
 function DashboardHome({ counts }) {
-  const { hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
+  const { isHouseManagerRole, assignedHouseIds } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
@@ -317,7 +317,7 @@ function DashboardHome({ counts }) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {recentActivity.map(item => {
-                  const { icon, color, bg } = activityIcon(item.type);
+                  const { icon, bg } = activityIcon(item.type);
                   return (
                     <div key={item.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #2a2a2a' }}>
                       <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>
