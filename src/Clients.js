@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
+import ClientPayments from './ClientPayments';
 
 const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
@@ -1055,7 +1056,11 @@ function Clients() {
                 </Card>
               )}
 
-              {activeTab === 'payments' && <Card title="Payments" full><p style={{ color: '#666', fontSize: '14px' }}>Payment records will appear here once billing is set up.</p></Card>}
+              {activeTab === 'payments' && (
+  <Card title="Payments" full>
+    <ClientPayments client={selected} />
+  </Card>
+)}
               {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#666', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
             </div>
           </div>
