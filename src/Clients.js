@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
-import ClientPayments from './ClientPayments';
 
 const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
@@ -348,12 +347,7 @@ function Clients() {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
         if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
       }
-      // Waive any remaining open charges on discharge
-      await supabase
-        .from('charges')
-        .update({ status: 'waived' })
-        .eq('client_id', client.id)
-        .in('status', ['unpaid', 'partial']);
+
     }
     const { error } = await supabase.from('clients').update(updates).eq('id', client.id);
     if (error) { alert('Error updating status: ' + error.message); return; }
@@ -1056,11 +1050,7 @@ function Clients() {
                 </Card>
               )}
 
-              {activeTab === 'payments' && (
-  <Card title="Payments" full>
-    <ClientPayments client={selected} />
-  </Card>
-)}
+              {activeTab === 'payments' && <Card title="Payments" full><p style={{ color: '#666', fontSize: '14px' }}>Payment records will appear here once billing is set up.</p></Card>}
               {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#666', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
             </div>
           </div>
