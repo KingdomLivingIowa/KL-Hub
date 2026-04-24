@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
+import ClientPayments from './ClientPayments';
 
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note'];
+
+const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'application', 'documents', 'notes'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -18,13 +21,11 @@ const reverseGeocode = async (lat, lng) => {
       return parts.join(', ') || data.display_name;
     }
     return null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 };
 
 function Houses() {
-  const { hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,23 +50,27 @@ function Houses() {
     total_beds: '', house_manager: '', phone: '', notes: '',
   });
 
+  // Move-in confirmation modal
+  const [moveInModal, setMoveInModal] = useState(null); // client object
+  const [moveInRoomType, setMoveInRoomType] = useState('Double');
+  const [savingMoveIn, setSavingMoveIn] = useState(false);
+
+  // Client profile modal (opened from resident row)
+  const [clientProfile, setClientProfile] = useState(null);
+  const [clientProfileTab, setClientProfileTab] = useState('overview');
+  const [clientTimeline, setClientTimeline] = useState([]);
+  const [clientTimelineLoading, setClientTimelineLoading] = useState(false);
+
   const fetchHouses = useCallback(async () => {
     setLoading(true);
     let query = supabase.from('houses').select('*').order('name');
-
-    // Filter to assigned houses for house manager roles
     if (isHouseManagerRole && assignedHouseIds.length > 0) {
       query = query.in('id', assignedHouseIds);
     } else if (isHouseManagerRole && assignedHouseIds.length === 0) {
-      // No houses assigned yet
-      setHouses([]);
-      setLoading(false);
-      return;
+      setHouses([]); setLoading(false); return;
     }
-
     const { data: housesData } = await query;
-    const { data: clientsData } = await supabase
-      .from('clients').select('house_id, status').in('status', ['Active', 'Pending']);
+    const { data: clientsData } = await supabase.from('clients').select('house_id, status').in('status', ['Active', 'Pending']);
     const enriched = (housesData || []).map(h => ({
       ...h,
       occupied_beds: (clientsData || []).filter(c => c.house_id === h.id && c.status === 'Active').length,
@@ -76,20 +81,12 @@ function Houses() {
   }, [isHouseManagerRole, assignedHouseIds]);
 
   const fetchAllResidents = useCallback(async () => {
-    let query = supabase
-      .from('clients')
-      .select('id, full_name, status, level, start_date, phone, balance, staff_notes, house_id')
-      .in('status', ['Active', 'Pending'])
-      .order('full_name');
-
-    // Filter to assigned houses for house manager roles
+    let query = supabase.from('clients').select('id, full_name, status, level, start_date, phone, balance, staff_notes, house_id, room_type').in('status', ['Active', 'Pending']).order('full_name');
     if (isHouseManagerRole && assignedHouseIds.length > 0) {
       query = query.in('house_id', assignedHouseIds);
     } else if (isHouseManagerRole && assignedHouseIds.length === 0) {
-      setAllResidents([]);
-      return;
+      setAllResidents([]); return;
     }
-
     const { data } = await query;
     setAllResidents(data || []);
   }, [isHouseManagerRole, assignedHouseIds]);
@@ -97,10 +94,7 @@ function Houses() {
   useEffect(() => { fetchHouses(); fetchAllResidents(); }, [fetchHouses, fetchAllResidents]);
 
   const fetchResidents = useCallback(async (houseId) => {
-    const { data } = await supabase
-      .from('clients')
-      .select('id, full_name, status, level, start_date, room_type, phone, balance, staff_notes')
-      .eq('house_id', houseId).in('status', ['Active', 'Pending']);
+    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, balance, staff_notes, email, date_of_birth, house_id').eq('house_id', houseId).in('status', ['Active', 'Pending']);
     setResidents(data || []);
     const checks = {};
     (data || []).forEach(r => { checks[r.id] = { name: r.full_name, value: '' }; });
@@ -113,11 +107,17 @@ function Houses() {
   }, []);
 
   const fetchTimeline = useCallback(async (houseId) => {
-    const { data } = await supabase.from('house_timeline').select('*')
-      .eq('house_id', houseId).order('created_at', { ascending: false });
+    const { data } = await supabase.from('house_timeline').select('*').eq('house_id', houseId).order('created_at', { ascending: false });
     setTimeline(data || []);
     setLocationLabels({});
   }, []);
+
+  const fetchClientTimeline = async (clientId) => {
+    setClientTimelineLoading(true);
+    const { data } = await supabase.from('client_timeline').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).limit(50);
+    setClientTimeline(data || []);
+    setClientTimelineLoading(false);
+  };
 
   const openHouse = (house) => {
     setSelected(house);
@@ -130,14 +130,61 @@ function Houses() {
     fetchTimeline(house.id);
   };
 
+  const openClientProfile = (client) => {
+    setClientProfile(client);
+    setClientProfileTab('overview');
+    fetchClientTimeline(client.id);
+  };
+
+  // Confirm move-in handler
+  const confirmMoveIn = async () => {
+    if (!moveInModal) return;
+    setSavingMoveIn(true);
+    const today = new Date().toISOString().split('T')[0];
+
+    // Update client: set Active, move-in date, room type
+    const { error } = await supabase.from('clients').update({
+      status: 'Active',
+      start_date: today,
+      room_type: moveInRoomType,
+    }).eq('id', moveInModal.id);
+
+    if (error) { alert('Error confirming move-in: ' + error.message); setSavingMoveIn(false); return; }
+
+    // Create move-in fee charge
+    await supabase.from('charges').insert([{
+      client_id: moveInModal.id,
+      charge_type: 'move_in_fee',
+      amount: 150,
+      due_date: today,
+      description: 'Move-in fee',
+      status: 'unpaid',
+      amount_paid: 0,
+      created_by: user?.email || null,
+    }]);
+
+    // Add timeline entry
+    await supabase.from('client_timeline').insert([{
+      client_id: moveInModal.id,
+      entry_type: 'General Note',
+      author: user?.email || 'Staff',
+      notes: `Move-in confirmed. Room type: ${moveInRoomType}. Weekly fee of $${moveInRoomType === 'Single' ? '160' : moveInRoomType === 'Houseperson' ? '110' : '135'} will begin the following Sunday.`,
+      source: 'staff',
+    }]);
+
+    setMoveInModal(null);
+    setMoveInRoomType('Double');
+    setSavingMoveIn(false);
+    fetchHouses();
+    fetchAllResidents();
+    if (selected) fetchResidents(selected.id);
+  };
+
   const deleteHouse = async (e, houseId) => {
     e.stopPropagation();
-    if (!hasFullAccess) return; // only admins/upper management can delete
+    if (!hasFullAccess) return;
     const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('house_id', houseId);
-    if (count > 0) {
-      alert('This house still has clients linked to it. Please reassign or discharge all residents first.');
-      return;
-    }
+    if (count > 0) { alert('This house still has clients linked to it. Please reassign or discharge all residents first.'); return; }
     if (!window.confirm('Are you sure you want to delete this house? This cannot be undone.')) return;
     await supabase.from('rooms').delete().eq('house_id', houseId);
     await supabase.from('house_timeline').delete().eq('house_id', houseId);
@@ -175,9 +222,7 @@ function Houses() {
 
   const addRoom = async () => {
     if (!roomForm.name) { alert('Room name is required.'); return; }
-    const { error } = await supabase.from('rooms').insert([{
-      house_id: selected.id, name: roomForm.name, type: roomForm.type, beds: parseInt(roomForm.beds) || 1,
-    }]);
+    const { error } = await supabase.from('rooms').insert([{ house_id: selected.id, name: roomForm.name, type: roomForm.type, beds: parseInt(roomForm.beds) || 1 }]);
     if (error) { alert('Error: ' + error.message); return; }
     setRoomForm({ name: '', type: 'Double', beds: '2' });
     setShowAddRoom(false);
@@ -195,12 +240,8 @@ function Houses() {
     if (entryType === 'Crisis' && !entryForm.severity) { alert('Severity is required.'); return; }
     if (entryType === 'Event Attendance' && !entryForm.event_name) { alert('Event name is required.'); return; }
     const resData = Object.entries(residentChecks).map(([id, v]) => ({ id, name: v.name, value: v.value }));
-    if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) {
-      alert('Please fill in at least one resident.'); return;
-    }
-    if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) {
-      alert('Please select at least one resident.'); return;
-    }
+    if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) { alert('Please fill in at least one resident.'); return; }
+    if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) { alert('Please select at least one resident.'); return; }
     const { error } = await supabase.from('house_timeline').insert([{
       house_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryForm.notes || null,
@@ -241,23 +282,15 @@ function Houses() {
     fetchTimeline(selected.id);
   };
 
-  const setResCheck = (resId, val) => {
-    setResidentChecks(p => ({ ...p, [resId]: { ...p[resId], value: val } }));
-  };
+  const setResCheck = (resId, val) => setResidentChecks(p => ({ ...p, [resId]: { ...p[resId], value: val } }));
 
-  const startEditingNotes = (residentId, currentNotes) => {
-    setEditingNotes(prev => ({ ...prev, [residentId]: currentNotes || '' }));
-  };
+  const startEditingNotes = (residentId, currentNotes) => setEditingNotes(prev => ({ ...prev, [residentId]: currentNotes || '' }));
 
   const saveNotes = async (residentId) => {
     const newNotes = editingNotes[residentId];
     await supabase.from('clients').update({ staff_notes: newNotes || null }).eq('id', residentId);
     setAllResidents(prev => prev.map(r => r.id === residentId ? { ...r, staff_notes: newNotes } : r));
-    setEditingNotes(prev => {
-      const updated = { ...prev };
-      delete updated[residentId];
-      return updated;
-    });
+    setEditingNotes(prev => { const updated = { ...prev }; delete updated[residentId]; return updated; });
   };
 
   useEffect(() => {
@@ -270,33 +303,30 @@ function Houses() {
   }, [timeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const entryColor = (type) => {
-    if (type === 'House Check-In')   return '#7F77DD';
-    if (type === 'Batch UA')         return '#1D9E75';
-    if (type === 'Crisis')           return '#E24B4A';
+    if (type === 'House Check-In') return '#7F77DD';
+    if (type === 'Batch UA') return '#1D9E75';
+    if (type === 'Crisis') return '#E24B4A';
     if (type === 'Event Attendance') return '#378ADD';
-    if (type === 'General Note')     return '#f59e0b';
+    if (type === 'General Note') return '#f59e0b';
     return '#888';
   };
 
   const severityColor = (sv) => {
-    if (sv === 'High')   return { bg: '#3a1e1e', color: '#f87171' };
+    if (sv === 'High') return { bg: '#3a1e1e', color: '#f87171' };
     if (sv === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
     return { bg: '#1e3a2f', color: '#4ade80' };
   };
 
   const statusColor = (st) => {
-    if (st === 'Active')  return { bg: '#2d1e3a', color: '#c084fc' };
+    if (st === 'Active') return { bg: '#2d1e3a', color: '#c084fc' };
     if (st === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
     return { bg: '#2a2a2a', color: '#aaa' };
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const formatBalance = (b) => {
-    if (b == null) return '—';
-    const num = parseFloat(b);
-    return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2);
-  };
+  const formatDateShort = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const formatBalance = (b) => { if (b == null) return '—'; const num = parseFloat(b); return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2); };
 
   const LocationPin = ({ entryId, lat, lng }) => {
     const address = locationLabels[entryId];
@@ -304,17 +334,18 @@ function Houses() {
     return (
       <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-          <span style={{ fontSize: '14px' }}>📍</span>
-          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>
-            {address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}
-          </span>
+          <span>📍</span>
+          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>
-          View map →
-        </a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
+  };
+
+  const weeklyRateForType = (rt) => {
+    if (rt === 'Single') return '$160';
+    if (rt === 'Houseperson') return '$110';
+    return '$135';
   };
 
   return (
@@ -329,10 +360,7 @@ function Houses() {
             <button onClick={() => setMainView('houses')} style={{ ...s.toggleBtn, ...(mainView === 'houses' ? s.toggleBtnActive : {}) }}>Houses</button>
             <button onClick={() => setMainView('residents')} style={{ ...s.toggleBtn, ...(mainView === 'residents' ? s.toggleBtnActive : {}) }}>All Residents</button>
           </div>
-          {/* Only admins and upper management can add houses */}
-          {hasFullAccess && (
-            <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{showAdd ? 'Cancel' : '+ Add House'}</button>
-          )}
+          {hasFullAccess && <button onClick={() => setShowAdd(!showAdd)} style={s.addBtn}>{showAdd ? 'Cancel' : '+ Add House'}</button>}
         </div>
       </div>
 
@@ -357,11 +385,7 @@ function Houses() {
       {loading ? <p style={{ color: '#888' }}>Loading...</p> : (
         <>
           {mainView === 'houses' && (
-            houses.length === 0 ? (
-              <p style={{ color: '#888' }}>
-                {isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}
-              </p>
-            ) : (
+            houses.length === 0 ? <p style={{ color: '#888' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
               <div style={s.houseGrid}>
                 {houses.map(house => (
                   <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
@@ -381,9 +405,7 @@ function Houses() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                       {house.house_manager ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p> : <span />}
-                      {hasFullAccess && (
-                        <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>
-                      )}
+                      {hasFullAccess && <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>}
                     </div>
                   </div>
                 ))}
@@ -413,7 +435,7 @@ function Houses() {
                         <span style={{ flex: 2 }}>Notes</span>
                       </div>
                       {houseResidents.map(r => (
-                        <div key={r.id} style={s.residentTableRow}>
+                        <div key={r.id} style={{ ...s.residentTableRow, cursor: 'pointer' }} onClick={() => openClientProfile(r)}>
                           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div>
@@ -427,7 +449,7 @@ function Houses() {
                           <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.start_date || '—'}</span>
                           <span style={{ flex: 1, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
                           <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.phone || '—'}</span>
-                          <div style={{ flex: 2 }}>
+                          <div style={{ flex: 2 }} onClick={e => e.stopPropagation()}>
                             {editingNotes.hasOwnProperty(r.id) ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <textarea autoFocus value={editingNotes[r.id]}
@@ -439,7 +461,7 @@ function Houses() {
                                 <span style={{ color: '#555', fontSize: '10px' }}>Enter to save · Shift+Enter for new line</span>
                               </div>
                             ) : (
-                              <div onClick={() => startEditingNotes(r.id, r.staff_notes)}
+                              <div onClick={e => { e.stopPropagation(); startEditingNotes(r.id, r.staff_notes); }}
                                 style={{ color: r.staff_notes ? '#aaa' : '#444', fontSize: '12px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
                                 onMouseEnter={e => e.currentTarget.style.borderColor = '#444'}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
@@ -453,16 +475,13 @@ function Houses() {
                   </div>
                 );
               })}
-              {allResidents.length === 0 && (
-                <p style={{ color: '#888' }}>
-                  {isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}
-                </p>
-              )}
+              {allResidents.length === 0 && <p style={{ color: '#888' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
             </div>
           )}
         </>
       )}
 
+      {/* House detail modal */}
       {selected && (
         <div style={s.overlay} onClick={() => setSelected(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
@@ -496,8 +515,9 @@ function Houses() {
                   {residents.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No current residents.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
-                        <div key={r.id} style={s.residentCard}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                        <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }}
+                          onClick={() => { setSelected(null); openClientProfile(r); }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: r.status === 'Pending' ? '10px' : '0' }}>
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div style={{ flex: 1 }}>
                               <p style={s.resName}>{r.full_name}</p>
@@ -505,15 +525,23 @@ function Houses() {
                             </div>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
-                          <div style={s.resDetailGrid}>
-                            <div style={s.resDetailItem}><span style={s.resDetailLabel}>Start Date</span><span style={s.resDetailVal}>{r.start_date || '—'}</span></div>
-                            <div style={s.resDetailItem}><span style={s.resDetailLabel}>Balance</span><span style={{ ...s.resDetailVal, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80' }}>{formatBalance(r.balance)}</span></div>
-                            <div style={s.resDetailItem}><span style={s.resDetailLabel}>Phone</span><span style={s.resDetailVal}>{r.phone || '—'}</span></div>
-                          </div>
-                          {r.staff_notes && (
-                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #333' }}>
-                              <span style={s.resDetailLabel}>Staff Notes</span>
-                              <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{r.staff_notes}</p>
+
+                          {/* Confirm Move-In button for Pending residents */}
+                          {r.status === 'Pending' && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }} onClick={e => e.stopPropagation()}>
+                              <button
+                                onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); }}
+                                style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', width: '100%' }}>
+                                ✓ Confirm Move-In
+                              </button>
+                            </div>
+                          )}
+
+                          {r.status === 'Active' && (
+                            <div style={s.resDetailGrid}>
+                              <div style={s.resDetailItem}><span style={s.resDetailLabel}>Start Date</span><span style={s.resDetailVal}>{r.start_date || '—'}</span></div>
+                              <div style={s.resDetailItem}><span style={s.resDetailLabel}>Room Type</span><span style={s.resDetailVal}>{r.room_type || '—'}</span></div>
+                              <div style={s.resDetailItem}><span style={s.resDetailLabel}>Phone</span><span style={s.resDetailVal}>{r.phone || '—'}</span></div>
                             </div>
                           )}
                         </div>
@@ -634,9 +662,7 @@ function Houses() {
                               <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '11px' }}>×</button>
                             </div>
                           </div>
-                          {entry.latitude && entry.longitude && (
-                            <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />
-                          )}
+                          {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
                           {entry.resident_data && entry.resident_data.length > 0 && (
                             <div style={{ marginBottom: '8px' }}>
                               {entry.entry_type === 'House Check-In' && (
@@ -721,6 +747,167 @@ function Houses() {
           </div>
         </div>
       )}
+
+      {/* Confirm Move-In modal */}
+      {moveInModal && (
+        <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => setMoveInModal(null)}>
+          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
+              <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>Confirm Move-In</h3>
+              <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
+            </div>
+            <div style={{ padding: '20px 24px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={s.label}>Room Type *</label>
+                <select value={moveInRoomType} onChange={e => setMoveInRoomType(e.target.value)} style={s.input}>
+                  <option value="Single">Single — $160/week</option>
+                  <option value="Double">Double — $135/week</option>
+                  <option value="Houseperson">Houseperson — $110/week</option>
+                </select>
+              </div>
+              <div style={{ background: '#2a2a2a', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 6px 0' }}>This will:</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={confirmMoveIn} disabled={savingMoveIn}
+                  style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                  {savingMoveIn ? 'Confirming...' : 'Confirm Move-In'}
+                </button>
+                <button onClick={() => setMoveInModal(null)}
+                  style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Client profile modal */}
+      {clientProfile && (
+        <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => setClientProfile(null)}>
+          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '860px', overflow: 'hidden' }}
+            onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #333' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '500', flexShrink: 0 }}>
+                {initials(clientProfile.full_name)}
+              </div>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '500', margin: 0, color: '#fff' }}>{clientProfile.full_name}</h2>
+                <p style={{ fontSize: '13px', color: '#666', margin: '2px 0 0 0' }}>
+                  {clientProfile.house_name || houses.find(h => h.id === clientProfile.house_id)?.name || 'No house assigned'}
+                  {clientProfile.start_date ? ` · Started ${clientProfile.start_date}` : ''}
+                </p>
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: statusColor(clientProfile.status).bg, color: statusColor(clientProfile.status).color, fontWeight: '500' }}>
+                    {clientProfile.status}
+                  </span>
+                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '500' }}>
+                    Level {clientProfile.level || 1}
+                  </span>
+                  {clientProfile.room_type && (
+                    <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: '#2a2a2a', color: '#aaa', fontWeight: '500' }}>
+                      {clientProfile.room_type}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => setClientProfile(null)} style={s.closeBtn}>×</button>
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'auto' }}>
+              {TABS.map(t => (
+                <button key={t} onClick={() => setClientProfileTab(t)}
+                  style={{ padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: clientProfileTab === t ? '#fff' : '#666', background: 'transparent', border: 'none', borderBottom: `2px solid ${clientProfileTab === t ? '#fff' : 'transparent'}`, whiteSpace: 'nowrap' }}>
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div style={{ padding: '20px', maxHeight: '520px', overflowY: 'auto' }}>
+              {clientProfileTab === 'overview' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                  <InfoCard title="Contact">
+                    <InfoRow label="Phone" value={clientProfile.phone} />
+                    <InfoRow label="Email" value={clientProfile.email} />
+                    <InfoRow label="DOB" value={clientProfile.date_of_birth} />
+                  </InfoCard>
+                  <InfoCard title="House">
+                    <InfoRow label="House" value={houses.find(h => h.id === clientProfile.house_id)?.name} />
+                    <InfoRow label="Room type" value={clientProfile.room_type} />
+                    <InfoRow label="Move-in" value={clientProfile.start_date} />
+                  </InfoCard>
+                  <InfoCard title="Program">
+                    <InfoRow label="Level" value={`Level ${clientProfile.level || 1}`} />
+                    <InfoRow label="Drug of choice" value={clientProfile.drug_of_choice} />
+                    <InfoRow label="Sober date" value={clientProfile.sober_date} />
+                  </InfoCard>
+                </div>
+              )}
+
+              {clientProfileTab === 'payments' && (
+                <ClientPayments client={clientProfile} />
+              )}
+
+              {clientProfileTab === 'timeline' && (
+                <div>
+                  {clientTimelineLoading ? <p style={{ color: '#666', fontSize: '14px' }}>Loading...</p> :
+                    clientTimeline.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries yet.</p> : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {clientTimeline.map(entry => (
+                          <div key={entry.id} style={{ background: '#2a2a2a', borderRadius: '8px', padding: '10px 14px', border: '1px solid #333' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{entry.entry_type}</span>
+                              <span style={{ color: '#555', fontSize: '11px' }}>{formatDateShort(entry.created_at?.split('T')[0])}</span>
+                            </div>
+                            {entry.event_name && <p style={{ color: '#60a5fa', fontSize: '12px', margin: '2px 0' }}>{entry.event_name}</p>}
+                            {entry.notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0 0' }}>{entry.notes}</p>}
+                            <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>By {entry.author}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </div>
+              )}
+
+              {clientProfileTab === 'notes' && (
+                <div>
+                  <p style={{ color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>{clientProfile.staff_notes || 'No staff notes.'}</p>
+                </div>
+              )}
+
+              {!['overview', 'payments', 'timeline', 'notes'].includes(clientProfileTab) && (
+                <p style={{ color: '#666', fontSize: '14px' }}>Open the full client profile in the Clients section to view {clientProfileTab}.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoCard({ title, children }) {
+  return (
+    <div style={{ background: '#2a2a2a', border: '1px solid #333', borderRadius: '10px', padding: '12px 14px' }}>
+      <p style={{ fontSize: '10px', fontWeight: '600', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px 0' }}>{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #333' }}>
+      <span style={{ fontSize: '12px', color: '#666' }}>{label}</span>
+      <span style={{ fontSize: '13px', color: value ? '#ddd' : '#444' }}>{value || '—'}</span>
     </div>
   );
 }
@@ -779,7 +966,7 @@ const s = {
   resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#2d1e3a', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '500', flexShrink: 0 },
   resName: { color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 },
   resMeta: { color: '#666', fontSize: '12px', margin: '2px 0 0 0' },
-  resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' },
+  resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '10px' },
   resDetailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   resDetailLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
   resDetailVal: { fontSize: '13px', color: '#ddd' },
