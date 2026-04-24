@@ -9,7 +9,7 @@ import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
 
 function DashboardHome({ counts }) {
-  const { isHouseManagerRole, assignedHouseIds } = useUser();
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
@@ -150,6 +150,15 @@ function DashboardHome({ counts }) {
     const checkedInIds = new Set((checkIns || []).map(c => c.client_id));
     const noCheckIn = (activeClients || []).filter(c => !checkedInIds.has(c.id));
 
+    // Unpaid charges
+    const { data: unpaidCharges } = await supabase
+      .from('charges')
+      .select('id, client_id, amount, amount_paid, due_date, clients(full_name)')
+      .in('status', ['unpaid', 'partial'])
+      .order('due_date', { ascending: true });
+
+    const totalUnpaid = (unpaidCharges || []).reduce((sum, c) => sum + (parseFloat(c.amount) - parseFloat(c.amount_paid || 0)), 0);
+
     const alertList = [
       ...(crises || []).map(c => ({
         id: `alert-crisis-${c.id}`,
@@ -165,6 +174,14 @@ function DashboardHome({ counts }) {
         level: 'medium',
         label: `${noCheckIn.length} active client${noCheckIn.length !== 1 ? 's' : ''} with no check-in this week`,
         sublabel: noCheckIn.slice(0, 3).map(c => c.full_name).join(', ') + (noCheckIn.length > 3 ? ` +${noCheckIn.length - 3} more` : ''),
+        time: null,
+      }] : []),
+      ...((unpaidCharges || []).length > 0 ? [{
+        id: 'alert-unpaid-charges',
+        type: 'unpaid_charges',
+        level: 'medium',
+        label: `${(unpaidCharges || []).length} open charge${(unpaidCharges || []).length !== 1 ? 's' : ''} — $${totalUnpaid.toFixed(2)} outstanding`,
+        sublabel: (unpaidCharges || []).slice(0, 3).map(c => c.clients?.full_name).filter(Boolean).join(', ') + ((unpaidCharges || []).length > 3 ? ` +${(unpaidCharges || []).length - 3} more` : ''),
         time: null,
       }] : []),
     ];
@@ -300,7 +317,7 @@ function DashboardHome({ counts }) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {recentActivity.map(item => {
-                  const { icon, bg } = activityIcon(item.type);
+                  const { icon, color, bg } = activityIcon(item.type);
                   return (
                     <div key={item.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #2a2a2a' }}>
                       <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>
