@@ -7,6 +7,7 @@ import Clients from './Clients';
 import Houses from './Houses';
 import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
+import Payments from './Payments';
 
 function DashboardHome({ counts }) {
   const { isHouseManagerRole, assignedHouseIds } = useUser();
@@ -372,6 +373,7 @@ function DashboardInner({ user }) {
   const {
     role,
     loadingRole,
+    hasFullAccess,
     canSeeAdmissions,
     canSeeWaitingList,
     canSeeIntake,
@@ -403,6 +405,7 @@ function DashboardInner({ user }) {
     { id: 'houses', label: 'Houses', show: true },
     { id: 'clients', label: 'Clients', show: true },
     { id: 'messages', label: 'Messages', show: true },
+    { id: 'payments', label: 'Payments', show: hasFullAccess },
     { id: 'intake', label: 'Intake & Discharge', show: canSeeIntake },
     { id: 'reports', label: 'Reports', show: canSeeReports },
   ].filter(item => item.show);
@@ -475,6 +478,7 @@ function DashboardInner({ user }) {
           {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList />}
           {activePage === 'clients' && <Clients />}
           {activePage === 'houses' && <Houses />}
+          {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
