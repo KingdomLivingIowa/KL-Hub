@@ -14,9 +14,14 @@ function Messaging() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [unreadCounts, setUnreadCounts] = useState({});
   const [staffList, setStaffList] = useState([]);
-  const [showNewDM, setShowNewDM] = useState(false);
-  const [memberProfiles, setMemberProfiles] = useState({});
   const [dmNames, setDmNames] = useState({});
+  const [memberProfiles, setMemberProfiles] = useState({});
+
+  // New chat modal
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [selectedMembers, setSelectedMembers] = useState([]);
+  const [groupChatName, setGroupChatName] = useState('');
+  const [creatingChat, setCreatingChat] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -37,7 +42,7 @@ function Messaging() {
     if (!user?.id) return;
     setLoadingConvs(true);
 
-    // Step 1: Make sure user is in all group chats
+    // Auto-join all group chats
     const { data: allGroups } = await supabase
       .from('conversations')
       .select('id, name, type')
@@ -51,7 +56,7 @@ function Messaging() {
       }, { onConflict: 'conversation_id,user_id' });
     }
 
-    // Step 2: Get all memberships for this user
+    // Get all memberships
     const { data: memberships } = await supabase
       .from('conversation_members')
       .select('conversation_id, last_read_at')
@@ -67,14 +72,13 @@ function Messaging() {
     const lastReadMap = {};
     memberships.forEach(m => { lastReadMap[m.conversation_id] = m.last_read_at; });
 
-    // Step 3: Fetch conversation details
     const { data: convs } = await supabase
       .from('conversations')
       .select('*')
       .in('id', convIds);
 
-    // Step 4: For each DM, find the other person's name
-    const dmNameMap = {};
+    // For DMs and custom groups, resolve display names
+    const dmNameMap = { ...dmNames };
     for (const conv of (convs || [])) {
       if (conv.type === 'direct') {
         const { data: members } = await supabase
@@ -94,7 +98,7 @@ function Messaging() {
     }
     setDmNames(dmNameMap);
 
-    // Step 5: Fetch last message + unread count for each conversation
+    // Fetch last message + unread count
     const convsWithMeta = await Promise.all((convs || []).map(async (conv) => {
       const { data: lastMsgs } = await supabase
         .from('messages')
@@ -114,28 +118,22 @@ function Messaging() {
       return { ...conv, lastMessage: lastMsgs?.[0] || null, unread: unreadCount || 0 };
     }));
 
-    // Sort: groups first (in order), then DMs by last message
-    const groups = convsWithMeta
-      .filter(c => c.type === 'group')
-      .sort((a, b) => a.name.localeCompare(b.name));
+    // Sort: preset groups first, then custom groups, then DMs by last message
+    const presetNames = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
+    const presetGroups = convsWithMeta.filter(c => c.type === 'group' && presetNames.includes(c.name))
+      .sort((a, b) => presetNames.indexOf(a.name) - presetNames.indexOf(b.name));
+    const customGroups = convsWithMeta.filter(c => c.type === 'group' && !presetNames.includes(c.name))
+      .sort((a, b) => a.name?.localeCompare(b.name || '') || 0);
+    const dms = convsWithMeta.filter(c => c.type === 'direct')
+      .sort((a, b) => new Date(b.lastMessage?.created_at || b.created_at) - new Date(a.lastMessage?.created_at || a.created_at));
 
-    const dms = convsWithMeta
-      .filter(c => c.type === 'direct')
-      .sort((a, b) => {
-        const aTime = a.lastMessage?.created_at || a.created_at;
-        const bTime = b.lastMessage?.created_at || b.created_at;
-        return new Date(bTime) - new Date(aTime);
-      });
-
-    const sorted = [...groups, ...dms];
+    const sorted = [...presetGroups, ...customGroups, ...dms];
 
     const unread = {};
     convsWithMeta.forEach(c => { unread[c.id] = c.unread; });
     setUnreadCounts(unread);
     setConversations(sorted);
     setLoadingConvs(false);
-
-    // Auto-select first if none selected
     setSelectedConv(prev => prev || sorted[0] || null);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -149,9 +147,7 @@ function Messaging() {
     setMessages(data || []);
     setLoadingMessages(false);
 
-    // Mark as read
-    await supabase
-      .from('conversation_members')
+    await supabase.from('conversation_members')
       .update({ last_read_at: new Date().toISOString() })
       .eq('conversation_id', convId)
       .eq('user_id', user.id);
@@ -169,20 +165,15 @@ function Messaging() {
     }
   }, [selectedConv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Real-time subscription for new messages in selected conversation
+  // Real-time for selected conversation
   useEffect(() => {
     if (!selectedConv) return;
-
-    if (subscriptionRef.current) {
-      supabase.removeChannel(subscriptionRef.current);
-    }
+    if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current);
 
     const channel = supabase
       .channel(`messages:${selectedConv.id}`)
       .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
+        event: 'INSERT', schema: 'public', table: 'messages',
         filter: `conversation_id=eq.${selectedConv.id}`,
       }, (payload) => {
         setMessages(prev => [...prev, payload.new]);
@@ -200,7 +191,6 @@ function Messaging() {
     return () => { supabase.removeChannel(channel); };
   }, [selectedConv?.id, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -210,79 +200,100 @@ function Messaging() {
     setSending(true);
     const body = newMessage.trim();
     setNewMessage('');
-
     const { error } = await supabase.from('messages').insert([{
       conversation_id: selectedConv.id,
       sender_id: user.id,
       body,
     }]);
-
-    if (error) {
-      alert('Error sending message: ' + error.message);
-      setNewMessage(body);
-    }
+    if (error) { alert('Error sending: ' + error.message); setNewMessage(body); }
     setSending(false);
   };
 
-  const startDM = async (staffMember) => {
-    setShowNewDM(false);
+  const toggleMember = (staffMember) => {
+    setSelectedMembers(prev =>
+      prev.find(m => m.id === staffMember.id)
+        ? prev.filter(m => m.id !== staffMember.id)
+        : [...prev, staffMember]
+    );
+  };
 
-    // Check if DM already exists between these two users
-    const { data: myMemberships } = await supabase
-      .from('conversation_members')
-      .select('conversation_id')
-      .eq('user_id', user.id);
+  const createChat = async () => {
+    if (selectedMembers.length === 0) { alert('Select at least one person.'); return; }
+    setCreatingChat(true);
 
-    const { data: theirMemberships } = await supabase
-      .from('conversation_members')
-      .select('conversation_id')
-      .eq('user_id', staffMember.id);
+    const isDM = selectedMembers.length === 1;
 
-    const myIds = new Set((myMemberships || []).map(m => m.conversation_id));
-    const sharedIds = (theirMemberships || [])
-      .map(m => m.conversation_id)
-      .filter(id => myIds.has(id));
+    // For DMs, check if one already exists
+    if (isDM) {
+      const otherId = selectedMembers[0].id;
+      const { data: myMemberships } = await supabase
+        .from('conversation_members').select('conversation_id').eq('user_id', user.id);
+      const { data: theirMemberships } = await supabase
+        .from('conversation_members').select('conversation_id').eq('user_id', otherId);
+      const myIds = new Set((myMemberships || []).map(m => m.conversation_id));
+      const sharedIds = (theirMemberships || []).map(m => m.conversation_id).filter(id => myIds.has(id));
 
-    // Check if any shared conversation is a direct type
-    for (const sharedId of sharedIds) {
-      const { data: conv } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('id', sharedId)
-        .eq('type', 'direct')
-        .maybeSingle();
-      if (conv) {
-        setSelectedConv(conv);
-        return;
+      for (const sharedId of sharedIds) {
+        const { data: conv } = await supabase.from('conversations').select('*').eq('id', sharedId).eq('type', 'direct').maybeSingle();
+        if (conv) {
+          setSelectedConv(conv);
+          setShowNewChat(false);
+          setSelectedMembers([]);
+          setGroupChatName('');
+          setCreatingChat(false);
+          return;
+        }
       }
     }
 
-    // Create new DM
+    // For group chats, require a name
+    if (!isDM && !groupChatName.trim()) {
+      alert('Please enter a name for the group chat.');
+      setCreatingChat(false);
+      return;
+    }
+
+    // Create conversation
     const { data: newConv, error: convError } = await supabase
       .from('conversations')
-      .insert([{ type: 'direct' }])
+      .insert([{
+        type: isDM ? 'direct' : 'group',
+        name: isDM ? null : groupChatName.trim(),
+      }])
       .select()
       .single();
 
     if (convError || !newConv) {
-      alert('Error creating conversation: ' + (convError?.message || 'Unknown error'));
+      alert('Error creating conversation: ' + (convError?.message || 'Unknown'));
+      setCreatingChat(false);
       return;
     }
 
-    // Add both members
-    const { error: memberError } = await supabase
-      .from('conversation_members')
-      .insert([
-        { conversation_id: newConv.id, user_id: user.id, last_read_at: new Date().toISOString() },
-        { conversation_id: newConv.id, user_id: staffMember.id, last_read_at: new Date().toISOString() },
-      ]);
+    // Add all members including current user
+    const allMemberIds = [user.id, ...selectedMembers.map(m => m.id)];
+    const { error: memberError } = await supabase.from('conversation_members').insert(
+      allMemberIds.map(uid => ({
+        conversation_id: newConv.id,
+        user_id: uid,
+        last_read_at: new Date().toISOString(),
+      }))
+    );
 
     if (memberError) {
       alert('Error adding members: ' + memberError.message);
+      setCreatingChat(false);
       return;
     }
 
-    setDmNames(prev => ({ ...prev, [newConv.id]: staffMember.full_name || staffMember.email }));
+    // Update DM name map
+    if (isDM) {
+      setDmNames(prev => ({ ...prev, [newConv.id]: selectedMembers[0].full_name || selectedMembers[0].email }));
+    }
+
+    setShowNewChat(false);
+    setSelectedMembers([]);
+    setGroupChatName('');
+    setCreatingChat(false);
     await fetchConversations();
     setSelectedConv(newConv);
   };
@@ -309,14 +320,16 @@ function Messaging() {
   const formatPreview = (conv) => {
     if (!conv.lastMessage) return 'No messages yet';
     const isMe = conv.lastMessage.sender_id === user.id;
-    const preview = conv.lastMessage.body?.length > 40
+    const preview = (conv.lastMessage.body || '').length > 40
       ? conv.lastMessage.body.slice(0, 40) + '...'
       : conv.lastMessage.body || '';
     return isMe ? `You: ${preview}` : preview;
   };
 
   const totalUnread = Object.values(unreadCounts).reduce((sum, n) => sum + n, 0);
-  const groupChats = conversations.filter(c => c.type === 'group');
+  const presetNames = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
+  const presetGroups = conversations.filter(c => c.type === 'group' && presetNames.includes(c.name));
+  const customGroups = conversations.filter(c => c.type === 'group' && !presetNames.includes(c.name));
   const directChats = conversations.filter(c => c.type === 'direct');
 
   return (
@@ -328,31 +341,62 @@ function Messaging() {
             Messages
             {totalUnread > 0 && <span style={ms.unreadBadge}>{totalUnread}</span>}
           </p>
-          <button onClick={() => setShowNewDM(!showNewDM)}
-            style={{ background: showNewDM ? '#444' : '#b22222', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
-            + DM
+          <button onClick={() => { setShowNewChat(!showNewChat); setSelectedMembers([]); setGroupChatName(''); }}
+            style={{ background: showNewChat ? '#444' : '#b22222', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+            {showNewChat ? 'Cancel' : '+ New Chat'}
           </button>
         </div>
 
-        {/* New DM picker */}
-        {showNewDM && (
-          <div style={ms.dmPicker}>
-            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 8px 0' }}>Start a conversation with:</p>
-            {staffList.filter(s => s.id !== user.id).length === 0 && (
-              <p style={{ color: '#555', fontSize: '12px' }}>No other staff members found.</p>
+        {/* New chat creator */}
+        {showNewChat && (
+          <div style={ms.newChatPanel}>
+            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 8px 0' }}>Select people to message:</p>
+
+            <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: '10px' }}>
+              {staffList.filter(s => s.id !== user.id).map(s => {
+                const isSelected = selectedMembers.find(m => m.id === s.id);
+                return (
+                  <div key={s.id} onClick={() => toggleMember(s)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#1e3a2f' : 'transparent', marginBottom: '2px' }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#2a2a2a'; }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#1e3a2f' : 'transparent'; }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#4ade80' : '#444'}`, background: isSelected ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {isSelected && <span style={{ color: '#000', fontSize: '11px', fontWeight: '700' }}>✓</span>}
+                    </div>
+                    <div style={ms.avatar}>{initials(s.full_name || s.email)}</div>
+                    <div>
+                      <p style={{ color: '#fff', fontSize: '12px', margin: 0 }}>{s.full_name || s.email}</p>
+                      <p style={{ color: '#666', fontSize: '10px', margin: 0 }}>{(s.role || '').replace(/_/g, ' ')}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Group name input — only show when 2+ people selected */}
+            {selectedMembers.length > 1 && (
+              <input
+                value={groupChatName}
+                onChange={e => setGroupChatName(e.target.value)}
+                placeholder="Group chat name..."
+                style={{ ...ms.input, marginBottom: '10px', padding: '8px 12px', fontSize: '13px' }}
+              />
             )}
-            {staffList.filter(s => s.id !== user.id).map(s => (
-              <div key={s.id} onClick={() => startDM(s)}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', borderRadius: '8px', cursor: 'pointer', marginBottom: '2px' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                <div style={ms.avatar}>{initials(s.full_name || s.email)}</div>
-                <div>
-                  <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{s.full_name || s.email}</p>
-                  <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>{(s.role || '').replace(/_/g, ' ')}</p>
-                </div>
+
+            {selectedMembers.length > 0 && (
+              <div style={{ marginBottom: '8px' }}>
+                <p style={{ color: '#4ade80', fontSize: '11px', margin: '0 0 6px 0' }}>
+                  {selectedMembers.length === 1
+                    ? `Direct message with ${selectedMembers[0].full_name || selectedMembers[0].email}`
+                    : `Group chat with ${selectedMembers.length} people`}
+                </p>
               </div>
-            ))}
+            )}
+
+            <button onClick={createChat} disabled={creatingChat || selectedMembers.length === 0}
+              style={{ width: '100%', background: selectedMembers.length > 0 ? '#b22222' : '#2a2a2a', border: 'none', color: selectedMembers.length > 0 ? '#fff' : '#555', padding: '8px', borderRadius: '8px', fontSize: '13px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
+              {creatingChat ? 'Creating...' : selectedMembers.length > 1 ? 'Create Group Chat' : 'Start Conversation'}
+            </button>
           </div>
         )}
 
@@ -360,10 +404,11 @@ function Messaging() {
           <p style={{ color: '#666', fontSize: '13px', padding: '12px 16px' }}>Loading...</p>
         ) : (
           <div style={{ overflowY: 'auto', flex: 1 }}>
-            {groupChats.length > 0 && (
+            {/* Preset group chats */}
+            {presetGroups.length > 0 && (
               <>
                 <p style={ms.convSectionLabel}>Group Chats</p>
-                {groupChats.map(conv => (
+                {presetGroups.map(conv => (
                   <ConvItem key={conv.id}
                     selected={selectedConv?.id === conv.id}
                     onClick={() => setSelectedConv(conv)}
@@ -374,6 +419,24 @@ function Messaging() {
                 ))}
               </>
             )}
+
+            {/* Custom group chats */}
+            {customGroups.length > 0 && (
+              <>
+                <p style={ms.convSectionLabel}>Custom Groups</p>
+                {customGroups.map(conv => (
+                  <ConvItem key={conv.id}
+                    selected={selectedConv?.id === conv.id}
+                    onClick={() => setSelectedConv(conv)}
+                    name={conv.name}
+                    preview={formatPreview(conv)}
+                    unread={unreadCounts[conv.id] || 0}
+                    isGroup />
+                ))}
+              </>
+            )}
+
+            {/* Direct messages */}
             {directChats.length > 0 && (
               <>
                 <p style={ms.convSectionLabel}>Direct Messages</p>
@@ -388,6 +451,7 @@ function Messaging() {
                 ))}
               </>
             )}
+
             {conversations.length === 0 && (
               <p style={{ color: '#555', fontSize: '13px', padding: '12px 16px' }}>No conversations yet.</p>
             )}
@@ -401,7 +465,7 @@ function Messaging() {
           <div style={ms.emptyState}>
             <p style={{ fontSize: '32px', margin: '0 0 12px 0' }}>💬</p>
             <p style={{ color: '#fff', fontSize: '16px', fontWeight: '500', margin: '0 0 6px 0' }}>Select a conversation</p>
-            <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>Choose a group chat or start a direct message</p>
+            <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>Choose a group chat or start a new conversation</p>
           </div>
         ) : (
           <>
@@ -434,9 +498,7 @@ function Messaging() {
                     return (
                       <div key={msg.id} style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         {showSender && (
-                          <p style={{ color: '#888', fontSize: '11px', margin: '0 0 3px 8px' }}>
-                            {getSenderName(msg.sender_id)}
-                          </p>
+                          <p style={{ color: '#888', fontSize: '11px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
                         )}
                         <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#2a2a2a', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
                           <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
@@ -502,14 +564,14 @@ const ms = {
   sidebarTitle: { color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' },
   unreadBadge: { background: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
   convSectionLabel: { color: '#555', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 14px 4px 14px', margin: 0 },
-  dmPicker: { padding: '10px 14px', borderBottom: '1px solid #2a2a2a', background: '#1a1a1a', maxHeight: '250px', overflowY: 'auto' },
+  newChatPanel: { padding: '12px 14px', borderBottom: '1px solid #2a2a2a', background: '#1a1a1a' },
   chatArea: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#1a1a1a' },
   chatHeader: { padding: '14px 20px', borderBottom: '1px solid #2a2a2a', background: '#111', flexShrink: 0 },
   messages: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column' },
   inputArea: { display: 'flex', gap: '10px', padding: '14px 20px', borderTop: '1px solid #2a2a2a', background: '#111', flexShrink: 0 },
-  input: { flex: 1, background: '#2a2a2a', border: '1px solid #444', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none' },
+  input: { flex: 1, background: '#2a2a2a', border: '1px solid #444', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' },
   emptyState: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
-  avatar: { width: '38px', height: '38px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '600', flexShrink: 0 },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', flexShrink: 0 },
 };
 
 export default Messaging;
