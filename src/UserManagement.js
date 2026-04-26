@@ -15,6 +15,8 @@ const ROLE_COLORS = {
   house_manager: { bg: '#1e3a2f', color: '#4ade80' },
 };
 
+const PRESET_GROUP_NAMES = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
+
 function UserManagement({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [houses, setHouses] = useState([]);
@@ -29,18 +31,50 @@ function UserManagement({ currentUser }) {
   const [resetSuccess, setResetSuccess] = useState('');
   const [resetting, setResetting] = useState(false);
   const [form, setForm] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-    role: 'house_manager',
+    full_name: '', email: '', password: '', role: 'house_manager',
   });
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
+  // Group chat state
+  const [presetGroups, setPresetGroups] = useState([]); // [{id, name}]
+  const [groupMemberships, setGroupMemberships] = useState({}); // { userId: [convId, ...] }
+  const [togglingGroup, setTogglingGroup] = useState({}); // { userId-convId: true }
+
   useEffect(() => {
     fetchUsers();
     fetchHouses();
-  }, []);
+    fetchPresetGroups();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchPresetGroups = async () => {
+    const { data } = await supabase
+      .from('conversations')
+      .select('id, name')
+      .eq('type', 'group')
+      .in('name', PRESET_GROUP_NAMES);
+    setPresetGroups(data || []);
+  };
+
+  const fetchGroupMemberships = async (userIds) => {
+    if (!userIds.length) return;
+    const presetIds = presetGroups.map(g => g.id);
+    if (!presetIds.length) return;
+
+    const { data } = await supabase
+      .from('conversation_members')
+      .select('user_id, conversation_id')
+      .in('user_id', userIds)
+      .in('conversation_id', presetIds);
+
+    const map = {};
+    userIds.forEach(id => { map[id] = []; });
+    (data || []).forEach(m => {
+      if (!map[m.user_id]) map[m.user_id] = [];
+      map[m.user_id].push(m.conversation_id);
+    });
+    setGroupMemberships(map);
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -62,6 +96,10 @@ function UserManagement({ currentUser }) {
 
       setHouseAssignments(assignmentMap);
       setUsers(profiles);
+
+      // Fetch group memberships after users load
+      const userIds = profiles.map(p => p.id);
+      await fetchGroupMemberships(userIds);
     }
     setLoading(false);
   };
@@ -71,41 +109,56 @@ function UserManagement({ currentUser }) {
     setHouses(data || []);
   };
 
+  const toggleGroupMembership = async (userId, groupId, isMember) => {
+    const key = `${userId}-${groupId}`;
+    setTogglingGroup(prev => ({ ...prev, [key]: true }));
+
+    if (isMember) {
+      // Remove from group
+      await supabase.from('conversation_members')
+        .delete()
+        .eq('user_id', userId)
+        .eq('conversation_id', groupId);
+
+      setGroupMemberships(prev => ({
+        ...prev,
+        [userId]: (prev[userId] || []).filter(id => id !== groupId),
+      }));
+    } else {
+      // Add to group
+      await supabase.from('conversation_members').upsert({
+        user_id: userId,
+        conversation_id: groupId,
+        last_read_at: new Date().toISOString(),
+      }, { onConflict: 'conversation_id,user_id' });
+
+      setGroupMemberships(prev => ({
+        ...prev,
+        [userId]: [...(prev[userId] || []), groupId],
+      }));
+    }
+
+    setTogglingGroup(prev => ({ ...prev, [key]: false }));
+  };
+
   const createUser = async () => {
     setFormError('');
     setFormSuccess('');
-
     if (!form.full_name || !form.email || !form.password || !form.role) {
-      setFormError('All fields are required.');
-      return;
+      setFormError('All fields are required.'); return;
     }
     if (form.password.length < 8) {
-      setFormError('Password must be at least 8 characters.');
-      return;
+      setFormError('Password must be at least 8 characters.'); return;
     }
-
     setSaving(true);
-
     try {
       const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          full_name: form.full_name,
-          role: form.role,
-        }),
+        body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, role: form.role }),
       });
-
       const result = await response.json();
-
-      if (!response.ok) {
-        setFormError(result.error || 'Failed to create user.');
-        setSaving(false);
-        return;
-      }
-
+      if (!response.ok) { setFormError(result.error || 'Failed to create user.'); setSaving(false); return; }
       setFormSuccess(`${form.full_name} has been added successfully!`);
       setForm({ full_name: '', email: '', password: '', role: 'house_manager' });
       setShowAddUser(false);
@@ -113,7 +166,6 @@ function UserManagement({ currentUser }) {
     } catch {
       setFormError('Network error. Please try again.');
     }
-
     setSaving(false);
   };
 
@@ -139,12 +191,8 @@ function UserManagement({ currentUser }) {
   };
 
   const resetPassword = async () => {
-    setResetError('');
-    setResetSuccess('');
-    if (newPassword.length < 8) {
-      setResetError('Password must be at least 8 characters.');
-      return;
-    }
+    setResetError(''); setResetSuccess('');
+    if (newPassword.length < 8) { setResetError('Password must be at least 8 characters.'); return; }
     setResetting(true);
     try {
       const response = await fetch('/api/reset-password', {
@@ -177,15 +225,12 @@ function UserManagement({ currentUser }) {
           <h2 style={s.title}>User Management</h2>
           <p style={s.sub}>{users.length} staff members</p>
         </div>
-        <button onClick={() => { setShowAddUser(!showAddUser); setFormError(''); setFormSuccess(''); }}
-          style={s.addBtn}>
+        <button onClick={() => { setShowAddUser(!showAddUser); setFormError(''); setFormSuccess(''); }} style={s.addBtn}>
           {showAddUser ? 'Cancel' : '+ Add Staff Member'}
         </button>
       </div>
 
-      {formSuccess && (
-        <div style={s.successBanner}>{formSuccess}</div>
-      )}
+      {formSuccess && <div style={s.successBanner}>{formSuccess}</div>}
 
       {/* Add User Form */}
       {showAddUser && (
@@ -194,18 +239,15 @@ function UserManagement({ currentUser }) {
           <div style={s.formGrid}>
             <div>
               <label style={s.label}>Full Name *</label>
-              <input value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
-                style={s.input} placeholder="First and last name" />
+              <input value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))} style={s.input} placeholder="First and last name" />
             </div>
             <div>
               <label style={s.label}>Email *</label>
-              <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                style={s.input} placeholder="staff@example.com" type="email" />
+              <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} style={s.input} placeholder="staff@example.com" type="email" />
             </div>
             <div>
               <label style={s.label}>Temporary Password *</label>
-              <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                style={s.input} placeholder="Min 8 characters" type="password" />
+              <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} style={s.input} placeholder="Min 8 characters" type="password" />
             </div>
             <div>
               <label style={s.label}>Role *</label>
@@ -228,74 +270,103 @@ function UserManagement({ currentUser }) {
       {loading ? (
         <p style={{ color: '#888' }}>Loading...</p>
       ) : (
-        <div style={s.table}>
-          <div style={s.tableHeader}>
-            <span style={{ flex: 2 }}>Name</span>
-            <span style={{ flex: 2 }}>Email</span>
-            <span style={{ flex: 1.5 }}>Role</span>
-            <span style={{ flex: 2 }}>House Assignments</span>
-            <span style={{ flex: 1.2 }}>Actions</span>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {users.map(u => {
             const col = roleColor(u.role);
             const assignments = houseAssignments[u.id] || [];
             const isCurrentUser = u.id === currentUser?.id;
+            const userGroupIds = groupMemberships[u.id] || [];
+
             return (
-              <div key={u.id} style={s.tableRow}>
-                <span style={{ flex: 2 }}>
-                  <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{u.full_name}</p>
-                  {isCurrentUser && <span style={{ fontSize: '10px', color: '#b22222' }}>You</span>}
-                </span>
-                <span style={{ flex: 2, color: '#aaa', fontSize: '13px' }}>{u.email}</span>
-                <span style={{ flex: 1.5 }}>
-                  {isCurrentUser ? (
-                    <span style={{ ...s.roleBadge, background: col.bg, color: col.color }}>
-                      {roleLabel(u.role)}
-                    </span>
-                  ) : (
-                    <select
-                      value={u.role}
-                      onChange={e => updateRole(u.id, e.target.value)}
-                      style={{ ...s.roleSelect, background: col.bg, color: col.color, borderColor: col.color + '44' }}
-                    >
-                      {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                    </select>
-                  )}
-                </span>
-                <span style={{ flex: 2 }}>
-                  {needsHouseAssignment(u.role) ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-                      {assignments.map(a => (
-                        <span key={a.assignmentId} style={s.houseTag}>
-                          {a.name}
-                          {!isCurrentUser && (
-                            <button onClick={() => removeHouseAssignment(a.assignmentId)}
-                              style={s.removeHouseBtn}>×</button>
-                          )}
-                        </span>
-                      ))}
-                      {!isCurrentUser && (
-                        <button onClick={() => setShowHouseModal(u)} style={s.assignHouseBtn}>
-                          + Assign House
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <span style={{ color: '#555', fontSize: '12px' }}>All houses</span>
-                  )}
-                </span>
-                <span style={{ flex: 1.2 }}>
+              <div key={u.id} style={s.userCard}>
+                {/* Top row: name, email, role, actions */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                  {/* Name + email */}
+                  <div style={{ flex: 2, minWidth: '160px' }}>
+                    <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{u.full_name}</p>
+                    <p style={{ color: '#666', fontSize: '12px', margin: '2px 0 0 0' }}>{u.email}</p>
+                    {isCurrentUser && <span style={{ fontSize: '10px', color: '#b22222' }}>You</span>}
+                  </div>
+
+                  {/* Role */}
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <p style={s.fieldLabel}>Role</p>
+                    {isCurrentUser ? (
+                      <span style={{ ...s.roleBadge, background: col.bg, color: col.color }}>{roleLabel(u.role)}</span>
+                    ) : (
+                      <select value={u.role} onChange={e => updateRole(u.id, e.target.value)}
+                        style={{ ...s.roleSelect, background: col.bg, color: col.color, borderColor: col.color + '44' }}>
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* House assignments */}
+                  <div style={{ flex: 2, minWidth: '160px' }}>
+                    <p style={s.fieldLabel}>House Assignments</p>
+                    {needsHouseAssignment(u.role) ? (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+                        {assignments.map(a => (
+                          <span key={a.assignmentId} style={s.houseTag}>
+                            {a.name}
+                            {!isCurrentUser && (
+                              <button onClick={() => removeHouseAssignment(a.assignmentId)} style={s.removeHouseBtn}>×</button>
+                            )}
+                          </span>
+                        ))}
+                        {!isCurrentUser && (
+                          <button onClick={() => setShowHouseModal(u)} style={s.assignHouseBtn}>+ Assign</button>
+                        )}
+                      </div>
+                    ) : (
+                      <span style={{ color: '#555', fontSize: '12px' }}>All houses</span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
                   {!isCurrentUser && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <button
-                        onClick={() => { setResetModal(u); setNewPassword(''); setResetError(''); setResetSuccess(''); }}
-                        style={s.resetBtn}>
-                        Reset Password
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                      <button onClick={() => { setResetModal(u); setNewPassword(''); setResetError(''); setResetSuccess(''); }} style={s.resetBtn}>
+                        Reset PW
                       </button>
                       <button onClick={() => removeUser(u.id)} style={s.removeBtn}>Remove</button>
                     </div>
                   )}
-                </span>
+                </div>
+
+                {/* Group chat memberships */}
+                {!isCurrentUser && presetGroups.length > 0 && (
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #333' }}>
+                    <p style={s.fieldLabel}>Group Chat Memberships</p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {presetGroups.map(group => {
+                        const isMember = userGroupIds.includes(group.id);
+                        const key = `${u.id}-${group.id}`;
+                        const isToggling = togglingGroup[key];
+                        return (
+                          <button
+                            key={group.id}
+                            onClick={() => toggleGroupMembership(u.id, group.id, isMember)}
+                            disabled={isToggling}
+                            style={{
+                              padding: '4px 12px',
+                              borderRadius: '20px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              fontWeight: '500',
+                              border: isMember ? 'none' : '1px dashed #444',
+                              background: isMember ? '#1e2d3a' : 'transparent',
+                              color: isMember ? '#60a5fa' : '#555',
+                              opacity: isToggling ? 0.5 : 1,
+                              transition: 'all 0.15s',
+                            }}>
+                            {isMember ? '✓ ' : '+ '}{group.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -306,12 +377,8 @@ function UserManagement({ currentUser }) {
       {showHouseModal && (
         <div style={s.overlay} onClick={() => setShowHouseModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: '#fff', margin: '0 0 6px 0', fontSize: '16px' }}>
-              Assign House to {showHouseModal.full_name}
-            </h3>
-            <p style={{ color: '#666', fontSize: '13px', margin: '0 0 16px 0' }}>
-              Select a house to assign. You can assign multiple houses.
-            </p>
+            <h3 style={{ color: '#fff', margin: '0 0 6px 0', fontSize: '16px' }}>Assign House to {showHouseModal.full_name}</h3>
+            <p style={{ color: '#666', fontSize: '13px', margin: '0 0 16px 0' }}>Select a house to assign. You can assign multiple houses.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {houses.map(h => {
                 const alreadyAssigned = (houseAssignments[showHouseModal.id] || []).some(a => a.id === h.id);
@@ -324,7 +391,7 @@ function UserManagement({ currentUser }) {
                     {alreadyAssigned ? (
                       <span style={{ fontSize: '12px', color: '#4ade80' }}>✓ Assigned</span>
                     ) : (
-                      <button onClick={() => { assignHouse(showHouseModal.id, h.id); }}
+                      <button onClick={() => assignHouse(showHouseModal.id, h.id)}
                         style={{ background: '#b22222', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
                         Assign
                       </button>
@@ -352,14 +419,9 @@ function UserManagement({ currentUser }) {
               Set a new temporary password for <strong style={{ color: '#ddd' }}>{resetModal.full_name}</strong>.
             </p>
             <label style={s.label}>New Password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') resetPassword(); }}
-              placeholder="Min 8 characters"
-              style={{ ...s.input, marginBottom: '12px' }}
-            />
+              placeholder="Min 8 characters" style={{ ...s.input, marginBottom: '12px' }} />
             {resetError && <p style={{ color: '#f87171', fontSize: '13px', margin: '0 0 12px 0' }}>{resetError}</p>}
             {resetSuccess && <p style={{ color: '#4ade80', fontSize: '13px', margin: '0 0 12px 0' }}>{resetSuccess}</p>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -389,14 +451,13 @@ const s = {
   formTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' },
   label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
+  fieldLabel: { color: '#555', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' },
   input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   hint: { color: '#555', fontSize: '12px', margin: 0, lineHeight: '1.5' },
   errorText: { color: '#f87171', fontSize: '13px', margin: '0 0 12px 0' },
   successBanner: { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' },
-  table: { background: '#2a2a2a', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' },
-  tableHeader: { display: 'flex', padding: '12px 16px', borderBottom: '1px solid #333', fontSize: '11px', color: '#666', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
-  tableRow: { display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #222', gap: '12px' },
+  userCard: { background: '#2a2a2a', borderRadius: '12px', padding: '16px 20px', border: '1px solid #333' },
   roleBadge: { fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: '500' },
   roleSelect: { fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', border: '1px solid', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' },
   houseTag: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: '#1e2d3a', color: '#60a5fa' },
