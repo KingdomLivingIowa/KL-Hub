@@ -370,7 +370,7 @@ function BedStat({ label, value, color }) {
 function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadMessages] = useState(0);
 
   const {
     role,
