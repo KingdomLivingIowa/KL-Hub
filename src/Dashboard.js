@@ -8,6 +8,7 @@ import Houses from './Houses';
 import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
 import Payments from './Payments';
+import Messaging from './Messaging';
 
 function DashboardHome({ counts }) {
   const { isHouseManagerRole, assignedHouseIds } = useUser();
@@ -369,6 +370,7 @@ function BedStat({ label, value, color }) {
 function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const {
     role,
@@ -447,6 +449,9 @@ function DashboardInner({ user }) {
               {item.id === 'admissions' && counts.pending > 0 && (
                 <span style={styles.badge}>{counts.pending}</span>
               )}
+              {item.id === 'messages' && unreadMessages > 0 && (
+                <span style={styles.badge}>{unreadMessages}</span>
+              )}
             </button>
           ))}
           {isAdmin && settingsItems.length > 0 && (
@@ -479,6 +484,7 @@ function DashboardInner({ user }) {
           {activePage === 'clients' && <Clients />}
           {activePage === 'houses' && <Houses />}
           {activePage === 'payments' && hasFullAccess && <Payments />}
+          {activePage === 'messages' && <Messaging />}
           {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
