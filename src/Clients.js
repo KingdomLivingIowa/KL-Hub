@@ -181,6 +181,8 @@ function Clients() {
   const [timelineTotal, setTimelineTotal] = useState(0);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
+  const [stays, setStays] = useState([]);
+  const [staysLoading, setStaysLoading] = useState(false);
 
   const [uaRecords, setUaRecords] = useState([]);
   const [meetingRecords, setMeetingRecords] = useState([]);
@@ -282,6 +284,13 @@ function Clients() {
     setChoreRecords(all.filter(e => e.entry_type === 'Chores'));
   };
 
+  const fetchStays = async (clientId) => {
+    setStaysLoading(true);
+    const { data } = await supabase.from('client_stays').select('*').eq('client_id', clientId).order('discharge_date', { ascending: false });
+    setStays(data || []);
+    setStaysLoading(false);
+  };
+
   const toggleWeek = (key) => setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -335,6 +344,7 @@ function Clients() {
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDateShort = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatDateFull = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
@@ -364,7 +374,7 @@ function Clients() {
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
       updates.level = 1;
-      updates.expected_move_in_date = null; // clear it once they actually move in
+      updates.expected_move_in_date = null;
       const houseId = statusForm.house_id || client.house_id;
       if (houseId) {
         updates.house_id = houseId;
@@ -387,11 +397,36 @@ function Clients() {
 
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
-      updates.discharge_date = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+      updates.discharge_date = today;
       updates.reason_for_discharge = statusForm.discharge_reason;
       updates.discharge_notes = statusForm.discharge_notes || null;
       updates.discharged_by = user?.email || user?.id || null;
       updates.level = null;
+
+      // Get current balance
+      const { data: chargesData } = await supabase.from('charges').select('amount').eq('client_id', client.id);
+      const { data: paymentsData } = await supabase.from('payments').select('amount').eq('client_id', client.id);
+      const totalCharged = (chargesData || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+      const totalPaid = (paymentsData || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+      const balanceAtDischarge = totalCharged - totalPaid;
+
+      // Get house name
+      const houseName = client.house_name || houses.find(h => h.id === client.house_id)?.name || null;
+
+      // Save stay record
+      await supabase.from('client_stays').insert([{
+        client_id: client.id,
+        house_id: client.house_id || null,
+        house_name: houseName,
+        start_date: client.start_date || null,
+        discharge_date: today,
+        discharge_reason: statusForm.discharge_reason,
+        discharge_notes: statusForm.discharge_notes || null,
+        balance_at_discharge: balanceAtDischarge,
+        discharged_by: user?.email || user?.id || null,
+      }]);
+
       if (client.house_id) {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
         if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
@@ -454,8 +489,10 @@ function Clients() {
     setEditingField(null);
     setTimeline([]);
     setTimelineTotal(0);
+    setStays([]);
     fetchTimeline(client.id);
     fetchFullHistory(client.id);
+    fetchStays(client.id);
   };
 
   const updateLevel = async (clientId, lvl) => {
@@ -626,7 +663,7 @@ function Clients() {
     );
   };
 
-  const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'application', 'documents', 'notes'];
+  const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'stays', 'application', 'documents', 'notes'];
   const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalCount);
 
@@ -764,7 +801,6 @@ function Clients() {
                       <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
                       <ReadField label="House manager" value={selected.house_manager} />
                       <ReadField label="Move-in date" value={selected.start_date} />
-                      {/* Show expected move-in date for Pending clients */}
                       {selected.status === 'Pending' && (
                         <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
                       )}
@@ -1069,6 +1105,86 @@ function Clients() {
                     </>
                   )}
                 </>
+              )}
+
+              {/* ── Stays Tab ── */}
+              {activeTab === 'stays' && (
+                <Card title="Stay History" full>
+                  {staysLoading ? (
+                    <p style={{ color: '#666', fontSize: '14px' }}>Loading stay history...</p>
+                  ) : stays.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px 0' }}>
+                      <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>No previous stays recorded.</p>
+                      <p style={{ color: '#444', fontSize: '12px', margin: '6px 0 0 0' }}>Stay history is saved automatically when a client is discharged.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                        <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#60a5fa', fontSize: '20px', fontWeight: '700' }}>{stays.length}</span>
+                          <span style={{ color: '#60a5fa', fontSize: '11px', opacity: 0.8 }}>Total Stays</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {stays.map((stay, i) => {
+                          const lengthDays = stay.start_date && stay.discharge_date
+                            ? Math.round((new Date(stay.discharge_date) - new Date(stay.start_date)) / (1000 * 60 * 60 * 24))
+                            : null;
+                          const balance = parseFloat(stay.balance_at_discharge) || 0;
+                          return (
+                            <div key={stay.id} style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #333', overflow: 'hidden' }}>
+                              {/* Stay header */}
+                              <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />
+                                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>Stay #{stays.length - i}</span>
+                                  {stay.house_name && (
+                                    <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>
+                                  )}
+                                </div>
+                                {lengthDays !== null && (
+                                  <span style={{ fontSize: '12px', color: '#555' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>
+                                )}
+                              </div>
+                              {/* Stay details */}
+                              <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <div>
+                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Move-in</p>
+                                  <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.start_date)}</p>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge</p>
+                                  <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.discharge_date)}</p>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reason</p>
+                                  <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{stay.discharge_reason || '—'}</p>
+                                </div>
+                                <div>
+                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Balance at discharge</p>
+                                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0, color: balance > 0 ? '#f87171' : balance < 0 ? '#4ade80' : '#555' }}>
+                                    {balance > 0 ? `$${balance.toFixed(2)} owed` : balance < 0 ? `$${Math.abs(balance).toFixed(2)} credit` : '$0.00'}
+                                  </p>
+                                </div>
+                                {stay.discharge_notes && (
+                                  <div style={{ gridColumn: 'span 2' }}>
+                                    <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</p>
+                                    <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{stay.discharge_notes}</p>
+                                  </div>
+                                )}
+                                {stay.discharged_by && (
+                                  <div style={{ gridColumn: 'span 2' }}>
+                                    <p style={{ fontSize: '11px', color: '#444', margin: 0 }}>Discharged by {stay.discharged_by}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </Card>
               )}
 
               {activeTab === 'application' && (
