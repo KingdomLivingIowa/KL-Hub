@@ -314,19 +314,15 @@ function Clients() {
 
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
-
-      // If a house is selected (either new or already assigned), update it
+      updates.level = 1; // Set level to 1 when becoming Active
       const houseId = statusForm.house_id || client.house_id;
       if (houseId) {
         updates.house_id = houseId;
-        // Only increment bed count if house is changing or client wasn't already Pending
         if (houseId !== client.house_id || client.status !== 'Pending') {
           const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', houseId).single();
           if (houseData) await supabase.from('houses').update({ occupied_beds: (houseData.occupied_beds || 0) + 1 }).eq('id', houseId);
         }
       }
-
-      // Auto-create move-in fee charge
       const roomType = client.room_type || 'Double';
       const feeAmounts = { 'Single': 150, 'Double': 150, 'Houseperson': 150, 'Live-Out': 0 };
       const moveInAmount = feeAmounts[roomType] ?? 150;
@@ -345,6 +341,7 @@ function Clients() {
       updates.reason_for_discharge = statusForm.discharge_reason;
       updates.discharge_notes = statusForm.discharge_notes || null;
       updates.discharged_by = user?.email || user?.id || null;
+      updates.level = null; // Clear level on discharge
       if (client.house_id) {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
         if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
@@ -623,7 +620,7 @@ function Clients() {
                   <span style={{ color: '#fff', fontWeight: '500' }}>{c.full_name}</span>
                 </span>
                 <span style={{ flex: 1 }}><span style={{ ...st.badge, background: statusColor(c.status).bg, color: statusColor(c.status).color }}>{c.status || '—'}</span></span>
-                <span style={{ flex: 1, color: '#aaa' }}>Level {c.level || 1}</span>
+                <span style={{ flex: 1, color: '#aaa' }}>{c.status === 'Active' && c.level ? `Level ${c.level}` : '—'}</span>
                 <span style={{ flex: 2, color: '#aaa' }}>{c.house_name || '—'}</span>
                 <span style={{ flex: 1, color: '#aaa' }}>{c.start_date || '—'}</span>
               </div>
@@ -658,10 +655,16 @@ function Clients() {
                 <p style={st.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
                 <div style={st.badges}>
                   <span style={{ ...st.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
-                  <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
-                    style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
-                    <option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option><option value={4}>Level 4</option>
-                  </select>
+                  {/* Only show level selector for Active clients */}
+                  {selected.status === 'Active' && (
+                    <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
+                      <option value={1}>Level 1</option>
+                      <option value={2}>Level 2</option>
+                      <option value={3}>Level 3</option>
+                      <option value={4}>Level 4</option>
+                    </select>
+                  )}
                   {selected.sor_grant && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
                 </div>
                 {hasFullAccess && STATUS_FLOW[selected.status]?.length > 0 && (
@@ -1067,7 +1070,6 @@ function Clients() {
               )}
               {statusModal.newStatus === 'Active' && (
                 <>
-                  {/* Show house selector only if client doesn't already have a house assigned */}
                   {!statusModal.client.house_id && (
                     <div style={{ marginBottom: '16px' }}>
                       <label style={sf.label}>Assign to house</label>
