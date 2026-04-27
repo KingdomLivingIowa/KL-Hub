@@ -64,6 +64,58 @@ const groupByWeek = (entries) => {
   return Object.values(weeks).sort((a, b) => b.weekStart - a.weekStart);
 };
 
+// ── Invite to Portal Button ───────────────────────────────────────────────────
+function InvitePortalButton({ client }) {
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+
+  const handleInvite = async (e) => {
+    e.stopPropagation();
+    if (status === 'sent') return;
+    if (!window.confirm(`Send a portal invite to ${client.email}?`)) return;
+
+    setStatus('sending');
+    const { error } = await supabase.auth.admin.inviteUserByEmail(client.email, {
+      redirectTo: 'https://kl-portal.vercel.app',
+    });
+
+    if (error) {
+      // If user already exists, that's fine — still show sent
+      if (error.message?.includes('already been registered')) {
+        setStatus('sent');
+      } else {
+        console.error(error);
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 3000);
+      }
+    } else {
+      setStatus('sent');
+    }
+  };
+
+  const btnStyles = {
+    idle:    { background: 'transparent', border: '1px solid #444', color: '#aaa' },
+    sending: { background: 'transparent', border: '1px solid #444', color: '#aaa', opacity: 0.6 },
+    sent:    { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80' },
+    error:   { background: '#3a1e1e', border: '1px solid #f87171', color: '#f87171' },
+  };
+
+  const btnLabel = {
+    idle:    '✉ Invite to Portal',
+    sending: 'Sending...',
+    sent:    '✓ Invite Sent',
+    error:   'Error — retry?',
+  };
+
+  return (
+    <button
+      onClick={handleInvite}
+      style={{ ...btnStyles[status], fontSize: '12px', padding: '4px 12px', borderRadius: '8px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
+    >
+      {btnLabel[status]}
+    </button>
+  );
+}
+
 function Clients() {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
@@ -180,7 +232,6 @@ function Clients() {
     else setTimelineLoading(true);
 
     try {
-      // Count total entries
       if (!append) {
         const { count } = await supabase
           .from('client_timeline')
@@ -212,7 +263,6 @@ function Clients() {
         setExpandedWeeks({ [thisWeekKey]: true });
       }
 
-      // Geocode any new entries with coordinates
       entries.forEach(async entry => {
         if (entry.latitude && entry.longitude) {
           const address = await reverseGeocode(entry.latitude, entry.longitude);
@@ -227,7 +277,6 @@ function Clients() {
     }
   };
 
-  // Fetch ALL entries for UA/meetings/chores tabs (needed for complete summaries)
   const fetchFullHistory = async (clientId) => {
     const { data } = await supabase
       .from('client_timeline')
@@ -319,12 +368,9 @@ function Clients() {
     }
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
-
-      // Auto-create move-in fee charge
       const roomType = client.room_type || 'Double';
       const feeAmounts = { 'Single': 150, 'Double': 150, 'Houseperson': 150, 'Live-Out': 0 };
       const moveInAmount = feeAmounts[roomType] ?? 150;
-
       if (moveInAmount > 0) {
         await supabase.from('charges').insert([{
           client_id: client.id,
@@ -348,7 +394,6 @@ function Clients() {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
         if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
       }
-
     }
     const { error } = await supabase.from('clients').update(updates).eq('id', client.id);
     if (error) { alert('Error updating status: ' + error.message); return; }
@@ -672,13 +717,14 @@ function Clients() {
                   {selected.sor_grant && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
                 </div>
                 {hasFullAccess && STATUS_FLOW[selected.status]?.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '11px', color: '#666' }}>Move to:</span>
                     <select defaultValue="" onChange={e => { if (e.target.value) openStatusModal(selected, e.target.value); e.target.value = ''; }}
                       style={{ backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>
                       <option value="">Select status...</option>
                       {STATUS_FLOW[selected.status].map(ns => <option key={ns} value={ns}>{ns}</option>)}
                     </select>
+                    {selected.email && <InvitePortalButton client={selected} />}
                   </div>
                 )}
               </div>
@@ -1010,8 +1056,6 @@ function Clients() {
                           </div>
                         ))}
                       </div>
-
-                      {/* Load more button */}
                       {hasMoreTimeline && (
                         <div style={{ textAlign: 'center', marginTop: '16px' }}>
                           <button onClick={() => fetchTimeline(selected.id, true)} disabled={timelineLoadingMore}
@@ -1052,10 +1096,11 @@ function Clients() {
               )}
 
               {activeTab === 'payments' && (
-  <Card title="Payments" full>
-    <ClientPayments client={selected} />
-  </Card>
-)}
+                <Card title="Payments" full>
+                  <ClientPayments client={selected} />
+                </Card>
+              )}
+
               {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#666', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
             </div>
           </div>
