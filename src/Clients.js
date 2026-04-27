@@ -19,7 +19,7 @@ const STATUS_FLOW = {
   'Denied': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
 };
 
-const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note'];
+const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Weekly Reflection'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -106,6 +106,80 @@ function InvitePortalButton({ client }) {
   );
 }
 
+// ── Weekly Reflection Form ────────────────────────────────────────────────────
+function WeeklyReflectionForm({ entryForm, setEntryForm }) {
+  return (
+    <>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={sf.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
+        <input type="range" min="1" max="10"
+          value={entryForm.reflection_mood || 5}
+          onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))}
+          style={{ width: '100%' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#555', marginTop: '2px' }}>
+          <span>1 — Rough</span><span>10 — Great</span>
+        </div>
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={sf.label}>Biggest challenge this week</label>
+        <textarea value={entryForm.reflection_challenge || ''} onChange={e => setEntryForm(p => ({ ...p, reflection_challenge: e.target.value }))}
+          style={{ ...sf.input, resize: 'vertical' }} rows={2} placeholder="What was hard this week?" />
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={sf.label}>A win or something you're proud of</label>
+        <textarea value={entryForm.reflection_win || ''} onChange={e => setEntryForm(p => ({ ...p, reflection_win: e.target.value }))}
+          style={{ ...sf.input, resize: 'vertical' }} rows={2} placeholder="What went well or what are you proud of?" />
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={sf.label}>Goals for next week</label>
+        <textarea value={entryForm.reflection_goals || ''} onChange={e => setEntryForm(p => ({ ...p, reflection_goals: e.target.value }))}
+          style={{ ...sf.input, resize: 'vertical' }} rows={2} placeholder="What do you want to focus on next week?" />
+      </div>
+    </>
+  );
+}
+
+// ── Weekly Reflection Display ─────────────────────────────────────────────────
+function WeeklyReflectionCard({ entry }) {
+  let data = null;
+  try { data = entry.reflection_data ? JSON.parse(entry.reflection_data) : null; } catch { data = null; }
+
+  return (
+    <div style={{ marginTop: '6px' }}>
+      {data?.mood && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', color: '#555' }}>Mood:</span>
+          <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>{data.mood}/10</span>
+        </div>
+      )}
+      {data?.challenge && (
+        <div style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p>
+        </div>
+      )}
+      {data?.win && (
+        <div style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p>
+        </div>
+      )}
+      {data?.goals && (
+        <div style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p>
+        </div>
+      )}
+      {entry.notes && (
+        <div>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Clients() {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
@@ -122,15 +196,10 @@ function Clients() {
   const [activeTab, setActiveTab] = useState('overview');
   const [statusModal, setStatusModal] = useState(null);
   const [statusForm, setStatusForm] = useState({
-    list_type: 'DOC Men',
-    move_in_date: '',
-    discharge_reason: '',
-    discharge_notes: '',
-    house_id: '',
+    list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', house_id: '',
   });
 
   const [houses, setHouses] = useState([]);
-
   const [timeline, setTimeline] = useState([]);
   const [timelineTotal, setTimelineTotal] = useState(0);
   const [timelineLoading, setTimelineLoading] = useState(false);
@@ -147,6 +216,7 @@ function Clients() {
     author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
     chore_status: 'Completed', mood_value: '5', ua_result: 'Negative',
     checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false,
+    reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
   });
   const [editingField, setEditingField] = useState(null);
   const [expandedWeeks, setExpandedWeeks] = useState({});
@@ -281,6 +351,7 @@ function Clients() {
     if (type === 'UA') return '#f472b6';
     if (type === 'General Note') return '#f59e0b';
     if (type === 'Chores') return '#34d399';
+    if (type === 'Weekly Reflection') return '#a78bfa';
     return '#888';
   };
 
@@ -314,7 +385,7 @@ function Clients() {
 
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
-      updates.level = 1; // Set level to 1 when becoming Active
+      updates.level = 1;
       const houseId = statusForm.house_id || client.house_id;
       if (houseId) {
         updates.house_id = houseId;
@@ -341,7 +412,7 @@ function Clients() {
       updates.reason_for_discharge = statusForm.discharge_reason;
       updates.discharge_notes = statusForm.discharge_notes || null;
       updates.discharged_by = user?.email || user?.id || null;
-      updates.level = null; // Clear level on discharge
+      updates.level = null;
       if (client.house_id) {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
         if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
@@ -365,19 +436,37 @@ function Clients() {
 
   const saveTimelineEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
+
+    let reflectionData = null;
+    if (entryType === 'Weekly Reflection') {
+      reflectionData = JSON.stringify({
+        mood: entryForm.reflection_mood,
+        challenge: entryForm.reflection_challenge,
+        win: entryForm.reflection_win,
+        goals: entryForm.reflection_goals,
+      });
+    }
+
     const { error } = await supabase.from('client_timeline').insert([{
       client_id: selected.id, entry_type: entryType, author: entryForm.author,
-      notes: entryForm.notes || null, severity: entryType === 'Crisis' ? entryForm.severity : null,
+      notes: entryForm.notes || null,
+      severity: entryType === 'Crisis' ? entryForm.severity : null,
       event_name: entryType === 'UA' ? entryForm.ua_result : entryType === 'Chores' ? entryForm.chore_status : null,
       meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : entryType === 'Chores' ? entryForm.chore_name : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
+      reflection_data: reflectionData,
       latitude: entryForm.latitude ? parseFloat(entryForm.latitude) : null,
       longitude: entryForm.longitude ? parseFloat(entryForm.longitude) : null,
       source: 'staff',
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
     setShowAddEntry(false);
-    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false });
+    setEntryForm({
+      author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
+      chore_status: 'Completed', mood_value: '5', ua_result: 'Negative',
+      checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false,
+      reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
+    });
     setEntryType('General Note');
     fetchTimeline(selected.id);
     fetchFullHistory(selected.id);
@@ -655,14 +744,10 @@ function Clients() {
                 <p style={st.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
                 <div style={st.badges}>
                   <span style={{ ...st.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
-                  {/* Only show level selector for Active clients */}
                   {selected.status === 'Active' && (
                     <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
-                      <option value={1}>Level 1</option>
-                      <option value={2}>Level 2</option>
-                      <option value={3}>Level 3</option>
-                      <option value={4}>Level 4</option>
+                      <option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option><option value={4}>Level 4</option>
                     </select>
                   )}
                   {selected.sor_grant && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
@@ -951,12 +1036,15 @@ function Clients() {
                           </button>
                         </div>
                       )}
+                      {entryType === 'Weekly Reflection' && (
+                        <WeeklyReflectionForm entryForm={entryForm} setEntryForm={setEntryForm} />
+                      )}
                       <div style={{ marginBottom: '12px' }}>
                         <label style={sf.label}>Author *</label>
                         <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={sf.input} placeholder="Your name" />
                       </div>
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={sf.label}>Notes</label>
+                        <label style={sf.label}>{entryType === 'Weekly Reflection' ? 'Additional notes (optional)' : 'Notes'}</label>
                         <textarea value={entryForm.notes} onChange={e => setEntryForm(p => ({ ...p, notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={3} placeholder="Add any notes..." />
                       </div>
                       <button onClick={saveTimelineEntry} style={sf.confirmBtn}>Save Entry</button>
@@ -980,6 +1068,7 @@ function Clients() {
                                 {entry.mood_value && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>Mood: {entry.mood_value}/10</span>}
                                 {entry.severity && <span style={{ ...st.badge, background: entry.severity === 'High' ? '#3a1e1e' : entry.severity === 'Medium' ? '#3a2d1e' : '#1e3a2f', color: entry.severity === 'High' ? '#f87171' : entry.severity === 'Medium' ? '#fb923c' : '#4ade80' }}>{entry.severity}</span>}
                                 {entry.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '10px' }}>House</span>}
+                                {entry.source === 'client' && <span style={{ ...st.badge, background: '#2d1e3a', color: '#c084fc', fontSize: '10px' }}>Self</span>}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>{formatDate(entry.created_at)}</span>
@@ -987,7 +1076,10 @@ function Clients() {
                               </div>
                             </div>
                             {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
-                            {entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
+                            {entry.entry_type === 'Weekly Reflection'
+                              ? <WeeklyReflectionCard entry={entry} />
+                              : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
+                            }
                             <p style={{ color: '#555', fontSize: '11px', margin: '6px 0 0 0' }}>By {entry.author}</p>
                           </div>
                         ))}

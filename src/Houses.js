@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import ClientPayments from './ClientPayments';
 
-const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note'];
+const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection'];
 
 const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'application', 'documents', 'notes'];
 
@@ -24,6 +24,80 @@ const reverseGeocode = async (lat, lng) => {
   } catch { return null; }
 };
 
+// ── Weekly Reflection Form (house staff version) ──────────────────────────────
+function HouseWeeklyReflectionForm({ entryForm, setEntryForm }) {
+  return (
+    <>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={s.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
+        <input type="range" min="1" max="10"
+          value={entryForm.reflection_mood || 5}
+          onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))}
+          style={{ width: '100%' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#555', marginTop: '2px' }}>
+          <span>1 — Rough</span><span>10 — Great</span>
+        </div>
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={s.label}>Biggest challenge this week</label>
+        <textarea value={entryForm.reflection_challenge || ''} onChange={e => setEntryForm(p => ({ ...p, reflection_challenge: e.target.value }))}
+          style={{ ...s.input, resize: 'vertical' }} rows={2} placeholder="What was hard this week?" />
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={s.label}>A win or something to be proud of</label>
+        <textarea value={entryForm.reflection_win || ''} onChange={e => setEntryForm(p => ({ ...p, reflection_win: e.target.value }))}
+          style={{ ...s.input, resize: 'vertical' }} rows={2} placeholder="What went well?" />
+      </div>
+      <div style={{ marginBottom: '12px' }}>
+        <label style={s.label}>Goals for next week</label>
+        <textarea value={entryForm.reflection_goals || ''} onChange={e => setEntryForm(p => ({ ...p, reflection_goals: e.target.value }))}
+          style={{ ...s.input, resize: 'vertical' }} rows={2} placeholder="What do you want to focus on next week?" />
+      </div>
+    </>
+  );
+}
+
+// ── Weekly Reflection Display ─────────────────────────────────────────────────
+function HouseWeeklyReflectionCard({ entry }) {
+  let data = null;
+  try { data = entry.reflection_data ? JSON.parse(entry.reflection_data) : null; } catch { data = null; }
+
+  return (
+    <div style={{ marginTop: '6px' }}>
+      {data?.mood && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <span style={{ fontSize: '12px', color: '#555' }}>Mood:</span>
+          <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: '#3a2d1e', color: '#fb923c', fontWeight: '500' }}>{data.mood}/10</span>
+        </div>
+      )}
+      {data?.challenge && (
+        <div style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p>
+        </div>
+      )}
+      {data?.win && (
+        <div style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p>
+        </div>
+      )}
+      {data?.goals && (
+        <div style={{ marginBottom: '8px' }}>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p>
+        </div>
+      )}
+      {entry.notes && (
+        <div>
+          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Houses() {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
@@ -40,7 +114,10 @@ function Houses() {
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [roomForm, setRoomForm] = useState({ name: '', type: 'Double', beds: '2' });
   const [entryType, setEntryType] = useState('House Check-In');
-  const [entryForm, setEntryForm] = useState({ author: '', notes: '', severity: 'Low', event_name: '' });
+  const [entryForm, setEntryForm] = useState({
+    author: '', notes: '', severity: 'Low', event_name: '',
+    reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
+  });
   const [residentChecks, setResidentChecks] = useState({});
   const [mainView, setMainView] = useState('houses');
   const [allResidents, setAllResidents] = useState([]);
@@ -50,12 +127,10 @@ function Houses() {
     total_beds: '', house_manager: '', phone: '', notes: '',
   });
 
-  // Move-in confirmation modal
-  const [moveInModal, setMoveInModal] = useState(null); // client object
+  const [moveInModal, setMoveInModal] = useState(null);
   const [moveInRoomType, setMoveInRoomType] = useState('Double');
   const [savingMoveIn, setSavingMoveIn] = useState(false);
 
-  // Client profile modal (opened from resident row)
   const [clientProfile, setClientProfile] = useState(null);
   const [clientProfileTab, setClientProfileTab] = useState('overview');
   const [clientTimeline, setClientTimeline] = useState([]);
@@ -124,7 +199,7 @@ function Houses() {
     setActiveTab('residents');
     setShowAddEntry(false);
     setEntryType('House Check-In');
-    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '' });
+    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     fetchResidents(house.id);
     fetchRooms(house.id);
     fetchTimeline(house.id);
@@ -136,42 +211,23 @@ function Houses() {
     fetchClientTimeline(client.id);
   };
 
-  // Confirm move-in handler
   const confirmMoveIn = async () => {
     if (!moveInModal) return;
     setSavingMoveIn(true);
     const today = new Date().toISOString().split('T')[0];
-
-    // Update client: set Active, move-in date, room type
     const { error } = await supabase.from('clients').update({
-      status: 'Active',
-      start_date: today,
-      room_type: moveInRoomType,
+      status: 'Active', start_date: today, room_type: moveInRoomType,
     }).eq('id', moveInModal.id);
-
     if (error) { alert('Error confirming move-in: ' + error.message); setSavingMoveIn(false); return; }
-
-    // Create move-in fee charge
     await supabase.from('charges').insert([{
-      client_id: moveInModal.id,
-      charge_type: 'move_in_fee',
-      amount: 150,
-      due_date: today,
-      description: 'Move-in fee',
-      status: 'unpaid',
-      amount_paid: 0,
-      created_by: user?.email || null,
+      client_id: moveInModal.id, charge_type: 'move_in_fee', amount: 150, due_date: today,
+      description: 'Move-in fee', status: 'unpaid', amount_paid: 0, created_by: user?.email || null,
     }]);
-
-    // Add timeline entry
     await supabase.from('client_timeline').insert([{
-      client_id: moveInModal.id,
-      entry_type: 'General Note',
-      author: user?.email || 'Staff',
+      client_id: moveInModal.id, entry_type: 'General Note', author: user?.email || 'Staff',
       notes: `Move-in confirmed. Room type: ${moveInRoomType}. Weekly fee of $${moveInRoomType === 'Single' ? '160' : moveInRoomType === 'Houseperson' ? '110' : '135'} will begin the following Sunday.`,
       source: 'staff',
     }]);
-
     setMoveInModal(null);
     setMoveInRoomType('Double');
     setSavingMoveIn(false);
@@ -195,7 +251,10 @@ function Houses() {
 
   const handleEntryTypeChange = (newType) => {
     setEntryType(newType);
-    setEntryForm(prev => ({ author: prev.author, notes: '', severity: 'Low', event_name: '' }));
+    setEntryForm(prev => ({
+      author: prev.author, notes: '', severity: 'Low', event_name: '',
+      reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
+    }));
     setResidentChecks(prev => {
       const reset = {};
       Object.keys(prev).forEach(id => { reset[id] = { name: prev[id].name, value: '' }; });
@@ -239,17 +298,31 @@ function Houses() {
     if (!entryForm.author) { alert('Author is required.'); return; }
     if (entryType === 'Crisis' && !entryForm.severity) { alert('Severity is required.'); return; }
     if (entryType === 'Event Attendance' && !entryForm.event_name) { alert('Event name is required.'); return; }
+
     const resData = Object.entries(residentChecks).map(([id, v]) => ({ id, name: v.name, value: v.value }));
     if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) { alert('Please fill in at least one resident.'); return; }
     if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) { alert('Please select at least one resident.'); return; }
+
+    let reflectionData = null;
+    if (entryType === 'Weekly Reflection') {
+      reflectionData = JSON.stringify({
+        mood: entryForm.reflection_mood,
+        challenge: entryForm.reflection_challenge,
+        win: entryForm.reflection_win,
+        goals: entryForm.reflection_goals,
+      });
+    }
+
     const { error } = await supabase.from('house_timeline').insert([{
       house_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryForm.notes || null,
       severity: entryType === 'Crisis' ? entryForm.severity : null,
       event_name: entryType === 'Event Attendance' ? entryForm.event_name : null,
       resident_data: resData.length ? resData : null,
+      reflection_data: reflectionData,
     }]);
     if (error) { alert('Error: ' + error.message); return; }
+
     if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
       const relevantResidents = resData.filter(r => r.value);
       for (const res of relevantResidents) {
@@ -265,9 +338,10 @@ function Houses() {
         }
       }
     }
+
     setShowAddEntry(false);
     setEntryType('House Check-In');
-    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '' });
+    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     setResidentChecks(prev => {
       const reset = {};
       Object.keys(prev).forEach(id => { reset[id] = { name: prev[id].name, value: '' }; });
@@ -283,7 +357,6 @@ function Houses() {
   };
 
   const setResCheck = (resId, val) => setResidentChecks(p => ({ ...p, [resId]: { ...p[resId], value: val } }));
-
   const startEditingNotes = (residentId, currentNotes) => setEditingNotes(prev => ({ ...prev, [residentId]: currentNotes || '' }));
 
   const saveNotes = async (residentId) => {
@@ -308,6 +381,7 @@ function Houses() {
     if (type === 'Crisis') return '#E24B4A';
     if (type === 'Event Attendance') return '#378ADD';
     if (type === 'General Note') return '#f59e0b';
+    if (type === 'Weekly Reflection') return '#a78bfa';
     return '#888';
   };
 
@@ -440,7 +514,7 @@ function Houses() {
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div>
                               <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
-                              <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>Level {r.level || 1}</p>
+                              <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
                           </div>
                           <span style={{ flex: 1 }}>
@@ -515,28 +589,23 @@ function Houses() {
                   {residents.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No current residents.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
-                        <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }}
-                          onClick={() => { setSelected(null); openClientProfile(r); }}>
+                        <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }} onClick={() => { setSelected(null); openClientProfile(r); }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: r.status === 'Pending' ? '10px' : '0' }}>
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div style={{ flex: 1 }}>
                               <p style={s.resName}>{r.full_name}</p>
-                              <p style={s.resMeta}>Level {r.level || 1}{r.room_type ? ` · ${r.room_type}` : ''}</p>
+                              <p style={s.resMeta}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}{r.room_type ? ` · ${r.room_type}` : ''}</p>
                             </div>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
-
-                          {/* Confirm Move-In button for Pending residents */}
                           {r.status === 'Pending' && (
                             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }} onClick={e => e.stopPropagation()}>
-                              <button
-                                onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); }}
+                              <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); }}
                                 style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', width: '100%' }}>
                                 ✓ Confirm Move-In
                               </button>
                             </div>
                           )}
-
                           {r.status === 'Active' && (
                             <div style={s.resDetailGrid}>
                               <div style={s.resDetailItem}><span style={s.resDetailLabel}>Start Date</span><span style={s.resDetailVal}>{r.start_date || '—'}</span></div>
@@ -635,12 +704,15 @@ function Houses() {
                           </div>
                         </div>
                       )}
+                      {entryType === 'Weekly Reflection' && (
+                        <HouseWeeklyReflectionForm entryForm={entryForm} setEntryForm={setEntryForm} />
+                      )}
                       <div style={{ marginBottom: '12px' }}>
                         <label style={s.label}>Author *</label>
                         <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={s.input} placeholder="Your name" />
                       </div>
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={s.label}>Notes</label>
+                        <label style={s.label}>{entryType === 'Weekly Reflection' ? 'Additional notes (optional)' : 'Notes'}</label>
                         <textarea value={entryForm.notes} onChange={e => setEntryForm(p => ({ ...p, notes: e.target.value }))} style={{ ...s.input, resize: 'vertical' }} rows={3} placeholder="Add any notes..." />
                       </div>
                       <button onClick={saveEntry} style={s.saveBtn}>Save Entry</button>
@@ -694,10 +766,13 @@ function Houses() {
                               )}
                             </div>
                           )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          {entry.entry_type === 'Weekly Reflection'
+                            ? <HouseWeeklyReflectionCard entry={entry} />
+                            : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
+                          }
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                             <span style={{ color: '#555', fontSize: '12px' }}>By {entry.author}</span>
                           </div>
-                          {entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
                         </div>
                       ))}
                     </div>
@@ -751,8 +826,7 @@ function Houses() {
       {/* Confirm Move-In modal */}
       {moveInModal && (
         <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => setMoveInModal(null)}>
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }}
-            onClick={e => e.stopPropagation()}>
+          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
               <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>Confirm Move-In</h3>
               <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
@@ -790,9 +864,7 @@ function Houses() {
       {/* Client profile modal */}
       {clientProfile && (
         <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => setClientProfile(null)}>
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '860px', overflow: 'hidden' }}
-            onClick={e => e.stopPropagation()}>
-            {/* Header */}
+          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '860px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #333' }}>
               <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', fontWeight: '500', flexShrink: 0 }}>
                 {initials(clientProfile.full_name)}
@@ -807,9 +879,11 @@ function Houses() {
                   <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: statusColor(clientProfile.status).bg, color: statusColor(clientProfile.status).color, fontWeight: '500' }}>
                     {clientProfile.status}
                   </span>
-                  <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '500' }}>
-                    Level {clientProfile.level || 1}
-                  </span>
+                  {clientProfile.status === 'Active' && clientProfile.level && (
+                    <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '500' }}>
+                      Level {clientProfile.level}
+                    </span>
+                  )}
                   {clientProfile.room_type && (
                     <span style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', background: '#2a2a2a', color: '#aaa', fontWeight: '500' }}>
                       {clientProfile.room_type}
@@ -820,7 +894,6 @@ function Houses() {
               <button onClick={() => setClientProfile(null)} style={s.closeBtn}>×</button>
             </div>
 
-            {/* Tabs */}
             <div style={{ display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'auto' }}>
               {TABS.map(t => (
                 <button key={t} onClick={() => setClientProfileTab(t)}
@@ -830,7 +903,6 @@ function Houses() {
               ))}
             </div>
 
-            {/* Tab content */}
             <div style={{ padding: '20px', maxHeight: '520px', overflowY: 'auto' }}>
               {clientProfileTab === 'overview' && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
@@ -845,16 +917,14 @@ function Houses() {
                     <InfoRow label="Move-in" value={clientProfile.start_date} />
                   </InfoCard>
                   <InfoCard title="Program">
-                    <InfoRow label="Level" value={`Level ${clientProfile.level || 1}`} />
+                    <InfoRow label="Level" value={clientProfile.status === 'Active' && clientProfile.level ? `Level ${clientProfile.level}` : '—'} />
                     <InfoRow label="Drug of choice" value={clientProfile.drug_of_choice} />
                     <InfoRow label="Sober date" value={clientProfile.sober_date} />
                   </InfoCard>
                 </div>
               )}
 
-              {clientProfileTab === 'payments' && (
-                <ClientPayments client={clientProfile} />
-              )}
+              {clientProfileTab === 'payments' && <ClientPayments client={clientProfile} />}
 
               {clientProfileTab === 'timeline' && (
                 <div>
@@ -868,7 +938,10 @@ function Houses() {
                               <span style={{ color: '#555', fontSize: '11px' }}>{formatDateShort(entry.created_at?.split('T')[0])}</span>
                             </div>
                             {entry.event_name && <p style={{ color: '#60a5fa', fontSize: '12px', margin: '2px 0' }}>{entry.event_name}</p>}
-                            {entry.notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0 0' }}>{entry.notes}</p>}
+                            {entry.entry_type === 'Weekly Reflection' && entry.reflection_data
+                              ? <HouseWeeklyReflectionCard entry={entry} />
+                              : entry.notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0 0' }}>{entry.notes}</p>
+                            }
                             <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>By {entry.author}</p>
                           </div>
                         ))}
