@@ -720,6 +720,7 @@ function Clients() {
                     </select>
                   )}
                   {selected.sor_grant && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
+                  {selected.oud === 'Yes' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>OUD</span>}
                 </div>
                 {hasFullAccess && STATUS_FLOW[selected.status]?.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
