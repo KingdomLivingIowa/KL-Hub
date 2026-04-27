@@ -5,6 +5,7 @@ import ClientPayments from './ClientPayments';
 
 const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
+const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
 const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
 
@@ -19,8 +20,6 @@ const STATUS_FLOW = {
 };
 
 const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note'];
-
-const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -68,23 +67,18 @@ const groupByWeek = (entries) => {
 
 // ── Invite to Portal Button ───────────────────────────────────────────────────
 function InvitePortalButton({ client }) {
-  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [status, setStatus] = useState('idle');
 
   const handleInvite = async (e) => {
     e.stopPropagation();
     if (status === 'sent') return;
     if (!window.confirm(`Send a portal invite to ${client.email}?`)) return;
-
     setStatus('sending');
-
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(`${SUPABASE_URL}/functions/v1/invite-user`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
         body: JSON.stringify({ email: client.email }),
       });
       const result = await res.json();
@@ -103,19 +97,10 @@ function InvitePortalButton({ client }) {
     sent:    { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80' },
     error:   { background: '#3a1e1e', border: '1px solid #f87171', color: '#f87171' },
   };
-
-  const btnLabel = {
-    idle:    '✉ Invite to Portal',
-    sending: 'Sending...',
-    sent:    '✓ Invite Sent',
-    error:   'Error — retry?',
-  };
+  const btnLabel = { idle: '✉ Invite to Portal', sending: 'Sending...', sent: '✓ Invite Sent', error: 'Error — retry?' };
 
   return (
-    <button
-      onClick={handleInvite}
-      style={{ ...btnStyles[status], fontSize: '12px', padding: '4px 12px', borderRadius: '8px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
-    >
+    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '12px', padding: '4px 12px', borderRadius: '8px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s' }}>
       {btnLabel[status]}
     </button>
   );
@@ -159,18 +144,9 @@ function Clients() {
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [entryType, setEntryType] = useState('General Note');
   const [entryForm, setEntryForm] = useState({
-    author: '',
-    notes: '',
-    severity: 'Low',
-    meeting_name: '',
-    chore_name: '',
-    chore_status: 'Completed',
-    mood_value: '5',
-    ua_result: 'Negative',
-    checkin_status: 'Here',
-    latitude: '',
-    longitude: '',
-    pinDropped: false,
+    author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
+    chore_status: 'Completed', mood_value: '5', ua_result: 'Negative',
+    checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false,
   });
   const [editingField, setEditingField] = useState(null);
   const [expandedWeeks, setExpandedWeeks] = useState({});
@@ -179,10 +155,7 @@ function Clients() {
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    debounceTimer.current = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setCurrentPage(1);
-    }, 300);
+    debounceTimer.current = setTimeout(() => { setDebouncedSearch(search.trim()); setCurrentPage(1); }, 300);
     return () => clearTimeout(debounceTimer.current);
   }, [search]);
 
@@ -198,9 +171,7 @@ function Clients() {
   const fetchClients = useCallback(async () => {
     setLoading(true);
     try {
-      if (isHouseManagerRole && assignedHouseIds.length === 0) {
-        setClients([]); setTotalCount(0); setLoading(false); return;
-      }
+      if (isHouseManagerRole && assignedHouseIds.length === 0) { setClients([]); setTotalCount(0); setLoading(false); return; }
       const from = (currentPage - 1) * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       let countQuery = supabase.from('clients').select('id', { count: 'exact', head: true });
@@ -213,11 +184,8 @@ function Clients() {
       const { data, error: dataError } = await dataQuery;
       if (dataError) { console.error(dataError); setClients([]); return; }
       setClients((data || []).map(c => ({ ...c, house_name: c.houses?.name || null, house_manager: c.houses?.house_manager || null })));
-    } catch (err) {
-      console.error(err); setClients([]); setTotalCount(0);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); setClients([]); setTotalCount(0); }
+    finally { setLoading(false); }
   }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
@@ -242,9 +210,8 @@ function Clients() {
       const { data, error } = await supabase.from('client_timeline').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).range(from, to);
       if (error) { console.error(error); return; }
       const entries = data || [];
-      if (append) {
-        setTimeline(prev => [...prev, ...entries]);
-      } else {
+      if (append) { setTimeline(prev => [...prev, ...entries]); }
+      else {
         setTimeline(entries);
         setLocationLabels({});
         const thisWeekKey = getWeekStart(new Date()).toISOString();
@@ -256,12 +223,8 @@ function Clients() {
           if (address) setLocationLabels(prev => ({ ...prev, [entry.id]: address }));
         }
       });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setTimelineLoading(false);
-      setTimelineLoadingMore(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setTimelineLoading(false); setTimelineLoadingMore(false); }
   };
 
   const fetchFullHistory = async (clientId) => {
@@ -278,9 +241,7 @@ function Clients() {
   const hasMoreTimeline = timeline.length < timelineTotal;
 
   const statusFilters = hasFullAccess
-    ? viewMode === 'operational'
-      ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active']
-      : ['All', 'Discharged', 'Denied']
+    ? viewMode === 'operational' ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active'] : ['All', 'Discharged', 'Denied']
     : ['All', 'Active', 'Pending'];
 
   const statusColor = (s) => {
@@ -329,12 +290,13 @@ function Clients() {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', house_id: '' });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', house_id: client.house_id || '' });
   };
 
   const confirmStatusChange = async () => {
     const { client, newStatus } = statusModal;
     const updates = { status: newStatus };
+
     if (newStatus === 'Waiting List') {
       const { error: wlError } = await supabase.from('waiting_list').insert([{
         full_name: client.full_name, email: client.email || null, phone: client.phone || null,
@@ -342,14 +304,29 @@ function Clients() {
       }]);
       if (wlError) { alert('Error adding to waiting list: ' + wlError.message); return; }
     }
+
     if (newStatus === 'Pending') {
       if (!statusForm.house_id) { alert('Please select a house.'); return; }
       updates.house_id = statusForm.house_id;
       const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', statusForm.house_id).single();
       if (houseData) await supabase.from('houses').update({ occupied_beds: (houseData.occupied_beds || 0) + 1 }).eq('id', statusForm.house_id);
     }
+
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
+
+      // If a house is selected (either new or already assigned), update it
+      const houseId = statusForm.house_id || client.house_id;
+      if (houseId) {
+        updates.house_id = houseId;
+        // Only increment bed count if house is changing or client wasn't already Pending
+        if (houseId !== client.house_id || client.status !== 'Pending') {
+          const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', houseId).single();
+          if (houseData) await supabase.from('houses').update({ occupied_beds: (houseData.occupied_beds || 0) + 1 }).eq('id', houseId);
+        }
+      }
+
+      // Auto-create move-in fee charge
       const roomType = client.room_type || 'Double';
       const feeAmounts = { 'Single': 150, 'Double': 150, 'Houseperson': 150, 'Live-Out': 0 };
       const moveInAmount = feeAmounts[roomType] ?? 150;
@@ -361,6 +338,7 @@ function Clients() {
         }]);
       }
     }
+
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
       updates.discharge_date = new Date().toISOString().split('T')[0];
@@ -372,6 +350,7 @@ function Clients() {
         if (houseData) await supabase.from('houses').update({ occupied_beds: Math.max((houseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
       }
     }
+
     const { error } = await supabase.from('clients').update(updates).eq('id', client.id);
     if (error) { alert('Error updating status: ' + error.message); return; }
     setStatusModal(null);
@@ -497,14 +476,9 @@ function Clients() {
       <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>
-            {address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}
-          </span>
+          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-          style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>
-          View map →
-        </a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
   };
@@ -764,9 +738,7 @@ function Clients() {
 
               {activeTab === 'UAs' && (
                 <Card title="UA Records" full>
-                  {uaRecords.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No UA records yet.</p>
-                  ) : (
+                  {uaRecords.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No UA records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         {['Negative', 'Positive', 'Inconclusive', 'Refused'].map(result => {
@@ -810,9 +782,7 @@ function Clients() {
 
               {activeTab === 'meetings' && (
                 <Card title="Meeting Records" full>
-                  {meetingRecords.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No meeting records yet.</p>
-                  ) : (
+                  {meetingRecords.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No meeting records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -831,9 +801,7 @@ function Clients() {
 
               {activeTab === 'chores' && (
                 <Card title="Chore Records" full>
-                  {choreRecords.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No chore records yet.</p>
-                  ) : (
+                  {choreRecords.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No chore records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         {['Completed', 'Not Completed', 'Partial'].map(status => {
@@ -882,9 +850,7 @@ function Clients() {
                             ))}
                           </div>
                         ) : <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>;
-                      } catch {
-                        return <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>;
-                      }
+                      } catch { return <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>; }
                     })()
                   ) : <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>}
                 </Card>
@@ -895,9 +861,7 @@ function Clients() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
                       <p style={{ ...st.sectionLabel, margin: 0 }}>Timeline</p>
-                      {timelineTotal > 0 && (
-                        <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>
-                      )}
+                      {timelineTotal > 0 && <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
                     </div>
                     <button onClick={() => setShowAddEntry(!showAddEntry)} style={st.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
                   </div>
@@ -1102,10 +1066,28 @@ function Clients() {
                 </div>
               )}
               {statusModal.newStatus === 'Active' && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={sf.label}>Move-in date</label>
-                  <input type="date" value={statusForm.move_in_date} onChange={e => setStatusForm(p => ({ ...p, move_in_date: e.target.value }))} style={sf.input} />
-                </div>
+                <>
+                  {/* Show house selector only if client doesn't already have a house assigned */}
+                  {!statusModal.client.house_id && (
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={sf.label}>Assign to house</label>
+                      <select value={statusForm.house_id} onChange={e => setStatusForm(p => ({ ...p, house_id: e.target.value }))} style={sf.input}>
+                        <option value="">Select a house</option>
+                        {houses.map(h => <option key={h.id} value={h.id}>{h.name} ({h.type})</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {statusModal.client.house_id && (
+                    <div style={{ marginBottom: '16px', padding: '10px 12px', background: '#1e2d3a', borderRadius: '8px', border: '1px solid #2a3d52' }}>
+                      <span style={{ fontSize: '12px', color: '#60a5fa' }}>🏠 Already assigned: </span>
+                      <span style={{ fontSize: '12px', color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span>
+                    </div>
+                  )}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Move-in date</label>
+                    <input type="date" value={statusForm.move_in_date} onChange={e => setStatusForm(p => ({ ...p, move_in_date: e.target.value }))} style={sf.input} />
+                  </div>
+                </>
               )}
               {statusModal.newStatus === 'Discharged' && (
                 <>
