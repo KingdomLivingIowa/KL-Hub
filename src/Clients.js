@@ -112,10 +112,8 @@ function WeeklyReflectionForm({ entryForm, setEntryForm }) {
     <>
       <div style={{ marginBottom: '12px' }}>
         <label style={sf.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
-        <input type="range" min="1" max="10"
-          value={entryForm.reflection_mood || 5}
-          onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))}
-          style={{ width: '100%' }} />
+        <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
+          onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#555', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
@@ -143,7 +141,6 @@ function WeeklyReflectionForm({ entryForm, setEntryForm }) {
 function WeeklyReflectionCard({ entry }) {
   let data = null;
   try { data = entry.reflection_data ? JSON.parse(entry.reflection_data) : null; } catch { data = null; }
-
   return (
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
@@ -152,30 +149,10 @@ function WeeklyReflectionCard({ entry }) {
           <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && (
-        <div style={{ marginBottom: '8px' }}>
-          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p>
-          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p>
-        </div>
-      )}
-      {data?.win && (
-        <div style={{ marginBottom: '8px' }}>
-          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p>
-          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p>
-        </div>
-      )}
-      {data?.goals && (
-        <div style={{ marginBottom: '8px' }}>
-          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p>
-          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p>
-        </div>
-      )}
-      {entry.notes && (
-        <div>
-          <p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p>
-          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p>
-        </div>
-      )}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -358,6 +335,7 @@ function Clients() {
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDateShort = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const formatDateFriendly = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
@@ -379,6 +357,7 @@ function Clients() {
     if (newStatus === 'Pending') {
       if (!statusForm.house_id) { alert('Please select a house.'); return; }
       updates.house_id = statusForm.house_id;
+      updates.expected_move_in_date = statusForm.expected_move_in_date || null;
       const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', statusForm.house_id).single();
       if (houseData) await supabase.from('houses').update({ occupied_beds: (houseData.occupied_beds || 0) + 1 }).eq('id', statusForm.house_id);
     }
@@ -386,6 +365,7 @@ function Clients() {
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
       updates.level = 1;
+      updates.expected_move_in_date = null; // clear it once they actually move in
       const houseId = statusForm.house_id || client.house_id;
       if (houseId) {
         updates.house_id = houseId;
@@ -436,21 +416,16 @@ function Clients() {
 
   const saveTimelineEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
-
     let reflectionData = null;
     if (entryType === 'Weekly Reflection') {
       reflectionData = JSON.stringify({
-        mood: entryForm.reflection_mood,
-        challenge: entryForm.reflection_challenge,
-        win: entryForm.reflection_win,
-        goals: entryForm.reflection_goals,
+        mood: entryForm.reflection_mood, challenge: entryForm.reflection_challenge,
+        win: entryForm.reflection_win, goals: entryForm.reflection_goals,
       });
     }
-
     const { error } = await supabase.from('client_timeline').insert([{
       client_id: selected.id, entry_type: entryType, author: entryForm.author,
-      notes: entryForm.notes || null,
-      severity: entryType === 'Crisis' ? entryForm.severity : null,
+      notes: entryForm.notes || null, severity: entryType === 'Crisis' ? entryForm.severity : null,
       event_name: entryType === 'UA' ? entryForm.ua_result : entryType === 'Chores' ? entryForm.chore_status : null,
       meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : entryType === 'Chores' ? entryForm.chore_name : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
@@ -461,12 +436,7 @@ function Clients() {
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
     setShowAddEntry(false);
-    setEntryForm({
-      author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
-      chore_status: 'Completed', mood_value: '5', ua_result: 'Negative',
-      checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false,
-      reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
-    });
+    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     setEntryType('General Note');
     fetchTimeline(selected.id);
     fetchFullHistory(selected.id);
@@ -794,6 +764,10 @@ function Clients() {
                       <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
                       <ReadField label="House manager" value={selected.house_manager} />
                       <ReadField label="Move-in date" value={selected.start_date} />
+                      {/* Show expected move-in date for Pending clients */}
+                      {selected.status === 'Pending' && (
+                        <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
+                      )}
                     </Card>
                     <Card title="PO & legal">
                       <EditableField label="PO name" field="po_name" value={selected.po_name} />
@@ -1152,13 +1126,19 @@ function Clients() {
                 </div>
               )}
               {statusModal.newStatus === 'Pending' && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={sf.label}>Assign to house</label>
-                  <select value={statusForm.house_id} onChange={e => setStatusForm(p => ({ ...p, house_id: e.target.value }))} style={sf.input}>
-                    <option value="">Select a house</option>
-                    {houses.map(h => <option key={h.id} value={h.id}>{h.name} ({h.type})</option>)}
-                  </select>
-                </div>
+                <>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Assign to house</label>
+                    <select value={statusForm.house_id} onChange={e => setStatusForm(p => ({ ...p, house_id: e.target.value }))} style={sf.input}>
+                      <option value="">Select a house</option>
+                      {houses.map(h => <option key={h.id} value={h.id}>{h.name} ({h.type})</option>)}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Expected move-in date (optional)</label>
+                    <input type="date" value={statusForm.expected_move_in_date || ''} onChange={e => setStatusForm(p => ({ ...p, expected_move_in_date: e.target.value }))} style={sf.input} />
+                  </div>
+                </>
               )}
               {statusModal.newStatus === 'Active' && (
                 <>

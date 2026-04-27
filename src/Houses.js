@@ -599,13 +599,22 @@ function Houses() {
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
                           {r.status === 'Pending' && (
-                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }} onClick={e => e.stopPropagation()}>
-                              <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); }}
-                                style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', width: '100%' }}>
-                                ✓ Confirm Move-In
-                              </button>
-                            </div>
-                          )}
+  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }} onClick={e => e.stopPropagation()}>
+    {r.expected_move_in_date && (
+      <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#2d2d1e', borderRadius: '6px', border: '1px solid #3a3a1e' }}>
+        <span style={{ fontSize: '11px', color: '#888' }}>Expected move-in: </span>
+        <span style={{ fontSize: '12px', color: '#facc15', fontWeight: '600' }}>
+          {new Date(r.expected_move_in_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </span>
+      </div>
+    )}
+    <button
+      onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); }}
+      style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', width: '100%' }}>
+      ✓ Confirm Move-In
+    </button>
+  </div>
+)}
                           {r.status === 'Active' && (
                             <div style={s.resDetailGrid}>
                               <div style={s.resDetailItem}><span style={s.resDetailLabel}>Start Date</span><span style={s.resDetailVal}>{r.start_date || '—'}</span></div>
