@@ -20,6 +20,8 @@ const STATUS_FLOW = {
 
 const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note'];
 
+const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
+
 const reverseGeocode = async (lat, lng) => {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -74,21 +76,24 @@ function InvitePortalButton({ client }) {
     if (!window.confirm(`Send a portal invite to ${client.email}?`)) return;
 
     setStatus('sending');
-    const { error } = await supabase.auth.admin.inviteUserByEmail(client.email, {
-      redirectTo: 'https://kl-portal.vercel.app',
-    });
 
-    if (error) {
-      // If user already exists, that's fine — still show sent
-      if (error.message?.includes('already been registered')) {
-        setStatus('sent');
-      } else {
-        console.error(error);
-        setStatus('error');
-        setTimeout(() => setStatus('idle'), 3000);
-      }
-    } else {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/invite-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ email: client.email }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Invite failed');
       setStatus('sent');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
     }
   };
 
@@ -141,13 +146,11 @@ function Clients() {
 
   const [houses, setHouses] = useState([]);
 
-  // Timeline state
   const [timeline, setTimeline] = useState([]);
   const [timelineTotal, setTimelineTotal] = useState(0);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
 
-  // Full history for tabs that need complete data
   const [uaRecords, setUaRecords] = useState([]);
   const [meetingRecords, setMeetingRecords] = useState([]);
   const [choreRecords, setChoreRecords] = useState([]);
@@ -226,34 +229,19 @@ function Clients() {
 
   useEffect(() => { fetchHouses(); }, [fetchHouses]);
 
-  // Fetch first 50 timeline entries for the Timeline tab
   const fetchTimeline = async (clientId, append = false) => {
     if (append) setTimelineLoadingMore(true);
     else setTimelineLoading(true);
-
     try {
       if (!append) {
-        const { count } = await supabase
-          .from('client_timeline')
-          .select('id', { count: 'exact', head: true })
-          .eq('client_id', clientId);
+        const { count } = await supabase.from('client_timeline').select('id', { count: 'exact', head: true }).eq('client_id', clientId);
         setTimelineTotal(count || 0);
       }
-
       const from = append ? timeline.length : 0;
       const to = from + TIMELINE_PAGE_SIZE - 1;
-
-      const { data, error } = await supabase
-        .from('client_timeline')
-        .select('*')
-        .eq('client_id', clientId)
-        .order('created_at', { ascending: false })
-        .range(from, to);
-
+      const { data, error } = await supabase.from('client_timeline').select('*').eq('client_id', clientId).order('created_at', { ascending: false }).range(from, to);
       if (error) { console.error(error); return; }
-
       const entries = data || [];
-
       if (append) {
         setTimeline(prev => [...prev, ...entries]);
       } else {
@@ -262,7 +250,6 @@ function Clients() {
         const thisWeekKey = getWeekStart(new Date()).toISOString();
         setExpandedWeeks({ [thisWeekKey]: true });
       }
-
       entries.forEach(async entry => {
         if (entry.latitude && entry.longitude) {
           const address = await reverseGeocode(entry.latitude, entry.longitude);
@@ -278,12 +265,7 @@ function Clients() {
   };
 
   const fetchFullHistory = async (clientId) => {
-    const { data } = await supabase
-      .from('client_timeline')
-      .select('*')
-      .eq('client_id', clientId)
-      .in('entry_type', ['UA', 'Meeting', 'Chores'])
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('client_timeline').select('*').eq('client_id', clientId).in('entry_type', ['UA', 'Meeting', 'Chores']).order('created_at', { ascending: false });
     const all = data || [];
     setUaRecords(all.filter(e => e.entry_type === 'UA'));
     setMeetingRecords(all.filter(e => e.entry_type === 'Meeting'));
@@ -373,14 +355,9 @@ function Clients() {
       const moveInAmount = feeAmounts[roomType] ?? 150;
       if (moveInAmount > 0) {
         await supabase.from('charges').insert([{
-          client_id: client.id,
-          charge_type: 'move_in_fee',
-          amount: moveInAmount,
+          client_id: client.id, charge_type: 'move_in_fee', amount: moveInAmount,
           due_date: statusForm.move_in_date || new Date().toISOString().split('T')[0],
-          description: 'Move-in fee',
-          status: 'unpaid',
-          amount_paid: 0,
-          created_by: user?.email || null,
+          description: 'Move-in fee', status: 'unpaid', amount_paid: 0, created_by: user?.email || null,
         }]);
       }
     }
@@ -413,11 +390,8 @@ function Clients() {
   const saveTimelineEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
     const { error } = await supabase.from('client_timeline').insert([{
-      client_id: selected.id,
-      entry_type: entryType,
-      author: entryForm.author,
-      notes: entryForm.notes || null,
-      severity: entryType === 'Crisis' ? entryForm.severity : null,
+      client_id: selected.id, entry_type: entryType, author: entryForm.author,
+      notes: entryForm.notes || null, severity: entryType === 'Crisis' ? entryForm.severity : null,
       event_name: entryType === 'UA' ? entryForm.ua_result : entryType === 'Chores' ? entryForm.chore_status : null,
       meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : entryType === 'Chores' ? entryForm.chore_name : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
@@ -740,7 +714,6 @@ function Clients() {
             </div>
 
             <div style={st.modalBody}>
-
               {activeTab === 'overview' && (
                 <>
                   <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0', fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
@@ -923,14 +896,11 @@ function Clients() {
                     <div>
                       <p style={{ ...st.sectionLabel, margin: 0 }}>Timeline</p>
                       {timelineTotal > 0 && (
-                        <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>
-                          Showing {timeline.length} of {timelineTotal} entries
-                        </p>
+                        <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>
                       )}
                     </div>
                     <button onClick={() => setShowAddEntry(!showAddEntry)} style={st.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
                   </div>
-
                   {showAddEntry && (
                     <div style={st.miniForm}>
                       <div style={{ marginBottom: '12px' }}>
@@ -1025,7 +995,6 @@ function Clients() {
                       <button onClick={saveTimelineEntry} style={sf.confirmBtn}>Save Entry</button>
                     </div>
                   )}
-
                   {timelineLoading ? (
                     <p style={{ color: '#666', fontSize: '14px' }}>Loading timeline...</p>
                   ) : timeline.length === 0 ? (
