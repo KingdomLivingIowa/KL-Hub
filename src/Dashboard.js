@@ -16,7 +16,7 @@ const WAITING_LISTS = [
 ];
 
 function DashboardHome({ counts, currentUser }) {
-  const { isHouseManagerRole, hasFullAccess, assignedHouseIds } = useUser();
+  const { isHouseManagerRole, assignedHouseIds } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
