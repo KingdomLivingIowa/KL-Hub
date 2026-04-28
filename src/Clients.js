@@ -1342,12 +1342,15 @@ updates.discharge_date = statusForm.discharge_date || today;
                     <label style={sf.label}>Reason for discharge *</label>
                     <select value={statusForm.discharge_reason} onChange={e => setStatusForm(p => ({ ...p, discharge_reason: e.target.value }))} style={sf.input}>
                       <option value="">Select reason</option>
-                      <option>Completed program</option>
-                      <option>Voluntary departure</option>
-                      <option>Rule violation</option>
-                      <option>Relapse</option>
-                      <option>Medical</option>
-                      <option>Other</option>
+<option>Move to Rent/Own Personal Home</option>
+<option>Move to Other Recovery House</option>
+<option>Move to Other Supportive Housing</option>
+<option>Return to Treatment</option>
+<option>Return to Use</option>
+<option>Asked to Leave</option>
+<option>Incarceration</option>
+<option>Unknown</option>
+<option>Other</option>
                     </select>
                   </div>
                   <div style={{ marginBottom: '16px' }}>
