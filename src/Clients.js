@@ -200,7 +200,7 @@ function WeeklyReflectionCard({ entry }) {
   );
 }
 
-function Clients() {
+function Clients({ pendingClientId, onClientOpened }) {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
   const [clients, setClients] = useState([]);

@@ -514,6 +514,7 @@ function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
   const [unreadMessages] = useState(0);
+  const [pendingClientId, setPendingClientId] = useState(null);
 
   const {
     role,
@@ -624,8 +625,8 @@ function DashboardInner({ user }) {
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
           {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
           {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList />}
-          {activePage === 'clients' && <Clients />}
-          {activePage === 'houses' && <Houses />}
+          {activePage === 'clients' && <Clients pendingClientId={pendingClientId} onClientOpened={() => setPendingClientId(null)} />}
+          {activePage === 'houses' && <Houses onOpenClient={(clientId) => { setActivePage('clients'); setPendingClientId(clientId); }} />}
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}

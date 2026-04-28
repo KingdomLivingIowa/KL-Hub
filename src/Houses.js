@@ -98,7 +98,7 @@ function HouseWeeklyReflectionCard({ entry }) {
   );
 }
 
-function Houses() {
+function Houses({ onOpenClient }) {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
   const [houses, setHouses] = useState([]);
@@ -206,10 +206,11 @@ function Houses() {
   };
 
   const openClientProfile = (client) => {
-    setClientProfile(client);
-    setClientProfileTab('overview');
-    fetchClientTimeline(client.id);
-  };
+  if (onOpenClient) { onOpenClient(client.id); return; }
+  setClientProfile(client);
+  setClientProfileTab('overview');
+  fetchClientTimeline(client.id);
+};
 
   const confirmMoveIn = async () => {
     if (!moveInModal) return;
