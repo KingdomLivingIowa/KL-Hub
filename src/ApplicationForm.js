@@ -13,49 +13,17 @@ const DRUG_OPTIONS = [
   'Morphine',
   'Oxycodone (OxyContin, Percocet)',
   'Hydrocodone (Vicodin)',
-  'Codeine',
-  'Methadone',
-  'Tramadol',
-  'Buprenorphine (Suboxone, Subutex)',
   'Cocaine (Coke)',
-  'Crack cocaine (Crack)',
+  'Crack Cocaine (Crack)',
   'Methamphetamine (Meth, Crystal)',
-  'Amphetamine (Adderall)',
-  'Methylphenidate (Ritalin, Concerta)',
   'MDMA (Ecstasy, Molly)',
   'Marijuana (Cannabis, Weed, Pot)',
-  'Synthetic cannabinoids (Spice or K2)',
+  'Spice or K2',
   'Alcohol',
-  'Nicotine (Tobacco)',
   'LSD (Acid)',
-  'Psilocybin (Magic Mushrooms)',
-  'Mescaline (Peyote)',
+  'Psilocybin (Mushrooms)',
   'Phencyclidine (PCP or Angel Dust)',
-  'Salvia',
-  'Ketamine (Special K)',
-  'DXM (Dextromethorphan)',
-  'GHB (Gamma-hydroxybutyrate)',
-  'Rohypnol (Roofies)',
-  'Diazepam (Valium)',
-  'Alprazolam (Xanax)',
-  'Lorazepam (Ativan)',
-  'Clonazepam (Klonopin)',
-  'Barbiturates',
-  'Inhalants',
-  'Bath salts (Synthetic cathinones)',
   'Kratom',
-  'Flunitrazepam (Rohypnol)',
-  'Chloral hydrate',
-  'Methaqualone (Quaalude)',
-  'DMT (Dimethyltryptamine)',
-  'Ayahuasca',
-  'Ibogaine',
-  'Khat',
-  'Mephedrone (Meow Meow)',
-  'Methylone',
-  'Benzylpiperazine (BZP)',
-  'PMA/PMMA (Death)',
-  'Xylazine',
   'Other',
 ];
 
@@ -67,6 +35,7 @@ function ApplicationForm() {
   const [treatments, setTreatments] = useState([emptyTreatment()]);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
+  const [selectedDrugs, setSelectedDrugs] = useState([]);
   const [form, setForm] = useState({
     first_name: '', last_name: '', phone: '', email: '',
     correspondence_contact: '', date_of_birth: '', ssn: '',
@@ -89,6 +58,12 @@ function ApplicationForm() {
   });
 
   const set = (field, value) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const toggleDrug = (drug) => {
+    setSelectedDrugs(prev =>
+      prev.includes(drug) ? prev.filter(d => d !== drug) : [...prev, drug]
+    );
+  };
 
   const updateMed = (i, field, value) => {
     const updated = [...medications];
@@ -195,11 +170,13 @@ function ApplicationForm() {
 
     const medDetails = form.takes_medication === 'Yes' ? JSON.stringify(medications) : null;
     const treatmentDetails = form.attended_treatment === 'Yes' ? JSON.stringify(treatments) : null;
+    const drugOfChoice = selectedDrugs.length > 0 ? selectedDrugs.join(', ') : '';
 
     const { error: appError } = await supabase
       .from('applications')
       .insert([{
         ...form,
+        drug_of_choice: drugOfChoice,
         full_name: fullName,
         status: 'pending',
         medication_details: medDetails,
@@ -268,7 +245,12 @@ function ApplicationForm() {
             <Row label="Have you ever lived in one of our houses before? *"><Select value={form.lived_here_before} onChange={v => set('lived_here_before', v)} options={['Yes', 'No']} /></Row>
             <Row label="Assigned Sex *"><Select value={form.assigned_sex} onChange={v => set('assigned_sex', v)} options={['Male', 'Female', 'No Response']} /></Row>
             <Row label="Ethnicity *"><Select value={form.ethnicity} onChange={v => set('ethnicity', v)} options={['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'Native Hawaiian or Other Pacific Islander', 'White', 'Two or More Races', 'No Response']} /></Row>
-            <Row label="Check all that applies *"><Select value={form.current_situation} onChange={v => set('current_situation', v)} options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} /></Row>
+
+            {/* Fixed: "Check one that applies" with single select */}
+            <Row label="Check one that applies *">
+              <Select value={form.current_situation} onChange={v => set('current_situation', v)} options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} />
+            </Row>
+
             <Row label="Do you have an ID? *"><Select value={form.has_id} onChange={v => set('has_id', v)} options={['Yes', 'No']} /></Row>
             <Row label="Marital Status *"><Select value={form.marital_status} onChange={v => set('marital_status', v)} options={['Single', 'Married', 'Divorced', 'Widowed', 'Separated']} /></Row>
             <Row label="Are you on (or will be on) disability? *"><Select value={form.on_disability} onChange={v => set('on_disability', v)} options={['Yes', 'No']} /></Row>
@@ -296,16 +278,29 @@ function ApplicationForm() {
               <Select value={form.substance_history} onChange={v => set('substance_history', v)} options={['Yes', 'No']} />
             </Row>
 
-            <Row label="Drug of Choice">
-              <select
-                value={form.drug_of_choice}
-                onChange={e => set('drug_of_choice', e.target.value)}
-                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: form.drug_of_choice ? '#fff' : '#888', fontSize: '14px' }}
-              >
-                <option value="">Select primary drug of choice</option>
-                {DRUG_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </Row>
+            {/* Drug of Choice — multi-select checkboxes */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ color: '#d0d0d0', fontSize: '14px', display: 'block', marginBottom: '4px' }}>Drug(s) of Choice</label>
+              <p style={s.hint}>Select all that apply.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
+                {DRUG_OPTIONS.map(drug => (
+                  <label key={drug} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${selectedDrugs.includes(drug) ? '#b22222' : '#333'}`, background: selectedDrugs.includes(drug) ? 'rgba(178,34,34,0.1)' : '#1a1a1a', transition: 'all 0.15s' }}>
+                    <input
+                      type="checkbox"
+                      checked={selectedDrugs.includes(drug)}
+                      onChange={() => toggleDrug(drug)}
+                      style={{ accentColor: '#b22222', width: '16px', height: '16px', flexShrink: 0 }}
+                    />
+                    <span style={{ color: selectedDrugs.includes(drug) ? '#fff' : '#aaa', fontSize: '13px', lineHeight: '1.3' }}>{drug}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedDrugs.length > 0 && (
+                <p style={{ color: '#b22222', fontSize: '12px', marginTop: '8px' }}>
+                  Selected: {selectedDrugs.join(', ')}
+                </p>
+              )}
+            </div>
 
             <Row label="Sobriety / Recovery Date">
               <Input value={form.sober_date} onChange={v => set('sober_date', v)} type="date" />
