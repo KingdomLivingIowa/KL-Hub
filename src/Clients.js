@@ -261,6 +261,24 @@ function Clients({ pendingClientId, onClientOpened }) {
   }, [search]);
 
   useEffect(() => { setCurrentPage(1); }, [statusFilter]);
+  useEffect(() => {
+  if (!pendingClientId || loading) return;
+  const client = clients.find(c => c.id === pendingClientId);
+  if (client) {
+    openProfile(client);
+    if (onClientOpened) onClientOpened();
+  } else if (pendingClientId) {
+    // Client not in current filtered list — fetch directly
+    supabase.from('clients').select('*, houses(name, house_manager)').eq('id', pendingClientId).single()
+      .then(({ data }) => {
+        if (data) {
+          const enriched = { ...data, house_name: data.houses?.name || null, house_manager: data.houses?.house_manager || null };
+          openProfile(enriched);
+          if (onClientOpened) onClientOpened();
+        }
+      });
+  }
+}, [pendingClientId, loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyClientFilters = useCallback((query) => {
     if (debouncedSearch) query = query.ilike('full_name', `%${debouncedSearch}%`);
