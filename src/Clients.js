@@ -450,6 +450,7 @@ function Clients() {
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
       const today = new Date().toISOString().split('T')[0];
+updates.discharge_date = statusForm.discharge_date || today;
       updates.discharge_date = today;
       updates.reason_for_discharge = statusForm.discharge_reason;
       updates.discharge_notes = statusForm.discharge_notes || null;
@@ -1349,6 +1350,10 @@ function Clients() {
                       <option>Other</option>
                     </select>
                   </div>
+                  <div style={{ marginBottom: '16px' }}>
+  <label style={sf.label}>Date of discharge</label>
+  <input type="date" value={statusForm.discharge_date || ''} onChange={e => setStatusForm(p => ({ ...p, discharge_date: e.target.value }))} style={sf.input} />
+</div>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Discharge notes</label>
                     <textarea value={statusForm.discharge_notes} onChange={e => setStatusForm(p => ({ ...p, discharge_notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={4} placeholder="Add any details about why the client was discharged..." />
