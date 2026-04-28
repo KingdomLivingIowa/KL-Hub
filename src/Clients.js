@@ -21,6 +21,11 @@ const STATUS_FLOW = {
 
 const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Weekly Reflection'];
 
+// Tabs split: primary (always visible) and secondary (in More dropdown)
+const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
+const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
+const ALL_TABS = [...PRIMARY_TABS, ...MORE_TABS];
+
 const reverseGeocode = async (lat, lng) => {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -97,12 +102,51 @@ function InvitePortalButton({ client }) {
     sent:    { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80' },
     error:   { background: '#3a1e1e', border: '1px solid #f87171', color: '#f87171' },
   };
-  const btnLabel = { idle: '✉ Invite to Portal', sending: 'Sending...', sent: '✓ Invite Sent', error: 'Error — retry?' };
+  const btnLabel = { idle: '✉ Invite', sending: '...', sent: '✓ Sent', error: 'Error' };
 
   return (
-    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '12px', padding: '4px 12px', borderRadius: '8px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s' }}>
+    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
       {btnLabel[status]}
     </button>
+  );
+}
+
+// ── Move To Button ────────────────────────────────────────────────────────────
+function MoveToButton({ client, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const statuses = STATUS_FLOW[client.status] || [];
+  if (!statuses.length) return null;
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        style={{ background: '#2a2a2a', border: '1px solid #444', color: '#ddd', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}
+      >
+        Move to {open ? '▲' : '▼'}
+      </button>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', overflow: 'hidden', zIndex: 100, minWidth: '160px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+          {statuses.map(ns => (
+            <button key={ns} onClick={e => { e.stopPropagation(); setOpen(false); onSelect(ns); }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', color: '#ddd', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {ns}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -171,6 +215,8 @@ function Clients() {
 
   const [selected, setSelected] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showMoreTabs, setShowMoreTabs] = useState(false);
+  const moreTabRef = useRef(null);
   const [statusModal, setStatusModal] = useState(null);
   const [statusForm, setStatusForm] = useState({
     list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', house_id: '',
@@ -201,6 +247,13 @@ function Clients() {
   const [expandedWeeks, setExpandedWeeks] = useState({});
 
   const debounceTimer = useRef(null);
+
+  // Close More dropdown when clicking outside
+  useEffect(() => {
+    const handleClick = (e) => { if (moreTabRef.current && !moreTabRef.current.contains(e.target)) setShowMoreTabs(false); };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -404,27 +457,18 @@ function Clients() {
       updates.discharged_by = user?.email || user?.id || null;
       updates.level = null;
 
-      // Get current balance
       const { data: chargesData } = await supabase.from('charges').select('amount').eq('client_id', client.id);
       const { data: paymentsData } = await supabase.from('payments').select('amount').eq('client_id', client.id);
       const totalCharged = (chargesData || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
       const totalPaid = (paymentsData || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
       const balanceAtDischarge = totalCharged - totalPaid;
-
-      // Get house name
       const houseName = client.house_name || houses.find(h => h.id === client.house_id)?.name || null;
 
-      // Save stay record
       await supabase.from('client_stays').insert([{
-        client_id: client.id,
-        house_id: client.house_id || null,
-        house_name: houseName,
-        start_date: client.start_date || null,
-        discharge_date: today,
-        discharge_reason: statusForm.discharge_reason,
-        discharge_notes: statusForm.discharge_notes || null,
-        balance_at_discharge: balanceAtDischarge,
-        discharged_by: user?.email || user?.id || null,
+        client_id: client.id, house_id: client.house_id || null, house_name: houseName,
+        start_date: client.start_date || null, discharge_date: today,
+        discharge_reason: statusForm.discharge_reason, discharge_notes: statusForm.discharge_notes || null,
+        balance_at_discharge: balanceAtDischarge, discharged_by: user?.email || user?.id || null,
       }]);
 
       if (client.house_id) {
@@ -663,9 +707,9 @@ function Clients() {
     );
   };
 
-  const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'stays', 'application', 'documents', 'notes'];
   const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalCount);
+  const isMoreTabActive = MORE_TABS.includes(activeTab);
 
   return (
     <div style={st.page}>
@@ -743,9 +787,11 @@ function Clients() {
       {selected && (
         <div style={st.overlay} onClick={() => { setSelected(null); setEditingField(null); }}>
           <div style={st.modal} onClick={e => e.stopPropagation()}>
+
+            {/* ── Modal Header ── */}
             <div style={st.modalHeader}>
               <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={52} fontSize={16} />
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <h2 style={st.modalName}>{selected.full_name}</h2>
                 <p style={st.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
                 <div style={st.badges}>
@@ -759,27 +805,44 @@ function Clients() {
                   {selected.sor_grant && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>SOR grant</span>}
                   {selected.oud === 'Yes' && <span style={{ ...st.badge, background: '#1e3a2f', color: '#4ade80' }}>OUD</span>}
                 </div>
-                {hasFullAccess && STATUS_FLOW[selected.status]?.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '11px', color: '#666' }}>Move to:</span>
-                    <select defaultValue="" onChange={e => { if (e.target.value) openStatusModal(selected, e.target.value); e.target.value = ''; }}
-                      style={{ backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '4px 10px', color: '#fff', fontSize: '12px', cursor: 'pointer' }}>
-                      <option value="">Select status...</option>
-                      {STATUS_FLOW[selected.status].map(ns => <option key={ns} value={ns}>{ns}</option>)}
-                    </select>
-                    {selected.email && <InvitePortalButton client={selected} />}
-                  </div>
-                )}
               </div>
-              <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
+              {/* Action buttons top-right */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
+                {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
+                <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
+              </div>
             </div>
 
-            <div style={st.tabs}>
-              {TABS.map(t => (
+            {/* ── Tabs with More dropdown ── */}
+            <div style={{ ...st.tabs, position: 'relative' }}>
+              {PRIMARY_TABS.map(t => (
                 <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); }} style={{ ...st.tab, ...(activeTab === t ? st.tabActive : {}) }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
+              {/* More dropdown */}
+              <div ref={moreTabRef} style={{ position: 'relative', display: 'flex', alignItems: 'stretch' }}>
+                <button
+                  onClick={() => setShowMoreTabs(o => !o)}
+                  style={{ ...st.tab, ...(isMoreTabActive ? st.tabActive : {}), display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  {isMoreTabActive ? activeTab.charAt(0).toUpperCase() + activeTab.slice(1) : 'More'} {showMoreTabs ? '▲' : '▼'}
+                </button>
+                {showMoreTabs && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', overflow: 'hidden', zIndex: 50, minWidth: '140px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+                    {MORE_TABS.map(t => (
+                      <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); setShowMoreTabs(false); }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: activeTab === t ? '#2a2a2a' : 'transparent', border: 'none', color: activeTab === t ? '#fff' : '#aaa', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
+                        onMouseLeave={e => e.currentTarget.style.background = activeTab === t ? '#2a2a2a' : 'transparent'}
+                      >
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div style={st.modalBody}>
@@ -1133,20 +1196,14 @@ function Clients() {
                           const balance = parseFloat(stay.balance_at_discharge) || 0;
                           return (
                             <div key={stay.id} style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #333', overflow: 'hidden' }}>
-                              {/* Stay header */}
                               <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />
                                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>Stay #{stays.length - i}</span>
-                                  {stay.house_name && (
-                                    <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>
-                                  )}
+                                  {stay.house_name && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>}
                                 </div>
-                                {lengthDays !== null && (
-                                  <span style={{ fontSize: '12px', color: '#555' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>
-                                )}
+                                {lengthDays !== null && <span style={{ fontSize: '12px', color: '#555' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
                               </div>
-                              {/* Stay details */}
                               <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                 <div>
                                   <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Move-in</p>
@@ -1344,9 +1401,9 @@ const st = {
   modalName: { fontSize: '18px', fontWeight: '500', margin: 0, color: '#fff' },
   modalSub: { fontSize: '13px', color: '#666', margin: '2px 0 0 0' },
   badges: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px', alignItems: 'center' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#888', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'auto' },
-  tab: { padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: '#666', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#888', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'visible' },
+  tab: { padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: '#666', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap', flexShrink: 0 },
   tabActive: { color: '#fff', borderBottomColor: '#fff' },
   modalBody: { padding: '20px', maxHeight: '520px', overflowY: 'auto' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' },
