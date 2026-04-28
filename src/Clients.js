@@ -24,7 +24,6 @@ const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Chec
 // Tabs split: primary (always visible) and secondary (in More dropdown)
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
 const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
-const ALL_TABS = [...PRIMARY_TABS, ...MORE_TABS];
 
 const reverseGeocode = async (lat, lng) => {
   try {
