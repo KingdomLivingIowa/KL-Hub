@@ -894,33 +894,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} />
                     </Card>
                     <Card title="Goals">
-  {(() => {
-    const latestReflection = timeline.find(e => e.entry_type === 'Weekly Reflection' && e.reflection_data);
-    if (latestReflection) {
-      let goals = null;
-      try { goals = JSON.parse(latestReflection.reflection_data)?.goals; } catch { goals = null; }
-      if (goals) {
-        return (
-          <>
-            <p style={{ fontSize: '13px', color: '#ddd', lineHeight: '1.6', margin: '0 0 10px 0' }}>{goals}</p>
-            <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>
-              From weekly reflection · by {latestReflection.author}
-              {latestReflection.source === 'client' ? ' (self)' : ''}
-              {' · '}{new Date(latestReflection.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </p>
-          </>
-        );
-      }
-    }
-    return (
-      <>
-        <EditableField label="Goal 1" field="goal_1" value={selected.goal_1} />
-        <EditableField label="Goal 2" field="goal_2" value={selected.goal_2} />
-        <EditableField label="Goal 3" field="goal_3" value={selected.goal_3} />
-      </>
-    );
-  })()}
-</Card>
+                      <EditableField label="Goal 1" field="goal_1" value={selected.goal_1} />
+                      <EditableField label="Goal 2" field="goal_2" value={selected.goal_2} />
+                      <EditableField label="Goal 3" field="goal_3" value={selected.goal_3} />
+                    </Card>
                   </div>
                 </>
               )}
