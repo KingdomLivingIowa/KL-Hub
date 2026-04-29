@@ -625,7 +625,7 @@ function DashboardInner({ user }) {
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
           {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
           {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList />}
-          {activePage === 'clients' && <Clients pendingClientId={pendingClientId} onClientOpened={() => setPendingClientId(null)} />}
+          {activePage === 'clients' && <Clients pendingClientId={pendingClientId} onClientOpened={() => setPendingClientId(null)} onBackToHouses={pendingClientId ? () => setActivePage('houses') : null} />}
           {activePage === 'houses' && <Houses onOpenClient={(clientId) => { setActivePage('clients'); setPendingClientId(clientId); }} />}
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}

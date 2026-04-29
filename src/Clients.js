@@ -200,7 +200,7 @@ function WeeklyReflectionCard({ entry }) {
   );
 }
 
-function Clients({ pendingClientId, onClientOpened }) {
+function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
 
   const [clients, setClients] = useState([]);
@@ -628,10 +628,17 @@ updates.discharge_date = statusForm.discharge_date || today;
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
     return (
       <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-          <span>📍</span>
-          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
-        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+  {onBackToHouses && (
+    <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
+      style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      ← Houses
+    </button>
+  )}
+  {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
+  {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
+  <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
+</div>
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
