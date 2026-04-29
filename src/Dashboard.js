@@ -45,44 +45,29 @@ function DashboardHome({ counts, currentUser }) {
 
   const fetchReadAlerts = async () => {
     if (!currentUser?.id) return;
-    const { data } = await supabase
-      .from('alert_reads')
-      .select('alert_key')
-      .eq('user_id', currentUser.id);
+    const { data } = await supabase.from('alert_reads').select('alert_key').eq('user_id', currentUser.id);
     setReadAlertKeys(new Set((data || []).map(r => r.alert_key)));
   };
 
   const markAlertRead = async (alertKey) => {
     if (!currentUser?.id) return;
-    await supabase.from('alert_reads').upsert([
-      { user_id: currentUser.id, alert_key: alertKey }
-    ], { onConflict: 'user_id,alert_key' });
+    await supabase.from('alert_reads').upsert([{ user_id: currentUser.id, alert_key: alertKey }], { onConflict: 'user_id,alert_key' });
     setReadAlertKeys(prev => new Set([...prev, alertKey]));
   };
 
   const fetchWaitingListCounts = async () => {
-    const { data } = await supabase
-      .from('waiting_list')
-      .select('list_type')
-      .eq('status', 'waiting');
+    const { data } = await supabase.from('waiting_list').select('list_type').eq('status', 'waiting');
     const counts = {};
     WAITING_LISTS.forEach(l => { counts[l] = 0; });
-    (data || []).forEach(row => {
-      if (counts[row.list_type] !== undefined) counts[row.list_type]++;
-    });
+    (data || []).forEach(row => { if (counts[row.list_type] !== undefined) counts[row.list_type]++; });
     setWaitingListCounts(counts);
   };
 
   const fetchHouses = async () => {
     let query = supabase.from('houses').select('*').order('name');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) {
-      query = query.in('id', assignedHouseIds);
-    }
+    if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('id', assignedHouseIds);
     const { data: housesData } = await query;
-    const { data: clientsData } = await supabase
-      .from('clients')
-      .select('house_id, status')
-      .in('status', ['Active', 'Pending']);
+    const { data: clientsData } = await supabase.from('clients').select('house_id, status').in('status', ['Active', 'Pending']);
     const enriched = (housesData || []).map(h => ({
       ...h,
       activeCount: (clientsData || []).filter(c => c.house_id === h.id && c.status === 'Active').length,
@@ -96,47 +81,14 @@ function DashboardHome({ counts, currentUser }) {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const iso = sevenDaysAgo.toISOString();
 
-    const { data: apps } = await supabase
-      .from('applications')
-      .select('id, first_name, last_name, created_at, status')
-      .gte('created_at', iso)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    const { data: discharges } = await supabase
-      .from('clients')
-      .select('id, full_name, discharge_date, reason_for_discharge')
-      .eq('status', 'Discharged')
-      .gte('discharge_date', iso.split('T')[0])
-      .order('discharge_date', { ascending: false })
-      .limit(5);
-
-    const { data: crises } = await supabase
-      .from('client_timeline')
-      .select('id, client_id, author, severity, created_at, notes, clients(full_name)')
-      .eq('entry_type', 'Crisis')
-      .gte('created_at', iso)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const { data: apps } = await supabase.from('applications').select('id, first_name, last_name, created_at, status').gte('created_at', iso).order('created_at', { ascending: false }).limit(5);
+    const { data: discharges } = await supabase.from('clients').select('id, full_name, discharge_date, reason_for_discharge').eq('status', 'Discharged').gte('discharge_date', iso.split('T')[0]).order('discharge_date', { ascending: false }).limit(5);
+    const { data: crises } = await supabase.from('client_timeline').select('id, client_id, author, severity, created_at, notes, clients(full_name)').eq('entry_type', 'Crisis').gte('created_at', iso).order('created_at', { ascending: false }).limit(5);
 
     const activity = [
-      ...(apps || []).map(a => ({
-        id: `app-${a.id}`, type: 'application',
-        label: `${a.first_name} ${a.last_name} submitted an application`,
-        time: a.created_at, status: a.status,
-      })),
-      ...(discharges || []).map(d => ({
-        id: `discharge-${d.id}`, type: 'discharge',
-        label: `${d.full_name} was discharged`,
-        sublabel: d.reason_for_discharge || null,
-        time: d.discharge_date + 'T00:00:00',
-      })),
-      ...(crises || []).map(c => ({
-        id: `crisis-${c.id}`, type: 'crisis',
-        label: `Crisis logged for ${c.clients?.full_name || 'unknown client'}`,
-        sublabel: c.severity ? `Severity: ${c.severity}` : null,
-        time: c.created_at, author: c.author,
-      })),
+      ...(apps || []).map(a => ({ id: `app-${a.id}`, type: 'application', label: `${a.first_name} ${a.last_name} submitted an application`, time: a.created_at, status: a.status })),
+      ...(discharges || []).map(d => ({ id: `discharge-${d.id}`, type: 'discharge', label: `${d.full_name} was discharged`, sublabel: d.reason_for_discharge || null, time: d.discharge_date + 'T00:00:00' })),
+      ...(crises || []).map(c => ({ id: `crisis-${c.id}`, type: 'crisis', label: `Crisis logged for ${c.clients?.full_name || 'unknown client'}`, sublabel: c.severity ? `Severity: ${c.severity}` : null, time: c.created_at, author: c.author })),
     ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
 
     setRecentActivity(activity);
@@ -147,21 +99,11 @@ function DashboardHome({ counts, currentUser }) {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const iso = sevenDaysAgo.toISOString();
 
-    // Crisis alerts
-    let crisisQuery = supabase
-      .from('client_timeline')
-      .select('id, severity, created_at, notes, clients(full_name, house_id)')
-      .eq('entry_type', 'Crisis')
-      .gte('created_at', iso)
-      .order('created_at', { ascending: false });
-    const { data: crises } = await crisisQuery;
-
-    // Filter crises for house managers
+    const { data: crises } = await supabase.from('client_timeline').select('id, severity, created_at, notes, clients(full_name, house_id)').eq('entry_type', 'Crisis').gte('created_at', iso).order('created_at', { ascending: false });
     const filteredCrises = isHouseManagerRole && assignedHouseIds.length > 0
       ? (crises || []).filter(c => assignedHouseIds.includes(c.clients?.house_id))
       : (crises || []);
 
-    // Clients with no check-in this week
     const now = new Date();
     const dayOfWeek = now.getDay();
     const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
@@ -169,37 +111,24 @@ function DashboardHome({ counts, currentUser }) {
     weekStart.setDate(now.getDate() + diffToMonday);
     weekStart.setHours(0, 0, 0, 0);
 
-    let clientQuery = supabase
-      .from('clients')
-      .select('id, full_name, house_id')
-      .eq('status', 'Active');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) {
-      clientQuery = clientQuery.in('house_id', assignedHouseIds);
-    }
+    let clientQuery = supabase.from('clients').select('id, full_name, house_id').eq('status', 'Active');
+    if (isHouseManagerRole && assignedHouseIds.length > 0) clientQuery = clientQuery.in('house_id', assignedHouseIds);
     const { data: activeClients } = await clientQuery;
 
-    const { data: checkIns } = await supabase
-      .from('client_timeline')
-      .select('client_id')
-      .in('entry_type', ['Check-In', 'House Check-In'])
-      .gte('created_at', weekStart.toISOString());
-
+    const { data: checkIns } = await supabase.from('client_timeline').select('client_id').in('entry_type', ['Check-In', 'House Check-In']).gte('created_at', weekStart.toISOString());
     const checkedInIds = new Set((checkIns || []).map(c => c.client_id));
     const noCheckIn = (activeClients || []).filter(c => !checkedInIds.has(c.id));
 
     const alertList = [
       ...filteredCrises.map(c => ({
-        id: `alert-crisis-${c.id}`,
-        type: 'crisis',
+        id: `alert-crisis-${c.id}`, type: 'crisis',
         level: c.severity === 'High' ? 'high' : c.severity === 'Medium' ? 'medium' : 'low',
         label: `Crisis — ${c.clients?.full_name || 'Unknown'}`,
         sublabel: c.severity ? `${c.severity} severity` : null,
         time: c.created_at,
       })),
       ...(noCheckIn.length > 0 ? [{
-        id: 'alert-no-checkin',
-        type: 'no_checkin',
-        level: 'medium',
+        id: 'alert-no-checkin', type: 'no_checkin', level: 'medium',
         label: `${noCheckIn.length} active client${noCheckIn.length !== 1 ? 's' : ''} with no check-in this week`,
         sublabel: noCheckIn.slice(0, 3).map(c => c.full_name).join(', ') + (noCheckIn.length > 3 ? ` +${noCheckIn.length - 3} more` : ''),
         time: null,
@@ -210,20 +139,11 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchOpenCharges = async () => {
-    let query = supabase
-      .from('charges')
-      .select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, houses(id, name))')
-      .in('status', ['unpaid', 'partial'])
-      .order('due_date', { ascending: true });
-
-    const { data } = await query;
+    const { data } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true });
     let charges = data || [];
-
-    // Filter for house managers
     if (isHouseManagerRole && assignedHouseIds.length > 0) {
       charges = charges.filter(c => assignedHouseIds.includes(c.clients?.house_id));
     }
-
     const total = charges.reduce((sum, c) => sum + (parseFloat(c.amount) - parseFloat(c.amount_paid || 0)), 0);
     setOpenCharges(charges);
     setTotalOutstanding(total);
@@ -243,10 +163,10 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const activityIcon = (type) => {
-    if (type === 'application') return { icon: '📋', color: '#60a5fa', bg: '#1e2d3a' };
-    if (type === 'discharge') return { icon: '🚪', color: '#f87171', bg: '#3a1e1e' };
-    if (type === 'crisis') return { icon: '⚠️', color: '#fb923c', bg: '#3a2d1e' };
-    return { icon: '•', color: '#aaa', bg: '#2a2a2a' };
+    if (type === 'application') return { icon: '📋', bg: '#1e2d3a' };
+    if (type === 'discharge') return { icon: '🚪', bg: '#3a1e1e' };
+    if (type === 'crisis') return { icon: '⚠️', bg: '#3a2d1e' };
+    return { icon: '•', bg: '#2a2a2a' };
   };
 
   const alertColor = (level) => {
@@ -258,7 +178,6 @@ function DashboardHome({ counts, currentUser }) {
   const availableBeds = (h) => Math.max((h.total_beds || 0) - (h.activeCount || 0) - (h.pendingCount || 0), 0);
   const occupancyPct = (h) => Math.min(((h.activeCount || 0) + (h.pendingCount || 0)) / Math.max(h.total_beds || 1, 1) * 100, 100);
 
-  // Group open charges by house
   const chargesByHouse = openCharges.reduce((acc, charge) => {
     const houseName = charge.clients?.houses?.name || 'No House Assigned';
     const houseId = charge.clients?.houses?.id || 'none';
@@ -269,7 +188,6 @@ function DashboardHome({ counts, currentUser }) {
 
   const unreadAlerts = alerts.filter(a => !readAlertKeys.has(a.id));
   const readAlerts = alerts.filter(a => readAlertKeys.has(a.id));
-
   const totalWaiting = Object.values(waitingListCounts).reduce((sum, n) => sum + n, 0);
 
   return (
@@ -301,7 +219,6 @@ function DashboardHome({ counts, currentUser }) {
             {/* Waiting List Breakdown */}
             <Section title="Waiting Lists" count={totalWaiting} countColor="#fb923c">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {/* Men's lists */}
                 <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
                 {['DOC Men', 'Community Men', 'Treatment Men'].map(list => (
                   <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
@@ -309,7 +226,6 @@ function DashboardHome({ counts, currentUser }) {
                     <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#60a5fa' : '#444' }}>{waitingListCounts[list] || 0}</span>
                   </div>
                 ))}
-                {/* Women's lists */}
                 <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 4px 0', fontWeight: '600' }}>Women's</p>
                 {['DOC Women', 'Community Women', 'Treatment Women'].map(list => (
                   <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
@@ -324,7 +240,6 @@ function DashboardHome({ counts, currentUser }) {
             {alerts.length > 0 && (
               <Section title="Alerts" count={unreadAlerts.length > 0 ? unreadAlerts.length : undefined} countColor="#f87171">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {/* Unread alerts */}
                   {unreadAlerts.map(alert => {
                     const col = alertColor(alert.level);
                     return (
@@ -344,7 +259,6 @@ function DashboardHome({ counts, currentUser }) {
                       </div>
                     );
                   })}
-                  {/* Read alerts (dimmed) */}
                   {readAlerts.length > 0 && (
                     <div style={{ marginTop: '4px' }}>
                       <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' }}>Read</p>
@@ -378,9 +292,7 @@ function DashboardHome({ counts, currentUser }) {
                             <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{h.name}</span>
                             <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: h.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: h.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{h.type}</span>
                           </div>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#f87171' : '#4ade80' }}>
-                            {available} available
-                          </span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#f87171' : '#4ade80' }}>{available} available</span>
                         </div>
                         <div style={{ height: '4px', background: '#333', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, background: isAlmostFull ? '#ef4444' : '#c084fc', borderRadius: '2px', transition: 'width 0.3s' }} />
@@ -402,10 +314,9 @@ function DashboardHome({ counts, currentUser }) {
           {/* Right column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            {/* Open Charges card */}
+            {/* Open Charges */}
             {openCharges.length > 0 && (
               <Section title="Open Charges">
-                {/* Summary */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#3a1e1e', borderRadius: '10px', border: '1px solid #7f1d1d', marginBottom: '14px' }}>
                   <div>
                     <p style={{ color: '#f87171', fontSize: '12px', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Outstanding</p>
@@ -416,19 +327,14 @@ function DashboardHome({ counts, currentUser }) {
                     <p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0 0' }}>open charge{openCharges.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
-
-                {/* Grouped by house */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {Object.entries(chargesByHouse).map(([houseId, group]) => {
                     const houseTotal = group.charges.reduce((sum, c) => sum + (parseFloat(c.amount) - parseFloat(c.amount_paid || 0)), 0);
-                    // Deduplicate clients within this house group
                     const clientMap = {};
                     group.charges.forEach(c => {
                       const cid = c.clients?.id;
                       if (!cid) return;
-                      if (!clientMap[cid]) {
-                        clientMap[cid] = { name: c.clients?.full_name || '—', total: 0 };
-                      }
+                      if (!clientMap[cid]) clientMap[cid] = { name: c.clients?.full_name || '—', total: 0 };
                       clientMap[cid].total += parseFloat(c.amount) - parseFloat(c.amount_paid || 0);
                     });
                     return (
@@ -515,6 +421,7 @@ function DashboardInner({ user }) {
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
   const [unreadMessages] = useState(0);
   const [pendingClientId, setPendingClientId] = useState(null);
+  const [cameFromHouses, setCameFromHouses] = useState(false);
 
   const {
     role,
@@ -625,8 +532,20 @@ function DashboardInner({ user }) {
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
           {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
           {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList />}
-          {activePage === 'clients' && <Clients pendingClientId={pendingClientId} onClientOpened={() => setPendingClientId(null)} onBackToHouses={pendingClientId ? () => setActivePage('houses') : null} />}
-          {activePage === 'houses' && <Houses onOpenClient={(clientId) => { setActivePage('clients'); setPendingClientId(clientId); }} />}
+          {activePage === 'clients' && (
+            <Clients
+              pendingClientId={pendingClientId}
+              onClientOpened={() => setPendingClientId(null)}
+              onBackToHouses={cameFromHouses ? () => { setActivePage('houses'); setCameFromHouses(false); } : null}
+            />
+          )}
+          {activePage === 'houses' && (
+            <Houses onOpenClient={(clientId) => {
+              setPendingClientId(clientId);
+              setCameFromHouses(true);
+              setActivePage('clients');
+            }} />
+          )}
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}

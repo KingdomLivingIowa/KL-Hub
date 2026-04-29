@@ -21,7 +21,6 @@ const STATUS_FLOW = {
 
 const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Weekly Reflection'];
 
-// Tabs split: primary (always visible) and secondary (in More dropdown)
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
 const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
 
@@ -72,7 +71,6 @@ const groupByWeek = (entries) => {
 // ── Invite to Portal Button ───────────────────────────────────────────────────
 function InvitePortalButton({ client }) {
   const [status, setStatus] = useState('idle');
-
   const handleInvite = async (e) => {
     e.stopPropagation();
     if (status === 'sent') return;
@@ -94,7 +92,6 @@ function InvitePortalButton({ client }) {
       setTimeout(() => setStatus('idle'), 3000);
     }
   };
-
   const btnStyles = {
     idle:    { background: 'transparent', border: '1px solid #444', color: '#aaa' },
     sending: { background: 'transparent', border: '1px solid #444', color: '#aaa', opacity: 0.6 },
@@ -102,7 +99,6 @@ function InvitePortalButton({ client }) {
     error:   { background: '#3a1e1e', border: '1px solid #f87171', color: '#f87171' },
   };
   const btnLabel = { idle: '✉ Invite', sending: '...', sent: '✓ Sent', error: 'Error' };
-
   return (
     <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
       {btnLabel[status]}
@@ -114,22 +110,17 @@ function InvitePortalButton({ client }) {
 function MoveToButton({ client, onSelect }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-
   useEffect(() => {
     const handleClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
-
   const statuses = STATUS_FLOW[client.status] || [];
   if (!statuses.length) return null;
-
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-        style={{ background: '#2a2a2a', border: '1px solid #444', color: '#ddd', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}
-      >
+      <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        style={{ background: '#2a2a2a', border: '1px solid #444', color: '#ddd', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
         Move to {open ? '▲' : '▼'}
       </button>
       {open && (
@@ -138,8 +129,7 @@ function MoveToButton({ client, onSelect }) {
             <button key={ns} onClick={e => { e.stopPropagation(); setOpen(false); onSelect(ns); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', color: '#ddd', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
               onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               {ns}
             </button>
           ))}
@@ -218,7 +208,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const moreTabRef = useRef(null);
   const [statusModal, setStatusModal] = useState(null);
   const [statusForm, setStatusForm] = useState({
-    list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', house_id: '',
+    list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '',
+    discharge_date: '', house_id: '',
   });
 
   const [houses, setHouses] = useState([]);
@@ -261,14 +252,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   }, [search]);
 
   useEffect(() => { setCurrentPage(1); }, [statusFilter]);
+
+  // Auto-open client when coming from Houses
   useEffect(() => {
-  if (!pendingClientId || loading) return;
-  const client = clients.find(c => c.id === pendingClientId);
-  if (client) {
-    openProfile(client);
-    if (onClientOpened) onClientOpened();
-  } else if (pendingClientId) {
-    // Client not in current filtered list — fetch directly
+    if (!pendingClientId) return;
     supabase.from('clients').select('*, houses(name, house_manager)').eq('id', pendingClientId).single()
       .then(({ data }) => {
         if (data) {
@@ -277,8 +264,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           if (onClientOpened) onClientOpened();
         }
       });
-  }
-}, [pendingClientId, loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pendingClientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyClientFilters = useCallback((query) => {
     if (debouncedSearch) query = query.ilike('full_name', `%${debouncedSearch}%`);
@@ -418,7 +404,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', house_id: client.house_id || '' });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '' });
   };
 
   const confirmStatusChange = async () => {
@@ -468,8 +454,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
       const today = new Date().toISOString().split('T')[0];
-updates.discharge_date = statusForm.discharge_date || today;
-      updates.discharge_date = today;
+      updates.discharge_date = statusForm.discharge_date || today;
       updates.reason_for_discharge = statusForm.discharge_reason;
       updates.discharge_notes = statusForm.discharge_notes || null;
       updates.discharged_by = user?.email || user?.id || null;
@@ -484,7 +469,7 @@ updates.discharge_date = statusForm.discharge_date || today;
 
       await supabase.from('client_stays').insert([{
         client_id: client.id, house_id: client.house_id || null, house_name: houseName,
-        start_date: client.start_date || null, discharge_date: today,
+        start_date: client.start_date || null, discharge_date: updates.discharge_date,
         discharge_reason: statusForm.discharge_reason, discharge_notes: statusForm.discharge_notes || null,
         balance_at_discharge: balanceAtDischarge, discharged_by: user?.email || user?.id || null,
       }]);
@@ -624,18 +609,18 @@ updates.discharge_date = statusForm.discharge_date || today;
   );
 
   const LocationPin = ({ entryId, lat, lng }) => {
-  const address = locationLabels[entryId];
-  const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
-  return (
-    <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-        <span>📍</span>
-        <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+    const address = locationLabels[entryId];
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    return (
+      <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+          <span>📍</span>
+          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+        </div>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
-      <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
-    </div>
-  );
-};
+    );
+  };
 
   const MeetingWeek = ({ weekStart, entries }) => {
     const key = weekStart.toISOString();
@@ -826,16 +811,16 @@ updates.discharge_date = statusForm.discharge_date || today;
               </div>
               {/* Action buttons top-right */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-  {onBackToHouses && (
-    <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
-      style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-      ← Houses
-    </button>
-  )}
-  {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
-  {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
-  <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
-</div>
+                {onBackToHouses && (
+                  <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
+                    style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    ← Houses
+                  </button>
+                )}
+                {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
+                {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
+                <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
+              </div>
             </div>
 
             {/* ── Tabs with More dropdown ── */}
@@ -845,12 +830,9 @@ updates.discharge_date = statusForm.discharge_date || today;
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
               ))}
-              {/* More dropdown */}
               <div ref={moreTabRef} style={{ position: 'relative', display: 'flex', alignItems: 'stretch' }}>
-                <button
-                  onClick={() => setShowMoreTabs(o => !o)}
-                  style={{ ...st.tab, ...(isMoreTabActive ? st.tabActive : {}), display: 'flex', alignItems: 'center', gap: '4px' }}
-                >
+                <button onClick={() => setShowMoreTabs(o => !o)}
+                  style={{ ...st.tab, ...(isMoreTabActive ? st.tabActive : {}), display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {isMoreTabActive ? activeTab.charAt(0).toUpperCase() + activeTab.slice(1) : 'More'} {showMoreTabs ? '▲' : '▼'}
                 </button>
                 {showMoreTabs && (
@@ -859,8 +841,7 @@ updates.discharge_date = statusForm.discharge_date || today;
                       <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); setShowMoreTabs(false); }}
                         style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: activeTab === t ? '#2a2a2a' : 'transparent', border: 'none', color: activeTab === t ? '#fff' : '#aaa', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
-                        onMouseLeave={e => e.currentTarget.style.background = activeTab === t ? '#2a2a2a' : 'transparent'}
-                      >
+                        onMouseLeave={e => e.currentTarget.style.background = activeTab === t ? '#2a2a2a' : 'transparent'}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </button>
                     ))}
@@ -1194,7 +1175,6 @@ updates.discharge_date = statusForm.discharge_date || today;
                 </>
               )}
 
-              {/* ── Stays Tab ── */}
               {activeTab === 'stays' && (
                 <Card title="Stay History" full>
                   {staysLoading ? (
@@ -1366,21 +1346,21 @@ updates.discharge_date = statusForm.discharge_date || today;
                     <label style={sf.label}>Reason for discharge *</label>
                     <select value={statusForm.discharge_reason} onChange={e => setStatusForm(p => ({ ...p, discharge_reason: e.target.value }))} style={sf.input}>
                       <option value="">Select reason</option>
-<option>Move to Rent/Own Personal Home</option>
-<option>Move to Other Recovery House</option>
-<option>Move to Other Supportive Housing</option>
-<option>Return to Treatment</option>
-<option>Return to Use</option>
-<option>Asked to Leave</option>
-<option>Incarceration</option>
-<option>Unknown</option>
-<option>Other</option>
+                      <option>Move to Rent/Own Personal Home</option>
+                      <option>Move to Other Recovery House</option>
+                      <option>Move to Other Supportive Housing</option>
+                      <option>Return to Treatment</option>
+                      <option>Return to Use</option>
+                      <option>Asked to Leave</option>
+                      <option>Incarceration</option>
+                      <option>Unknown</option>
+                      <option>Other</option>
                     </select>
                   </div>
                   <div style={{ marginBottom: '16px' }}>
-  <label style={sf.label}>Date of discharge</label>
-  <input type="date" value={statusForm.discharge_date || ''} onChange={e => setStatusForm(p => ({ ...p, discharge_date: e.target.value }))} style={sf.input} />
-</div>
+                    <label style={sf.label}>Date of discharge</label>
+                    <input type="date" value={statusForm.discharge_date || ''} onChange={e => setStatusForm(p => ({ ...p, discharge_date: e.target.value }))} style={sf.input} />
+                  </div>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Discharge notes</label>
                     <textarea value={statusForm.discharge_notes} onChange={e => setStatusForm(p => ({ ...p, discharge_notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={4} placeholder="Add any details about why the client was discharged..." />
