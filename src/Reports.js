@@ -97,7 +97,6 @@ export default function Reports() {
   const [clients, setClients] = useState([]);
   const [stays, setStays] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [charges, setCharges] = useState([]);
   const [waitingList, setWaitingList] = useState([]);
   const [houses, setHouses] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -105,13 +104,12 @@ export default function Reports() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [
-      clientsRes, staysRes, paymentsRes, chargesRes,
+      clientsRes, staysRes, paymentsRes,
       waitingRes, housesRes, appsRes,
     ] = await Promise.all([
       supabase.from('clients').select('*'),
       supabase.from('client_stays').select('*'),
       supabase.from('payments').select('*'),
-      supabase.from('charges').select('*'),
       supabase.from('waiting_list').select('*'),
       supabase.from('houses').select('*'),
       supabase.from('applications').select('id, gender, created_at, status'),
@@ -119,7 +117,6 @@ export default function Reports() {
     setClients(clientsRes.data || []);
     setStays(staysRes.data || []);
     setPayments(paymentsRes.data || []);
-    setCharges(chargesRes.data || []);
     setWaitingList(waitingRes.data || []);
     setHouses(housesRes.data || []);
     setApplications(appsRes.data || []);
@@ -166,14 +163,6 @@ export default function Reports() {
   const completedStays = stays.filter(s => s.start_date && s.discharge_date);
   const losAll = completedStays.map(s => calcLOS(s.start_date, s.discharge_date));
 
-  function losForPeriod(months) {
-    const cutoff = new Date();
-    cutoff.setMonth(cutoff.getMonth() - months);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
-    const filtered = completedStays.filter(s => s.discharge_date >= cutoffStr);
-    return avg(filtered.map(s => calcLOS(s.start_date, s.discharge_date)));
-  }
-
   function losByGenderAndPeriod(gender, months) {
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - months);
@@ -188,9 +177,6 @@ export default function Reports() {
   // Year-by-year stats
   function staysForYear(year) {
     return stays.filter(s => s.start_date && s.start_date.startsWith(String(year)));
-  }
-  function dischargesForYear(year) {
-    return stays.filter(s => s.discharge_date && s.discharge_date.startsWith(String(year)));
   }
   function graduatesForYear(year) {
     return stays.filter(s => s.discharge_date && s.discharge_date.startsWith(String(year)) && s.graduate === true).length;
