@@ -10,6 +10,7 @@ import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
 import Payments from './Payments';
 import Messaging from './Messaging';
+import Reports from './Reports';
 
 const WAITING_LISTS = [
   'DOC Men', 'Community Men', 'Treatment Men',
@@ -574,6 +575,7 @@ function DashboardInner({ user }) {
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}
+          {activePage === 'reports' && canSeeReports && <Reports />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
       </div>
