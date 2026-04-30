@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import { getCached, setCached, bustCache } from './dataCache';
 import { UserProvider, useUser } from './UserContext';
 import Admissions from './Admissions';
 import WaitingList from './WaitingList';
@@ -27,7 +28,18 @@ function DashboardHome({ counts, currentUser }) {
   const [totalOutstanding, setTotalOutstanding] = useState(0);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = useCallback(async (force = false) => {
+    // Use cached data for instant render, then refresh in background after 60s
+    const cached = getCached('dashboard_main');
+    if (cached && !force) {
+      setHouses(cached.houses);
+      setRecentActivity(cached.activity);
+      setOpenCharges(cached.charges);
+      setTotalOutstanding(cached.outstanding);
+      setWaitingListCounts(cached.waitlistCounts);
+      setLoadingDashboard(false);
+      return;
+    }
     setLoadingDashboard(true);
     try {
       await Promise.all([
@@ -150,6 +162,19 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+
+  // Write to cache after data settles so next visit is instant
+  useEffect(() => {
+    if (!loadingDashboard && (houses.length > 0 || recentActivity.length > 0)) {
+      setCached('dashboard_main', {
+        houses,
+        activity: recentActivity,
+        charges: openCharges,
+        outstanding: totalOutstanding,
+        waitlistCounts: waitingListCounts,
+      });
+    }
+  }, [loadingDashboard, houses, recentActivity, openCharges, totalOutstanding, waitingListCounts]);
 
   const formatTimeAgo = (dateStr) => {
     if (!dateStr) return '';

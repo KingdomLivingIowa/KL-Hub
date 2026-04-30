@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
+import { getCached, setCached, bustCache } from './dataCache';
 import { useUser } from './UserContext';
 import ClientPayments from './ClientPayments';
 
@@ -273,7 +274,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     return query;
   }, [debouncedSearch, statusFilter, isHouseManagerRole, assignedHouseIds]);
 
-  const fetchClients = useCallback(async () => {
+  const fetchClients = useCallback(async (force = false) => {
+    const cacheKey = `clients_${statusFilter}_${debouncedSearch}_${currentPage}`;
+    if (!force) {
+      const cached = getCached(cacheKey);
+      if (cached) { setClients(cached.clients); setTotalCount(cached.total); setLoading(false); return; }
+    }
     setLoading(true);
     try {
       if (isHouseManagerRole && assignedHouseIds.length === 0) { setClients([]); setTotalCount(0); setLoading(false); return; }
@@ -288,10 +294,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       dataQuery = applyClientFilters(dataQuery);
       const { data, error: dataError } = await dataQuery;
       if (dataError) { console.error(dataError); setClients([]); return; }
-      setClients((data || []).map(c => ({ ...c, house_name: c.houses?.name || null, house_manager: c.houses?.house_manager || null })));
+      const mapped = (data || []).map(c => ({ ...c, house_name: c.houses?.name || null, house_manager: c.houses?.house_manager || null }));
+      setClients(mapped);
+      setCached(cacheKey, { clients: mapped, total: count || 0 });
     } catch (err) { console.error(err); setClients([]); setTotalCount(0); }
     finally { setLoading(false); }
-  }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters]);
+  }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters, statusFilter, debouncedSearch]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 

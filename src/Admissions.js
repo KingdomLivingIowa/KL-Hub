@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { getCached, setCached, bustCache } from './dataCache';
 import { supabase } from './supabaseClient';
 
 const PAGE_SIZE = 25;
@@ -53,7 +54,12 @@ function Admissions() {
     [filter, debouncedSearch]
   );
 
-  const fetchApplications = useCallback(async () => {
+  const fetchApplications = useCallback(async (force = false) => {
+    const cacheKey = `admissions_${filter}_${debouncedSearch}_${currentPage}`;
+    if (!force) {
+      const cached = getCached(cacheKey);
+      if (cached) { setApplications(cached.apps); setTotalCount(cached.total); setLoading(false); return; }
+    }
     setLoading(true);
 
     try {
@@ -96,6 +102,7 @@ function Admissions() {
       }
 
       setApplications(data || []);
+      setCached(cacheKey, { apps: data || [], total: count || 0 });
     } catch (error) {
       console.error('Unexpected fetchApplications error:', error);
       alert('Something went wrong while loading admissions.');
@@ -104,7 +111,7 @@ function Admissions() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, applyApplicationFilters]);
+  }, [currentPage, applyApplicationFilters, filter, debouncedSearch]);
 
   const fetchClients = useCallback(async () => {
     try {

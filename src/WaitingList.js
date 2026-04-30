@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getCached, setCached, bustCache } from './dataCache';
 import { supabase } from './supabaseClient';
 
 const LISTS = [
@@ -16,7 +17,12 @@ function WaitingList() {
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const fetchList = useCallback(async () => {
+  const fetchList = useCallback(async (force = false) => {
+    const cacheKey = `waitingList_${activeList}`;
+    if (!force) {
+      const cached = getCached(cacheKey);
+      if (cached) { setClients(cached); setLoading(false); return; }
+    }
     setLoading(true);
     const { data, error } = await supabase
       .from('waiting_list')
@@ -24,7 +30,7 @@ function WaitingList() {
       .eq('list_type', activeList)
       .eq('status', 'waiting')
       .order('ready_date', { ascending: true, nullsFirst: false });
-    if (!error) setClients(data || []);
+    if (!error) { setClients(data || []); setCached(cacheKey, data || []); }
     setLoading(false);
   }, [activeList]);
 
@@ -41,7 +47,7 @@ function WaitingList() {
   }, []);
 
   useEffect(() => {
-    fetchList();
+    bustCache(`waitingList_${activeList}`); fetchList(true);
   }, [fetchList]);
 
   const selectAccepted = (app) => {
@@ -68,13 +74,13 @@ function WaitingList() {
     setAddForm({ full_name: '', email: '', phone: '', notes: '', ready_date: '', application_id: null });
     setSearch('');
     setShowAdd(false);
-    fetchList();
+    bustCache(`waitingList_${activeList}`); fetchList(true);
   };
 
   const removeFromList = async (id) => {
     if (!window.confirm('Remove this person from the waiting list?')) return;
     await supabase.from('waiting_list').update({ status: 'removed' }).eq('id', id);
-    fetchList();
+    bustCache(`waitingList_${activeList}`); fetchList(true);
   };
 
   const formatDate = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString() : null;

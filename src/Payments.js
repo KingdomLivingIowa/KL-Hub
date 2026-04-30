@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getCached, setCached, bustCache } from './dataCache';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import ClientPayments from './ClientPayments';
@@ -26,7 +27,12 @@ function Payments() {
   const [savingFees, setSavingFees] = useState(false);
   const [feeEdits, setFeeEdits] = useState({});
 
-  const fetchClients = useCallback(async () => {
+  const fetchClients = useCallback(async (force = false) => {
+    const cacheKey = `payments_clients_${viewFilter}`;
+    if (!force) {
+      const cached = getCached(cacheKey);
+      if (cached) { setClients(cached.clients); setBalances(cached.balances); setLoading(false); return; }
+    }
     setLoading(true);
 
     let query = supabase
@@ -44,6 +50,7 @@ function Payments() {
     const enriched = (data || []).map(c => ({ ...c, house_name: c.houses?.name || null }));
     setClients(enriched);
 
+    const balanceMap = {};
     // Fetch balances for all clients
     if (enriched.length > 0) {
       const ids = enriched.map(c => c.id);
@@ -53,13 +60,13 @@ function Payments() {
         supabase.from('payments').select('client_id, amount').in('client_id', ids),
       ]);
 
-      const balanceMap = {};
       ids.forEach(id => { balanceMap[id] = { charged: 0, paid: 0 }; });
       (chargesRes.data || []).forEach(c => { balanceMap[c.client_id].charged += parseFloat(c.amount || 0); });
       (paymentsRes.data || []).forEach(p => { balanceMap[p.client_id].paid += parseFloat(p.amount || 0); });
       setBalances(balanceMap);
     }
 
+    setCached(cacheKey, { clients: enriched, balances: balanceMap });
     setLoading(false);
   }, [viewFilter]);
 
