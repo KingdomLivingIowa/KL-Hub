@@ -47,8 +47,8 @@ function WaitingList() {
   }, []);
 
   useEffect(() => {
-    bustCache(`waitingList_${activeList}`); fetchList(true);
-  }, [fetchList]);
+    fetchList();
+  }, [fetchList]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectAccepted = (app) => {
     setAddForm(p => ({ ...p, full_name: app.full_name, email: app.email || '', phone: app.phone || '', application_id: app.id }));

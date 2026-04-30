@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
-import { getCached, setCached, bustCache } from './dataCache';
+import { getCached, setCached } from './dataCache';
 import { useUser } from './UserContext';
 import ClientPayments from './ClientPayments';
 

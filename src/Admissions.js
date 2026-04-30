@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getCached, setCached, bustCache } from './dataCache';
+import { getCached, setCached } from './dataCache';
 import { supabase } from './supabaseClient';
 
 const PAGE_SIZE = 25;

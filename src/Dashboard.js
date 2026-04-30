@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { getCached, setCached, bustCache } from './dataCache';
+import { getCached, setCached } from './dataCache';
 import { UserProvider, useUser } from './UserContext';
 import Admissions from './Admissions';
 import WaitingList from './WaitingList';
