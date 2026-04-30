@@ -6,7 +6,6 @@ import Admissions from './Admissions';
 import WaitingList from './WaitingList';
 import Clients from './Clients';
 import Houses from './Houses';
-import IntakeDischarge from './IntakeDischarge';
 import UserManagement from './UserManagement';
 import Payments from './Payments';
 import Messaging from './Messaging';
@@ -455,7 +454,6 @@ function DashboardInner({ user }) {
     hasFullAccess,
     canSeeAdmissions,
     canSeeWaitingList,
-    canSeeIntake,
     canSeeReports,
     canSeeUserManagement,
     isAdmin,
@@ -485,7 +483,6 @@ function DashboardInner({ user }) {
     { id: 'clients', label: 'Clients', show: true },
     { id: 'messages', label: 'Messages', show: true },
     { id: 'payments', label: 'Payments', show: hasFullAccess },
-    { id: 'intake', label: 'Intake & Discharge', show: canSeeIntake },
     { id: 'reports', label: 'Reports', show: canSeeReports },
   ].filter(item => item.show);
 
@@ -574,7 +571,6 @@ function DashboardInner({ user }) {
           )}
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}
-          {activePage === 'intake' && canSeeIntake && <IntakeDischarge />}
           {activePage === 'reports' && canSeeReports && <Reports />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
