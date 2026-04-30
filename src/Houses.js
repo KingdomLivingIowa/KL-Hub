@@ -1,10 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
-import ClientPayments from './ClientPayments';
 
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection'];
-const TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline', 'application', 'documents', 'notes'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -841,24 +839,6 @@ function Houses({ onOpenClient }) {
   );
 }
 
-// These are kept for backward compatibility but no longer used for navigation
-function InfoCard({ title, children }) {
-  return (
-    <div style={{ background: '#2a2a2a', border: '1px solid #333', borderRadius: '10px', padding: '12px 14px' }}>
-      <p style={{ fontSize: '10px', fontWeight: '600', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px 0' }}>{title}</p>
-      {children}
-    </div>
-  );
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #333' }}>
-      <span style={{ fontSize: '12px', color: '#666' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: value ? '#ddd' : '#444' }}>{value || '—'}</span>
-    </div>
-  );
-}
 
 // Suppress unused warning
 
