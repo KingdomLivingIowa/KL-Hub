@@ -357,7 +357,6 @@ function Houses({ onOpenClient }) {
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const formatDateShort = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const formatBalance = (b) => { if (b == null) return '—'; const num = parseFloat(b); return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2); };
 
   const LocationPin = ({ entryId, lat, lng }) => {
@@ -862,7 +861,6 @@ function InfoRow({ label, value }) {
 }
 
 // Suppress unused warning
-const _unused = { InfoCard, InfoRow, TABS, ClientPayments };
 
 const s = {
   page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
