@@ -209,7 +209,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [statusModal, setStatusModal] = useState(null);
   const [statusForm, setStatusForm] = useState({
     list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '',
-    discharge_date: '', house_id: '',
+    discharge_date: '', house_id: '', successful_discharge: '', graduate: false,
   });
 
   const [houses, setHouses] = useState([]);
@@ -404,7 +404,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '' });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false });
   };
 
   const confirmStatusChange = async () => {
@@ -459,6 +459,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       updates.discharge_notes = statusForm.discharge_notes || null;
       updates.discharged_by = user?.email || user?.id || null;
       updates.level = null;
+      updates.successful_discharge = statusForm.successful_discharge === 'yes' ? true : statusForm.successful_discharge === 'no' ? false : null;
+      updates.graduate = statusForm.discharge_reason === 'Graduate';
 
       const { data: chargesData } = await supabase.from('charges').select('amount').eq('client_id', client.id);
       const { data: paymentsData } = await supabase.from('payments').select('amount').eq('client_id', client.id);
@@ -472,6 +474,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         start_date: client.start_date || null, discharge_date: updates.discharge_date,
         discharge_reason: statusForm.discharge_reason, discharge_notes: statusForm.discharge_notes || null,
         balance_at_discharge: balanceAtDischarge, discharged_by: user?.email || user?.id || null,
+        successful_discharge: updates.successful_discharge,
+        graduate: updates.graduate,
       }]);
 
       if (client.house_id) {
@@ -1353,9 +1357,25 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <option>Return to Use</option>
                       <option>Asked to Leave</option>
                       <option>Incarceration</option>
+                      <option>Graduate</option>
                       <option>Unknown</option>
                       <option>Other</option>
                     </select>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Was this a successful discharge? *</label>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                      {['yes', 'no'].map(v => (
+                        <button key={v} onClick={() => setStatusForm(p => ({ ...p, successful_discharge: v }))}
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                            borderColor: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#444',
+                            background: statusForm.successful_discharge === v ? (v === 'yes' ? '#1a3a2a' : '#3a1a1a') : 'transparent',
+                            color: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#aaa',
+                          }}>
+                          {v === 'yes' ? 'Yes' : 'No'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Date of discharge</label>
