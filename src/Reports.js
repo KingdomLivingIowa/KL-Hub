@@ -290,28 +290,6 @@ export default function Reports() {
             <StatCard label="Payments This Week" value={fmtMoney(paymentsWeekTotal)} accent="#8b5cf6" />
           </div>
 
-          <Section title="Average Length of Stay (Days)">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-              <div>
-                <div style={{ fontSize: 12, color: '#3b82f6', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Male</div>
-                <Row label="Past Year" value={losByGenderAndPeriod('Male', 12)} />
-                <Row label="Past 6 Months" value={losByGenderAndPeriod('Male', 6)} />
-                <Row label="Past 3 Months" value={losByGenderAndPeriod('Male', 3)} />
-                <Row label="Past 1 Month" value={losByGenderAndPeriod('Male', 1)} />
-              </div>
-              <div>
-                <div style={{ fontSize: 12, color: '#ec4899', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Female</div>
-                <Row label="Past Year" value={losByGenderAndPeriod('Female', 12)} />
-                <Row label="Past 6 Months" value={losByGenderAndPeriod('Female', 6)} />
-                <Row label="Past 3 Months" value={losByGenderAndPeriod('Female', 3)} />
-                <Row label="Past 1 Month" value={losByGenderAndPeriod('Female', 1)} />
-              </div>
-            </div>
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #333', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: '#aaa' }}>Overall average (all time)</span>
-              <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{avgLosOverall ?? '—'} days</span>
-            </div>
-          </Section>
         </div>
       )}
 
@@ -358,6 +336,29 @@ export default function Reports() {
               <Row label="Women's — On Waiting List" value={womenWaitList} />
             </Section>
           )}
+
+          <Section title="Average Length of Stay (Days)">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+              <div>
+                <div style={{ fontSize: 12, color: '#3b82f6', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Male</div>
+                <Row label="Past Year" value={losByGenderAndPeriod('Male', 12)} />
+                <Row label="Past 6 Months" value={losByGenderAndPeriod('Male', 6)} />
+                <Row label="Past 3 Months" value={losByGenderAndPeriod('Male', 3)} />
+                <Row label="Past 1 Month" value={losByGenderAndPeriod('Male', 1)} />
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: '#ec4899', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Female</div>
+                <Row label="Past Year" value={losByGenderAndPeriod('Female', 12)} />
+                <Row label="Past 6 Months" value={losByGenderAndPeriod('Female', 6)} />
+                <Row label="Past 3 Months" value={losByGenderAndPeriod('Female', 3)} />
+                <Row label="Past 1 Month" value={losByGenderAndPeriod('Female', 1)} />
+              </div>
+            </div>
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #333', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, color: '#aaa' }}>Overall average (all time)</span>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{avgLosOverall ?? '—'} days</span>
+            </div>
+          </Section>
 
           <Section title="Intakes by Referral Source">
             {Object.entries(REFERRAL_LABELS).map(([key, label]) => (
