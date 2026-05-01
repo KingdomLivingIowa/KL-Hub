@@ -458,7 +458,6 @@ function DashboardInner({ user }) {
     canSeeReports,
     canSeeUserManagement,
     isAdmin,
-    user: ctxUser,
   } = useUser();
 
   useEffect(() => {
