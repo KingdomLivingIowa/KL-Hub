@@ -15,7 +15,36 @@ function fmtDate(ymd) {
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const RECURRENCE_OPTIONS = [
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function getNthWeekdayLabel(date) {
+  const d = new Date(date + 'T00:00:00');
+  const dayName = DAY_NAMES[d.getDay()];
+  const nth = Math.ceil(d.getDate() / 7);
+  const nthLabel = ['','first','second','third','fourth','fifth'][nth] || 'last';
+  return { value: `monthly_first_${dayName.toLowerCase()}`, label: `Monthly on the ${nthLabel} ${dayName}` };
+}
+
+function getRecurrenceOptions(dateStr) {
+  if (!dateStr) return [{ value: 'none', label: 'Does not repeat' }];
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayName = DAY_NAMES[d.getDay()];
+  const monthName = MONTH_NAMES[d.getMonth()];
+  const dayOfMonth = d.getDate();
+  const nthDay = getNthWeekdayLabel(dateStr);
+  return [
+    { value: 'none', label: 'Does not repeat' },
+    { value: 'daily', label: 'Daily' },
+    { value: 'weekly', label: `Weekly on ${dayName}` },
+    nthDay,
+    { value: 'annual', label: `Annually on ${monthName} ${dayOfMonth}` },
+    { value: 'weekdays', label: 'Every weekday (Monday to Friday)' },
+    { value: 'custom', label: 'Custom...' },
+  ];
+}
+
+const CUSTOM_RECURRENCE_OPTIONS = [
   { value: 'weekly', label: 'Weekly' },
   { value: 'biweekly', label: 'Every 2 Weeks' },
   { value: 'monthly_date', label: 'Monthly (same date)' },
@@ -161,7 +190,7 @@ function OrgEventsCalendar() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedEvents, setSelectedEvents] = useState([]);
-  const [form, setForm] = useState({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'weekly' });
+  const [form, setForm] = useState({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'none' });
   const [saving, setSaving] = useState(false);
 
   const fetchEvents = useCallback(async () => {
@@ -192,7 +221,13 @@ function OrgEventsCalendar() {
         const date = new Date(year, month, d);
         const ymd = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const rec = ev.recurrence;
-        if (rec === 'weekly' && date.getDay() === originDate.getDay()) {
+        if (rec === 'daily') {
+          addToDate(ymd);
+        } else if (rec === 'weekdays' && date.getDay() >= 1 && date.getDay() <= 5) {
+          addToDate(ymd);
+        } else if (rec === 'annual' && date.getMonth() === originDate.getMonth() && date.getDate() === originDate.getDate()) {
+          addToDate(ymd);
+        } else if (rec === 'weekly' && date.getDay() === originDate.getDay()) {
           addToDate(ymd);
         } else if (rec === 'biweekly' && date.getDay() === originDate.getDay()) {
           const diffWeeks = Math.round((date - originDate) / (7 * 24 * 60 * 60 * 1000));
@@ -238,7 +273,7 @@ function OrgEventsCalendar() {
     setSaving(false);
     if (evErr) { alert('Error saving event: ' + evErr.message); return; }
     setShowAddModal(false);
-    setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'weekly' });
+    setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'none' });
     fetchEvents();
   };
 
@@ -321,22 +356,29 @@ function OrgEventsCalendar() {
               <input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={s.input} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div><label style={s.label}>Start Time</label><input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} style={s.input} /></div>
-              <div><label style={s.label}>End Time</label><input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={s.input} /></div>
+              <div><label style={s.label}>Start Time</label><input type="text" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} style={s.input} placeholder="e.g. 7:00 PM" /></div>
+              <div><label style={s.label}>End Time</label><input type="text" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={s.input} placeholder="e.g. 8:00 PM" /></div>
             </div>
             <div>
               <label style={s.label}>Description</label>
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...s.input, height: 70, resize: 'vertical' }} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input type="checkbox" id="recurring" checked={form.is_recurring} onChange={e => setForm(f => ({ ...f, is_recurring: e.target.checked }))} />
-              <label htmlFor="recurring" style={{ color: '#aaa', fontSize: 14, cursor: 'pointer' }}>Recurring event</label>
+            <div>
+              <label style={s.label}>Repeat</label>
+              <select value={form.recurrence} onChange={e => {
+                const val = e.target.value;
+                if (val === 'custom') return; // keep open, user picks from custom below
+                setForm(f => ({ ...f, recurrence: val, is_recurring: val !== 'none', showCustom: false }));
+              }} style={s.select}>
+                {getRecurrenceOptions(form.event_date).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
-            {form.is_recurring && (
+            {form.recurrence === 'custom' && (
               <div>
-                <label style={s.label}>Recurrence</label>
-                <select value={form.recurrence} onChange={e => setForm(f => ({ ...f, recurrence: e.target.value }))} style={s.select}>
-                  {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                <label style={s.label}>Custom Recurrence</label>
+                <select onChange={e => setForm(f => ({ ...f, recurrence: e.target.value, is_recurring: true }))} style={s.select} defaultValue="">
+                  <option value="" disabled>Select...</option>
+                  {CUSTOM_RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             )}
@@ -364,7 +406,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedEvents, setSelectedEvents] = useState([]);
-  const [form, setForm] = useState({ title: '', description: '', event_date: '', start_time: '', end_time: '', is_recurring: false, recurrence: 'weekly' });
+  const [form, setForm] = useState({ title: '', description: '', event_date: '', start_time: '', end_time: '', is_recurring: false, recurrence: 'none' });
   const [saving, setSaving] = useState(false);
 
   const fetchEvents = useCallback(async () => {
@@ -427,7 +469,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
     }]);
     setSaving(false);
     setShowAddModal(false);
-    setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', is_recurring: false, recurrence: 'weekly' });
+    setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', is_recurring: false, recurrence: 'none' });
     fetchEvents();
   };
 
@@ -484,18 +526,25 @@ export function HouseCalendarTab({ houseId, houseType }) {
             <div><label style={s.label}>Event Title *</label><input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} style={s.input} placeholder="e.g. House Meeting" /></div>
             <div><label style={s.label}>Date *</label><input type="date" value={form.event_date} onChange={e => setForm(f => ({ ...f, event_date: e.target.value }))} style={s.input} /></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <div><label style={s.label}>Start Time</label><input type="time" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} style={s.input} /></div>
-              <div><label style={s.label}>End Time</label><input type="time" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={s.input} /></div>
+              <div><label style={s.label}>Start Time</label><input type="text" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} style={s.input} placeholder="e.g. 7:00 PM" /></div>
+              <div><label style={s.label}>End Time</label><input type="text" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={s.input} placeholder="e.g. 8:00 PM" /></div>
             </div>
             <div><label style={s.label}>Description</label><textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...s.input, height: 70, resize: 'vertical' }} /></div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input type="checkbox" id="recHouse" checked={form.is_recurring} onChange={e => setForm(f => ({ ...f, is_recurring: e.target.checked }))} />
-              <label htmlFor="recHouse" style={{ color: '#aaa', fontSize: 14, cursor: 'pointer' }}>Recurring event</label>
+            <div>
+              <label style={s.label}>Repeat</label>
+              <select value={form.recurrence} onChange={e => {
+                const val = e.target.value;
+                setForm(f => ({ ...f, recurrence: val, is_recurring: val !== 'none' && val !== 'custom' }));
+              }} style={s.select}>
+                {getRecurrenceOptions(form.event_date).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
-            {form.is_recurring && (
-              <div><label style={s.label}>Recurrence</label>
-                <select value={form.recurrence} onChange={e => setForm(f => ({ ...f, recurrence: e.target.value }))} style={s.select}>
-                  {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {form.recurrence === 'custom' && (
+              <div>
+                <label style={s.label}>Custom Recurrence</label>
+                <select onChange={e => setForm(f => ({ ...f, recurrence: e.target.value, is_recurring: true }))} style={s.select} defaultValue="">
+                  <option value="" disabled>Select...</option>
+                  {CUSTOM_RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             )}
