@@ -264,6 +264,7 @@ export default function Reports() {
         <button style={tabBtn('weekly')} onClick={() => setActiveTab('weekly')}>Weekly Overview</button>
         <button style={tabBtn('monthly')} onClick={() => setActiveTab('monthly')}>Monthly Report</button>
         <button style={tabBtn('yearly')} onClick={() => setActiveTab('yearly')}>Year-by-Year</button>
+        <button style={tabBtn('levels')} onClick={() => setActiveTab('levels')}>Levels</button>
       </div>
 
       {/* ── WEEKLY ──────────────────────────────────────────────────────────── */}
@@ -389,6 +390,172 @@ export default function Reports() {
           />
         </div>
       )}
+
+      {/* ── LEVELS ───────────────────────────────────────────────────────────── */}
+      {activeTab === 'levels' && (
+        <LevelsReport clients={clients} houses={houses} />
+      )}
+    </div>
+  );
+}
+
+// ─── Levels Report Component ──────────────────────────────────────────────────
+const LEVEL_COLORS = { L1: '#3b82f6', L2: '#f59e0b', L3: '#ec4899', L4: '#10b981', null: '#555' };
+const LEVEL_KEYS = ['L1', 'L2', 'L3', 'L4'];
+
+function PieChart({ data, size = 120 }) {
+  const total = data.reduce((s, d) => s + d.count, 0);
+  if (total === 0) return <div style={{ width: size, height: size, borderRadius: '50%', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#555', fontSize: 12 }}>No data</span></div>;
+
+  let cumulativeAngle = -Math.PI / 2;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 4;
+
+  const slices = data.filter(d => d.count > 0).map(d => {
+    const angle = (d.count / total) * 2 * Math.PI;
+    const startAngle = cumulativeAngle;
+    cumulativeAngle += angle;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(cumulativeAngle);
+    const y2 = cy + r * Math.sin(cumulativeAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const midAngle = startAngle + angle / 2;
+    const labelR = r * 0.65;
+    const lx = cx + labelR * Math.cos(midAngle);
+    const ly = cy + labelR * Math.sin(midAngle);
+    const pct = Math.round((d.count / total) * 100);
+    return { ...d, x1, y1, x2, y2, largeArc, lx, ly, pct };
+  });
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {slices.map((sl, i) => (
+        <g key={i}>
+          <path d={`M ${cx} ${cy} L ${sl.x1} ${sl.y1} A ${r} ${r} 0 ${sl.largeArc} 1 ${sl.x2} ${sl.y2} Z`} fill={sl.color} opacity={0.9} />
+          {sl.pct >= 8 && <text x={sl.lx} y={sl.ly} textAnchor="middle" dominantBaseline="middle" fontSize={size < 100 ? 9 : 11} fill="#fff" fontWeight="600">{sl.pct}%</text>}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function LevelsReport({ clients, houses }) {
+  const activeClients = clients.filter(c => c.status === 'Active');
+
+  function getLevelData(clientList) {
+    const counts = { L1: 0, L2: 0, L3: 0, L4: 0 };
+    clientList.forEach(c => {
+      const lv = c.level ? `L${c.level}` : null;
+      if (lv && counts[lv] !== undefined) counts[lv]++;
+    });
+    return LEVEL_KEYS.map(k => ({ label: k, count: counts[k], color: LEVEL_COLORS[k] }));
+  }
+
+  const allData = getLevelData(activeClients);
+  const menClients = activeClients.filter(c => {
+    const house = houses.find(h => h.id === c.house_id);
+    return house?.type === 'Men';
+  });
+  const womenClients = activeClients.filter(c => {
+    const house = houses.find(h => h.id === c.house_id);
+    return house?.type === 'Women';
+  });
+
+  const houseBreakdowns = houses.map(h => ({
+    house: h,
+    clients: activeClients.filter(c => c.house_id === h.id),
+    data: getLevelData(activeClients.filter(c => c.house_id === h.id)),
+  })).filter(h => h.clients.length > 0);
+
+  // Pivot table: houses as rows, levels as columns
+  const pivotRows = houseBreakdowns.map(hb => {
+    const counts = {};
+    LEVEL_KEYS.forEach(k => { counts[k] = hb.data.find(d => d.label === k)?.count || 0; });
+    const empty = hb.clients.filter(c => !c.level).length;
+    return { name: hb.house.name, counts, empty, total: hb.clients.length };
+  });
+
+  const ChartCard = ({ title, clientList }) => {
+    const data = getLevelData(clientList);
+    const total = clientList.length;
+    return (
+      <div style={{ background: '#2a2a2a', borderRadius: 12, padding: '18px 20px', border: '1px solid #333' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 14 }}>{title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <PieChart data={data} size={130} />
+          <div>
+            {data.filter(d => d.count > 0).map(d => (
+              <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: '#aaa' }}>{d.label} ({d.count})</span>
+              </div>
+            ))}
+            <div style={{ fontSize: 11, color: '#555', marginTop: 6 }}>{total} residents</div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div>
+      {/* Summary row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <ChartCard title="All Houses" clientList={activeClients} />
+        <ChartCard title="Men's Houses" clientList={menClients} />
+        <ChartCard title="Women's Houses" clientList={womenClients} />
+      </div>
+
+      {/* Per-house charts */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16, marginBottom: 28 }}>
+        {houseBreakdowns.map(hb => (
+          <ChartCard key={hb.house.id} title={hb.house.name} clientList={hb.clients} />
+        ))}
+      </div>
+
+      {/* Pivot table */}
+      <div style={{ background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', overflow: 'hidden' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid #333' }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Pivot Table — Levels by House</span>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#1e1e1e' }}>
+                <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600, borderBottom: '1px solid #333' }}>House</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', color: '#555', fontWeight: 600, borderBottom: '1px solid #333' }}>No Level</th>
+                {LEVEL_KEYS.map(k => (
+                  <th key={k} style={{ padding: '10px 12px', textAlign: 'right', color: LEVEL_COLORS[k], fontWeight: 600, borderBottom: '1px solid #333' }}>{k}</th>
+                ))}
+                <th style={{ padding: '10px 12px', textAlign: 'right', color: '#fff', fontWeight: 700, borderBottom: '1px solid #333' }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pivotRows.map((row, i) => (
+                <tr key={row.name} style={{ background: i % 2 === 0 ? 'transparent' : '#252525', borderBottom: '1px solid #2a2a2a' }}>
+                  <td style={{ padding: '10px 16px', color: '#ddd' }}>{row.name}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#555' }}>{row.empty}</td>
+                  {LEVEL_KEYS.map(k => (
+                    <td key={k} style={{ padding: '10px 12px', textAlign: 'right', color: row.counts[k] > 0 ? '#fff' : '#444' }}>{row.counts[k]}</td>
+                  ))}
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#fff', fontWeight: 700 }}>{row.total}</td>
+                </tr>
+              ))}
+              {/* Totals row */}
+              <tr style={{ background: '#1e1e1e', borderTop: '2px solid #444' }}>
+                <td style={{ padding: '10px 16px', color: '#fff', fontWeight: 700 }}>Total</td>
+                <td style={{ padding: '10px 12px', textAlign: 'right', color: '#555' }}>{activeClients.filter(c => !c.level).length}</td>
+                {LEVEL_KEYS.map(k => (
+                  <td key={k} style={{ padding: '10px 12px', textAlign: 'right', color: LEVEL_COLORS[k], fontWeight: 700 }}>
+                    {allData.find(d => d.label === k)?.count || 0}
+                  </td>
+                ))}
+                <td style={{ padding: '10px 12px', textAlign: 'right', color: '#fff', fontWeight: 700 }}>{activeClients.length}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
