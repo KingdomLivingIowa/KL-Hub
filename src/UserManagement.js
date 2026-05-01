@@ -109,6 +109,12 @@ function UserManagement({ currentUser }) {
     setHouses(data || []);
   };
 
+  const toggleOrgEventPermission = async (userId, currentValue) => {
+    const newValue = !currentValue;
+    await supabase.from('user_profiles').update({ can_manage_org_events: newValue }).eq('id', userId);
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, can_manage_org_events: newValue } : u));
+  };
+
   const toggleGroupMembership = async (userId, groupId, isMember) => {
     const key = `${userId}-${groupId}`;
     setTogglingGroup(prev => ({ ...prev, [key]: true }));
@@ -333,6 +339,26 @@ function UserManagement({ currentUser }) {
                     </div>
                   )}
                 </div>
+
+                {/* Permissions */}
+                {!isCurrentUser && (
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #333' }}>
+                    <p style={s.fieldLabel}>Permissions</p>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => toggleOrgEventPermission(u.id, u.can_manage_org_events)}
+                        style={{
+                          padding: '4px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontWeight: '500',
+                          border: u.can_manage_org_events ? 'none' : '1px dashed #444',
+                          background: u.can_manage_org_events ? '#1e3a2a' : 'transparent',
+                          color: u.can_manage_org_events ? '#4ade80' : '#555',
+                          transition: 'all 0.15s',
+                        }}>
+                        {u.can_manage_org_events ? '✓ ' : '+ '}Can Add Org Events
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Group chat memberships */}
                 {!isCurrentUser && presetGroups.length > 0 && (
