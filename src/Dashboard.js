@@ -10,7 +10,7 @@ import UserManagement from './UserManagement';
 import Payments from './Payments';
 import Messaging from './Messaging';
 import Reports from './Reports';
-import Calendars, { NotificationsBell } from './Calendars';
+import Calendars from './Calendars';
 
 const WAITING_LISTS = [
   'DOC Men', 'Community Men', 'Treatment Men',
@@ -552,7 +552,6 @@ function DashboardInner({ user }) {
       <div style={styles.main}>
         <div style={styles.header}>
           <h1 style={styles.pageTitle}>{getPageTitle()}</h1>
-          <NotificationsBell userId={user?.id} />
         </div>
         <div style={styles.content}>
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}

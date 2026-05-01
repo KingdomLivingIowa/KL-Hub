@@ -15,7 +15,20 @@ function fmtDate(ymd) {
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const RECURRENCE_OPTIONS = ['weekly', 'biweekly', 'monthly'];
+const RECURRENCE_OPTIONS = [
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 Weeks' },
+  { value: 'monthly_date', label: 'Monthly (same date)' },
+  { value: 'monthly_first_sunday', label: 'Monthly (1st Sunday)' },
+  { value: 'monthly_first_monday', label: 'Monthly (1st Monday)' },
+  { value: 'monthly_first_tuesday', label: 'Monthly (1st Tuesday)' },
+  { value: 'monthly_first_wednesday', label: 'Monthly (1st Wednesday)' },
+  { value: 'monthly_first_thursday', label: 'Monthly (1st Thursday)' },
+  { value: 'monthly_first_friday', label: 'Monthly (1st Friday)' },
+  { value: 'monthly_first_saturday', label: 'Monthly (1st Saturday)' },
+  { value: 'monthly_last_sunday', label: 'Monthly (Last Sunday)' },
+  { value: 'monthly_last_friday', label: 'Monthly (Last Friday)' },
+];
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const s = {
@@ -178,11 +191,35 @@ function OrgEventsCalendar() {
       for (let d = 1; d <= daysInMonth; d++) {
         const date = new Date(year, month, d);
         const ymd = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        if (ev.recurrence === 'weekly' && date.getDay() === originDate.getDay()) addToDate(ymd);
-        else if (ev.recurrence === 'biweekly' && date.getDay() === originDate.getDay()) {
+        const rec = ev.recurrence;
+        if (rec === 'weekly' && date.getDay() === originDate.getDay()) {
+          addToDate(ymd);
+        } else if (rec === 'biweekly' && date.getDay() === originDate.getDay()) {
           const diffWeeks = Math.round((date - originDate) / (7 * 24 * 60 * 60 * 1000));
           if (diffWeeks % 2 === 0) addToDate(ymd);
-        } else if (ev.recurrence === 'monthly' && date.getDate() === originDate.getDate()) addToDate(ymd);
+        } else if (rec === 'monthly_date' && date.getDate() === originDate.getDate()) {
+          addToDate(ymd);
+        } else if (rec && rec.startsWith('monthly_first_')) {
+          const dayName = rec.replace('monthly_first_', '');
+          const dayMap = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+          const targetDay = dayMap[dayName];
+          if (date.getDay() === targetDay) {
+            // Check it's the first occurrence of that day in the month
+            const firstOccurrence = new Date(year, month, 1);
+            while (firstOccurrence.getDay() !== targetDay) firstOccurrence.setDate(firstOccurrence.getDate() + 1);
+            if (date.getDate() === firstOccurrence.getDate()) addToDate(ymd);
+          }
+        } else if (rec && rec.startsWith('monthly_last_')) {
+          const dayName = rec.replace('monthly_last_', '');
+          const dayMap = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+          const targetDay = dayMap[dayName];
+          if (date.getDay() === targetDay) {
+            // Check it's the last occurrence of that day in the month
+            const lastOccurrence = new Date(year, month + 1, 0);
+            while (lastOccurrence.getDay() !== targetDay) lastOccurrence.setDate(lastOccurrence.getDate() - 1);
+            if (date.getDate() === lastOccurrence.getDate()) addToDate(ymd);
+          }
+        }
       }
     }
   });
@@ -190,16 +227,16 @@ function OrgEventsCalendar() {
   const saveEvent = async () => {
     if (!form.title || !form.event_date) return alert('Title and date are required.');
     setSaving(true);
-    await supabase.from('house_events').insert([{
+    const { error: evErr } = await supabase.from('house_events').insert([{
       title: form.title, description: form.description || null,
       event_date: form.event_date, start_time: form.start_time || null, end_time: form.end_time || null,
-      house_id: null, // null = org-wide
       scope: form.scope,
       is_recurring: form.is_recurring,
       recurrence: form.is_recurring ? form.recurrence : 'none',
       created_by: user?.id,
     }]);
     setSaving(false);
+    if (evErr) { alert('Error saving event: ' + evErr.message); return; }
     setShowAddModal(false);
     setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'weekly' });
     fetchEvents();
@@ -299,7 +336,7 @@ function OrgEventsCalendar() {
               <div>
                 <label style={s.label}>Recurrence</label>
                 <select value={form.recurrence} onChange={e => setForm(f => ({ ...f, recurrence: e.target.value }))} style={s.select}>
-                  {RECURRENCE_OPTIONS.map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+                  {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             )}
@@ -458,7 +495,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
             {form.is_recurring && (
               <div><label style={s.label}>Recurrence</label>
                 <select value={form.recurrence} onChange={e => setForm(f => ({ ...f, recurrence: e.target.value }))} style={s.select}>
-                  {RECURRENCE_OPTIONS.map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+                  {RECURRENCE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             )}
@@ -518,10 +555,11 @@ function VacationCalendar() {
     if (form.end_date < form.start_date) return alert('End date must be after start date.');
     setSaving(true);
     const { data: profile } = await supabase.from('user_profiles').select('full_name, email').eq('id', user.id).single();
-    await supabase.from('vacation_requests').insert([{
+    const { error: vacErr } = await supabase.from('vacation_requests').insert([{
       user_id: user.id, user_name: profile?.full_name || profile?.email || user.email,
       start_date: form.start_date, end_date: form.end_date, notes: form.notes || null, status: 'pending',
     }]);
+    if (vacErr) { setSaving(false); alert('Error submitting request: ' + vacErr.message); return; }
     const managers = staffList.filter(s => s.role === 'upper_management' || s.role === 'admin');
     if (managers.length > 0) {
       await supabase.from('notifications').insert(managers.map(m => ({
