@@ -432,18 +432,46 @@ export function HouseCalendarTab({ houseId, houseType }) {
         if (!result[ymd]) result[ymd] = [];
         result[ymd].push({ ...ev, label: ev.title, color: isOrg ? '#f59e0b' : '#3b82f6', isOrg });
       };
-      if (!ev.is_recurring || ev.recurrence === 'none') {
+      if (!ev.is_recurring || !ev.recurrence || ev.recurrence === 'none') {
         if (ev.event_date) addToDate(ev.event_date);
       } else {
-        const originDate = new Date(ev.event_date);
+        const originDate = new Date(ev.event_date + 'T00:00:00');
         for (let d = 1; d <= daysInMonth; d++) {
           const date = new Date(year, month, d);
           const ymd = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-          if (ev.recurrence === 'weekly' && date.getDay() === originDate.getDay()) addToDate(ymd);
-          else if (ev.recurrence === 'biweekly' && date.getDay() === originDate.getDay()) {
+          const rec = ev.recurrence;
+          if (rec === 'daily') {
+            addToDate(ymd);
+          } else if (rec === 'weekdays' && date.getDay() >= 1 && date.getDay() <= 5) {
+            addToDate(ymd);
+          } else if (rec === 'annual' && date.getMonth() === originDate.getMonth() && date.getDate() === originDate.getDate()) {
+            addToDate(ymd);
+          } else if (rec === 'weekly' && date.getDay() === originDate.getDay()) {
+            addToDate(ymd);
+          } else if (rec === 'biweekly' && date.getDay() === originDate.getDay()) {
             const diffWeeks = Math.round((date - originDate) / (7 * 24 * 60 * 60 * 1000));
             if (diffWeeks % 2 === 0) addToDate(ymd);
-          } else if (ev.recurrence === 'monthly' && date.getDate() === originDate.getDate()) addToDate(ymd);
+          } else if (rec === 'monthly_date' && date.getDate() === originDate.getDate()) {
+            addToDate(ymd);
+          } else if (rec && rec.startsWith('monthly_first_')) {
+            const dayName = rec.replace('monthly_first_', '');
+            const dayMap = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+            const targetDay = dayMap[dayName];
+            if (date.getDay() === targetDay) {
+              const firstOccurrence = new Date(year, month, 1);
+              while (firstOccurrence.getDay() !== targetDay) firstOccurrence.setDate(firstOccurrence.getDate() + 1);
+              if (date.getDate() === firstOccurrence.getDate()) addToDate(ymd);
+            }
+          } else if (rec && rec.startsWith('monthly_last_')) {
+            const dayName = rec.replace('monthly_last_', '');
+            const dayMap = { sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6 };
+            const targetDay = dayMap[dayName];
+            if (date.getDay() === targetDay) {
+              const lastOccurrence = new Date(year, month + 1, 0);
+              while (lastOccurrence.getDay() !== targetDay) lastOccurrence.setDate(lastOccurrence.getDate() - 1);
+              if (date.getDate() === lastOccurrence.getDate()) addToDate(ymd);
+            }
+          }
         }
       }
     });
