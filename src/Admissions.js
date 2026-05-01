@@ -844,7 +844,7 @@ const s = {
   },
   title: { fontSize: '24px', fontWeight: '600', margin: '0 0 24px 0' },
   toolbar: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' },
-  sub: { color: '#666', fontSize: '14px', margin: 0 },
+  sub: { color: '#999', fontSize: '14px', margin: 0 },
   search: {
     width: '100%',
     maxWidth: '360px',
@@ -861,15 +861,15 @@ const s = {
     borderRadius: '20px',
     border: '1px solid #444',
     background: 'transparent',
-    color: '#888',
+    color: '#bbb',
     cursor: 'pointer',
     fontSize: '13px',
   },
   tabActive: { background: '#b22222', color: '#fff', borderColor: '#b22222' },
-  empty: { color: '#666', fontSize: '14px' },
+  empty: { color: '#999', fontSize: '14px' },
   list: { display: 'flex', flexDirection: 'column', gap: '16px' },
   card: {
-    background: '#2a2a2a',
+    background: '#333',
     borderRadius: '12px',
     padding: '20px',
     border: '1px solid #333',
@@ -881,7 +881,7 @@ const s = {
     marginBottom: '16px',
   },
   name: { fontSize: '18px', fontWeight: '600', color: '#fff' },
-  meta: { fontSize: '13px', color: '#888', margin: '2px 0 0 0' },
+  meta: { fontSize: '13px', color: '#bbb', margin: '2px 0 0 0' },
   badge: {
     fontSize: '12px',
     padding: '4px 12px',
@@ -912,7 +912,7 @@ const s = {
   snapshotItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   snapshotLabel: {
     fontSize: '10px',
-    color: '#666',
+    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
@@ -952,7 +952,7 @@ const s = {
   sectionDivider: {
     fontSize: '11px',
     fontWeight: '600',
-    color: '#666',
+    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     margin: '16px 0 10px 0',
@@ -967,7 +967,7 @@ const s = {
   fullItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   fullLabel: {
     fontSize: '10px',
-    color: '#666',
+    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
@@ -992,7 +992,7 @@ const s = {
     padding: '20px',
   },
   modal: {
-    background: '#2a2a2a',
+    background: '#333',
     borderRadius: '16px',
     padding: '28px',
     maxWidth: '700px',
@@ -1003,7 +1003,7 @@ const s = {
   },
   modalHeader: { marginBottom: '20px' },
   modalTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 6px 0', color: '#fff' },
-  modalSub: { fontSize: '13px', color: '#888', margin: 0 },
+  modalSub: { fontSize: '13px', color: '#bbb', margin: 0 },
   compareGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -1014,7 +1014,7 @@ const s = {
   compareColHeader: {
     fontSize: '11px',
     fontWeight: '600',
-    color: '#888',
+    color: '#bbb',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     marginBottom: '12px',
@@ -1022,7 +1022,7 @@ const s = {
   compareRow: { display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '10px' },
   compareLabel: {
     fontSize: '10px',
-    color: '#666',
+    color: '#999',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
@@ -1054,7 +1054,7 @@ const s = {
     borderRadius: '8px',
     border: '1px solid #444',
     background: 'transparent',
-    color: '#666',
+    color: '#999',
     cursor: 'pointer',
     fontSize: '13px',
     fontFamily: 'sans-serif',
@@ -1084,7 +1084,7 @@ const s = {
     fontWeight: '600',
   },
   pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
-  ellipsis: { color: '#555', fontSize: '13px', padding: '0 4px' },
+  ellipsis: { color: '#bbb', fontSize: '13px', padding: '0 4px' },
   pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
 

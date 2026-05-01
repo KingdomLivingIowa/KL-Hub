@@ -95,7 +95,7 @@ function WaitingList() {
     if (diff === null) return null;
     if (diff < 0) return { label: 'Ready now', color: '#16a34a' };
     if (diff <= 7) return { label: `${diff}d away`, color: '#ca8a04' };
-    return { label: `${diff}d away`, color: '#555' };
+    return { label: `${diff}d away`, color: '#bbb' };
   };
 
   return (
@@ -146,7 +146,7 @@ function WaitingList() {
                 )}
               </div>
             )}
-            <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>Or fill in manually below</p>
+            <p style={{ color: '#999', fontSize: '12px', margin: '4px 0 0 0' }}>Or fill in manually below</p>
           </div>
 
           <div style={styles.addGrid}>
@@ -224,7 +224,7 @@ const styles = {
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   listCount: { color: '#a0a0a0', fontSize: '14px', margin: 0 },
   addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
-  addForm: { backgroundColor: '#2a2a2a', borderRadius: '12px', padding: '20px 24px', marginBottom: '20px' },
+  addForm: { backgroundColor: '#333', borderRadius: '12px', padding: '20px 24px', marginBottom: '20px' },
   addTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   addGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
   label: { color: '#a0a0a0', fontSize: '13px', display: 'block', marginBottom: '4px' },
@@ -232,22 +232,22 @@ const styles = {
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   empty: { color: '#a0a0a0', textAlign: 'center', marginTop: '60px', fontSize: '15px' },
   list: { display: 'flex', flexDirection: 'column', gap: '12px' },
-  card: { backgroundColor: '#2a2a2a', borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px' },
+  card: { backgroundColor: '#333', borderRadius: '12px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px' },
   position: { backgroundColor: '#b22222', color: '#fff', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', flexShrink: 0 },
   info: { flex: 1 },
   name: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 2px 0' },
   meta: { color: '#a0a0a0', fontSize: '13px', margin: '2px 0' },
   readyDate: { color: '#60a5fa', fontSize: '13px', margin: '2px 0' },
   notes: { color: '#cbd5e1', fontSize: '13px', fontStyle: 'italic', margin: '4px 0' },
-  date: { color: '#555', fontSize: '12px', margin: '4px 0 0 0' },
+  date: { color: '#bbb', fontSize: '12px', margin: '4px 0 0 0' },
   badge: { border: '1px solid', borderRadius: '12px', padding: '2px 8px', fontSize: '11px', fontWeight: '600' },
   controls: { display: 'flex', gap: '6px', alignItems: 'center' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
-  searchDropdown: { position: 'absolute', top: '64px', left: 0, right: 0, backgroundColor: '#1e1e1e', border: '1px solid #444', borderRadius: '8px', zIndex: 100, maxHeight: '200px', overflowY: 'auto' },
+  searchDropdown: { position: 'absolute', top: '64px', left: 0, right: 0, backgroundColor: '#252525', border: '1px solid #444', borderRadius: '8px', zIndex: 100, maxHeight: '200px', overflowY: 'auto' },
   searchItem: { padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' },
   searchName: { color: '#fff', fontSize: '14px', margin: 0 },
-  searchMeta: { color: '#888', fontSize: '12px', margin: '2px 0 0 0' },
-  noResults: { color: '#888', fontSize: '13px', padding: '10px 14px', margin: 0 },
+  searchMeta: { color: '#bbb', fontSize: '12px', margin: '2px 0 0 0' },
+  noResults: { color: '#bbb', fontSize: '13px', padding: '10px 14px', margin: 0 },
 };
 
 export default WaitingList;

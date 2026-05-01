@@ -65,9 +65,9 @@ const CUSTOM_RECURRENCE_OPTIONS = [
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const s = {
-  tabBtn: (active) => ({ padding: '9px 20px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14, background: active ? '#2a2a2a' : 'transparent', color: active ? '#fff' : '#aaa', fontWeight: active ? 600 : 400 }),
-  card: { background: '#2a2a2a', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 },
-  label: { fontSize: 12, color: '#888', marginBottom: 5, display: 'block' },
+  tabBtn: (active) => ({ padding: '9px 20px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14, background: active ? '#333' : 'transparent', color: active ? '#fff' : '#aaa', fontWeight: active ? 600 : 400 }),
+  card: { background: '#333', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 },
+  label: { fontSize: 12, color: '#bbb', marginBottom: 5, display: 'block' },
   input: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   select: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   btn: (color) => ({ padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#fff' }),
@@ -92,7 +92,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
         <button onClick={onNext} style={s.ghost}>›</button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-        {DAYS.map(d => <div key={d} style={{ fontSize: 13, color: '#888', textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
+        {DAYS.map(d => <div key={d} style={{ fontSize: 13, color: '#bbb', textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((day, i) => {
@@ -107,7 +107,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
               {events.slice(0, 3).map((ev, j) => renderDot ? renderDot(ev, j) : (
                 <div key={j} style={{ fontSize: 11, color: '#fff', background: ev.color || '#b22222', borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
               ))}
-              {events.length > 3 && <div style={{ fontSize: 11, color: '#888' }}>+{events.length - 3} more</div>}
+              {events.length > 3 && <div style={{ fontSize: 11, color: '#bbb' }}>+{events.length - 3} more</div>}
             </div>
           );
         })}
@@ -120,10 +120,10 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
 function Modal({ title, onClose, children }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#1e1e1e', borderRadius: 14, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333' }}>
+      <div style={{ background: '#252525', borderRadius: 14, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{title}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 20 }}>×</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 20 }}>×</button>
         </div>
         {children}
       </div>
@@ -160,7 +160,7 @@ function MoveInCalendar() {
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: '#666', marginBottom: 20 }}>Clients with a move-in date appear here automatically. Set a client's start date in their profile to add them.</p>
+      <p style={{ fontSize: 13, color: '#999', marginBottom: 20 }}>Clients with a move-in date appear here automatically. Set a client's start date in their profile to add them.</p>
       <div style={s.card}>
         <CalendarGrid year={year} month={month} eventsByDate={eventsByDate}
           onDayClick={(ymd, evs) => { if (evs.length) { setSelectedDay(ymd); setSelectedEvents(evs); } }}
@@ -172,7 +172,7 @@ function MoveInCalendar() {
           {selectedEvents.map((ev, i) => (
             <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #333' }}>
               <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.label}</div>
-              <div style={{ fontSize: 12, color: '#888', marginTop: 3 }}>{ev.house} · {ev.gender}</div>
+              <div style={{ fontSize: 12, color: '#bbb', marginTop: 3 }}>{ev.house} · {ev.gender}</div>
               <span style={{ ...s.badge(ev.color), marginTop: 4 }}>{ev.status}</span>
             </div>
           ))}
@@ -295,7 +295,7 @@ function OrgEventsCalendar() {
           {Object.entries(SCOPE_LABELS).map(([key, label]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <div style={{ width: 10, height: 10, borderRadius: 2, background: SCOPE_COLORS[key] }} />
-              <span style={{ fontSize: 12, color: '#888' }}>{label}</span>
+              <span style={{ fontSize: 12, color: '#bbb' }}>{label}</span>
             </div>
           ))}
         </div>
@@ -303,7 +303,7 @@ function OrgEventsCalendar() {
       </div>
 
       {!canAddOrgEvents && (
-        <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#666' }}>
+        <div style={{ background: '#252525', border: '1px solid #333', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#999' }}>
           Contact an admin to add org-wide events.
         </div>
       )}
@@ -326,8 +326,8 @@ function OrgEventsCalendar() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.title}</div>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{SCOPE_LABELS[ev.scope] || ev.scope}</div>
-                  {ev.start_time && <div style={{ fontSize: 12, color: '#888' }}>{ev.start_time}{ev.end_time ? ` – ${ev.end_time}` : ''}</div>}
+                  <div style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{SCOPE_LABELS[ev.scope] || ev.scope}</div>
+                  {ev.start_time && <div style={{ fontSize: 12, color: '#bbb' }}>{ev.start_time}{ev.end_time ? ` – ${ev.end_time}` : ''}</div>}
                   {ev.description && <div style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>{ev.description}</div>}
                   {ev.is_recurring && <span style={s.badge('#8b5cf6')}>Recurring · {ev.recurrence}</span>}
                 </div>
@@ -516,8 +516,8 @@ export function HouseCalendarTab({ houseId, houseType }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#3b82f6' }} /><span style={{ fontSize: 12, color: '#888' }}>This House</span></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b' }} /><span style={{ fontSize: 12, color: '#888' }}>Org-Wide</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#3b82f6' }} /><span style={{ fontSize: 12, color: '#bbb' }}>This House</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b' }} /><span style={{ fontSize: 12, color: '#bbb' }}>Org-Wide</span></div>
         </div>
         {canEdit && <button style={{ ...s.btn(), padding: '6px 14px', fontSize: 12 }} onClick={() => setShowAddModal(true)}>+ Add Event</button>}
       </div>
@@ -539,7 +539,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.title}</div>
                   {ev.isOrg && <span style={s.badge('#f59e0b')}>Org-Wide</span>}
-                  {ev.start_time && <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>{ev.start_time}{ev.end_time ? ` – ${ev.end_time}` : ''}</div>}
+                  {ev.start_time && <div style={{ fontSize: 12, color: '#bbb', marginTop: 4 }}>{ev.start_time}{ev.end_time ? ` – ${ev.end_time}` : ''}</div>}
                   {ev.description && <div style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>{ev.description}</div>}
                   {ev.is_recurring && <span style={s.badge('#8b5cf6')}>Recurring · {ev.recurrence}</span>}
                 </div>
@@ -692,15 +692,15 @@ function VacationCalendar() {
 
       {activeView === 'requests' && (
         <div style={s.card}>
-          <div style={{ fontSize: 13, color: '#666', marginBottom: 16 }}>{canApprove ? 'All submitted vacation requests' : 'You do not have permission to review requests.'}</div>
-          {requests.length === 0 && <div style={{ color: '#555', fontSize: 14 }}>No requests yet.</div>}
+          <div style={{ fontSize: 13, color: '#999', marginBottom: 16 }}>{canApprove ? 'All submitted vacation requests' : 'You do not have permission to review requests.'}</div>
+          {requests.length === 0 && <div style={{ color: '#bbb', fontSize: 14 }}>No requests yet.</div>}
           {requests.map(r => (
             <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #333' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{r.user_name}</div>
                   <div style={{ fontSize: 13, color: '#aaa', marginTop: 2 }}>{fmtDate(r.start_date)} – {fmtDate(r.end_date)}</div>
-                  {r.notes && <div style={{ fontSize: 12, color: '#666', marginTop: 3 }}>{r.notes}</div>}
+                  {r.notes && <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>{r.notes}</div>}
                   <span style={{ ...s.badge(statusColor(r.status)), marginTop: 4 }}>{r.status}</span>
                 </div>
                 {canApprove && r.status === 'pending' && (
@@ -717,11 +717,11 @@ function VacationCalendar() {
 
       {activeView === 'mine' && (
         <div style={s.card}>
-          {myRequests.length === 0 && <div style={{ color: '#555', fontSize: 14 }}>No requests submitted yet.</div>}
+          {myRequests.length === 0 && <div style={{ color: '#bbb', fontSize: 14 }}>No requests submitted yet.</div>}
           {myRequests.map(r => (
             <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #333' }}>
               <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{fmtDate(r.start_date)} – {fmtDate(r.end_date)}</div>
-              {r.notes && <div style={{ fontSize: 12, color: '#666', marginTop: 3 }}>{r.notes}</div>}
+              {r.notes && <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>{r.notes}</div>}
               <span style={{ ...s.badge(statusColor(r.status)), marginTop: 4 }}>{r.status}</span>
             </div>
           ))}
@@ -733,7 +733,7 @@ function VacationCalendar() {
           {selectedEvents.map((ev, i) => (
             <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #333' }}>
               <div style={{ fontWeight: 600, color: '#fff' }}>{ev.label}</div>
-              <div style={{ fontSize: 12, color: '#888' }}>{fmtDate(ev.start_date)} – {fmtDate(ev.end_date)}</div>
+              <div style={{ fontSize: 12, color: '#bbb' }}>{fmtDate(ev.start_date)} – {fmtDate(ev.end_date)}</div>
             </div>
           ))}
         </Modal>
@@ -794,17 +794,17 @@ export function NotificationsBell({ userId }) {
         {unread > 0 && <span style={{ position: 'absolute', top: 0, right: 0, background: '#b22222', color: '#fff', borderRadius: '50%', fontSize: 10, fontWeight: 700, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
-        <div style={{ position: 'absolute', right: 0, top: 36, width: 320, background: '#1e1e1e', border: '1px solid #333', borderRadius: 12, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', right: 0, top: 36, width: 320, background: '#252525', border: '1px solid #333', borderRadius: 12, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
           <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Notifications</span>
-            {unread > 0 && <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: '#888', fontSize: 12, cursor: 'pointer' }}>Mark all read</button>}
+            {unread > 0 && <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 12, cursor: 'pointer' }}>Mark all read</button>}
           </div>
           <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-            {notifications.length === 0 && <div style={{ padding: 16, color: '#555', fontSize: 13 }}>No notifications</div>}
+            {notifications.length === 0 && <div style={{ padding: 16, color: '#bbb', fontSize: 13 }}>No notifications</div>}
             {notifications.map(n => (
               <div key={n.id} onClick={() => markRead(n.id)} style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', background: n.read ? 'transparent' : '#2a1a1a', cursor: 'pointer' }}>
-                <div style={{ fontSize: 13, color: n.read ? '#888' : '#fff' }}>{n.message}</div>
-                <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>{new Date(n.created_at).toLocaleDateString()}</div>
+                <div style={{ fontSize: 13, color: n.read ? '#bbb' : '#fff' }}>{n.message}</div>
+                <div style={{ fontSize: 11, color: '#bbb', marginTop: 4 }}>{new Date(n.created_at).toLocaleDateString()}</div>
               </div>
             ))}
           </div>

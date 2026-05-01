@@ -101,7 +101,7 @@ function InvitePortalButton({ client }) {
   };
   const btnLabel = { idle: '✉ Invite', sending: '...', sent: '✓ Sent', error: 'Error' };
   return (
-    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
       {btnLabel[status]}
     </button>
   );
@@ -121,7 +121,7 @@ function MoveToButton({ client, onSelect }) {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-        style={{ background: '#2a2a2a', border: '1px solid #444', color: '#ddd', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+        style={{ background: '#333', border: '1px solid #444', color: '#ddd', fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
         Move to {open ? '▲' : '▼'}
       </button>
       {open && (
@@ -129,7 +129,7 @@ function MoveToButton({ client, onSelect }) {
           {statuses.map(ns => (
             <button key={ns} onClick={e => { e.stopPropagation(); setOpen(false); onSelect(ns); }}
               style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', color: '#ddd', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
+              onMouseEnter={e => e.currentTarget.style.background = '#333'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               {ns}
             </button>
@@ -148,7 +148,7 @@ function WeeklyReflectionForm({ entryForm, setEntryForm }) {
         <label style={sf.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
         <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
           onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#555', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#bbb', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
       </div>
@@ -179,14 +179,14 @@ function WeeklyReflectionCard({ entry }) {
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#555' }}>Mood:</span>
+          <span style={{ fontSize: '13px', color: '#bbb' }}>Mood:</span>
           <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
-      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
-      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
-      {entry.notes && <div><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -371,23 +371,23 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (s === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
     if (s === 'Active') return { bg: '#2d1e3a', color: '#c084fc' };
     if (s === 'Discharged') return { bg: '#3a1e1e', color: '#f87171' };
-    if (s === 'Denied') return { bg: '#2a2a2a', color: '#888' };
-    return { bg: '#2a2a2a', color: '#aaa' };
+    if (s === 'Denied') return { bg: '#333', color: '#bbb' };
+    return { bg: '#333', color: '#aaa' };
   };
 
   const uaResultColor = (result) => {
     if (result === 'Negative') return { bg: '#1e3a2f', color: '#4ade80' };
     if (result === 'Positive') return { bg: '#3a1e1e', color: '#f87171' };
     if (result === 'Inconclusive') return { bg: '#3a2d1e', color: '#fb923c' };
-    if (result === 'Refused') return { bg: '#2a2a2a', color: '#888' };
-    return { bg: '#2a2a2a', color: '#aaa' };
+    if (result === 'Refused') return { bg: '#333', color: '#bbb' };
+    return { bg: '#333', color: '#aaa' };
   };
 
   const choreStatusColor = (status) => {
     if (status === 'Completed') return { bg: '#1e3a2f', color: '#4ade80' };
     if (status === 'Not Completed') return { bg: '#3a1e1e', color: '#f87171' };
     if (status === 'Partial') return { bg: '#3a2d1e', color: '#fb923c' };
-    return { bg: '#2a2a2a', color: '#aaa' };
+    return { bg: '#333', color: '#aaa' };
   };
 
   const entryColor = (type) => {
@@ -402,7 +402,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (type === 'General Note') return '#f59e0b';
     if (type === 'Chores') return '#34d399';
     if (type === 'Weekly Reflection') return '#a78bfa';
-    return '#888';
+    return '#bbb';
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -582,7 +582,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const isEditing = editingField?.field === field;
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
-        <span style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>{label}</span>
+        <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>{label}</span>
         {isEditing ? (
           options ? (
             <select autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
@@ -597,8 +597,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           )
         ) : (
           <span onClick={() => startEdit(field, value)} title="Click to edit"
-            style={{ fontSize: '13px', color: isAlert ? '#f87171' : value ? '#ddd' : '#444', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#444'}
+            style={{ fontSize: '13px', color: isAlert ? '#f87171' : value ? '#ddd' : '#999', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
             {value || '—'}
           </span>
@@ -609,8 +609,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const ReadField = ({ label, value, alert: isAlert }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
-      <span style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: '13px', color: isAlert ? '#f87171' : value ? '#ddd' : '#444', textAlign: 'right', wordBreak: 'break-word' }}>{value || '—'}</span>
+      <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: '13px', color: isAlert ? '#f87171' : value ? '#ddd' : '#999', textAlign: 'right', wordBreak: 'break-word' }}>{value || '—'}</span>
     </div>
   );
 
@@ -627,9 +627,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          <span style={{ fontSize: '13px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
   };
@@ -645,12 +645,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
-            {isThisWeek && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '600' }}>This week</span>}
+            {isThisWeek && <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '600' }}>This week</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '13px', fontWeight: '700', color: meetsGoal ? '#4ade80' : '#f87171' }}>{count} / 4 meetings</span>
-            <span style={{ fontSize: '11px', color: meetsGoal ? '#4ade80' : '#f87171' }}>{meetsGoal ? '✓' : '✗'}</span>
-            <span style={{ color: '#555', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
+            <span style={{ fontSize: '13px', color: meetsGoal ? '#4ade80' : '#f87171' }}>{meetsGoal ? '✓' : '✗'}</span>
+            <span style={{ color: '#bbb', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
         {isExpanded && (
@@ -660,12 +660,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '13px', color: '#60a5fa', fontWeight: '500' }}>{m.meeting_name || 'Meeting'}</span>
-                    <span style={{ fontSize: '11px', color: '#555' }}>by {m.author}</span>
+                    <span style={{ fontSize: '13px', color: '#bbb' }}>by {m.author}</span>
                   </div>
                   {m.latitude && m.longitude && <LocationPin entryId={m.id} lat={m.latitude} lng={m.longitude} />}
-                  {m.notes && <p style={{ color: '#888', fontSize: '12px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
+                  {m.notes && <p style={{ color: '#bbb', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
                 </div>
-                <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
+                <span style={{ fontSize: '13px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
               </div>
             ))}
           </div>
@@ -688,16 +688,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
-            {isThisWeek && <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
+            {isThisWeek && <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ display: 'flex', gap: '6px' }}>
-              {completed > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>{completed} done</span>}
-              {partial > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
-              {notCompleted > 0 && <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
+              {completed > 0 && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>{completed} done</span>}
+              {partial > 0 && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
+              {notCompleted > 0 && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
             </div>
-            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '11px' }}>{allDone ? '✓' : '✗'}</span>
-            <span style={{ color: '#555', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
+            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '13px' }}>{allDone ? '✓' : '✗'}</span>
+            <span style={{ color: '#bbb', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
         {isExpanded && (
@@ -707,12 +707,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               return (
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
-                    <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '11px' }}>{c.event_name}</span>
+                    <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '13px' }}>{c.event_name}</span>
                     {c.meeting_name && <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{c.meeting_name}</span>}
-                    <span style={{ fontSize: '11px', color: '#555' }}>by {c.author}</span>
-                    {c.notes && <span style={{ fontSize: '11px', color: '#666' }}>— {c.notes}</span>}
+                    <span style={{ fontSize: '13px', color: '#bbb' }}>by {c.author}</span>
+                    {c.notes && <span style={{ fontSize: '13px', color: '#999' }}>— {c.notes}</span>}
                   </div>
-                  <span style={{ fontSize: '11px', color: '#555', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(c.created_at)}</span>
+                  <span style={{ fontSize: '13px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(c.created_at)}</span>
                 </div>
               );
             })}
@@ -754,9 +754,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       </div>
 
       {loading ? (
-        <p style={{ color: '#888', padding: '20px' }}>Loading clients...</p>
+        <p style={{ color: '#bbb', padding: '20px' }}>Loading clients...</p>
       ) : clients.length === 0 ? (
-        <p style={{ color: '#888', padding: '20px' }}>{isHouseManagerRole ? 'No clients found in your assigned house(s).' : 'No clients found.'}</p>
+        <p style={{ color: '#bbb', padding: '20px' }}>{isHouseManagerRole ? 'No clients found in your assigned house(s).' : 'No clients found.'}</p>
       ) : (
         <>
           <div style={st.table}>
@@ -813,7 +813,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <span style={{ ...st.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
                   {selected.status === 'Active' && (
                     <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
-                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
+                      style={{ fontSize: '13px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
                       <option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option><option value={4}>Level 4</option>
                     </select>
                   )}
@@ -825,7 +825,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {onBackToHouses && (
                   <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
-                    style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '12px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     ← Houses
                   </button>
                 )}
@@ -851,9 +851,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ position: 'absolute', top: '100%', right: 0, background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', overflow: 'hidden', zIndex: 50, minWidth: '140px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
                     {MORE_TABS.map(t => (
                       <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); setShowMoreTabs(false); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: activeTab === t ? '#2a2a2a' : 'transparent', border: 'none', color: activeTab === t ? '#fff' : '#aaa', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#2a2a2a'}
-                        onMouseLeave={e => e.currentTarget.style.background = activeTab === t ? '#2a2a2a' : 'transparent'}>
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: activeTab === t ? '#333' : 'transparent', border: 'none', color: activeTab === t ? '#fff' : '#aaa', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#333'}
+                        onMouseLeave={e => e.currentTarget.style.background = activeTab === t ? '#333' : 'transparent'}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
                       </button>
                     ))}
@@ -865,7 +865,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             <div style={st.modalBody}>
               {activeTab === 'overview' && (
                 <>
-                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0', fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
+                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 12px 0', fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
                   <div style={st.grid}>
                     <Card title="Contact info">
                       <EditableField label="Phone" field="phone" value={selected.phone} />
@@ -916,7 +916,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
               {activeTab === 'UAs' && (
                 <Card title="UA Records" full>
-                  {uaRecords.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No UA records yet.</p> : (
+                  {uaRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No UA records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         {['Negative', 'Positive', 'Inconclusive', 'Refused'].map(result => {
@@ -926,13 +926,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           return (
                             <div key={result} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
-                              <span style={{ color: col.color, fontSize: '11px', opacity: 0.8 }}>{result}</span>
+                              <span style={{ color: col.color, fontSize: '13px', opacity: 0.8 }}>{result}</span>
                             </div>
                           );
                         })}
-                        <div style={{ background: '#2a2a2a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ background: '#333', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{uaRecords.length}</span>
-                          <span style={{ color: '#888', fontSize: '11px' }}>Total</span>
+                          <span style={{ color: '#bbb', fontSize: '13px' }}>Total</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -941,13 +941,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           return (
                             <div key={ua.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '12px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
-                                <span style={{ color: '#aaa', fontSize: '12px' }}>By {ua.author}</span>
-                                {ua.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '10px' }}>House</span>}
+                                <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '13px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
+                                <span style={{ color: '#aaa', fontSize: '13px' }}>By {ua.author}</span>
+                                {ua.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '12px' }}>House</span>}
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <span style={{ color: '#555', fontSize: '12px' }}>{formatDateShort(ua.created_at)}</span>
-                                {ua.notes && <span style={{ color: '#666', fontSize: '11px', maxWidth: '200px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ua.notes}</span>}
+                                <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDateShort(ua.created_at)}</span>
+                                {ua.notes && <span style={{ color: '#999', fontSize: '13px', maxWidth: '200px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ua.notes}</span>}
                               </div>
                             </div>
                           );
@@ -960,15 +960,15 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
               {activeTab === 'meetings' && (
                 <Card title="Meeting Records" full>
-                  {meetingRecords.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No meeting records yet.</p> : (
+                  {meetingRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No meeting records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#60a5fa', fontSize: '18px', fontWeight: '700' }}>{meetingRecords.length}</span>
-                          <span style={{ color: '#60a5fa', fontSize: '11px', opacity: 0.8 }}>Total Meetings</span>
+                          <span style={{ color: '#60a5fa', fontSize: '13px', opacity: 0.8 }}>Total Meetings</span>
                         </div>
                       </div>
-                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0' }}>Goal: 4 meetings per week. Current week expands automatically.</p>
+                      <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 12px 0' }}>Goal: 4 meetings per week. Current week expands automatically.</p>
                       {groupByWeek(meetingRecords).map(({ weekStart, entries }) => (
                         <MeetingWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
                       ))}
@@ -979,7 +979,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
               {activeTab === 'chores' && (
                 <Card title="Chore Records" full>
-                  {choreRecords.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No chore records yet.</p> : (
+                  {choreRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No chore records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         {['Completed', 'Not Completed', 'Partial'].map(status => {
@@ -989,16 +989,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           return (
                             <div key={status} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
-                              <span style={{ color: col.color, fontSize: '11px', opacity: 0.8 }}>{status}</span>
+                              <span style={{ color: col.color, fontSize: '13px', opacity: 0.8 }}>{status}</span>
                             </div>
                           );
                         })}
-                        <div style={{ background: '#2a2a2a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ background: '#333', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{choreRecords.length}</span>
-                          <span style={{ color: '#888', fontSize: '11px' }}>Total</span>
+                          <span style={{ color: '#bbb', fontSize: '13px' }}>Total</span>
                         </div>
                       </div>
-                      <p style={{ fontSize: '11px', color: '#555', margin: '0 0 12px 0' }}>Current week expands automatically. ✓ = all chores completed that week.</p>
+                      <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 12px 0' }}>Current week expands automatically. ✓ = all chores completed that week.</p>
                       {groupByWeek(choreRecords).map(({ weekStart, entries }) => (
                         <ChoreWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
                       ))}
@@ -1019,18 +1019,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               <div key={i} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', border: '1px solid #333' }}>
                                 <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: '0 0 8px 0' }}>{med.name || 'Unnamed medication'}</p>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
-                                  {med.dosage && <div><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Dosage</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.dosage}</p></div>}
-                                  {med.intake && <div><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Frequency</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.intake}x/day</p></div>}
-                                  {med.count && <div><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Count</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.count}</p></div>}
-                                  {med.notes && <div style={{ gridColumn: 'span 2' }}><span style={{ fontSize: '10px', color: '#666', textTransform: 'uppercase' }}>Notes</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.notes}</p></div>}
+                                  {med.dosage && <div><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Dosage</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.dosage}</p></div>}
+                                  {med.intake && <div><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Frequency</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.intake}x/day</p></div>}
+                                  {med.count && <div><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Count</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.count}</p></div>}
+                                  {med.notes && <div style={{ gridColumn: 'span 2' }}><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Notes</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.notes}</p></div>}
                                 </div>
                               </div>
                             ))}
                           </div>
-                        ) : <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>;
-                      } catch { return <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>; }
+                        ) : <p style={{ color: '#999', fontSize: '14px' }}>No medications listed on application.</p>;
+                      } catch { return <p style={{ color: '#999', fontSize: '14px' }}>No medications listed on application.</p>; }
                     })()
-                  ) : <p style={{ color: '#666', fontSize: '14px' }}>No medications listed on application.</p>}
+                  ) : <p style={{ color: '#999', fontSize: '14px' }}>No medications listed on application.</p>}
                 </Card>
               )}
 
@@ -1039,7 +1039,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
                       <p style={{ ...st.sectionLabel, margin: 0 }}>Timeline</p>
-                      {timelineTotal > 0 && <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
+                      {timelineTotal > 0 && <p style={{ color: '#bbb', fontSize: '13px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
                     </div>
                     <button onClick={() => setShowAddEntry(!showAddEntry)} style={st.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
                   </div>
@@ -1141,9 +1141,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     </div>
                   )}
                   {timelineLoading ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>Loading timeline...</p>
+                    <p style={{ color: '#999', fontSize: '14px' }}>Loading timeline...</p>
                   ) : timeline.length === 0 ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries yet.</p>
+                    <p style={{ color: '#999', fontSize: '14px' }}>No timeline entries yet.</p>
                   ) : (
                     <>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1157,12 +1157,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
                                 {entry.mood_value && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>Mood: {entry.mood_value}/10</span>}
                                 {entry.severity && <span style={{ ...st.badge, background: entry.severity === 'High' ? '#3a1e1e' : entry.severity === 'Medium' ? '#3a2d1e' : '#1e3a2f', color: entry.severity === 'High' ? '#f87171' : entry.severity === 'Medium' ? '#fb923c' : '#4ade80' }}>{entry.severity}</span>}
-                                {entry.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '10px' }}>House</span>}
-                                {entry.source === 'client' && <span style={{ ...st.badge, background: '#2d1e3a', color: '#c084fc', fontSize: '10px' }}>Self</span>}
+                                {entry.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '12px' }}>House</span>}
+                                {entry.source === 'client' && <span style={{ ...st.badge, background: '#2d1e3a', color: '#c084fc', fontSize: '12px' }}>Self</span>}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ color: '#555', fontSize: '11px', whiteSpace: 'nowrap' }}>{formatDate(entry.created_at)}</span>
-                                <button onClick={() => deleteTimelineEntry(entry.id)} style={{ background: 'transparent', border: '1px solid #444', color: '#666', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>×</button>
+                                <span style={{ color: '#bbb', fontSize: '13px', whiteSpace: 'nowrap' }}>{formatDate(entry.created_at)}</span>
+                                <button onClick={() => deleteTimelineEntry(entry.id)} style={{ background: 'transparent', border: '1px solid #444', color: '#999', borderRadius: '4px', padding: '2px 8px', fontSize: '13px', cursor: 'pointer' }}>×</button>
                               </div>
                             </div>
                             {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
@@ -1170,7 +1170,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               ? <WeeklyReflectionCard entry={entry} />
                               : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                             }
-                            <p style={{ color: '#555', fontSize: '11px', margin: '6px 0 0 0' }}>By {entry.author}</p>
+                            <p style={{ color: '#bbb', fontSize: '13px', margin: '6px 0 0 0' }}>By {entry.author}</p>
                           </div>
                         ))}
                       </div>
@@ -1190,18 +1190,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               {activeTab === 'stays' && (
                 <Card title="Stay History" full>
                   {staysLoading ? (
-                    <p style={{ color: '#666', fontSize: '14px' }}>Loading stay history...</p>
+                    <p style={{ color: '#999', fontSize: '14px' }}>Loading stay history...</p>
                   ) : stays.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '30px 0' }}>
-                      <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>No previous stays recorded.</p>
-                      <p style={{ color: '#444', fontSize: '12px', margin: '6px 0 0 0' }}>Stay history is saved automatically when a client is discharged.</p>
+                      <p style={{ color: '#bbb', fontSize: '14px', margin: 0 }}>No previous stays recorded.</p>
+                      <p style={{ color: '#999', fontSize: '13px', margin: '6px 0 0 0' }}>Stay history is saved automatically when a client is discharged.</p>
                     </div>
                   ) : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                         <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#60a5fa', fontSize: '20px', fontWeight: '700' }}>{stays.length}</span>
-                          <span style={{ color: '#60a5fa', fontSize: '11px', opacity: 0.8 }}>Total Stays</span>
+                          <span style={{ color: '#60a5fa', fontSize: '13px', opacity: 0.8 }}>Total Stays</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1218,36 +1218,36 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>Stay #{stays.length - i}</span>
                                   {stay.house_name && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>}
                                 </div>
-                                {lengthDays !== null && <span style={{ fontSize: '12px', color: '#555' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
+                                {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
                               </div>
                               <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                 <div>
-                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Move-in</p>
+                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Move-in</p>
                                   <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.start_date)}</p>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge</p>
+                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge</p>
                                   <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.discharge_date)}</p>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reason</p>
+                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reason</p>
                                   <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{stay.discharge_reason || '—'}</p>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Balance at discharge</p>
-                                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0, color: balance > 0 ? '#f87171' : balance < 0 ? '#4ade80' : '#555' }}>
+                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Balance at discharge</p>
+                                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0, color: balance > 0 ? '#f87171' : balance < 0 ? '#4ade80' : '#bbb' }}>
                                     {balance > 0 ? `$${balance.toFixed(2)} owed` : balance < 0 ? `$${Math.abs(balance).toFixed(2)} credit` : '$0.00'}
                                   </p>
                                 </div>
                                 {stay.discharge_notes && (
                                   <div style={{ gridColumn: 'span 2' }}>
-                                    <p style={{ fontSize: '11px', color: '#555', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</p>
+                                    <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</p>
                                     <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{stay.discharge_notes}</p>
                                   </div>
                                 )}
                                 {stay.discharged_by && (
                                   <div style={{ gridColumn: 'span 2' }}>
-                                    <p style={{ fontSize: '11px', color: '#444', margin: 0 }}>Discharged by {stay.discharged_by}</p>
+                                    <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Discharged by {stay.discharged_by}</p>
                                   </div>
                                 )}
                               </div>
@@ -1282,7 +1282,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 <Card title="Staff notes" full>
                   <textarea defaultValue={selected.client_notes || ''} onBlur={saveNotes} placeholder="Add staff notes here..."
                     style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '12px 14px', color: '#fff', fontSize: '14px', lineHeight: '1.6', resize: 'vertical', boxSizing: 'border-box', minHeight: '220px', outline: 'none', fontFamily: 'sans-serif' }} />
-                  <p style={{ color: '#555', fontSize: '11px', marginTop: '8px' }}>Changes save automatically when you click away.</p>
+                  <p style={{ color: '#bbb', fontSize: '13px', marginTop: '8px' }}>Changes save automatically when you click away.</p>
                 </Card>
               )}
 
@@ -1292,7 +1292,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 </Card>
               )}
 
-              {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#666', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
+              {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#999', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
             </div>
           </div>
         </div>
@@ -1303,7 +1303,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           <div style={{ ...st.modal, maxWidth: '420px', marginTop: '120px' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
               <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>Move to {statusModal.newStatus}</h3>
-              <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>{statusModal.client.full_name}</p>
+              <p style={{ color: '#999', fontSize: '13px', margin: '4px 0 0 0' }}>{statusModal.client.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
               {statusModal.newStatus === 'Waiting List' && (
@@ -1342,8 +1342,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   )}
                   {statusModal.client.house_id && (
                     <div style={{ marginBottom: '16px', padding: '10px 12px', background: '#1e2d3a', borderRadius: '8px', border: '1px solid #2a3d52' }}>
-                      <span style={{ fontSize: '12px', color: '#60a5fa' }}>🏠 Already assigned: </span>
-                      <span style={{ fontSize: '12px', color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span>
+                      <span style={{ fontSize: '13px', color: '#60a5fa' }}>🏠 Already assigned: </span>
+                      <span style={{ fontSize: '13px', color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span>
                     </div>
                   )}
                   <div style={{ marginBottom: '16px' }}>
@@ -1376,7 +1376,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       {['yes', 'no'].map(v => (
                         <button key={v} onClick={() => setStatusForm(p => ({ ...p, successful_discharge: v }))}
                           style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
-                            borderColor: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#444',
+                            borderColor: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#999',
                             background: statusForm.successful_discharge === v ? (v === 'yes' ? '#1a3a2a' : '#3a1a1a') : 'transparent',
                             color: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#aaa',
                           }}>
@@ -1412,8 +1412,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
 function Card({ title, children, full }) {
   return (
-    <div style={{ background: '#2a2a2a', border: '1px solid #333', borderRadius: '12px', padding: '14px 16px', gridColumn: full ? '1 / -1' : undefined }}>
-      <p style={{ fontSize: '11px', fontWeight: '500', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>{title}</p>
+    <div style={{ background: '#333', border: '1px solid #333', borderRadius: '12px', padding: '14px 16px', gridColumn: full ? '1 / -1' : undefined }}>
+      <p style={{ fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>{title}</p>
       {children}
     </div>
   );
@@ -1423,38 +1423,38 @@ const st = {
   page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
   header: { marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#666', fontSize: '14px', margin: '4px 0 0 0' },
+  sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
   toolbar: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' },
   search: { width: '100%', maxWidth: '360px', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '14px' },
   viewToggleWrap: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   filters: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  filterBtn: { padding: '6px 14px', borderRadius: '20px', border: '1px solid #444', background: 'transparent', color: '#888', fontSize: '13px', cursor: 'pointer' },
+  filterBtn: { padding: '6px 14px', borderRadius: '20px', border: '1px solid #444', background: 'transparent', color: '#bbb', fontSize: '13px', cursor: 'pointer' },
   filterActive: { background: '#b22222', borderColor: '#b22222', color: '#fff' },
-  table: { background: '#2a2a2a', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' },
-  tableHeader: { display: 'flex', padding: '12px 16px', borderBottom: '1px solid #333', fontSize: '12px', color: '#666', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  table: { background: '#333', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' },
+  tableHeader: { display: 'flex', padding: '12px 16px', borderBottom: '1px solid #333', fontSize: '13px', color: '#999', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' },
   row: { display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #222', cursor: 'pointer' },
-  badge: { fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500' },
+  badge: { fontSize: '13px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
   modal: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '860px', overflow: 'hidden' },
   modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #333' },
   modalName: { fontSize: '18px', fontWeight: '500', margin: 0, color: '#fff' },
-  modalSub: { fontSize: '13px', color: '#666', margin: '2px 0 0 0' },
+  modalSub: { fontSize: '13px', color: '#999', margin: '2px 0 0 0' },
   badges: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px', alignItems: 'center' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#888', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'visible' },
-  tab: { padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: '#666', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap', flexShrink: 0 },
+  tab: { padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap', flexShrink: 0 },
   tabActive: { color: '#fff', borderBottomColor: '#fff' },
   modalBody: { padding: '20px', maxHeight: '520px', overflowY: 'auto' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' },
-  sectionLabel: { fontSize: '11px', fontWeight: '500', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  timelineCard: { background: '#2a2a2a', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
+  sectionLabel: { fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
+  timelineCard: { background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
   miniForm: { background: '#222', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #333' },
-  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' },
+  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
   pagination: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '20px', flexWrap: 'wrap' },
   pageBtn: { padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#aaa', fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s' },
   pageBtnActive: { background: '#b22222', borderColor: '#b22222', color: '#fff', fontWeight: '600' },
   pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
-  ellipsis: { color: '#555', fontSize: '13px', padding: '0 4px' },
+  ellipsis: { color: '#bbb', fontSize: '13px', padding: '0 4px' },
   pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
 

@@ -60,18 +60,18 @@ function getMonthBounds(ym) {
 
 function StatCard({ label, value, sub, accent }) {
   return (
-    <div style={{ background: '#2a2a2a', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent || '#b22222'}`, minWidth: 0 }}>
+    <div style={{ background: '#333', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent || '#b22222'}`, minWidth: 0 }}>
       <div style={{ fontSize: 13, color: '#aaa', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
       <div style={{ fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{value ?? '—'}</div>
-      {sub && <div style={{ fontSize: 13, color: '#777', marginTop: 5 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 13, color: '#aaa', marginTop: 5 }}>{sub}</div>}
     </div>
   );
 }
 
 function Section({ title, children }) {
   return (
-    <div style={{ background: '#2a2a2a', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>{title}</div>
+    <div style={{ background: '#333', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>{title}</div>
       {children}
     </div>
   );
@@ -98,17 +98,17 @@ function MetricCard({ label, value }) {
 function YearTable({ title, columns, rows }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>{title}</div>
-      <div style={{ background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `1fr ${columns.map(() => '90px').join(' ')}`, background: '#1e1e1e', padding: '10px 16px', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#555', fontWeight: 600 }}>YEAR</span>
-          {columns.map(c => <span key={c} style={{ fontSize: 12, color: '#555', fontWeight: 600, textAlign: 'right' }}>{c}</span>)}
+      <div style={{ fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>{title}</div>
+      <div style={{ background: '#333', borderRadius: 12, border: '1px solid #333', overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `1fr ${columns.map(() => '90px').join(' ')}`, background: '#252525', padding: '10px 16px', gap: 8 }}>
+          <span style={{ fontSize: 12, color: '#bbb', fontWeight: 600 }}>YEAR</span>
+          {columns.map(c => <span key={c} style={{ fontSize: 12, color: '#bbb', fontWeight: 600, textAlign: 'right' }}>{c}</span>)}
         </div>
         {rows.map((row, i) => (
           <div key={row.year} style={{ display: 'grid', gridTemplateColumns: `1fr ${columns.map(() => '90px').join(' ')}`, padding: '11px 16px', gap: 8, borderTop: '1px solid #333', background: i === 0 ? '#2e2e2e' : 'transparent' }}>
             <span style={{ fontSize: 14, color: i === 0 ? '#fff' : '#aaa', fontWeight: i === 0 ? 600 : 400 }}>{row.year}</span>
             {row.values.map((v, j) => (
-              <span key={j} style={{ fontSize: 14, color: i === 0 ? '#fff' : '#888', fontWeight: i === 0 ? 600 : 400, textAlign: 'right' }}>{v ?? '—'}</span>
+              <span key={j} style={{ fontSize: 14, color: i === 0 ? '#fff' : '#bbb', fontWeight: i === 0 ? 600 : 400, textAlign: 'right' }}>{v ?? '—'}</span>
             ))}
           </div>
         ))}
@@ -251,12 +251,12 @@ export default function Reports() {
 
   const tabBtn = (id) => ({
     padding: '9px 20px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14,
-    background: activeTab === id ? '#2a2a2a' : 'transparent',
+    background: activeTab === id ? '#333' : 'transparent',
     color: activeTab === id ? '#fff' : '#aaa',
     fontWeight: activeTab === id ? 600 : 400,
   });
 
-  if (loading) return <div style={{ padding: 32, color: '#555', fontSize: 14 }}>Loading reports...</div>;
+  if (loading) return <div style={{ padding: 32, color: '#bbb', fontSize: 14 }}>Loading reports...</div>;
 
   return (
     <div style={{ fontFamily: 'sans-serif' }}>
@@ -270,7 +270,7 @@ export default function Reports() {
       {/* ── WEEKLY ──────────────────────────────────────────────────────────── */}
       {activeTab === 'weekly' && (
         <div>
-          <div style={{ fontSize: 11, color: '#555', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
             Week of {week.start} — {week.end}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
@@ -299,14 +299,14 @@ export default function Reports() {
         <div>
           <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 5 }}>Report Month</div>
+              <div style={{ fontSize: 12, color: '#bbb', marginBottom: 5 }}>Report Month</div>
               <input type="month" value={reportMonth} onChange={e => setReportMonth(e.target.value)}
-                style={{ background: '#2a2a2a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14 }} />
+                style={{ background: '#333', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14 }} />
             </div>
             <div>
-              <div style={{ fontSize: 12, color: '#888', marginBottom: 5 }}>View</div>
+              <div style={{ fontSize: 12, color: '#bbb', marginBottom: 5 }}>View</div>
               <select value={reportHouse} onChange={e => setReportHouse(e.target.value)}
-                style={{ background: '#2a2a2a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14 }}>
+                style={{ background: '#333', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14 }}>
                 <option value="combined">Combined</option>
                 <option value="men">Men's House</option>
                 <option value="women">Women's House</option>
@@ -400,12 +400,12 @@ export default function Reports() {
 }
 
 // ─── Levels Report Component ──────────────────────────────────────────────────
-const LEVEL_COLORS = { L1: '#3b82f6', L2: '#f59e0b', L3: '#ec4899', L4: '#10b981', null: '#555' };
+const LEVEL_COLORS = { L1: '#3b82f6', L2: '#f59e0b', L3: '#ec4899', L4: '#10b981', null: '#bbb' };
 const LEVEL_KEYS = ['L1', 'L2', 'L3', 'L4'];
 
 function PieChart({ data, size = 120 }) {
   const total = data.reduce((s, d) => s + d.count, 0);
-  if (total === 0) return <div style={{ width: size, height: size, borderRadius: '50%', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#555', fontSize: 12 }}>No data</span></div>;
+  if (total === 0) return <div style={{ width: size, height: size, borderRadius: '50%', background: '#333', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#bbb', fontSize: 12 }}>No data</span></div>;
 
   let cumulativeAngle = -Math.PI / 2;
   const cx = size / 2, cy = size / 2, r = size / 2 - 4;
@@ -479,7 +479,7 @@ function LevelsReport({ clients, houses }) {
     const data = getLevelData(clientList);
     const total = clientList.length;
     return (
-      <div style={{ background: '#2a2a2a', borderRadius: 12, padding: '18px 20px', border: '1px solid #333' }}>
+      <div style={{ background: '#333', borderRadius: 12, padding: '18px 20px', border: '1px solid #333' }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 14 }}>{title}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
           <PieChart data={data} size={130} />
@@ -490,7 +490,7 @@ function LevelsReport({ clients, houses }) {
                 <span style={{ fontSize: 12, color: '#aaa' }}>{d.label} ({d.count})</span>
               </div>
             ))}
-            <div style={{ fontSize: 11, color: '#555', marginTop: 6 }}>{total} residents</div>
+            <div style={{ fontSize: 11, color: '#bbb', marginTop: 6 }}>{total} residents</div>
           </div>
         </div>
       </div>
@@ -514,16 +514,16 @@ function LevelsReport({ clients, houses }) {
       </div>
 
       {/* Pivot table */}
-      <div style={{ background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', overflow: 'hidden' }}>
+      <div style={{ background: '#333', borderRadius: 12, border: '1px solid #333', overflow: 'hidden' }}>
         <div style={{ padding: '14px 18px', borderBottom: '1px solid #333' }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Pivot Table — Levels by House</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ background: '#1e1e1e' }}>
-                <th style={{ padding: '10px 16px', textAlign: 'left', color: '#555', fontWeight: 600, borderBottom: '1px solid #333' }}>House</th>
-                <th style={{ padding: '10px 12px', textAlign: 'right', color: '#555', fontWeight: 600, borderBottom: '1px solid #333' }}>No Level</th>
+              <tr style={{ background: '#252525' }}>
+                <th style={{ padding: '10px 16px', textAlign: 'left', color: '#bbb', fontWeight: 600, borderBottom: '1px solid #333' }}>House</th>
+                <th style={{ padding: '10px 12px', textAlign: 'right', color: '#bbb', fontWeight: 600, borderBottom: '1px solid #333' }}>No Level</th>
                 {LEVEL_KEYS.map(k => (
                   <th key={k} style={{ padding: '10px 12px', textAlign: 'right', color: LEVEL_COLORS[k], fontWeight: 600, borderBottom: '1px solid #333' }}>{k}</th>
                 ))}
@@ -534,17 +534,17 @@ function LevelsReport({ clients, houses }) {
               {pivotRows.map((row, i) => (
                 <tr key={row.name} style={{ background: i % 2 === 0 ? 'transparent' : '#252525', borderBottom: '1px solid #2a2a2a' }}>
                   <td style={{ padding: '10px 16px', color: '#ddd' }}>{row.name}</td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#555' }}>{row.empty}</td>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', color: '#bbb' }}>{row.empty}</td>
                   {LEVEL_KEYS.map(k => (
-                    <td key={k} style={{ padding: '10px 12px', textAlign: 'right', color: row.counts[k] > 0 ? '#fff' : '#444' }}>{row.counts[k]}</td>
+                    <td key={k} style={{ padding: '10px 12px', textAlign: 'right', color: row.counts[k] > 0 ? '#fff' : '#999' }}>{row.counts[k]}</td>
                   ))}
                   <td style={{ padding: '10px 12px', textAlign: 'right', color: '#fff', fontWeight: 700 }}>{row.total}</td>
                 </tr>
               ))}
               {/* Totals row */}
-              <tr style={{ background: '#1e1e1e', borderTop: '2px solid #444' }}>
+              <tr style={{ background: '#252525', borderTop: '2px solid #444' }}>
                 <td style={{ padding: '10px 16px', color: '#fff', fontWeight: 700 }}>Total</td>
-                <td style={{ padding: '10px 12px', textAlign: 'right', color: '#555' }}>{activeClients.filter(c => !c.level).length}</td>
+                <td style={{ padding: '10px 12px', textAlign: 'right', color: '#bbb' }}>{activeClients.filter(c => !c.level).length}</td>
                 {LEVEL_KEYS.map(k => (
                   <td key={k} style={{ padding: '10px 12px', textAlign: 'right', color: LEVEL_COLORS[k], fontWeight: 700 }}>
                     {allData.find(d => d.label === k)?.count || 0}

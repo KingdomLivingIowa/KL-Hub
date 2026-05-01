@@ -241,7 +241,7 @@ function ClientPayments({ client }) {
         </button>
         {hasFullAccess && (
           <button onClick={() => { setShowAddCharge(!showAddCharge); setShowPaymentForm(false); }}
-            style={{ background: showAddCharge ? 'transparent' : 'transparent', border: '1px solid #444', color: showAddCharge ? '#aaa' : '#888', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ background: showAddCharge ? 'transparent' : 'transparent', border: '1px solid #444', color: showAddCharge ? '#aaa' : '#bbb', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
             {showAddCharge ? 'Cancel' : '+ Add Charge'}
           </button>
         )}
@@ -361,16 +361,16 @@ function ClientPayments({ client }) {
         </div>
       )}
 
-      {loading ? <p style={{ color: '#666', fontSize: '14px' }}>Loading...</p> : (
+      {loading ? <p style={{ color: '#999', fontSize: '14px' }}>Loading...</p> : (
         <>
           {/* View toggle */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
             <button onClick={() => setActiveView('charges')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #444', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#fff' : '#888', fontSize: '12px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #444', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#fff' : '#bbb', fontSize: '12px', cursor: 'pointer' }}>
               Charges ({charges.length})
             </button>
             <button onClick={() => setActiveView('payments')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #444', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#fff' : '#888', fontSize: '12px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #444', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#fff' : '#bbb', fontSize: '12px', cursor: 'pointer' }}>
               Payments ({payments.length})
             </button>
           </div>
@@ -378,7 +378,7 @@ function ClientPayments({ client }) {
           {/* Charges list */}
           {activeView === 'charges' && (
             charges.length === 0 ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>No charges yet.</p>
+              <p style={{ color: '#999', fontSize: '14px' }}>No charges yet.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {charges.map(c => (
@@ -386,13 +386,13 @@ function ClientPayments({ client }) {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                         <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(c.amount)}</span>
-                        <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: '#2a2a2a', color: '#888' }}>
+                        <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: '#333', color: '#bbb' }}>
                           {CHARGE_TYPE_LABELS[c.charge_type] || c.charge_type}
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: '#555', fontSize: '12px' }}>{formatDate(c.due_date)}</span>
-                        <span style={{ color: '#666', fontSize: '12px' }}>· {c.description}</span>
+                        <span style={{ color: '#bbb', fontSize: '12px' }}>{formatDate(c.due_date)}</span>
+                        <span style={{ color: '#999', fontSize: '12px' }}>· {c.description}</span>
                       </div>
                     </div>
                     {hasFullAccess && (
@@ -410,7 +410,7 @@ function ClientPayments({ client }) {
           {/* Payments list */}
           {activeView === 'payments' && (
             payments.length === 0 ? (
-              <p style={{ color: '#666', fontSize: '14px' }}>No payments recorded yet.</p>
+              <p style={{ color: '#999', fontSize: '14px' }}>No payments recorded yet.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {payments.map(p => (
@@ -421,12 +421,12 @@ function ClientPayments({ client }) {
                         <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>
                           {p.payment_method === 'third_party' ? '3rd Party' : p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1)}
                         </span>
-                        {p.payer_name && <span style={{ fontSize: '11px', color: '#888' }}>{p.payer_name}</span>}
+                        {p.payer_name && <span style={{ fontSize: '11px', color: '#bbb' }}>{p.payer_name}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: '#555', fontSize: '12px' }}>{formatDate(p.payment_date)}</span>
-                        {p.notes && <span style={{ color: '#666', fontSize: '12px' }}>· {p.notes}</span>}
-                        {p.created_by && <span style={{ color: '#555', fontSize: '11px' }}>· by {p.created_by}</span>}
+                        <span style={{ color: '#bbb', fontSize: '12px' }}>{formatDate(p.payment_date)}</span>
+                        {p.notes && <span style={{ color: '#999', fontSize: '12px' }}>· {p.notes}</span>}
+                        {p.created_by && <span style={{ color: '#bbb', fontSize: '11px' }}>· by {p.created_by}</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
@@ -457,7 +457,7 @@ function ClientPayments({ client }) {
             onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <p style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 4px 0' }}>Kingdom Living</p>
-              <p style={{ fontSize: '13px', color: '#666', margin: 0 }}>Payment Receipt</p>
+              <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Payment Receipt</p>
             </div>
             <div style={{ borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '16px 0', marginBottom: '16px' }}>
               {[
@@ -468,7 +468,7 @@ function ClientPayments({ client }) {
                 showReceipt.notes ? ['Notes', showReceipt.notes] : null,
               ].filter(Boolean).map(([label, value]) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', color: '#666' }}>{label}</span>
+                  <span style={{ fontSize: '13px', color: '#999' }}>{label}</span>
                   <span style={{ fontSize: '13px', fontWeight: '500' }}>{value}</span>
                 </div>
               ))}
@@ -483,7 +483,7 @@ function ClientPayments({ client }) {
                 Print Receipt
               </button>
               <button onClick={() => setShowReceipt(null)}
-                style={{ flex: 1, background: 'transparent', border: '1px solid #ccc', color: '#666', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ flex: 1, background: 'transparent', border: '1px solid #ccc', color: '#999', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Close
               </button>
             </div>

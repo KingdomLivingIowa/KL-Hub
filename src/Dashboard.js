@@ -192,7 +192,7 @@ function DashboardHome({ counts, currentUser }) {
     if (type === 'application') return { icon: '📋', bg: '#1e2d3a' };
     if (type === 'discharge') return { icon: '🚪', bg: '#3a1e1e' };
     if (type === 'crisis') return { icon: '⚠️', bg: '#3a2d1e' };
-    return { icon: '•', bg: '#2a2a2a' };
+    return { icon: '•', bg: '#333' };
   };
 
   const alertColor = (level) => {
@@ -235,7 +235,7 @@ function DashboardHome({ counts, currentUser }) {
       </div>
 
       {loadingDashboard ? (
-        <p style={{ color: '#555', fontSize: '14px', marginTop: '32px' }}>Loading dashboard...</p>
+        <p style={{ color: '#bbb', fontSize: '14px', marginTop: '32px' }}>Loading dashboard...</p>
       ) : (
         <div style={ds.contentGrid}>
 
@@ -245,18 +245,18 @@ function DashboardHome({ counts, currentUser }) {
             {/* Waiting List Breakdown */}
             <Section title="Waiting Lists" count={totalWaiting} countColor="#fb923c">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
+                <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
                 {['DOC Men', 'Community Men', 'Treatment Men'].map(list => (
                   <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
                     <span style={{ fontSize: '13px', color: '#aaa' }}>{list}</span>
-                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#60a5fa' : '#444' }}>{waitingListCounts[list] || 0}</span>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#60a5fa' : '#999' }}>{waitingListCounts[list] || 0}</span>
                   </div>
                 ))}
-                <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 4px 0', fontWeight: '600' }}>Women's</p>
+                <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 4px 0', fontWeight: '600' }}>Women's</p>
                 {['DOC Women', 'Community Women', 'Treatment Women'].map(list => (
                   <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
                     <span style={{ fontSize: '13px', color: '#aaa' }}>{list}</span>
-                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#f9a8d4' : '#444' }}>{waitingListCounts[list] || 0}</span>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#f9a8d4' : '#999' }}>{waitingListCounts[list] || 0}</span>
                   </div>
                 ))}
               </div>
@@ -287,12 +287,12 @@ function DashboardHome({ counts, currentUser }) {
                   })}
                   {readAlerts.length > 0 && (
                     <div style={{ marginTop: '4px' }}>
-                      <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' }}>Read</p>
+                      <p style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' }}>Read</p>
                       {readAlerts.map(alert => (
-                        <div key={alert.id} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
-                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#444', flexShrink: 0 }} />
-                          <p style={{ color: '#666', fontSize: '12px', margin: 0, flex: 1 }}>{alert.label}</p>
-                          {alert.time && <span style={{ color: '#444', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(alert.time)}</span>}
+                        <div key={alert.id} style={{ background: '#252525', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#999', flexShrink: 0 }} />
+                          <p style={{ color: '#999', fontSize: '12px', margin: 0, flex: 1 }}>{alert.label}</p>
+                          {alert.time && <span style={{ color: '#999', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(alert.time)}</span>}
                         </div>
                       ))}
                     </div>
@@ -304,7 +304,7 @@ function DashboardHome({ counts, currentUser }) {
             {/* Bed availability */}
             <Section title="Bed Availability">
               {houses.length === 0 ? (
-                <p style={{ color: '#555', fontSize: '14px' }}>No houses found.</p>
+                <p style={{ color: '#bbb', fontSize: '14px' }}>No houses found.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {houses.map(h => {
@@ -312,7 +312,7 @@ function DashboardHome({ counts, currentUser }) {
                     const pct = occupancyPct(h);
                     const isAlmostFull = available <= 1;
                     return (
-                      <div key={h.id} style={{ background: '#2a2a2a', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' }}>
+                      <div key={h.id} style={{ background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{h.name}</span>
@@ -350,7 +350,7 @@ function DashboardHome({ counts, currentUser }) {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ color: '#f87171', fontSize: '20px', fontWeight: '700', margin: 0 }}>{openCharges.length}</p>
-                    <p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0 0' }}>open charge{openCharges.length !== 1 ? 's' : ''}</p>
+                    <p style={{ color: '#bbb', fontSize: '11px', margin: '2px 0 0 0' }}>open charge{openCharges.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -367,7 +367,7 @@ function DashboardHome({ counts, currentUser }) {
                       <div key={houseId}>
                         {!isHouseManagerRole && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <p style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, fontWeight: '600' }}>{group.name}</p>
+                            <p style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, fontWeight: '600' }}>{group.name}</p>
                             <span style={{ fontSize: '12px', color: '#f87171', fontWeight: '600' }}>${houseTotal.toFixed(2)}</span>
                           </div>
                         )}
@@ -389,7 +389,7 @@ function DashboardHome({ counts, currentUser }) {
             {/* Recent Activity */}
             <Section title="Recent Activity (Last 7 Days)">
               {recentActivity.length === 0 ? (
-                <p style={{ color: '#555', fontSize: '14px' }}>No recent activity.</p>
+                <p style={{ color: '#bbb', fontSize: '14px' }}>No recent activity.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   {recentActivity.map(item => {
@@ -401,10 +401,10 @@ function DashboardHome({ counts, currentUser }) {
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ color: '#ddd', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>{item.label}</p>
-                          {item.sublabel && <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>{item.sublabel}</p>}
-                          {item.author && <p style={{ color: '#555', fontSize: '11px', margin: '2px 0 0 0' }}>by {item.author}</p>}
+                          {item.sublabel && <p style={{ color: '#999', fontSize: '11px', margin: '2px 0 0 0' }}>{item.sublabel}</p>}
+                          {item.author && <p style={{ color: '#bbb', fontSize: '11px', margin: '2px 0 0 0' }}>by {item.author}</p>}
                         </div>
-                        <span style={{ color: '#555', fontSize: '11px', flexShrink: 0, paddingTop: '2px' }}>{formatTimeAgo(item.time)}</span>
+                        <span style={{ color: '#bbb', fontSize: '11px', flexShrink: 0, paddingTop: '2px' }}>{formatTimeAgo(item.time)}</span>
                       </div>
                     );
                   })}
@@ -421,7 +421,7 @@ function DashboardHome({ counts, currentUser }) {
 
 function Section({ title, children, count, countColor }) {
   return (
-    <div style={{ background: '#2a2a2a', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333' }}>
+    <div style={{ background: '#333', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
         <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
         {count !== undefined && (
@@ -437,7 +437,7 @@ function BedStat({ label, value, color }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
       <span style={{ fontSize: '15px', fontWeight: '700', color }}>{value}</span>
-      <span style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
     </div>
   );
 }
@@ -505,7 +505,7 @@ function DashboardInner({ user }) {
   if (loadingRole) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#1a1a1a' }}>
-        <p style={{ color: '#666', fontSize: '14px' }}>Loading...</p>
+        <p style={{ color: '#999', fontSize: '14px' }}>Loading...</p>
       </div>
     );
   }
@@ -592,7 +592,7 @@ function Dashboard({ user }) {
 
 const ds = {
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' },
-  statCard: { backgroundColor: '#2a2a2a', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222' },
+  statCard: { backgroundColor: '#333', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222' },
   statLabel: { color: '#a0a0a0', fontSize: '13px', margin: '0 0 8px 0' },
   statValue: { color: '#ffffff', fontSize: '32px', fontWeight: '700', margin: '0' },
   contentGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' },
@@ -606,10 +606,10 @@ const styles = {
   logoSub: { color: '#bbb', fontSize: '13px', margin: '3px 0 0 0' },
   nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto' },
   navItem: { backgroundColor: 'transparent', border: 'none', color: '#bbb', padding: '13px 20px', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
-  navItemActive: { backgroundColor: '#1e1e1e', color: '#ffffff', borderLeft: '3px solid #b22222', fontWeight: '600' },
+  navItemActive: { backgroundColor: '#252525', color: '#ffffff', borderLeft: '3px solid #b22222', fontWeight: '600' },
   badge: { backgroundColor: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
   settingsSection: { marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '8px' },
-  settingsSectionLabel: { color: '#666', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
+  settingsSectionLabel: { color: '#999', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
   sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #333' },
   userRole: { color: '#b22222', fontSize: '12px', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' },
   userEmail: { color: '#bbb', fontSize: '12px', margin: '0 0 10px 0', wordBreak: 'break-all' },

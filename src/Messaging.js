@@ -342,7 +342,7 @@ function Messaging() {
             {totalUnread > 0 && <span style={ms.unreadBadge}>{totalUnread}</span>}
           </p>
           <button onClick={() => { setShowNewChat(!showNewChat); setSelectedMembers([]); setGroupChatName(''); }}
-            style={{ background: showNewChat ? '#444' : '#b22222', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+            style={{ background: showNewChat ? '#999' : '#b22222', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
             {showNewChat ? 'Cancel' : '+ New Chat'}
           </button>
         </div>
@@ -350,7 +350,7 @@ function Messaging() {
         {/* New chat creator */}
         {showNewChat && (
           <div style={ms.newChatPanel}>
-            <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 8px 0' }}>Select people to message:</p>
+            <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 8px 0' }}>Select people to message:</p>
 
             <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: '10px' }}>
               {staffList.filter(s => s.id !== user.id).map(s => {
@@ -358,15 +358,15 @@ function Messaging() {
                 return (
                   <div key={s.id} onClick={() => toggleMember(s)}
                     style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#1e3a2f' : 'transparent', marginBottom: '2px' }}
-                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#2a2a2a'; }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#333'; }}
                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#1e3a2f' : 'transparent'; }}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#4ade80' : '#444'}`, background: isSelected ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {isSelected && <span style={{ color: '#000', fontSize: '11px', fontWeight: '700' }}>✓</span>}
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#4ade80' : '#999'}`, background: isSelected ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {isSelected && <span style={{ color: '#000', fontSize: '13px', fontWeight: '700' }}>✓</span>}
                     </div>
                     <div style={ms.avatar}>{initials(s.full_name || s.email)}</div>
                     <div>
-                      <p style={{ color: '#fff', fontSize: '12px', margin: 0 }}>{s.full_name || s.email}</p>
-                      <p style={{ color: '#666', fontSize: '10px', margin: 0 }}>{(s.role || '').replace(/_/g, ' ')}</p>
+                      <p style={{ color: '#fff', fontSize: '13px', margin: 0 }}>{s.full_name || s.email}</p>
+                      <p style={{ color: '#999', fontSize: '12px', margin: 0 }}>{(s.role || '').replace(/_/g, ' ')}</p>
                     </div>
                   </div>
                 );
@@ -385,7 +385,7 @@ function Messaging() {
 
             {selectedMembers.length > 0 && (
               <div style={{ marginBottom: '8px' }}>
-                <p style={{ color: '#4ade80', fontSize: '11px', margin: '0 0 6px 0' }}>
+                <p style={{ color: '#4ade80', fontSize: '13px', margin: '0 0 6px 0' }}>
                   {selectedMembers.length === 1
                     ? `Direct message with ${selectedMembers[0].full_name || selectedMembers[0].email}`
                     : `Group chat with ${selectedMembers.length} people`}
@@ -394,14 +394,14 @@ function Messaging() {
             )}
 
             <button onClick={createChat} disabled={creatingChat || selectedMembers.length === 0}
-              style={{ width: '100%', background: selectedMembers.length > 0 ? '#b22222' : '#2a2a2a', border: 'none', color: selectedMembers.length > 0 ? '#fff' : '#555', padding: '8px', borderRadius: '8px', fontSize: '13px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
+              style={{ width: '100%', background: selectedMembers.length > 0 ? '#b22222' : '#333', border: 'none', color: selectedMembers.length > 0 ? '#fff' : '#bbb', padding: '8px', borderRadius: '8px', fontSize: '13px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
               {creatingChat ? 'Creating...' : selectedMembers.length > 1 ? 'Create Group Chat' : 'Start Conversation'}
             </button>
           </div>
         )}
 
         {loadingConvs ? (
-          <p style={{ color: '#666', fontSize: '13px', padding: '12px 16px' }}>Loading...</p>
+          <p style={{ color: '#999', fontSize: '13px', padding: '12px 16px' }}>Loading...</p>
         ) : (
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {/* Preset group chats */}
@@ -453,7 +453,7 @@ function Messaging() {
             )}
 
             {conversations.length === 0 && (
-              <p style={{ color: '#555', fontSize: '13px', padding: '12px 16px' }}>No conversations yet.</p>
+              <p style={{ color: '#bbb', fontSize: '13px', padding: '12px 16px' }}>No conversations yet.</p>
             )}
           </div>
         )}
@@ -465,7 +465,7 @@ function Messaging() {
           <div style={ms.emptyState}>
             <p style={{ fontSize: '32px', margin: '0 0 12px 0' }}>💬</p>
             <p style={{ color: '#fff', fontSize: '16px', fontWeight: '500', margin: '0 0 6px 0' }}>Select a conversation</p>
-            <p style={{ color: '#555', fontSize: '14px', margin: 0 }}>Choose a group chat or start a new conversation</p>
+            <p style={{ color: '#bbb', fontSize: '14px', margin: 0 }}>Choose a group chat or start a new conversation</p>
           </div>
         ) : (
           <>
@@ -476,16 +476,16 @@ function Messaging() {
                 </div>
                 <div>
                   <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>{getConvName(selectedConv)}</p>
-                  <p style={{ color: '#555', fontSize: '12px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
+                  <p style={{ color: '#bbb', fontSize: '13px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
                 </div>
               </div>
             </div>
 
             <div style={ms.messages}>
               {loadingMessages ? (
-                <p style={{ color: '#555', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>Loading messages...</p>
+                <p style={{ color: '#bbb', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>Loading messages...</p>
               ) : messages.length === 0 ? (
-                <p style={{ color: '#555', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
+                <p style={{ color: '#bbb', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
               ) : (
                 <>
                   {messages.map((msg, idx) => {
@@ -498,13 +498,13 @@ function Messaging() {
                     return (
                       <div key={msg.id} style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         {showSender && (
-                          <p style={{ color: '#888', fontSize: '11px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
+                          <p style={{ color: '#bbb', fontSize: '13px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
                         )}
-                        <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#2a2a2a', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                        <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
                           <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
                         </div>
                         {!isGrouped && (
-                          <p style={{ color: '#444', fontSize: '10px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>
+                          <p style={{ color: '#999', fontSize: '12px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>
                         )}
                       </div>
                     );
@@ -524,7 +524,7 @@ function Messaging() {
                 style={ms.input}
               />
               <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-                style={{ background: newMessage.trim() ? '#b22222' : '#2a2a2a', border: 'none', color: newMessage.trim() ? '#fff' : '#555', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+                style={{ background: newMessage.trim() ? '#b22222' : '#333', border: 'none', color: newMessage.trim() ? '#fff' : '#bbb', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
                 Send
               </button>
             </div>
@@ -538,7 +538,7 @@ function Messaging() {
 function ConvItem({ selected, onClick, name, preview, unread, isGroup }) {
   return (
     <div onClick={onClick}
-      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#1e1e1e' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer' }}
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#252525' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer' }}
       onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#1a1a1a'; }}
       onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent'; }}>
       <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: isGroup ? '#1e2d3a' : '#2d1e3a', color: isGroup ? '#60a5fa' : '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isGroup ? '14px' : '13px', fontWeight: '600', flexShrink: 0 }}>
@@ -547,9 +547,9 @@ function ConvItem({ selected, onClick, name, preview, unread, isGroup }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <p style={{ color: unread > 0 ? '#fff' : '#ccc', fontSize: '13px', fontWeight: unread > 0 ? '600' : '400', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-          {unread > 0 && <span style={{ background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '10px', fontWeight: '700', flexShrink: 0, marginLeft: '4px' }}>{unread}</span>}
+          {unread > 0 && <span style={{ background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '12px', fontWeight: '700', flexShrink: 0, marginLeft: '4px' }}>{unread}</span>}
         </div>
-        <p style={{ color: '#555', fontSize: '11px', margin: '1px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</p>
+        <p style={{ color: '#bbb', fontSize: '13px', margin: '1px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</p>
       </div>
     </div>
   );
@@ -562,16 +562,16 @@ const ms = {
   sidebar: { width: '280px', borderRight: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#111' },
   sidebarHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 14px', borderBottom: '1px solid #2a2a2a' },
   sidebarTitle: { color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' },
-  unreadBadge: { background: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
-  convSectionLabel: { color: '#555', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 14px 4px 14px', margin: 0 },
+  unreadBadge: { background: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '13px', fontWeight: '700' },
+  convSectionLabel: { color: '#bbb', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 14px 4px 14px', margin: 0 },
   newChatPanel: { padding: '12px 14px', borderBottom: '1px solid #2a2a2a', background: '#1a1a1a' },
   chatArea: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#1a1a1a' },
   chatHeader: { padding: '14px 20px', borderBottom: '1px solid #2a2a2a', background: '#111', flexShrink: 0 },
   messages: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column' },
   inputArea: { display: 'flex', gap: '10px', padding: '14px 20px', borderTop: '1px solid #2a2a2a', background: '#111', flexShrink: 0 },
-  input: { flex: 1, background: '#2a2a2a', border: '1px solid #444', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+  input: { flex: 1, background: '#333', border: '1px solid #444', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' },
   emptyState: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
-  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', flexShrink: 0 },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '600', flexShrink: 0 },
 };
 
 export default Messaging;

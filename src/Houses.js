@@ -29,7 +29,7 @@ function HouseWeeklyReflectionForm({ entryForm, setEntryForm }) {
         <label style={s.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
         <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
           onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#555', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#bbb', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
       </div>
@@ -59,14 +59,14 @@ function HouseWeeklyReflectionCard({ entry }) {
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#555' }}>Mood:</span>
-          <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: '#3a2d1e', color: '#fb923c', fontWeight: '500' }}>{data.mood}/10</span>
+          <span style={{ fontSize: '13px', color: '#bbb' }}>Mood:</span>
+          <span style={{ fontSize: '13px', padding: '2px 8px', borderRadius: '20px', background: '#3a2d1e', color: '#fb923c', fontWeight: '500' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
-      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
-      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
-      {entry.notes && <div><p style={{ fontSize: '11px', color: '#555', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -339,7 +339,7 @@ function Houses({ onOpenClient }) {
     if (type === 'Event Attendance') return '#378ADD';
     if (type === 'General Note') return '#f59e0b';
     if (type === 'Weekly Reflection') return '#a78bfa';
-    return '#888';
+    return '#bbb';
   };
 
   const severityColor = (sv) => {
@@ -351,7 +351,7 @@ function Houses({ onOpenClient }) {
   const statusColor = (st) => {
     if (st === 'Active') return { bg: '#2d1e3a', color: '#c084fc' };
     if (st === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
-    return { bg: '#2a2a2a', color: '#aaa' };
+    return { bg: '#333', color: '#aaa' };
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -365,9 +365,9 @@ function Houses({ onOpenClient }) {
       <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '12px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          <span style={{ fontSize: '13px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
   };
@@ -392,10 +392,10 @@ function Houses({ onOpenClient }) {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {lastRefreshed && (
-            <span style={{ fontSize: '11px', color: '#555' }}>{formatRefreshed()}</span>
+            <span style={{ fontSize: '13px', color: '#bbb' }}>{formatRefreshed()}</span>
           )}
           <button onClick={() => loadAllData(true)} disabled={refreshing}
-            style={{ background: 'transparent', border: '1px solid #444', color: refreshing ? '#555' : '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '12px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #444', color: refreshing ? '#bbb' : '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '13px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
             {refreshing ? '↻ Refreshing...' : '↻ Refresh'}
           </button>
           <div style={s.viewToggle}>
@@ -424,10 +424,10 @@ function Houses({ onOpenClient }) {
         </div>
       )}
 
-      {loading ? <p style={{ color: '#888' }}>Loading...</p> : (
+      {loading ? <p style={{ color: '#bbb' }}>Loading...</p> : (
         <>
           {mainView === 'houses' && (
-            houses.length === 0 ? <p style={{ color: '#888' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
+            houses.length === 0 ? <p style={{ color: '#bbb' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
               <div style={s.houseGrid}>
                 {houses.map(house => (
                   <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
@@ -482,7 +482,7 @@ function Houses({ onOpenClient }) {
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div>
                               <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
-                              <p style={{ color: '#666', fontSize: '11px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
+                              <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
                           </div>
                           <span style={{ flex: 1 }}>
@@ -499,13 +499,13 @@ function Houses({ onOpenClient }) {
                                   onBlur={() => saveNotes(r.id)}
                                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes(r.id); } }}
                                   rows={2} placeholder="Add a note..."
-                                  style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '12px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
-                                <span style={{ color: '#555', fontSize: '10px' }}>Enter to save · Shift+Enter for new line</span>
+                                  style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '13px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
+                                <span style={{ color: '#bbb', fontSize: '12px' }}>Enter to save · Shift+Enter for new line</span>
                               </div>
                             ) : (
                               <div onClick={e => { e.stopPropagation(); startEditingNotes(r.id, r.staff_notes); }}
-                                style={{ color: r.staff_notes ? '#aaa' : '#444', fontSize: '12px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = '#444'}
+                                style={{ color: r.staff_notes ? '#aaa' : '#999', fontSize: '13px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
                                 {r.staff_notes || <span style={{ fontStyle: 'italic' }}>Click to add notes...</span>}
                               </div>
@@ -517,7 +517,7 @@ function Houses({ onOpenClient }) {
                   </div>
                 );
               })}
-              {allResidents.length === 0 && <p style={{ color: '#888' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
+              {allResidents.length === 0 && <p style={{ color: '#bbb' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
             </div>
           )}
         </>
@@ -536,7 +536,7 @@ function Houses({ onOpenClient }) {
                   <span style={{ ...s.typeBadge, background: '#2d1e3a', color: '#c084fc' }}>{selected.occupied_beds || 0} active</span>
                   <span style={{ ...s.typeBadge, background: '#2d2d1e', color: '#facc15' }}>{selected.pending_count || 0} pending</span>
                   <span style={{ ...s.typeBadge, background: '#1e3a2f', color: '#4ade80' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
-                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#2a2a2a', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
+                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#333', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
                 </div>
               </div>
               <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
@@ -554,7 +554,7 @@ function Houses({ onOpenClient }) {
               {activeTab === 'residents' && (
                 <>
                   <p style={s.sectionLabel}>Current residents ({residents.length})</p>
-                  {residents.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No current residents.</p> : (
+                  {residents.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No current residents.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
                         <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }} onClick={() => { setSelected(null); openClientProfile(r); }}>
@@ -570,8 +570,8 @@ function Houses({ onOpenClient }) {
                             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }} onClick={e => e.stopPropagation()}>
                               {r.expected_move_in_date && (
                                 <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#2d2d1e', borderRadius: '6px', border: '1px solid #3a3a1e' }}>
-                                  <span style={{ fontSize: '11px', color: '#888' }}>Expected move-in: </span>
-                                  <span style={{ fontSize: '12px', color: '#facc15', fontWeight: '600' }}>
+                                  <span style={{ fontSize: '13px', color: '#bbb' }}>Expected move-in: </span>
+                                  <span style={{ fontSize: '13px', color: '#facc15', fontWeight: '600' }}>
                                     {new Date(r.expected_move_in_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                   </span>
                                 </div>
@@ -642,7 +642,7 @@ function Houses({ onOpenClient }) {
                               <span style={{ color: '#ddd', fontSize: '13px' }}>{r.full_name}</span>
                               <div style={{ display: 'flex', gap: '12px' }}>
                                 {['Here', 'Not Here'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '12px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
                                     <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -659,7 +659,7 @@ function Houses({ onOpenClient }) {
                               <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>{r.full_name}</p>
                               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '12px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
                                     <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -694,7 +694,7 @@ function Houses({ onOpenClient }) {
                       <button onClick={saveEntry} style={s.saveBtn}>Save Entry</button>
                     </div>
                   )}
-                  {timeline.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries yet.</p> : (
+                  {timeline.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No timeline entries yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {timeline.map(entry => (
                         <div key={entry.id} style={s.timelineCard}>
@@ -706,8 +706,8 @@ function Houses({ onOpenClient }) {
                               {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ color: '#555', fontSize: '11px' }}>{formatDate(entry.created_at)}</span>
-                              <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '11px' }}>×</button>
+                              <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDate(entry.created_at)}</span>
+                              <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '13px' }}>×</button>
                             </div>
                           </div>
                           {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
@@ -717,8 +717,8 @@ function Houses({ onOpenClient }) {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
                                     <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#222', borderRadius: '4px' }}>
-                                      <span style={{ color: '#aaa', fontSize: '12px' }}>{r.name}</span>
-                                      <span style={{ fontSize: '11px', color: r.value === 'Here' ? '#4ade80' : '#f87171', fontWeight: '600' }}>{r.value}</span>
+                                      <span style={{ color: '#aaa', fontSize: '13px' }}>{r.name}</span>
+                                      <span style={{ fontSize: '13px', color: r.value === 'Here' ? '#4ade80' : '#f87171', fontWeight: '600' }}>{r.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -727,8 +727,8 @@ function Houses({ onOpenClient }) {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
                                     <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#222', borderRadius: '4px' }}>
-                                      <span style={{ color: '#aaa', fontSize: '12px' }}>{r.name}</span>
-                                      <span style={{ fontSize: '11px', fontWeight: '600', color: r.value === 'Negative' ? '#4ade80' : r.value === 'Positive' ? '#f87171' : '#fb923c' }}>{r.value}</span>
+                                      <span style={{ color: '#aaa', fontSize: '13px' }}>{r.name}</span>
+                                      <span style={{ fontSize: '13px', fontWeight: '600', color: r.value === 'Negative' ? '#4ade80' : r.value === 'Positive' ? '#f87171' : '#fb923c' }}>{r.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -736,7 +736,7 @@ function Houses({ onOpenClient }) {
                               {entry.entry_type === 'Event Attendance' && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value === 'Attended').map(r => (
-                                    <span key={r.id} style={{ ...s.typeBadge, background: '#1e2d3a', color: '#60a5fa', fontSize: '11px' }}>{r.name}</span>
+                                    <span key={r.id} style={{ ...s.typeBadge, background: '#1e2d3a', color: '#60a5fa', fontSize: '13px' }}>{r.name}</span>
                                   ))}
                                 </div>
                               )}
@@ -747,7 +747,7 @@ function Houses({ onOpenClient }) {
                             : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                           }
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                            <span style={{ color: '#555', fontSize: '12px' }}>By {entry.author}</span>
+                            <span style={{ color: '#bbb', fontSize: '13px' }}>By {entry.author}</span>
                           </div>
                         </div>
                       ))}
@@ -772,13 +772,13 @@ function Houses({ onOpenClient }) {
                       <button onClick={addRoom} style={s.saveBtn}>Save Room</button>
                     </div>
                   )}
-                  {rooms.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No rooms added yet.</p> : (
+                  {rooms.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No rooms added yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {rooms.map(r => (
                         <div key={r.id} style={s.roomRow}>
                           <div style={{ flex: 1 }}>
                             <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
-                            <p style={{ color: '#666', fontSize: '12px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
+                            <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
                           </div>
                           <button onClick={() => deleteRoom(r.id)} style={s.deleteBtn}>Remove</button>
                         </div>
@@ -795,7 +795,7 @@ function Houses({ onOpenClient }) {
               {activeTab === 'forms' && (
                 <div>
                   <p style={s.sectionLabel}>Forms</p>
-                  <p style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>Forms submitted by residents of {selected.name} will appear here once the forms system is built out.</p>
+                  <p style={{ color: '#999', fontSize: '14px', lineHeight: '1.6' }}>Forms submitted by residents of {selected.name} will appear here once the forms system is built out.</p>
                 </div>
               )}
             </div>
@@ -809,7 +809,7 @@ function Houses({ onOpenClient }) {
           <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
               <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>Confirm Move-In</h3>
-              <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
+              <p style={{ color: '#999', fontSize: '13px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
               <div style={{ marginBottom: '16px' }}>
@@ -820,8 +820,8 @@ function Houses({ onOpenClient }) {
                   <option value="Houseperson">Houseperson — $110/week</option>
                 </select>
               </div>
-              <div style={{ background: '#2a2a2a', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 6px 0' }}>This will:</p>
+              <div style={{ background: '#333', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
                 <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
                 <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
                 <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
@@ -851,62 +851,62 @@ const s = {
   page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#666', fontSize: '14px', margin: '4px 0 0 0' },
+  sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
   addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
-  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' },
-  addForm: { background: '#2a2a2a', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #333' },
+  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
+  addForm: { background: '#333', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #333' },
   miniForm: { background: '#222', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #333' },
   addTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
   label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
   input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
-  deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
-  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' },
-  viewToggle: { display: 'flex', background: '#2a2a2a', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '13px' },
-  toggleBtnActive: { background: '#444', color: '#fff' },
+  deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
+  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
+  viewToggle: { display: 'flex', background: '#333', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#bbb', cursor: 'pointer', fontSize: '13px' },
+  toggleBtnActive: { background: '#999', color: '#fff' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  houseCard: { background: '#2a2a2a', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333', cursor: 'pointer' },
+  houseCard: { background: '#333', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
   houseName: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' },
-  houseAddress: { color: '#666', fontSize: '12px', margin: 0 },
-  typeBadge: { fontSize: '11px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
+  houseAddress: { color: '#999', fontSize: '13px', margin: 0 },
+  typeBadge: { fontSize: '13px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
   bedBar: { height: '4px', background: '#333', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
   bedBarFill: (house) => ({ height: '100%', width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`, background: '#c084fc', borderRadius: '2px' }),
   houseStats: { display: 'flex', gap: '16px', marginBottom: '10px' },
   statItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   statNum: { fontSize: '18px', fontWeight: '700', color: '#fff' },
-  statLbl: { fontSize: '11px', color: '#666' },
-  manager: { color: '#888', fontSize: '12px', margin: 0 },
+  statLbl: { fontSize: '13px', color: '#999' },
+  manager: { color: '#bbb', fontSize: '13px', margin: 0 },
   houseGroup: { marginBottom: '32px' },
   houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #333' },
   houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  houseGroupCount: { fontSize: '12px', color: '#666', marginLeft: 'auto' },
-  residentTable: { background: '#2a2a2a', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' },
-  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#222', fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
+  houseGroupCount: { fontSize: '13px', color: '#999', marginLeft: 'auto' },
+  residentTable: { background: '#333', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' },
+  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#222', fontSize: '13px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
   residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #333', gap: '12px' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
   modal: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '680px', overflow: 'hidden' },
   modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #333' },
   modalName: { fontSize: '20px', fontWeight: '600', margin: 0, color: '#fff' },
-  modalSub: { fontSize: '13px', color: '#666', margin: '4px 0 0 0' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#888', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  modalSub: { fontSize: '13px', color: '#999', margin: '4px 0 0 0' },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
   tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px' },
-  tab: { padding: '10px 16px', fontSize: '13px', cursor: 'pointer', color: '#666', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
+  tab: { padding: '10px 16px', fontSize: '13px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
   tabActive: { color: '#fff', borderBottomColor: '#fff' },
   modalBody: { padding: '20px 24px', maxHeight: '520px', overflowY: 'auto' },
-  sectionLabel: { fontSize: '11px', fontWeight: '500', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  residentCard: { background: '#2a2a2a', borderRadius: '10px', padding: '14px 16px', border: '1px solid #333' },
+  sectionLabel: { fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
+  residentCard: { background: '#333', borderRadius: '10px', padding: '14px 16px', border: '1px solid #333' },
   resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#2d1e3a', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '500', flexShrink: 0 },
   resName: { color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 },
-  resMeta: { color: '#666', fontSize: '12px', margin: '2px 0 0 0' },
+  resMeta: { color: '#999', fontSize: '13px', margin: '2px 0 0 0' },
   resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '10px' },
   resDetailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  resDetailLabel: { fontSize: '10px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  resDetailLabel: { fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' },
   resDetailVal: { fontSize: '13px', color: '#ddd' },
-  roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#2a2a2a', borderRadius: '10px' },
-  timelineCard: { background: '#2a2a2a', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
+  roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#333', borderRadius: '10px' },
+  timelineCard: { background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
 };
 
 export default Houses;
