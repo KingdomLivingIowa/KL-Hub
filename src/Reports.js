@@ -250,10 +250,10 @@ export default function Reports() {
   });
 
   const tabBtn = (id) => ({
-    padding: '8px 18px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 13,
+    padding: '9px 20px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14,
     background: activeTab === id ? '#2a2a2a' : 'transparent',
     color: activeTab === id ? '#fff' : '#aaa',
-    fontWeight: activeTab === id ? 600 : 400, fontSize: 14,
+    fontWeight: activeTab === id ? 600 : 400,
   });
 
   if (loading) return <div style={{ padding: 32, color: '#555', fontSize: 14 }}>Loading reports...</div>;
