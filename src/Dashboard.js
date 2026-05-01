@@ -615,7 +615,7 @@ const styles = {
   userEmail: { color: '#bbb', fontSize: '12px', margin: '0 0 10px 0', wordBreak: 'break-all' },
   signOutBtn: { backgroundColor: 'transparent', border: '1px solid #555', color: '#bbb', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
   main: { marginLeft: '230px', flex: 1, display: 'flex', flexDirection: 'column' },
-  header: { backgroundColor: '#111111', borderBottom: '1px solid #333', padding: '22px 36px' },
+  header: { backgroundColor: '#111111', borderBottom: '2px solid #7a1515', padding: '22px 36px' },
   pageTitle: { color: '#ffffff', fontSize: '26px', fontWeight: '700', margin: '0' },
   content: { padding: '36px' },
 };

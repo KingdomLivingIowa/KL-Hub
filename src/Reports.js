@@ -105,7 +105,7 @@ function YearTable({ title, columns, rows }) {
           {columns.map(c => <span key={c} style={{ fontSize: 12, color: '#bbb', fontWeight: 600, textAlign: 'right' }}>{c}</span>)}
         </div>
         {rows.map((row, i) => (
-          <div key={row.year} style={{ display: 'grid', gridTemplateColumns: `1fr ${columns.map(() => '90px').join(' ')}`, padding: '11px 16px', gap: 8, borderTop: '1px solid #333', background: i === 0 ? '#2e2e2e' : 'transparent' }}>
+          <div key={row.year} style={{ display: 'grid', gridTemplateColumns: `1fr ${columns.map(() => '90px').join(' ')}`, padding: '11px 16px', gap: 8, borderTop: '1px solid #333', background: i === 0 ? '#2a1a1a' : 'transparent' }}>
             <span style={{ fontSize: 14, color: i === 0 ? '#fff' : '#aaa', fontWeight: i === 0 ? 600 : 400 }}>{row.year}</span>
             {row.values.map((v, j) => (
               <span key={j} style={{ fontSize: 14, color: i === 0 ? '#fff' : '#bbb', fontWeight: i === 0 ? 600 : 400, textAlign: 'right' }}>{v ?? '—'}</span>
