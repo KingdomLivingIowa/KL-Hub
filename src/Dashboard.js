@@ -10,6 +10,7 @@ import UserManagement from './UserManagement';
 import Payments from './Payments';
 import Messaging from './Messaging';
 import Reports from './Reports';
+import Calendars, { NotificationsBell } from './Calendars';
 
 const WAITING_LISTS = [
   'DOC Men', 'Community Men', 'Treatment Men',
@@ -457,6 +458,7 @@ function DashboardInner({ user }) {
     canSeeReports,
     canSeeUserManagement,
     isAdmin,
+    user: ctxUser,
   } = useUser();
 
   useEffect(() => {
@@ -484,6 +486,7 @@ function DashboardInner({ user }) {
     { id: 'messages', label: 'Messages', show: true },
     { id: 'payments', label: 'Payments', show: hasFullAccess },
     { id: 'reports', label: 'Reports', show: canSeeReports },
+    { id: 'calendars', label: 'Calendars', show: true },
   ].filter(item => item.show);
 
   const settingsItems = [
@@ -550,6 +553,7 @@ function DashboardInner({ user }) {
       <div style={styles.main}>
         <div style={styles.header}>
           <h1 style={styles.pageTitle}>{getPageTitle()}</h1>
+          <NotificationsBell userId={user?.id} />
         </div>
         <div style={styles.content}>
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
@@ -572,6 +576,7 @@ function DashboardInner({ user }) {
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'reports' && canSeeReports && <Reports />}
+          {activePage === 'calendars' && <Calendars />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
       </div>
