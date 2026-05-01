@@ -61,9 +61,9 @@ function getMonthBounds(ym) {
 function StatCard({ label, value, sub, accent }) {
   return (
     <div style={{ background: '#2a2a2a', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent || '#b22222'}`, minWidth: 0 }}>
-      <div style={{ fontSize: 12, color: '#888', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontSize: 28, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{value ?? '—'}</div>
-      {sub && <div style={{ fontSize: 12, color: '#555', marginTop: 4 }}>{sub}</div>}
+      <div style={{ fontSize: 13, color: '#aaa', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      <div style={{ fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1.1 }}>{value ?? '—'}</div>
+      {sub && <div style={{ fontSize: 13, color: '#777', marginTop: 5 }}>{sub}</div>}
     </div>
   );
 }
@@ -71,7 +71,7 @@ function StatCard({ label, value, sub, accent }) {
 function Section({ title, children }) {
   return (
     <div style={{ background: '#2a2a2a', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>{title}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>{title}</div>
       {children}
     </div>
   );
@@ -80,8 +80,8 @@ function Section({ title, children }) {
 function Row({ label, value }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #333' }}>
-      <span style={{ fontSize: 14, color: '#aaa' }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 500, color: '#fff' }}>{value ?? '—'}</span>
+      <span style={{ fontSize: 15, color: '#ccc' }}>{label}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{value ?? '—'}</span>
     </div>
   );
 }
@@ -89,8 +89,8 @@ function Row({ label, value }) {
 function MetricCard({ label, value }) {
   return (
     <div style={{ background: '#1a1a1a', borderRadius: 10, padding: '14px 16px' }}>
-      <div style={{ fontSize: 12, color: '#888', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 600, color: '#fff' }}>{value ?? '—'}</div>
+      <div style={{ fontSize: 13, color: '#aaa', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{value ?? '—'}</div>
     </div>
   );
 }
@@ -252,8 +252,8 @@ export default function Reports() {
   const tabBtn = (id) => ({
     padding: '8px 18px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 13,
     background: activeTab === id ? '#2a2a2a' : 'transparent',
-    color: activeTab === id ? '#fff' : '#888',
-    fontWeight: activeTab === id ? 600 : 400,
+    color: activeTab === id ? '#fff' : '#aaa',
+    fontWeight: activeTab === id ? 600 : 400, fontSize: 14,
   });
 
   if (loading) return <div style={{ padding: 32, color: '#555', fontSize: 14 }}>Loading reports...</div>;

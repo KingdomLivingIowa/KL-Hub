@@ -65,7 +65,7 @@ const CUSTOM_RECURRENCE_OPTIONS = [
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const s = {
-  tabBtn: (active) => ({ padding: '8px 18px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 13, background: active ? '#2a2a2a' : 'transparent', color: active ? '#fff' : '#888', fontWeight: active ? 600 : 400 }),
+  tabBtn: (active) => ({ padding: '9px 20px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14, background: active ? '#2a2a2a' : 'transparent', color: active ? '#fff' : '#aaa', fontWeight: active ? 600 : 400 }),
   card: { background: '#2a2a2a', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 },
   label: { fontSize: 12, color: '#888', marginBottom: 5, display: 'block' },
   input: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
@@ -88,11 +88,11 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <button onClick={onPrev} style={s.ghost}>‹</button>
-        <span style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>{fmtMonthYear(year, month)}</span>
+        <span style={{ fontSize: 20, fontWeight: 700, color: '#fff' }}>{fmtMonthYear(year, month)}</span>
         <button onClick={onNext} style={s.ghost}>›</button>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
-        {DAYS.map(d => <div key={d} style={{ fontSize: 11, color: '#555', textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
+        {DAYS.map(d => <div key={d} style={{ fontSize: 13, color: '#888', textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((day, i) => {
@@ -102,12 +102,12 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
           const isToday = ymd === today;
           return (
             <div key={ymd} onClick={() => onDayClick && onDayClick(ymd, events)}
-              style={{ minHeight: 64, background: isToday ? '#2e1a1a' : '#1e1e1e', borderRadius: 8, padding: '6px 8px', cursor: onDayClick ? 'pointer' : 'default', border: isToday ? '1px solid #b22222' : '1px solid #2a2a2a' }}>
-              <div style={{ fontSize: 12, color: isToday ? '#b22222' : '#666', fontWeight: isToday ? 700 : 400, marginBottom: 4 }}>{day}</div>
+              style={{ minHeight: 80, background: isToday ? '#2e1a1a' : '#222', borderRadius: 8, padding: '8px 10px', cursor: onDayClick ? 'pointer' : 'default', border: isToday ? '1px solid #b22222' : '1px solid #333' }}>
+              <div style={{ fontSize: 14, color: isToday ? '#e05555' : '#bbb', fontWeight: isToday ? 700 : 500, marginBottom: 5 }}>{day}</div>
               {events.slice(0, 3).map((ev, j) => renderDot ? renderDot(ev, j) : (
-                <div key={j} style={{ fontSize: 10, color: '#fff', background: ev.color || '#b22222', borderRadius: 3, padding: '1px 4px', marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{ev.label}</div>
+                <div key={j} style={{ fontSize: 11, color: '#fff', background: ev.color || '#b22222', borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
               ))}
-              {events.length > 3 && <div style={{ fontSize: 10, color: '#666' }}>+{events.length - 3} more</div>}
+              {events.length > 3 && <div style={{ fontSize: 11, color: '#888' }}>+{events.length - 3} more</div>}
             </div>
           );
         })}
@@ -122,7 +122,7 @@ function Modal({ title, onClose, children }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: '#1e1e1e', borderRadius: 14, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <span style={{ fontSize: 16, fontWeight: 600, color: '#fff' }}>{title}</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{title}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 20 }}>×</button>
         </div>
         {children}
@@ -314,7 +314,7 @@ function OrgEventsCalendar() {
           onPrev={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
           onNext={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
           renderDot={(ev, j) => (
-            <div key={j} style={{ fontSize: 10, color: '#fff', background: SCOPE_COLORS[ev.scope] || '#b22222', borderRadius: 3, padding: '1px 4px', marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{ev.label}</div>
+            <div key={j} style={{ fontSize: 11, color: '#fff', background: SCOPE_COLORS[ev.scope] || '#b22222', borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
           )}
         />
       </div>
@@ -527,7 +527,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
         onPrev={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
         onNext={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
         renderDot={(ev, j) => (
-          <div key={j} style={{ fontSize: 10, color: '#fff', background: ev.color, borderRadius: 3, padding: '1px 4px', marginBottom: 2, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{ev.label}</div>
+          <div key={j} style={{ fontSize: 11, color: '#fff', background: ev.color, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
         )}
       />
 
