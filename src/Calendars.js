@@ -373,10 +373,10 @@ export function HouseCalendarTab({ houseId, houseType }) {
   }, [houseId]);
 
   const fetchOrgEvents = useCallback(async () => {
-    // Pull org-wide events that match this house type (all or matching gender)
-    const scope = houseType === 'Women' ? ['all', 'womens'] : ['all', 'mens'];
-    const { data } = await supabase.from('house_events').select('*').is('house_id', null).in('scope', scope).order('event_date');
-    setOrgEvents(data || []);
+    // Pull all org-wide events (house_id is null), then filter by scope client-side
+    const { data } = await supabase.from('house_events').select('*').is('house_id', null).order('event_date');
+    const matchingScopes = houseType === 'Women' ? ['all', 'womens', null] : ['all', 'mens', null];
+    setOrgEvents((data || []).filter(ev => matchingScopes.includes(ev.scope)));
   }, [houseType]);
 
   useEffect(() => { fetchEvents(); fetchOrgEvents(); }, [fetchEvents, fetchOrgEvents]);
@@ -422,7 +422,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
     await supabase.from('house_events').insert([{
       title: form.title, description: form.description || null,
       event_date: form.event_date, start_time: form.start_time || null, end_time: form.end_time || null,
-      house_id: houseId, scope: null, is_recurring: form.is_recurring,
+      house_id: houseId, is_recurring: form.is_recurring,
       recurrence: form.is_recurring ? form.recurrence : 'none', created_by: user?.id,
     }]);
     setSaving(false);
