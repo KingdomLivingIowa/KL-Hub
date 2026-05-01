@@ -21,8 +21,12 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 function getNthWeekdayLabel(date) {
   const d = new Date(date + 'T00:00:00');
   const dayName = DAY_NAMES[d.getDay()];
-  const nth = Math.ceil(d.getDate() / 7);
-  const nthLabel = ['','first','second','third','fourth','fifth'][nth] || 'last';
+  // Calculate true nth: which occurrence of this weekday is it in the month?
+  let count = 0;
+  for (let i = 1; i <= d.getDate(); i++) {
+    if (new Date(d.getFullYear(), d.getMonth(), i).getDay() === d.getDay()) count++;
+  }
+  const nthLabel = ['','first','second','third','fourth','fifth'][count] || 'last';
   return { value: `monthly_first_${dayName.toLowerCase()}`, label: `Monthly on the ${nthLabel} ${dayName}` };
 }
 
@@ -216,7 +220,7 @@ function OrgEventsCalendar() {
     if (!ev.is_recurring || ev.recurrence === 'none') {
       if (ev.event_date) addToDate(ev.event_date);
     } else {
-      const originDate = new Date(ev.event_date);
+      const originDate = new Date(ev.event_date + 'T00:00:00');
       for (let d = 1; d <= daysInMonth; d++) {
         const date = new Date(year, month, d);
         const ymd = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
