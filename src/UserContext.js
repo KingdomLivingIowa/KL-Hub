@@ -5,6 +5,7 @@ const UserContext = createContext(null);
 
 export function UserProvider({ user, children }) {
   const [role, setRole] = useState(null);
+  const [canManageOrgEvents, setCanManageOrgEvents] = useState(false);
   const [assignedHouseIds, setAssignedHouseIds] = useState([]);
   const [loadingRole, setLoadingRole] = useState(true);
 
@@ -19,12 +20,13 @@ export function UserProvider({ user, children }) {
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('role, can_manage_org_events')
       .eq('id', user.id)
       .single();
 
     if (profile) {
       setRole(profile.role);
+      setCanManageOrgEvents(profile.can_manage_org_events || false);
 
       // Only fetch house assignments for house manager roles
       if (profile.role === 'house_manager' || profile.role === 'head_house_manager') {
@@ -56,6 +58,7 @@ export function UserProvider({ user, children }) {
   const canSeeIntake = hasFullAccess;
   const canSeeReports = hasFullAccess;
   const canSeeUserManagement = isAdmin;
+  const canAddOrgEvents = isAdmin || isUpperManagement || canManageOrgEvents;
   const canSeeHouses = true; // all roles
   const canSeeClients = true; // all roles, but filtered for house managers
 
@@ -76,6 +79,7 @@ export function UserProvider({ user, children }) {
       canSeeIntake,
       canSeeReports,
       canSeeUserManagement,
+      canAddOrgEvents,
       canSeeHouses,
       canSeeClients,
     }}>

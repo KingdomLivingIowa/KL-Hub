@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
+import { HouseCalendarTab } from './Calendars';
 
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection'];
 
@@ -542,7 +543,7 @@ function Houses({ onOpenClient }) {
             </div>
 
             <div style={s.tabs}>
-              {['residents', 'timeline', 'rooms', 'forms'].map(t => (
+              {['residents', 'timeline', 'rooms', 'calendar', 'forms'].map(t => (
                 <button key={t} onClick={() => setActiveTab(t)} style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -785,6 +786,10 @@ function Houses({ onOpenClient }) {
                     </div>
                   )}
                 </>
+              )}
+
+              {activeTab === 'calendar' && (
+                <HouseCalendarTab houseId={selected.id} houseType={selected.type} />
               )}
 
               {activeTab === 'forms' && (
