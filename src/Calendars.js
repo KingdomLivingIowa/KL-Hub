@@ -319,7 +319,7 @@ function OrgEventsCalendar() {
 // ═══════════════════════════════════════════════════════════════════════════════
 export function HouseCalendarTab({ houseId, houseType }) {
   const { user, isHouseManagerRole, assignedHouseIds, hasFullAccess } = useUser();
-  const canEdit = hasFullAccess || isHouseManagerRole && assignedHouseIds.includes(houseId);
+  const canEdit = hasFullAccess || (isHouseManagerRole && assignedHouseIds.includes(houseId));
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
   const [events, setEvents] = useState([]);
