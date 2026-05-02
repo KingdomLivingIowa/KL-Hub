@@ -87,17 +87,19 @@ function InvitePortalButton({ client }) {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Invite failed');
       setStatus('sent');
-      // After invite, add to house chat if client is in a house
-      if (client.house_id) {
-        // Short delay to let auth account propagate
-        setTimeout(async () => {
-          const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
-          if (conv && result.user?.id) {
-            await supabase.from('conversation_members').upsert({
-              conversation_id: conv.id, user_id: result.user.id, last_read_at: new Date().toISOString(),
-            }, { onConflict: 'conversation_id,user_id' });
-          }
-        }, 2000);
+      // Save auth_user_id to clients table and add to house chat
+      if (result.user?.id) {
+        await supabase.from('clients').update({ auth_user_id: result.user.id }).eq('id', client.id);
+        if (client.house_id) {
+          setTimeout(async () => {
+            const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
+            if (conv) {
+              await supabase.from('conversation_members').upsert({
+                conversation_id: conv.id, user_id: result.user.id, last_read_at: new Date().toISOString(),
+              }, { onConflict: 'conversation_id,user_id' });
+            }
+          }, 2000);
+        }
       }
     } catch (err) {
       console.error(err);

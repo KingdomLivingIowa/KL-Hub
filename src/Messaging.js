@@ -35,6 +35,16 @@ function Messaging() {
     setStaffList(data || []);
     const map = {};
     (data || []).forEach(s => { map[s.id] = s; });
+
+    // Also load clients so house chat sender names resolve correctly
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('id, full_name, email, auth_user_id')
+      .not('auth_user_id', 'is', null);
+    (clientData || []).forEach(c => {
+      if (c.auth_user_id) map[c.auth_user_id] = { full_name: c.full_name, email: c.email, role: 'resident' };
+    });
+
     setMemberProfiles(map);
   }, []);
 
@@ -311,7 +321,9 @@ function Messaging() {
   const getSenderName = (senderId) => {
     if (senderId === user.id) return 'You';
     const profile = memberProfiles[senderId];
-    return profile?.full_name || profile?.email || 'Staff';
+    if (profile?.full_name) return profile.full_name;
+    if (profile?.email) return profile.email;
+    return profile?.role === 'resident' ? 'Resident' : 'Staff';
   };
 
   const formatTime = (d) => {
