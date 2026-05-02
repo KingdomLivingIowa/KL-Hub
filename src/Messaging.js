@@ -42,13 +42,16 @@ function Messaging() {
     if (!user?.id) return;
     setLoadingConvs(true);
 
-    // Auto-join all group chats
-    const { data: allGroups } = await supabase
+    // Auto-join only preset staff group chats (NOT house chats - those are managed separately)
+    const presetStaffNames = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
+    const { data: presetStaffGroups } = await supabase
       .from('conversations')
       .select('id, name, type')
-      .eq('type', 'group');
+      .eq('type', 'group')
+      .is('house_id', null)
+      .in('name', presetStaffNames);
 
-    for (const group of (allGroups || [])) {
+    for (const group of (presetStaffGroups || [])) {
       await supabase.from('conversation_members').upsert({
         conversation_id: group.id,
         user_id: user.id,
@@ -118,16 +121,18 @@ function Messaging() {
       return { ...conv, lastMessage: lastMsgs?.[0] || null, unread: unreadCount || 0 };
     }));
 
-    // Sort: preset groups first, then custom groups, then DMs by last message
+    // Sort: preset groups first, then house chats, then custom groups, then DMs
     const presetNames = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
     const presetGroups = convsWithMeta.filter(c => c.type === 'group' && presetNames.includes(c.name))
       .sort((a, b) => presetNames.indexOf(a.name) - presetNames.indexOf(b.name));
-    const customGroups = convsWithMeta.filter(c => c.type === 'group' && !presetNames.includes(c.name))
+    const houseChats = convsWithMeta.filter(c => c.house_id != null)
+      .sort((a, b) => a.name?.localeCompare(b.name || '') || 0);
+    const customGroups = convsWithMeta.filter(c => c.type === 'group' && !presetNames.includes(c.name) && c.house_id == null)
       .sort((a, b) => a.name?.localeCompare(b.name || '') || 0);
     const dms = convsWithMeta.filter(c => c.type === 'direct')
       .sort((a, b) => new Date(b.lastMessage?.created_at || b.created_at) - new Date(a.lastMessage?.created_at || a.created_at));
 
-    const sorted = [...presetGroups, ...customGroups, ...dms];
+    const sorted = [...presetGroups, ...houseChats, ...customGroups, ...dms];
 
     const unread = {};
     convsWithMeta.forEach(c => { unread[c.id] = c.unread; });
@@ -329,7 +334,8 @@ function Messaging() {
   const totalUnread = Object.values(unreadCounts).reduce((sum, n) => sum + n, 0);
   const presetNames = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
   const presetGroups = conversations.filter(c => c.type === 'group' && presetNames.includes(c.name));
-  const customGroups = conversations.filter(c => c.type === 'group' && !presetNames.includes(c.name));
+  const houseChats = conversations.filter(c => c.house_id != null);
+  const customGroups = conversations.filter(c => c.type === 'group' && !presetNames.includes(c.name) && c.house_id == null);
   const directChats = conversations.filter(c => c.type === 'direct');
 
   return (
@@ -420,6 +426,23 @@ function Messaging() {
               </>
             )}
 
+            {/* House chats */}
+            {houseChats.length > 0 && (
+              <>
+                <p style={{ ...ms.convSectionLabel, color: '#b22222' }}>House Chats</p>
+                {houseChats.map(conv => (
+                  <ConvItem key={conv.id}
+                    selected={selectedConv?.id === conv.id}
+                    onClick={() => setSelectedConv(conv)}
+                    name={conv.name}
+                    preview={formatPreview(conv)}
+                    unread={unreadCounts[conv.id] || 0}
+                    isGroup
+                    isHouseChat />
+                ))}
+              </>
+            )}
+
             {/* Custom group chats */}
             {customGroups.length > 0 && (
               <>
@@ -476,7 +499,7 @@ function Messaging() {
                 </div>
                 <div>
                   <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>{getConvName(selectedConv)}</p>
-                  <p style={{ color: '#bbb', fontSize: '13px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
+                  <p style={{ color: '#bbb', fontSize: '13px', margin: 0 }}>{selectedConv.house_id ? 'House chat' : selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
                 </div>
               </div>
             </div>
@@ -535,14 +558,16 @@ function Messaging() {
   );
 }
 
-function ConvItem({ selected, onClick, name, preview, unread, isGroup }) {
+function ConvItem({ selected, onClick, name, preview, unread, isGroup, isHouseChat }) {
+  const avatarBg = isHouseChat ? '#3a1a1a' : isGroup ? '#1e2d3a' : '#2d1e3a';
+  const avatarColor = isHouseChat ? '#e05555' : isGroup ? '#60a5fa' : '#c084fc';
   return (
     <div onClick={onClick}
       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#252525' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer' }}
       onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#1a1a1a'; }}
       onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent'; }}>
-      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: isGroup ? '#1e2d3a' : '#2d1e3a', color: isGroup ? '#60a5fa' : '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isGroup ? '14px' : '13px', fontWeight: '600', flexShrink: 0 }}>
-        {isGroup ? '#' : initials(name)}
+      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: avatarBg, color: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isGroup ? '14px' : '13px', fontWeight: '600', flexShrink: 0 }}>
+        {isHouseChat ? '🏠' : isGroup ? '#' : initials(name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

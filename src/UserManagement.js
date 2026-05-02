@@ -228,13 +228,31 @@ function UserManagement({ currentUser }) {
     fetchUsers();
   };
 
+  const addStaffToHouseChat = async (userId, houseId) => {
+    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
+    if (!conv) return;
+    await supabase.from('conversation_members').upsert({
+      conversation_id: conv.id, user_id: userId, last_read_at: new Date().toISOString(),
+    }, { onConflict: 'conversation_id,user_id' });
+  };
+
+  const removeStaffFromHouseChat = async (userId, houseId) => {
+    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
+    if (!conv) return;
+    await supabase.from('conversation_members').delete().eq('conversation_id', conv.id).eq('user_id', userId);
+  };
+
   const assignHouse = async (userId, houseId) => {
     await supabase.from('user_house_assignments').insert([{ user_id: userId, house_id: houseId }]);
+    await addStaffToHouseChat(userId, houseId);
     fetchUsers();
   };
 
   const removeHouseAssignment = async (assignmentId) => {
+    // Get the house_id before deleting so we can remove from chat
+    const { data: assignment } = await supabase.from('user_house_assignments').select('user_id, house_id').eq('id', assignmentId).single();
     await supabase.from('user_house_assignments').delete().eq('id', assignmentId);
+    if (assignment) await removeStaffFromHouseChat(assignment.user_id, assignment.house_id);
     fetchUsers();
   };
 

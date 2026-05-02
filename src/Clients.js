@@ -87,6 +87,18 @@ function InvitePortalButton({ client }) {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Invite failed');
       setStatus('sent');
+      // After invite, add to house chat if client is in a house
+      if (client.house_id) {
+        // Short delay to let auth account propagate
+        setTimeout(async () => {
+          const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
+          if (conv && result.user?.id) {
+            await supabase.from('conversation_members').upsert({
+              conversation_id: conv.id, user_id: result.user.id, last_read_at: new Date().toISOString(),
+            }, { onConflict: 'conversation_id,user_id' });
+          }
+        }, 2000);
+      }
     } catch (err) {
       console.error(err);
       setStatus('error');
@@ -308,6 +320,31 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setHouses(data || []);
   }, []);
 
+  // Add a client to their house chat (only if they have an auth account)
+  const addClientToHouseChat = async (clientId, houseId, clientEmail) => {
+    if (!houseId || !clientEmail) return;
+    // Get auth user id for this client
+    const { data: authUsers } = await supabase.from('user_profiles').select('id').eq('email', clientEmail).maybeSingle();
+    // Try auth.users via RPC if not in user_profiles
+    let authUserId = authUsers?.id;
+    if (!authUserId) return; // no auth account yet
+    // Find the house chat conversation
+    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
+    if (!conv) return;
+    await supabase.from('conversation_members').upsert({
+      conversation_id: conv.id, user_id: authUserId, last_read_at: new Date().toISOString(),
+    }, { onConflict: 'conversation_id,user_id' });
+  };
+
+  const removeClientFromHouseChat = async (clientEmail, houseId) => {
+    if (!houseId || !clientEmail) return;
+    const { data: authUser } = await supabase.from('user_profiles').select('id').eq('email', clientEmail).maybeSingle();
+    if (!authUser?.id) return;
+    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
+    if (!conv) return;
+    await supabase.from('conversation_members').delete().eq('conversation_id', conv.id).eq('user_id', authUser.id);
+  };
+
   useEffect(() => { fetchHouses(); }, [fetchHouses]);
 
   const fetchTimeline = async (clientId, append = false) => {
@@ -438,6 +475,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
       updates.level = 1;
+      // Auto-add client to house chat
+      const activeHouseId = statusForm.house_id || client.house_id;
+      if (activeHouseId && client.email) {
+        await addClientToHouseChat(client.id, activeHouseId, client.email);
+      }
       updates.expected_move_in_date = null;
       const houseId = statusForm.house_id || client.house_id;
       if (houseId) {
@@ -461,6 +503,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
+      // Remove client from house chat
+      if (client.house_id && client.email) {
+        await removeClientFromHouseChat(client.email, client.house_id);
+      }
       const today = new Date().toISOString().split('T')[0];
       updates.discharge_date = statusForm.discharge_date || today;
       updates.reason_for_discharge = statusForm.discharge_reason;
