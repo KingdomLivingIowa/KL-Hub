@@ -42,23 +42,65 @@ function UserManagement({ currentUser }) {
   const [togglingGroup, setTogglingGroup] = useState({}); // { userId-convId: true }
 
   useEffect(() => {
-    fetchUsers();
     fetchHouses();
-    fetchPresetGroups();
+    fetchInitial();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchPresetGroups = async () => {
-    const { data } = await supabase
+  const fetchInitial = async () => {
+    // Must fetch preset groups FIRST so fetchGroupMemberships has the IDs
+    const { data: groups } = await supabase
       .from('conversations')
       .select('id, name')
       .eq('type', 'group')
       .in('name', PRESET_GROUP_NAMES);
-    setPresetGroups(data || []);
+    const loadedGroups = groups || [];
+    setPresetGroups(loadedGroups);
+
+    // Now fetch users and memberships with the group IDs we just got
+    setLoading(true);
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (profiles) {
+      const { data: assignments } = await supabase
+        .from('user_house_assignments')
+        .select('*, houses(name)');
+
+      const assignmentMap = {};
+      (assignments || []).forEach(a => {
+        if (!assignmentMap[a.user_id]) assignmentMap[a.user_id] = [];
+        assignmentMap[a.user_id].push({ id: a.house_id, name: a.houses?.name, assignmentId: a.id });
+      });
+      setHouseAssignments(assignmentMap);
+      setUsers(profiles);
+
+      // Now fetch memberships with known group IDs
+      const userIds = profiles.map(p => p.id);
+      const presetIds = loadedGroups.map(g => g.id);
+      if (userIds.length && presetIds.length) {
+        const { data: memberships } = await supabase
+          .from('conversation_members')
+          .select('user_id, conversation_id')
+          .in('user_id', userIds)
+          .in('conversation_id', presetIds);
+
+        const map = {};
+        userIds.forEach(id => { map[id] = []; });
+        (memberships || []).forEach(m => {
+          if (!map[m.user_id]) map[m.user_id] = [];
+          map[m.user_id].push(m.conversation_id);
+        });
+        setGroupMemberships(map);
+      }
+    }
+    setLoading(false);
   };
 
-  const fetchGroupMemberships = async (userIds) => {
+  const fetchGroupMemberships = async (userIds, groups) => {
     if (!userIds.length) return;
-    const presetIds = presetGroups.map(g => g.id);
+    const presetIds = (groups || presetGroups).map(g => g.id);
     if (!presetIds.length) return;
 
     const { data } = await supabase
