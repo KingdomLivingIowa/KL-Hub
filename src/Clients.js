@@ -20,7 +20,7 @@ const STATUS_FLOW = {
   'Denied': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
 };
 
-const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Weekly Reflection'];
+const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Reflection'];
 
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
 const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
@@ -564,6 +564,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         win: entryForm.reflection_win, goals: entryForm.reflection_goals,
       });
     }
+    // Upload photo if attached
+    let photoUrl = null;
+    if (entryForm.photo_file) {
+      const ext = entryForm.photo_file.name.split('.').pop();
+      const path = `${selected.id}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('timeline-photos').upload(path, entryForm.photo_file, { upsert: true });
+      if (uploadErr) { alert('Photo upload failed: ' + uploadErr.message); return; }
+      const { data: urlData } = supabase.storage.from('timeline-photos').getPublicUrl(path);
+      photoUrl = urlData.publicUrl;
+    }
     const { error } = await supabase.from('client_timeline').insert([{
       client_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryForm.notes || null, severity: entryType === 'Crisis' ? entryForm.severity : null,
@@ -573,11 +583,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       reflection_data: reflectionData,
       latitude: entryForm.latitude ? parseFloat(entryForm.latitude) : null,
       longitude: entryForm.longitude ? parseFloat(entryForm.longitude) : null,
+      photo_url: photoUrl,
       source: 'staff',
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
     setShowAddEntry(false);
-    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
+    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null });
     setEntryType('General Note');
     fetchTimeline(selected.id);
     fetchFullHistory(selected.id);
@@ -1185,6 +1196,25 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         <label style={sf.label}>{entryType === 'Weekly Reflection' ? 'Additional notes (optional)' : 'Notes'}</label>
                         <textarea value={entryForm.notes} onChange={e => setEntryForm(p => ({ ...p, notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={3} placeholder="Add any notes..." />
                       </div>
+                      {['UA', 'Check-In', 'General Note', 'Jobs Applied For'].includes(entryType) && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={sf.label}>Photo (optional)</label>
+                          <input type="file" accept="image/*" onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => setEntryForm(p => ({ ...p, photo_file: file, photo_preview: ev.target.result }));
+                            reader.readAsDataURL(file);
+                          }} style={{ color: '#aaa', fontSize: '13px', marginBottom: '8px', display: 'block' }} />
+                          {entryForm.photo_preview && (
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                              <img src={entryForm.photo_preview} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #444' }} />
+                              <button onClick={() => setEntryForm(p => ({ ...p, photo_file: null, photo_preview: null }))}
+                                style={{ position: 'absolute', top: 4, right: 4, background: '#b22222', border: 'none', color: '#fff', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>×</button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <button onClick={saveTimelineEntry} style={sf.confirmBtn}>Save Entry</button>
                     </div>
                   )}
@@ -1217,6 +1247,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             {entry.entry_type === 'Weekly Reflection'
                               ? <WeeklyReflectionCard entry={entry} />
                               : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
+                              }{entry.photo_url && (
+                                <a href={entry.photo_url} target="_blank" rel="noreferrer">
+                                  <img src={entry.photo_url} alt="Entry photo" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
+                                </a>
+                              )}
                             }
                             <p style={{ color: '#bbb', fontSize: '13px', margin: '6px 0 0 0' }}>By {entry.author}</p>
                           </div>
