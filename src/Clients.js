@@ -230,6 +230,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [houses, setHouses] = useState([]);
   const [timeline, setTimeline] = useState([]);
   const [latestReflection, setLatestReflection] = useState(null);
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const [timelineTotal, setTimelineTotal] = useState(0);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
@@ -1284,9 +1285,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               ? <WeeklyReflectionCard entry={entry} />
                               : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                               }{entry.photo_url && (
-                                <a href={entry.photo_url} target="_blank" rel="noreferrer">
-                                  <img src={entry.photo_url} alt="" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
-                                </a>
+                                <img src={entry.photo_url} alt="" onClick={() => setLightboxUrl(entry.photo_url)}
+                                  style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
                               )}
                             }
                             <p style={{ color: '#bbb', fontSize: '13px', margin: '6px 0 0 0' }}>By {entry.author}</p>
@@ -1413,6 +1413,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
               {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#999', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Lightbox */}
+      {lightboxUrl && (
+        <div onClick={() => setLightboxUrl(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
+            <img src={lightboxUrl} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: '10px', objectFit: 'contain' }} />
+            <button onClick={() => setLightboxUrl(null)}
+              style={{ position: 'absolute', top: -14, right: -14, background: '#b22222', border: 'none', color: '#fff', borderRadius: '50%', width: 30, height: 30, fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>×</button>
           </div>
         </div>
       )}
