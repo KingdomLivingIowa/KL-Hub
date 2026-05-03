@@ -1249,7 +1249,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                               }{entry.photo_url && (
                                 <a href={entry.photo_url} target="_blank" rel="noreferrer">
-                                  <img src={entry.photo_url} alt="Entry photo" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
+                                  <img src={entry.photo_url} alt="" style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
                                 </a>
                               )}
                             }
