@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { getCached, setCached } from './dataCache';
 import { useUser } from './UserContext';
+import { ClientLevelProgress } from './LevelRequirements';
+import { InvoiceButton } from './Invoice';
 import ClientPayments from './ClientPayments';
 
 const PAGE_SIZE = 25;
@@ -915,6 +917,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 )}
                 {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
                 {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
+                {hasFullAccess && <InvoiceButton client={selected} style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }} />}
                 <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
               </div>
             </div>
@@ -1009,6 +1012,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           </p>
                         </>
                       )}
+                    </Card>
+                    <Card title="Level Progress" full>
+                      <ClientLevelProgress client={selected} currentUser={user} />
                     </Card>
                   </div>
                 </>

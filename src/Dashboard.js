@@ -11,6 +11,7 @@ import Payments from './Payments';
 import Messaging from './Messaging';
 import Reports from './Reports';
 import Calendars from './Calendars';
+import Resources from './Resources';
 
 const WAITING_LISTS = [
   'DOC Men', 'Community Men', 'Treatment Men',
@@ -486,6 +487,7 @@ function DashboardInner({ user }) {
     { id: 'payments', label: 'Payments', show: hasFullAccess },
     { id: 'reports', label: 'Reports', show: canSeeReports },
     { id: 'calendars', label: 'Calendars', show: true },
+    { id: 'resources', label: 'Resources', show: true },
   ].filter(item => item.show);
 
   const settingsItems = [
@@ -575,6 +577,7 @@ function DashboardInner({ user }) {
           {activePage === 'messages' && <Messaging />}
           {activePage === 'reports' && canSeeReports && <Reports />}
           {activePage === 'calendars' && <Calendars />}
+          {activePage === 'resources' && <Resources />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
         </div>
       </div>
