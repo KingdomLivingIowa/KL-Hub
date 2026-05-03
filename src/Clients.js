@@ -229,6 +229,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const [houses, setHouses] = useState([]);
   const [timeline, setTimeline] = useState([]);
+  const [latestReflection, setLatestReflection] = useState(null);
   const [timelineTotal, setTimelineTotal] = useState(0);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
@@ -377,6 +378,24 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       });
     } catch (err) { console.error(err); }
     finally { setTimelineLoading(false); setTimelineLoadingMore(false); }
+  };
+
+  const fetchLatestReflection = async (clientId) => {
+    const { data } = await supabase
+      .from('client_timeline')
+      .select('reflection_data')
+      .eq('client_id', clientId)
+      .eq('entry_type', 'Weekly Reflection')
+      .not('reflection_data', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (data?.reflection_data) {
+      try { setLatestReflection(JSON.parse(data.reflection_data)); }
+      catch { setLatestReflection(null); }
+    } else {
+      setLatestReflection(null);
+    }
   };
 
   const fetchFullHistory = async (clientId) => {
@@ -610,6 +629,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setStays([]);
     fetchTimeline(client.id);
     fetchFullHistory(client.id);
+    fetchLatestReflection(client.id);
     fetchStays(client.id);
   };
 
@@ -965,9 +985,25 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} />
                     </Card>
                     <Card title="Goals">
-                      <EditableField label="Goal 1" field="goal_1" value={selected.goal_1} />
-                      <EditableField label="Goal 2" field="goal_2" value={selected.goal_2} />
-                      <EditableField label="Goal 3" field="goal_3" value={selected.goal_3} />
+                      {latestReflection?.goals ? (
+                        <>
+                          <p style={{ fontSize: '12px', color: '#b22222', margin: '0 0 10px 0', fontWeight: '600' }}>
+                            From latest weekly reflection
+                          </p>
+                          <p style={{ fontSize: '14px', color: '#ddd', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                            {latestReflection.goals}
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <EditableField label="Goal 1" field="goal_1" value={selected.goal_1} />
+                          <EditableField label="Goal 2" field="goal_2" value={selected.goal_2} />
+                          <EditableField label="Goal 3" field="goal_3" value={selected.goal_3} />
+                          <p style={{ fontSize: '12px', color: '#555', margin: '8px 0 0 0' }}>
+                            Goals will auto-update from weekly reflections.
+                          </p>
+                        </>
+                      )}
                     </Card>
                   </div>
                 </>
