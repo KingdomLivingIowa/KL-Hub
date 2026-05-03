@@ -497,8 +497,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
       updates.level = 1;
-      // Auto-add client to house chat
       const activeHouseId = statusForm.house_id || client.house_id;
+      // If moving to a different house, remove from old house chat first
+      if (client.house_id && activeHouseId && client.house_id !== activeHouseId && client.email) {
+        await removeClientFromHouseChat(client.email, client.house_id);
+      }
+      // Add to new house chat
       if (activeHouseId && client.email) {
         await addClientToHouseChat(client.id, activeHouseId, client.email);
       }
