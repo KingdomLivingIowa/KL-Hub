@@ -3,8 +3,6 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { LevelRequirementsAdmin } from './LevelRequirements';
 
-const TABS = ['resources', 'levels'];
-
 const CATEGORIES = [
   { id: 'policy', label: 'Policies & Procedures' },
   { id: 'shuttle', label: 'Shuttle Schedule' },
@@ -75,8 +73,6 @@ export default function Resources() {
   };
 
   const filtered = activeCategory === 'all' ? resources : resources.filter(r => r.category === activeCategory);
-  const getCatLabel = (cat) => CATEGORIES.find(c => c.id === cat)?.label || cat;
-
   if (loading) return <div style={{ padding: 32, color: '#555' }}>Loading resources...</div>;
 
   return (

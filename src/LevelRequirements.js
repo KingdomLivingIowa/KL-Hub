@@ -163,7 +163,7 @@ export function ClientLevelProgress({ client, currentUser }) {
     setLoading(false);
   }, [client.id, clientLevel]);
 
-  useEffect(() => { if (client?.id) fetchData(); }, [fetchData]);
+  useEffect(() => { if (client?.id) fetchData(); }, [fetchData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleProgress = async (reqId, currentlyCompleted) => {
     if (!canCheck) return;
