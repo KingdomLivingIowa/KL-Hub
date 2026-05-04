@@ -22,7 +22,7 @@ const STATUS_FLOW = {
   'Denied': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
 };
 
-const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Reflection'];
+const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
 
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
 const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
@@ -203,6 +203,51 @@ function WeeklyReflectionCard({ entry }) {
       {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
       {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
       {entry.notes && <div><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+    </div>
+  );
+}
+
+// ── Latest Weekly Check-In Display ───────────────────────────────────────────
+function LatestCheckIn({ clientId }) {
+  const [entry, setEntry] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from('client_timeline')
+      .select('*').eq('client_id', clientId).eq('entry_type', 'Weekly Check-In')
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { setEntry(data); setLoading(false); });
+  }, [clientId]);
+
+  if (loading) return <p style={{ color: '#555', fontSize: 13 }}>Loading...</p>;
+  if (!entry) return <p style={{ color: '#555', fontSize: 13 }}>No weekly check-ins yet.</p>;
+
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const Row = ({ label, value }) => value != null && value !== '' ? (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #333' }}>
+      <span style={{ fontSize: 14, color: '#999' }}>{label}</span>
+      <span style={{ fontSize: 14, color: '#fff', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    </div>
+  ) : null;
+
+  return (
+    <div>
+      <p style={{ fontSize: 12, color: '#b22222', fontWeight: 600, margin: '0 0 12px 0' }}>
+        Submitted {fmtDate(entry.created_at)}{entry.author ? ` by ${entry.author}` : ''}
+      </p>
+      <Row label="Meetings this week" value={entry.checkin_meetings} />
+      <Row label="Sponsor contacts" value={entry.checkin_sponsor_contacts} />
+      <Row label="Assigned chore" value={entry.checkin_chore} />
+      <Row label="Chore completed" value={entry.checkin_chore_completed === true ? 'Yes ✓' : entry.checkin_chore_completed === false ? 'No ✗' : null} />
+      <Row label="Employed" value={entry.checkin_employed === true ? 'Yes' : entry.checkin_employed === false ? 'No' : null} />
+      <Row label="Employer" value={entry.checkin_employer} />
+      <Row label="Payment plan" value={entry.checkin_payment_plan} />
+      {entry.notes && (
+        <div style={{ marginTop: 12 }}>
+          <p style={{ fontSize: 12, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px 0' }}>Weekly reflection</p>
+          <p style={{ fontSize: 14, color: '#ccc', lineHeight: 1.6, margin: 0 }}>{entry.notes}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -392,7 +437,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       .not('reflection_data', 'is', null)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
     if (data?.reflection_data) {
       try { setLatestReflection(JSON.parse(data.reflection_data)); }
       catch { setLatestReflection(null); }
@@ -602,7 +647,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     }
     const { error } = await supabase.from('client_timeline').insert([{
       client_id: selected.id, entry_type: entryType, author: entryForm.author,
-      notes: entryForm.notes || null, severity: entryType === 'Crisis' ? entryForm.severity : null,
+      notes: entryType === 'Weekly Check-In' ? (entryForm.wci_reflection || null) : (entryForm.notes || null),
+      severity: entryType === 'Crisis' ? entryForm.severity : null,
       event_name: entryType === 'UA' ? entryForm.ua_result : entryType === 'Chores' ? entryForm.chore_status : null,
       meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : entryType === 'Chores' ? entryForm.chore_name : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
@@ -611,10 +657,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       longitude: entryForm.longitude ? parseFloat(entryForm.longitude) : null,
       photo_url: photoUrl,
       source: 'staff',
+      checkin_meetings: entryType === 'Weekly Check-In' && entryForm.wci_meetings !== '' ? parseInt(entryForm.wci_meetings) : null,
+      checkin_sponsor_contacts: entryType === 'Weekly Check-In' && entryForm.wci_sponsor_contacts !== '' ? parseInt(entryForm.wci_sponsor_contacts) : null,
+      checkin_chore: entryType === 'Weekly Check-In' ? (entryForm.wci_chore || null) : null,
+      checkin_chore_completed: entryType === 'Weekly Check-In' && entryForm.wci_chore_completed !== '' ? entryForm.wci_chore_completed === 'yes' : null,
+      checkin_employed: entryType === 'Weekly Check-In' && entryForm.wci_employed !== '' ? entryForm.wci_employed === 'yes' : null,
+      checkin_employer: entryType === 'Weekly Check-In' ? (entryForm.wci_employer || null) : null,
+      checkin_payment_plan: entryType === 'Weekly Check-In' ? (entryForm.wci_payment_plan || null) : null,
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
     setShowAddEntry(false);
-    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null });
+    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null, wci_meetings: '', wci_sponsor_contacts: '', wci_chore: '', wci_chore_completed: '', wci_employed: '', wci_employer: '', wci_payment_plan: '', wci_reflection: '' });
     setEntryType('General Note');
     fetchTimeline(selected.id);
     fetchFullHistory(selected.id);
@@ -992,26 +1045,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Treatment history" field="treatment_history" value={selected.treatment_history} options={['Yes', 'No']} />
                       <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} />
                     </Card>
-                    <Card title="Goals">
-                      {latestReflection?.goals ? (
-                        <>
-                          <p style={{ fontSize: '12px', color: '#b22222', margin: '0 0 10px 0', fontWeight: '600' }}>
-                            From latest weekly reflection
-                          </p>
-                          <p style={{ fontSize: '14px', color: '#ddd', margin: 0, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                            {latestReflection.goals}
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <EditableField label="Goal 1" field="goal_1" value={selected.goal_1} />
-                          <EditableField label="Goal 2" field="goal_2" value={selected.goal_2} />
-                          <EditableField label="Goal 3" field="goal_3" value={selected.goal_3} />
-                          <p style={{ fontSize: '12px', color: '#555', margin: '8px 0 0 0' }}>
-                            Goals will auto-update from weekly reflections.
-                          </p>
-                        </>
-                      )}
+                    <Card title="Latest Weekly Check-In" full>
+                      <LatestCheckIn clientId={selected.id} />
                     </Card>
                     <Card title="Level Progress" full>
                       <ClientLevelProgress client={selected} currentUser={user} />
