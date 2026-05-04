@@ -33,8 +33,6 @@ export default function Resources() {
   const [editingId, setEditingId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('all');
   const [form, setForm] = useState({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 });
-  const [pdfFile, setPdfFile] = useState(null);
-  const [pdfName, setPdfName] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
@@ -47,12 +45,11 @@ export default function Resources() {
 
   useEffect(() => { fetchResources(); }, [fetchResources]);
 
-  const resetForm = () => { setForm({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 }); setPdfFile(null); setPdfName(''); };
+  const resetForm = () => { setForm({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 }); };
 
   const handleFileUpload = async (file) => {
     if (!file) return null;
     setUploading(true);
-    const ext = file.name.split('.').pop();
     const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const { error: uploadErr } = await supabase.storage.from('resources').upload(path, file, { upsert: true });
     if (uploadErr) { alert('Upload failed: ' + uploadErr.message); setUploading(false); return null; }
@@ -61,13 +58,10 @@ export default function Resources() {
     return data.publicUrl;
   };
 
-  const saveResource = async (pdfFile) => {
+  const saveResource = async () => {
     if (!form.title.trim()) return alert('Title is required.');
     setSaving(true);
-    let url = form.url;
-    if (pdfFile) {
-      const uploadedUrl = await handleFileUpload(pdfFile);
-      if (uploadedUrl) url = uploadedUrl;
+    const url = form.url;
     }
     const payload = { ...form, url };
     if (editingId) {
@@ -158,27 +152,16 @@ export default function Resources() {
               <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} style={{ ...s.textarea, minHeight: 100 }} placeholder="Enter content here..." rows={4} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={s.label}>PDF Upload</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <label style={{ background: '#2a2a2a', border: '1px dashed #555', borderRadius: 8, padding: '9px 16px', color: '#aaa', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
-                  📄 {pdfName || 'Choose PDF'}
-                  <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => {
-                    const file = e.target.files?.[0];
-                    if (file) { setPdfFile(file); setPdfName(file.name); }
-                  }} />
-                </label>
-                {pdfName && <button onClick={() => { setPdfFile(null); setPdfName(''); }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 18 }}>×</button>}
-                {form.url && !pdfName && <a href={form.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#60a5fa' }}>View current PDF ↗</a>}
-              </div>
-            </div>
-            <div style={{ marginBottom: 14 }}>
               <label style={s.label}>Document</label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                   style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   {uploading ? '⏳ Uploading...' : '📄 Upload PDF'}
                 </button>
-                <input ref={fileInputRef} type="file" accept="application/pdf" onChange={e => handleFileUpload(e.target.files?.[0]).then(url => url && setForm(f => ({ ...f, url })))} style={{ display: 'none' }} />
+                <input ref={fileInputRef} type="file" accept="application/pdf" onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file).then(url => url && setForm(f => ({ ...f, url })));
+                }} style={{ display: 'none' }} />
                 {form.url && (
                   <>
                     <span style={{ fontSize: 13, color: '#4ade80' }}>✓ Uploaded</span>
