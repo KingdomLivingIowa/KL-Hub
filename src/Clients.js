@@ -1071,12 +1071,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Treatment history" field="treatment_history" value={selected.treatment_history} options={['Yes', 'No']} />
                       <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} />
                     </Card>
-                    <Card title="Latest Weekly Check-In" full>
+                    <Card title="Latest Weekly Check-In">
                       <LatestCheckIn clientId={selected.id} />
                     </Card>
-                    <Card title="Level Progress" full>
-                      <ClientLevelProgress client={selected} currentUser={user} />
-                    </Card>
+                    {selected.status === 'Active' && (
+                      <Card title="Level Progress" full>
+                        <ClientLevelProgress client={selected} currentUser={user} />
+                      </Card>
+                    )}
                   </div>
                 </>
               )}

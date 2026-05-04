@@ -242,19 +242,24 @@ function Admissions() {
   };
 
   const findDuplicate = (app) => {
+    // Don't flag duplicates for already accepted/rejected applications
+    if (app.status !== 'pending') return null;
+
     const firstLower = app.first_name?.toLowerCase().trim();
     const lastLower = app.last_name?.toLowerCase().trim();
 
     const clientMatch = clients.find(
       (c) =>
         c.first_name?.toLowerCase().trim() === firstLower &&
-        c.last_name?.toLowerCase().trim() === lastLower
+        c.last_name?.toLowerCase().trim() === lastLower &&
+        c.application_id !== app.id // don't flag client created from this same app
     );
     if (clientMatch) return clientMatch;
 
     const appMatch = applications.find(
       (a) =>
         a.id !== app.id &&
+        a.status === 'pending' && // only flag against other pending apps
         a.first_name?.toLowerCase().trim() === firstLower &&
         a.last_name?.toLowerCase().trim() === lastLower
     );
