@@ -207,6 +207,34 @@ function WeeklyReflectionCard({ entry }) {
   );
 }
 
+// ── Weekly Check-In Card (timeline display) ─────────────────────────────────
+function WeeklyCheckInCard({ entry }) {
+  const Row = ({ label, value }) => value != null && value !== '' ? (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #2a2a2a' }}>
+      <span style={{ fontSize: '13px', color: '#999' }}>{label}</span>
+      <span style={{ fontSize: '13px', color: '#ddd', fontWeight: 500 }}>{String(value)}</span>
+    </div>
+  ) : null;
+
+  return (
+    <div style={{ marginTop: '8px' }}>
+      <Row label="Meetings attended" value={entry.checkin_meetings} />
+      <Row label="Sponsor contacts" value={entry.checkin_sponsor_contacts} />
+      <Row label="Assigned chore" value={entry.checkin_chore} />
+      <Row label="Chore completed" value={entry.checkin_chore_completed === true ? 'Yes ✓' : entry.checkin_chore_completed === false ? 'No ✗' : null} />
+      <Row label="Employed" value={entry.checkin_employed === true ? 'Yes' : entry.checkin_employed === false ? 'No' : null} />
+      <Row label="Employer" value={entry.checkin_employer} />
+      <Row label="Payment plan" value={entry.checkin_payment_plan} />
+      {entry.notes && (
+        <div style={{ marginTop: '8px' }}>
+          <p style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px 0' }}>Weekly reflection</p>
+          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Latest Weekly Check-In Display ───────────────────────────────────────────
 function LatestCheckIn({ clientId }) {
   const [entry, setEntry] = useState(null);
@@ -1326,6 +1354,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
                             {entry.entry_type === 'Weekly Reflection'
                               ? <WeeklyReflectionCard entry={entry} />
+                              : entry.entry_type === 'Weekly Check-In'
+                              ? <WeeklyCheckInCard entry={entry} />
                               : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                               }{entry.photo_url && (
                                 <img src={entry.photo_url} alt="" onClick={() => setLightboxUrl(entry.photo_url)}
