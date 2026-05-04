@@ -62,7 +62,6 @@ export default function Resources() {
     if (!form.title.trim()) return alert('Title is required.');
     setSaving(true);
     const url = form.url;
-    }
     const payload = { ...form, url };
     if (editingId) {
       await supabase.from('resources').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingId);
