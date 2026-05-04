@@ -38,8 +38,6 @@ export default function Resources() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useState(null);
 
   const fetchResources = useCallback(async () => {
     const { data } = await supabase.from('resources').select('*').order('category').order('display_order');
@@ -207,7 +205,7 @@ export default function Resources() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => { setShowAdd(false); setEditingId(null); resetForm(); }} style={s.ghost}>Cancel</button>
-              <button onClick={() => saveResource(pdfFile)} disabled={saving || uploading} style={s.btn()}>{uploading ? 'Uploading...' : saving ? 'Saving...' : 'Save Resource'}</button>
+              <button onClick={saveResource} disabled={saving || uploading} style={s.btn()}>{uploading ? 'Uploading...' : saving ? 'Saving...' : 'Save Resource'}</button>
             </div>
           </div>
         </div>
