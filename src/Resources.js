@@ -178,7 +178,7 @@ export default function Resources() {
                   style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   {uploading ? '⏳ Uploading...' : '📄 Upload PDF'}
                 </button>
-                <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handlePdfUpload} style={{ display: 'none' }} />
+                <input ref={fileInputRef} type="file" accept="application/pdf" onChange={e => handleFileUpload(e.target.files?.[0]).then(url => url && setForm(f => ({ ...f, url })))} style={{ display: 'none' }} />
                 {form.url && (
                   <>
                     <span style={{ fontSize: 13, color: '#4ade80' }}>✓ Uploaded</span>
