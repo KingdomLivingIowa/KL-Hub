@@ -34,6 +34,7 @@ export default function Resources() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [form, setForm] = useState({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 });
   const [saving, setSaving] = useState(false);
+  const [pdfViewer, setPdfViewer] = useState(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -226,10 +227,10 @@ export default function Resources() {
                   <div style={s.cardBody}>
                     {r.content && <p style={{ color: '#ccc', fontSize: 14, margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.content}</p>}
                     {r.url && (
-                      <a href={r.url} target="_blank" rel="noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: r.content ? 12 : 0, color: '#60a5fa', fontSize: 14, textDecoration: 'none', fontWeight: 500 }}>
-                        📄 {r.url?.includes('resources') ? 'View PDF' : 'Open Document'} ↗
-                      </a>
+                      <button onClick={() => setPdfViewer(r.url)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: r.content ? 12 : 0, color: '#60a5fa', fontSize: 14, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                        📄 {r.url?.includes('supabase') ? 'View PDF' : 'Open Document'}
+                      </button>
                     )}
                   </div>
                 )}
@@ -239,6 +240,21 @@ export default function Resources() {
         );
       })}
       </>}
+      {pdfViewer && (
+        <div onClick={() => setPdfViewer(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '90vw', height: '90vh', background: '#fff', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#1a1a1a', flexShrink: 0 }}>
+              <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>Document Viewer</span>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <a href={pdfViewer} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: 13, textDecoration: 'none' }}>Open in new tab ↗</a>
+                <button onClick={() => setPdfViewer(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 22 }}>×</button>
+              </div>
+            </div>
+            <iframe src={pdfViewer} title="Document" style={{ flex: 1, border: 'none', width: '100%' }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
