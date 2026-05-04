@@ -1361,7 +1361,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 <img src={entry.photo_url} alt="" onClick={() => setLightboxUrl(entry.photo_url)}
                                   style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
                               )}
-                            <p style={{ color: '#bbb', fontSize: '13px', margin: '6px 0 0 0' }}>By {entry.author}</p>
+                            {entry.author && <p style={{ color: '#bbb', fontSize: '13px', margin: '6px 0 0 0' }}>By {entry.author}</p>}
                           </div>
                         ))}
                       </div>
