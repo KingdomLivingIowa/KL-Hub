@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { LevelRequirementsAdmin } from './LevelRequirements';
@@ -33,7 +33,13 @@ export default function Resources() {
   const [editingId, setEditingId] = useState(null);
   const [activeCategory, setActiveCategory] = useState('all');
   const [form, setForm] = useState({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 });
+  const [pdfFile, setPdfFile] = useState(null);
+  const [pdfName, setPdfName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useState(null);
 
   const fetchResources = useCallback(async () => {
     const { data } = await supabase.from('resources').select('*').order('category').order('display_order');
@@ -43,15 +49,33 @@ export default function Resources() {
 
   useEffect(() => { fetchResources(); }, [fetchResources]);
 
-  const resetForm = () => setForm({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 });
+  const resetForm = () => { setForm({ title: '', category: 'policy', content: '', url: '', visible_to: 'all', display_order: 0 }); setPdfFile(null); setPdfName(''); };
 
-  const saveResource = async () => {
+  const handleFileUpload = async (file) => {
+    if (!file) return null;
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const { error: uploadErr } = await supabase.storage.from('resources').upload(path, file, { upsert: true });
+    if (uploadErr) { alert('Upload failed: ' + uploadErr.message); setUploading(false); return null; }
+    const { data } = supabase.storage.from('resources').getPublicUrl(path);
+    setUploading(false);
+    return data.publicUrl;
+  };
+
+  const saveResource = async (pdfFile) => {
     if (!form.title.trim()) return alert('Title is required.');
     setSaving(true);
+    let url = form.url;
+    if (pdfFile) {
+      const uploadedUrl = await handleFileUpload(pdfFile);
+      if (uploadedUrl) url = uploadedUrl;
+    }
+    const payload = { ...form, url };
     if (editingId) {
-      await supabase.from('resources').update({ ...form, updated_at: new Date().toISOString() }).eq('id', editingId);
+      await supabase.from('resources').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', editingId);
     } else {
-      await supabase.from('resources').insert([form]);
+      await supabase.from('resources').insert([payload]);
     }
     setSaving(false);
     setShowAdd(false);
@@ -136,7 +160,36 @@ export default function Resources() {
               <textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} style={{ ...s.textarea, minHeight: 100 }} placeholder="Enter content here..." rows={4} />
             </div>
             <div style={{ marginBottom: 14 }}>
-              <label style={s.label}>Link (Google Drive URL, website, etc.)</label>
+              <label style={s.label}>PDF Upload</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <label style={{ background: '#2a2a2a', border: '1px dashed #555', borderRadius: 8, padding: '9px 16px', color: '#aaa', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}>
+                  📄 {pdfName || 'Choose PDF'}
+                  <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) { setPdfFile(file); setPdfName(file.name); }
+                  }} />
+                </label>
+                {pdfName && <button onClick={() => { setPdfFile(null); setPdfName(''); }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 18 }}>×</button>}
+                {form.url && !pdfName && <a href={form.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#60a5fa' }}>View current PDF ↗</a>}
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={s.label}>Document</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  {uploading ? '⏳ Uploading...' : '📄 Upload PDF'}
+                </button>
+                <input ref={fileInputRef} type="file" accept="application/pdf" onChange={handlePdfUpload} style={{ display: 'none' }} />
+                {form.url && (
+                  <>
+                    <span style={{ fontSize: 13, color: '#4ade80' }}>✓ Uploaded</span>
+                    <a href={form.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#60a5fa' }}>Preview ↗</a>
+                    <button onClick={() => setForm(f => ({ ...f, url: '' }))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>Remove</button>
+                  </>
+                )}
+              </div>
+              <label style={{ ...s.label, marginBottom: 4 }}>Or paste a URL</label>
               <input value={form.url} onChange={e => setForm(f => ({ ...f, url: e.target.value }))} style={s.input} placeholder="https://..." />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -154,7 +207,7 @@ export default function Resources() {
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
               <button onClick={() => { setShowAdd(false); setEditingId(null); resetForm(); }} style={s.ghost}>Cancel</button>
-              <button onClick={saveResource} disabled={saving} style={s.btn()}>{saving ? 'Saving...' : 'Save Resource'}</button>
+              <button onClick={() => saveResource(pdfFile)} disabled={saving || uploading} style={s.btn()}>{uploading ? 'Uploading...' : saving ? 'Saving...' : 'Save Resource'}</button>
             </div>
           </div>
         </div>
@@ -195,7 +248,7 @@ export default function Resources() {
                     {r.url && (
                       <a href={r.url} target="_blank" rel="noreferrer"
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: r.content ? 12 : 0, color: '#60a5fa', fontSize: 14, textDecoration: 'none', fontWeight: 500 }}>
-                        📄 Open Document ↗
+                        📄 {r.url?.includes('resources') ? 'View PDF' : 'Open Document'} ↗
                       </a>
                     )}
                   </div>
