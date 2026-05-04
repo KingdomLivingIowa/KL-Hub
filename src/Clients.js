@@ -276,7 +276,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const [houses, setHouses] = useState([]);
   const [timeline, setTimeline] = useState([]);
-  const [latestReflection, setLatestReflection] = useState(null);
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [timelineTotal, setTimelineTotal] = useState(0);
   const [timelineLoading, setTimelineLoading] = useState(false);
@@ -439,10 +438,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       .limit(1)
       .maybeSingle();
     if (data?.reflection_data) {
-      try { setLatestReflection(JSON.parse(data.reflection_data)); }
-      catch { setLatestReflection(null); }
+      // reflection data loaded but no longer displayed
     } else {
-      setLatestReflection(null);
+      // no reflection data
     }
   };
 
