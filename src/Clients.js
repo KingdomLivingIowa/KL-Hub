@@ -689,7 +689,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '' });
   };
 
   const confirmStatusChange = async () => {
@@ -699,7 +699,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (newStatus === 'Waiting List') {
       const { error: wlError } = await supabase.from('waiting_list').insert([{
         full_name: client.full_name, email: client.email || null, phone: client.phone || null,
-        list_type: statusForm.list_type, position: 999, status: 'waiting', application_id: client.application_id || null,
+        list_type: statusForm.list_type, position: 999, status: 'waiting',
+        ready_date: statusForm.ready_date || null,
+        application_id: client.application_id || null,
       }]);
       if (wlError) { alert('Error adding to waiting list: ' + wlError.message); return; }
     }
@@ -1643,12 +1645,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             </div>
             <div style={{ padding: '20px 24px' }}>
               {statusModal.newStatus === 'Waiting List' && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={sf.label}>Select waiting list</label>
-                  <select value={statusForm.list_type} onChange={e => setStatusForm(p => ({ ...p, list_type: e.target.value }))} style={sf.input}>
-                    {LISTS.map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
-                </div>
+                <>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Select waiting list</label>
+                    <select value={statusForm.list_type} onChange={e => setStatusForm(p => ({ ...p, list_type: e.target.value }))} style={sf.input}>
+                      {LISTS.map(l => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Ready date (when are they ready to move in?)</label>
+                    <input type="date" value={statusForm.ready_date || ''} onChange={e => setStatusForm(p => ({ ...p, ready_date: e.target.value }))} style={sf.input} />
+                  </div>
+                </>
               )}
               {statusModal.newStatus === 'Pending' && (
                 <>

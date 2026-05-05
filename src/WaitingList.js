@@ -6,14 +6,14 @@ function WaitingList() {
   const { hasFullAccess } = useUser();
   const [waitingClients, setWaitingClients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeList, setActiveList] = useState("Men's");
+  const [activeList, setActiveList] = useState('DOC Men');
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState({ full_name: '', email: '', phone: '', notes: '', ready_date: '', application_id: null });
   const [editingId, setEditingId] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const LIST_TYPES = ["Men's", "Women's", "Treatment Men", "Treatment Women"];
+  const LIST_TYPES = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
 
   const fetchWaitingList = useCallback(async () => {
     const { data } = await supabase
