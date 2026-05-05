@@ -137,11 +137,6 @@ function Admissions() {
     fetchClients();
   }, [fetchClients]);
 
-  const formatSupabaseError = (error) => {
-    if (!error) return '';
-    return [error.message, error.details, error.hint].filter(Boolean).join('\n');
-  };
-
   const createClientFromApp = async (app) => {
     const { data: existingClient, error: existingError } = await supabase
       .from('clients')
