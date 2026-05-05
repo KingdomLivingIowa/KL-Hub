@@ -92,7 +92,7 @@ export function InvoiceButton({ client, style }) {
   <div class="summary">
     <div class="summary-row"><span>Total Charged</span><span>${fmt(totalCharged)}</span></div>
     <div class="summary-row"><span>Total Paid</span><span>${fmt(totalPaid)}</span></div>
-    <div class="summary-row balance"><span>Current Balance</span><span>${fmt(balance)}</span></div>
+    <div class="summary-row balance"><span>${balance < 0 ? 'Credit on Account' : 'Current Balance'}</span><span>${balance < 0 ? 'Credit ' + fmt(Math.abs(balance)) : fmt(balance)}</span></div>
   </div>
 
   <div class="footer">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${new Date().toLocaleString()}</div>

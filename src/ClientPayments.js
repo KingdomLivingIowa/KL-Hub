@@ -210,10 +210,10 @@ function ClientPayments({ client }) {
       <div style={{ background: balance > 0 ? '#3a1e1e' : '#1e3a2f', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '28px', fontWeight: '700', margin: 0 }}>
-            {balance > 0 ? formatCurrency(balance) : isCredit ? 'Credit on Account' : 'Paid up'}
+            {balance > 0 ? formatCurrency(balance) : isCredit ? `Credit $${Math.abs(balance).toFixed(2)}` : 'Paid up'}
           </p>
           <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '12px', opacity: 0.7, margin: '2px 0 0 0' }}>
-            {balance > 0 ? 'Balance owed' : isCredit ? `$${Math.abs(balance).toFixed(2)} credit` : 'No balance owed'}
+            {balance > 0 ? 'Balance owed' : isCredit ? 'Credit on account' : 'No balance owed'}
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>

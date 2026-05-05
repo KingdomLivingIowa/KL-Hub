@@ -207,6 +207,151 @@ function WeeklyReflectionCard({ entry }) {
   );
 }
 
+// ── Client Application View ─────────────────────────────────────────────────
+function ClientApplicationView({ client }) {
+  const [app, setApp] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      // Try by application_id first, then by email match
+      let data = null;
+      if (client.application_id) {
+        const res = await supabase.from('applications').select('*').eq('id', client.application_id).maybeSingle();
+        data = res.data;
+      }
+      if (!data && client.email) {
+        const res = await supabase.from('applications').select('*').eq('email', client.email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        data = res.data;
+      }
+      setApp(data);
+      setLoading(false);
+    };
+    load();
+  }, [client.id, client.application_id, client.email]);
+
+  if (loading) return <div style={{ padding: 20, color: '#555' }}>Loading application...</div>;
+  if (!app) return (
+    <Card title="Application" full>
+      <p style={{ color: '#555', fontSize: 14 }}>No application found for this client.</p>
+    </Card>
+  );
+
+  const Section = ({ title, fields }) => (
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#b22222', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>{title}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px' }}>
+        {fields.filter(([,v]) => v != null && v !== '').map(([label, val]) => (
+          <div key={label} style={{ padding: '7px 0', borderBottom: '1px solid #333' }}>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 2 }}>{label}</div>
+            <div style={{ fontSize: 14, color: '#ddd', lineHeight: 1.4 }}>{String(val)}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const parsedMeds = (() => { try { return JSON.parse(app.medication_details) || []; } catch { return []; } })();
+  const parsedTreatments = (() => { try { return JSON.parse(app.treatment_details) || []; } catch { return []; } })();
+
+  return (
+    <div style={{ padding: '4px 0' }}>
+      <Card title="Application" full>
+        <div style={{ fontSize: 12, color: '#555', marginBottom: 16 }}>
+          Submitted {app.created_at ? new Date(app.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
+          {' · '}<span style={{ color: app.status === 'accepted' ? '#4ade80' : app.status === 'denied' ? '#ef4444' : '#f59e0b', textTransform: 'capitalize', fontWeight: 600 }}>{app.status}</span>
+        </div>
+
+        <Section title="Personal Info" fields={[
+          ['First Name', app.first_name],
+          ['Last Name', app.last_name],
+          ['Email', app.email],
+          ['Phone', app.phone],
+          ['Date of Birth', app.date_of_birth],
+          ['Gender', app.gender || app.assigned_sex],
+          ['Ethnicity', app.ethnicity],
+          ['Marital Status', app.marital_status],
+          ['SSN', app.ssn],
+        ]} />
+
+        <Section title="Housing & Background" fields={[
+          ['Program Type', app.program || app.application_type],
+          ['Present Residence', app.present_residence],
+          ['Has ID?', app.has_id],
+          ['Has SS Card?', app.has_ss_card],
+          ['Lived Here Before?', app.lived_here_before],
+          ['Current Situation', app.current_situation],
+          ['Criminal History', app.criminal_history],
+        ]} />
+
+        <Section title="Employment & Disability" fields={[
+          ['Employment Status', app.employment_status],
+          ['Employer', app.employer_name],
+          ['On Disability?', app.on_disability],
+          ['Able to Work?', app.able_to_work],
+          ['Agree to Volunteer?', app.agree_to_volunteer],
+        ]} />
+
+        <Section title="Recovery" fields={[
+          ['Substance History?', app.substance_history],
+          ['Drug of Choice', app.drug_of_choice],
+          ['Sober Date', app.sober_date],
+          ['OUD Diagnosis', app.oud_diagnosis],
+          ['Recovery Meetings', app.recovery_meetings],
+          ['Attended Treatment?', app.attended_treatment],
+          ['Takes Medication?', app.takes_medication],
+        ]} />
+
+        <Section title="Legal" fields={[
+          ['PO Name', app.po_name],
+          ['PO Phone', app.po_phone],
+          ['On Probation?', app.on_probation],
+          ['On Parole?', app.on_parole],
+          ['Sex Offense?', app.sex_offense],
+          ['Personal Status', app.personal_status],
+        ]} />
+
+        <Section title="Other" fields={[
+          ['Emergency Contact', app.emergency_contact],
+          ['Sponsor', app.sponsor_name],
+          ['Allergy Info', app.allergy_info],
+          ['Doctor Info', app.doctor_info],
+          ['Referral Source', app.referral_source],
+          ['Correspondence Contact', app.correspondence_contact],
+        ]} />
+
+        {parsedMeds.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#b22222', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Medications</div>
+            {parsedMeds.map((med, i) => (
+              <div key={i} style={{ background: '#1e1e1e', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #333' }}>
+                <div style={{ fontSize: 14, color: '#fff', fontWeight: 600, marginBottom: 4 }}>{med.name || 'Medication ' + (i+1)}</div>
+                {[['Dosage', med.dosage], ['Times/day', med.intake], ['Notes', med.notes]].filter(([,v]) => v).map(([l,v]) => (
+                  <div key={l} style={{ fontSize: 13, color: '#aaa' }}>{l}: {v}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {parsedTreatments.length > 0 && (
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#b22222', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Treatment History</div>
+            {parsedTreatments.map((t, i) => (
+              <div key={i} style={{ background: '#1e1e1e', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #333' }}>
+                <div style={{ fontSize: 14, color: '#fff', fontWeight: 600, marginBottom: 4 }}>{t.name || 'Treatment ' + (i+1)}</div>
+                {[['Level of Care', t.level_of_care], ['Contact', t.contact_name], ['Phone', t.contact_phone], ['Discharge Date', t.discharge_date]].filter(([,v]) => v).map(([l,v]) => (
+                  <div key={l} style={{ fontSize: 13, color: '#aaa' }}>{l}: {v}</div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
 // ── Weekly Check-In Card (timeline display) ─────────────────────────────────
 function WeeklyCheckInCard({ entry }) {
   const Row = ({ label, value }) => value != null && value !== '' ? (
@@ -1454,21 +1599,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'application' && (
-                <div style={st.grid}>
-                  <Card title="Application details">
-                    <ReadField label="Application type" value={selected.application_type} />
-                    <ReadField label="Present residence" value={selected.present_residence} />
-                    <ReadField label="Has ID" value={selected.has_id} />
-                    <ReadField label="Has SS card" value={selected.has_ss_card} />
-                    <ReadField label="Employment" value={selected.employment_status} />
-                    <ReadField label="On disability" value={selected.on_disability} />
-                    <ReadField label="Criminal history" value={selected.criminal_history} />
-                    <ReadField label="Discharge reason" value={selected.reason_for_discharge} />
-                    <ReadField label="Discharge date" value={selected.discharge_date} />
-                    <ReadField label="Discharge notes" value={selected.discharge_notes} />
-                    <ReadField label="Discharged by" value={selected.discharged_by} />
-                  </Card>
-                </div>
+                <ClientApplicationView client={selected} />
               )}
 
               {activeTab === 'notes' && (
