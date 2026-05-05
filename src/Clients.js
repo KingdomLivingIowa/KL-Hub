@@ -156,6 +156,102 @@ function MoveToButton({ client, onSelect }) {
   );
 }
 
+// ── Move House Modal ──────────────────────────────────────────────────────────
+function MoveHouseModal({ client, houses, onClose, onSuccess }) {
+  const [toHouseId, setToHouseId] = useState('');
+  const [moveDate, setMoveDate] = useState(new Date().toISOString().split('T')[0]);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const eligibleHouses = houses.filter(h => h.id !== client.house_id);
+
+  const handleMove = async () => {
+    if (!toHouseId) { alert('Please select a destination house.'); return; }
+    setSaving(true);
+    try {
+      const fromHouseName = client.house_name || 'Unknown house';
+      const toHouse = houses.find(h => h.id === toHouseId);
+      const toHouseName = toHouse?.name || 'Unknown house';
+
+      // 1. Update client house_id
+      const { error } = await supabase.from('clients').update({ house_id: toHouseId }).eq('id', client.id);
+      if (error) throw error;
+
+      // 2. Adjust occupied_beds on both houses
+      const { data: fromHouseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
+      if (fromHouseData) await supabase.from('houses').update({ occupied_beds: Math.max((fromHouseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
+      const { data: toHouseData } = await supabase.from('houses').select('occupied_beds').eq('id', toHouseId).single();
+      if (toHouseData) await supabase.from('houses').update({ occupied_beds: (toHouseData.occupied_beds || 0) + 1 }).eq('id', toHouseId);
+
+      // 3. Swap house chat membership
+      if (client.email) {
+        const { data: fromAuthUser } = await supabase.from('user_profiles').select('id').eq('email', client.email).maybeSingle();
+        if (fromAuthUser?.id) {
+          // Remove from old chat
+          const { data: fromConv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
+          if (fromConv) await supabase.from('conversation_members').delete().eq('conversation_id', fromConv.id).eq('user_id', fromAuthUser.id);
+          // Add to new chat
+          const { data: toConv } = await supabase.from('conversations').select('id').eq('house_id', toHouseId).maybeSingle();
+          if (toConv) await supabase.from('conversation_members').upsert({ conversation_id: toConv.id, user_id: fromAuthUser.id, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
+        }
+      }
+
+      // 4. Log timeline entry
+      const noteText = note.trim() ? ` — ${note.trim()}` : '';
+      await supabase.from('client_timeline').insert([{
+        client_id: client.id,
+        type: 'General Note',
+        note: `Transferred from ${fromHouseName} to ${toHouseName} on ${moveDate}${noteText}`,
+        created_at: new Date().toISOString(),
+      }]);
+
+      onSuccess(toHouseId, toHouseName);
+    } catch (err) {
+      alert('Error moving client: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
+      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
+        <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '600', color: '#fff' }}>Move to a Different House</h3>
+        <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#888' }}>
+          Currently at <strong style={{ color: '#ddd' }}>{client.house_name || 'Unknown'}</strong>. Status stays Active — no discharge recorded.
+        </p>
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Destination House *</label>
+          <select value={toHouseId} onChange={e => setToHouseId(e.target.value)}
+            style={{ width: '100%', background: '#111', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: toHouseId ? '#fff' : '#666', fontSize: '14px', boxSizing: 'border-box' }}>
+            <option value="">Select a house...</option>
+            {eligibleHouses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+          </select>
+        </div>
+        <div style={{ marginBottom: '14px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Transfer Date</label>
+          <input type="date" value={moveDate} onChange={e => setMoveDate(e.target.value)}
+            style={{ width: '100%', background: '#111', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Note (optional)</label>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Reason for transfer, room change, etc."
+            style={{ width: '100%', background: '#111', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'sans-serif', boxSizing: 'border-box' }} />
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid #444', borderRadius: '9px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+            Cancel
+          </button>
+          <button onClick={handleMove} disabled={saving || !toHouseId}
+            style={{ flex: 1, padding: '11px', background: saving || !toHouseId ? '#333' : '#1e3a5f', border: '1px solid ' + (saving || !toHouseId ? '#444' : '#3b82f6'), borderRadius: '9px', color: saving || !toHouseId ? '#666' : '#60a5fa', fontSize: '14px', fontWeight: '600', cursor: saving || !toHouseId ? 'not-allowed' : 'pointer' }}>
+            {saving ? 'Moving...' : 'Confirm Transfer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Weekly Reflection Form ────────────────────────────────────────────────────
 function WeeklyReflectionForm({ entryForm, setEntryForm }) {
   return (
@@ -442,6 +538,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [showMoreTabs, setShowMoreTabs] = useState(false);
   const moreTabRef = useRef(null);
   const [statusModal, setStatusModal] = useState(null);
+  const [moveHouseModal, setMoveHouseModal] = useState(null);
   const [statusForm, setStatusForm] = useState({
     list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '',
     discharge_date: '', house_id: '', successful_discharge: '', graduate: false,
@@ -1191,6 +1288,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     </Card>
                     <Card title="House assignment">
                       <ReadField label="House" value={selected.house_name} />
+                      {selected.status === 'Active' && selected.house_id && hasFullAccess && (
+                        <button onClick={() => setMoveHouseModal(selected)}
+                          style={{ marginTop: '6px', marginBottom: '4px', padding: '6px 14px', background: '#1e2d3a', border: '1px solid #2a3d52', borderRadius: '7px', color: '#60a5fa', fontSize: '12px', fontWeight: '500', cursor: 'pointer', width: '100%' }}>
+                          ⇄ Transfer to Different House
+                        </button>
+                      )}
                       <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
                       <ReadField label="House manager" value={selected.house_manager} />
                       <ReadField label="Move-in date" value={selected.start_date} />
@@ -1634,6 +1737,21 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               style={{ position: 'absolute', top: -14, right: -14, background: '#b22222', border: 'none', color: '#fff', borderRadius: '50%', width: 30, height: 30, fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>×</button>
           </div>
         </div>
+      )}
+
+      {moveHouseModal && (
+        <MoveHouseModal
+          client={moveHouseModal}
+          houses={houses}
+          onClose={() => setMoveHouseModal(null)}
+          onSuccess={(newHouseId, newHouseName) => {
+            setMoveHouseModal(null);
+            fetchClients();
+            if (selected?.id === moveHouseModal.id) {
+              setSelected(prev => ({ ...prev, house_id: newHouseId, house_name: newHouseName }));
+            }
+          }}
+        />
       )}
 
       {statusModal && (
