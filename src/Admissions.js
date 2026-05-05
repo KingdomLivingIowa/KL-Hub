@@ -117,7 +117,7 @@ function Admissions() {
     try {
       const { data: cls, error: clientsError } = await supabase
         .from('clients')
-        .select('id, first_name, last_name, date_of_birth, ssn, status');
+        .select('id, first_name, last_name, date_of_birth, ssn, email, application_id, status');
 
       if (clientsError) {
         console.error('Error loading clients:', clientsError);
@@ -215,13 +215,8 @@ function Admissions() {
     if (status === 'accepted') {
       setAcceptingId(id);
       const clientError = await createClientFromApp(app);
-
-      if (clientError) {
-        setAcceptingId(null);
-        alert('Client profile was not created:\n' + formatSupabaseError(clientError));
-        console.error('createClientFromApp error:', clientError);
-        return;
-      }
+      // Log error but never block status update — application must go to accepted
+      if (clientError) console.error('createClientFromApp error:', clientError);
     }
 
     const { error } = await supabase
