@@ -242,26 +242,33 @@ function Admissions() {
   };
 
   const findDuplicate = (app) => {
-    // Don't flag duplicates for already accepted/rejected applications
     if (app.status !== 'pending') return null;
 
     const firstLower = app.first_name?.toLowerCase().trim();
     const lastLower = app.last_name?.toLowerCase().trim();
+    const appDob = app.date_of_birth;
+    const appSsn = app.ssn?.replace(/\D/g, '');
+    const appEmail = app.email?.toLowerCase().trim();
 
-    const clientMatch = clients.find(
-      (c) =>
-        c.first_name?.toLowerCase().trim() === firstLower &&
-        c.last_name?.toLowerCase().trim() === lastLower &&
-        c.application_id !== app.id // don't flag client created from this same app
-    );
+    // Require name + at least one other matching field to flag as duplicate
+    const clientMatch = clients.find((c) => {
+      if (c.application_id === app.id) return false; // same app
+      const nameMatch = c.first_name?.toLowerCase().trim() === firstLower &&
+                        c.last_name?.toLowerCase().trim() === lastLower;
+      if (!nameMatch) return false;
+      const dobMatch = appDob && c.date_of_birth && c.date_of_birth === appDob;
+      const ssnMatch = appSsn && appSsn.length >= 4 && c.ssn?.replace(/\D/g, '') === appSsn;
+      const emailMatch = appEmail && c.email?.toLowerCase().trim() === appEmail;
+      return dobMatch || ssnMatch || emailMatch;
+    });
     if (clientMatch) return clientMatch;
 
-    const appMatch = applications.find(
-      (a) =>
-        a.id !== app.id &&
-        a.status === 'pending' && // only flag against other pending apps
-        a.first_name?.toLowerCase().trim() === firstLower &&
-        a.last_name?.toLowerCase().trim() === lastLower
+    // For other pending apps, name match alone is enough (same person applying twice)
+    const appMatch = applications.find((a) =>
+      a.id !== app.id &&
+      a.status === 'pending' &&
+      a.first_name?.toLowerCase().trim() === firstLower &&
+      a.last_name?.toLowerCase().trim() === lastLower
     );
     if (appMatch) return { ...appMatch, isApplication: true };
 
