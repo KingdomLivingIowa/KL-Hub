@@ -1744,7 +1744,19 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                   {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
                                   <button
-                                    onClick={() => generateDischargePDF(stay, selected, klLogo)}
+                                    onClick={() => {
+                                      const img = new Image();
+                                      img.crossOrigin = 'anonymous';
+                                      img.onload = () => {
+                                        const canvas = document.createElement('canvas');
+                                        canvas.width = img.naturalWidth;
+                                        canvas.height = img.naturalHeight;
+                                        canvas.getContext('2d').drawImage(img, 0, 0);
+                                        generateDischargePDF(stay, selected, canvas.toDataURL('image/jpeg'));
+                                      };
+                                      img.onerror = () => generateDischargePDF(stay, selected, null);
+                                      img.src = klLogo;
+                                    }}
                                     style={{ padding: '5px 12px', background: '#1a2a1a', border: '1px solid #2a5a2a', borderRadius: '6px', color: '#4ade80', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}
                                   >
                                     ⬇ Discharge Sheet
