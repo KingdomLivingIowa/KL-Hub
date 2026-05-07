@@ -1286,19 +1286,15 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Marital status" field="marital_status" value={selected.marital_status} options={['Single', 'Married', 'Divorced', 'Widowed', 'Separated']} />
                       <EditableField label="Emergency contact" field="emergency_contact_name" value={selected.emergency_contact_name} />
                     </Card>
-                    <Card title="House assignment">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
-                        <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>House</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '13px', color: selected.house_name ? '#ddd' : '#999', textAlign: 'right' }}>{selected.house_name || '—'}</span>
-                          {selected.status === 'Active' && selected.house_id && hasFullAccess && (
-                            <button onClick={() => setMoveHouseModal(selected)}
-                              style={{ padding: '2px 8px', background: 'transparent', border: 'none', borderRadius: '4px', color: '#60a5fa', fontSize: '11px', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                              ⇄ Transfer
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                    <Card title="House assignment" action={
+                      selected.status === 'Active' && selected.house_id && hasFullAccess ? (
+                        <button onClick={() => { setSelected(null); setEditingField(null); setMoveHouseModal(selected); }}
+                          style={{ padding: '2px 8px', background: 'transparent', border: 'none', borderRadius: '4px', color: '#60a5fa', fontSize: '11px', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          ⇄ Transfer
+                        </button>
+                      ) : null
+                    }>
+                      <ReadField label="House" value={selected.house_name} />
                       <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
                       <ReadField label="House manager" value={selected.house_manager} />
                       <ReadField label="Move-in date" value={selected.start_date} />
@@ -1877,10 +1873,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   );
 }
 
-function Card({ title, children, full }) {
+function Card({ title, children, full, action }) {
   return (
     <div style={{ background: '#333', border: '1px solid #333', borderRadius: '12px', padding: '14px 16px', gridColumn: full ? '1 / -1' : undefined }}>
-      <p style={{ fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>{title}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <p style={{ fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{title}</p>
+        {action && action}
+      </div>
       {children}
     </div>
   );
