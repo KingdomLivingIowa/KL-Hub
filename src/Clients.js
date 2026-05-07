@@ -10,6 +10,76 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
+function generateDischargePDF(stay, client) {
+  const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
+  const location = stay.house_name || '—';
+  const startDate = stay.start_date ? new Date(stay.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : '—';
+  const dischargeDate = stay.discharge_date ? new Date(stay.discharge_date + 'T12:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : '—';
+  const completionDate = new Date().toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+  const balance = parseFloat(stay.balance_at_discharge) || 0;
+  const balanceStr = balance > 0 ? `$${balance.toFixed(2)} owed` : balance < 0 ? `$${Math.abs(balance).toFixed(2)} credit` : '$0.00';
+  const dischargeType = stay.discharge_type || '';
+  const uaResult = stay.ua_at_discharge || '';
+  const twoWeek = stay.two_week_notice || '';
+  const reason = stay.discharge_notes || stay.discharge_reason || '—';
+  const completedBy = stay.discharged_by || '—';
+
+  const row = (label, value, highlight = '') => `
+    <tr>
+      <td style="font-weight:bold;padding:10px 14px;border:1px solid #ccc;width:160px;vertical-align:top;">${label}</td>
+      <td style="padding:10px 14px;border:1px solid #ccc;${highlight}">${value}</td>
+    </tr>`;
+
+  const choiceRow = (label, options, selected) => {
+    const opts = options.map(o => `<span style="margin-right:24px;">${o === selected ? `<span style="background:#ffd700;padding:0 4px;font-weight:bold;">${o}</span>` : o}</span>`).join('');
+    return row(label, `<span style="font-size:13px;">${opts}</span>`);
+  };
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Discharge Sheet – ${name}</title>
+  <style>
+    @media print { body { margin: 0; } .no-print { display: none; } }
+    body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
+    .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+    .logo-box { width: 70px; height: 70px; border: 2px solid #8b1c1c; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: #8b1c1c; }
+    .org-name { font-size: 22px; font-weight: bold; }
+    .org-sub { font-size: 13px; color: #555; }
+    hr { border: none; border-top: 1px solid #999; margin: 14px 0 20px 0; }
+    h2 { text-align: center; font-size: 18px; margin: 0 0 20px 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  </style></head><body>
+  <button class="no-print print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+  <div class="header">
+    <div class="logo-box">KL</div>
+    <div>
+      <div class="org-name">KINGDOM LIVING IOWA</div>
+      <div class="org-sub">Non-Profit Recovery Community</div>
+    </div>
+  </div>
+  <hr/>
+  <h2>Discharge Sheet</h2>
+  <table>
+    ${row('Name:', name)}
+    ${row('Location:', location)}
+    ${row('Start Date:', startDate)}
+    ${row('Date of Discharge:', dischargeDate)}
+    ${choiceRow('Type of Discharge:', ['Complete', 'Incomplete'], dischargeType)}
+    ${row('Reason for Discharge:', reason, 'line-height:1.6;')}
+    ${choiceRow('UA:', ['Positive', 'Negative', 'N/A'], uaResult)}
+    ${choiceRow('Did client give two-week notice?', ['Yes', 'No'], twoWeek)}
+    ${row('Completed by:', completedBy)}
+    ${row('Date of Completion:', completionDate)}
+    ${row('Final Balance:', balanceStr, balance > 0 ? 'color:#b22222;font-weight:bold;' : '')}
+  </table>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=900');
+  win.document.write(html);
+  win.document.close();
+}
+
+
 const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
 
 const STATUS_FLOW = {
@@ -786,7 +856,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '' });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '', discharge_type: '', ua_at_discharge: '', two_week_notice: '' });
   };
 
   const confirmStatusChange = async () => {
@@ -873,6 +943,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         balance_at_discharge: balanceAtDischarge, discharged_by: user?.email || user?.id || null,
         successful_discharge: updates.successful_discharge,
         graduate: updates.graduate,
+        discharge_type: statusForm.discharge_type || null,
+        ua_at_discharge: statusForm.ua_at_discharge || null,
+        two_week_notice: statusForm.two_week_notice || null,
       }]);
 
       if (client.house_id) {
@@ -1662,7 +1735,15 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>Stay #{stays.length - i}</span>
                                   {stay.house_name && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>}
                                 </div>
-                                {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
+                                  <button
+                                    onClick={() => generateDischargePDF(stay, selected)}
+                                    style={{ padding: '5px 12px', background: '#1a2a1a', border: '1px solid #2a5a2a', borderRadius: '6px', color: '#4ade80', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}
+                                  >
+                                    ⬇ Discharge Sheet
+                                  </button>
+                                </div>
                               </div>
                               <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                 <div>
@@ -1851,6 +1932,51 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Date of discharge</label>
                     <input type="date" value={statusForm.discharge_date || ''} onChange={e => setStatusForm(p => ({ ...p, discharge_date: e.target.value }))} style={sf.input} />
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Type of discharge</label>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                      {['Complete', 'Incomplete'].map(v => (
+                        <button key={v} onClick={() => setStatusForm(p => ({ ...p, discharge_type: v }))}
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                            borderColor: statusForm.discharge_type === v ? '#60a5fa' : '#999',
+                            background: statusForm.discharge_type === v ? '#1e2d3a' : 'transparent',
+                            color: statusForm.discharge_type === v ? '#60a5fa' : '#aaa',
+                          }}>
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>UA at discharge</label>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                      {['Positive', 'Negative', 'N/A'].map(v => (
+                        <button key={v} onClick={() => setStatusForm(p => ({ ...p, ua_at_discharge: v }))}
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                            borderColor: statusForm.ua_at_discharge === v ? '#60a5fa' : '#999',
+                            background: statusForm.ua_at_discharge === v ? '#1e2d3a' : 'transparent',
+                            color: statusForm.ua_at_discharge === v ? '#60a5fa' : '#aaa',
+                          }}>
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Did client give two-week notice?</label>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                      {['Yes', 'No'].map(v => (
+                        <button key={v} onClick={() => setStatusForm(p => ({ ...p, two_week_notice: v }))}
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                            borderColor: statusForm.two_week_notice === v ? '#60a5fa' : '#999',
+                            background: statusForm.two_week_notice === v ? '#1e2d3a' : 'transparent',
+                            color: statusForm.two_week_notice === v ? '#60a5fa' : '#aaa',
+                          }}>
+                          {v}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Discharge notes</label>
