@@ -86,11 +86,11 @@ function Row({ label, value }) {
   );
 }
 
-function MetricCard({ label, value }) {
+function MetricCard({ label, value, color }) {
   return (
     <div style={{ background: '#1a1a1a', borderRadius: 10, padding: '14px 16px' }}>
       <div style={{ fontSize: 13, color: '#aaa', marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 30, fontWeight: 700, color: '#fff' }}>{value ?? '—'}</div>
+      <div style={{ fontSize: 30, fontWeight: 700, color: color || '#fff' }}>{value ?? '—'}</div>
     </div>
   );
 }
@@ -225,6 +225,12 @@ export default function Reports() {
     : staysExitedThisMonth.filter(s => clientGenderMap[s.client_id] === (reportHouse === 'men' ? 'Male' : 'Female'));
   const avgLosMonth = avgArr(staysFiltered.map(s => calcLOS(s.start_date, s.discharge_date)));
 
+  const graduatesMonth = staysExitedThisMonth.filter(s => s.graduate === true);
+  const graduatesMonthFiltered = reportHouse === 'combined' ? graduatesMonth
+    : graduatesMonth.filter(s => clientGenderMap[s.client_id] === (reportHouse === 'men' ? 'Male' : 'Female'));
+  const menGraduatesMonth = graduatesMonth.filter(s => clientGenderMap[s.client_id] === 'Male').length;
+  const womenGraduatesMonth = graduatesMonth.filter(s => clientGenderMap[s.client_id] === 'Female').length;
+
   const menWaitList = waitingList.filter(w => w.status === 'waiting' && w.list_type?.includes('Men')).length;
   const womenWaitList = waitingList.filter(w => w.status === 'waiting' && w.list_type?.includes('Women')).length;
   const totalWaitList = waitingList.filter(w => w.status === 'waiting').length;
@@ -319,6 +325,7 @@ export default function Reports() {
             <MetricCard label="OUD / Overdose History" value={oudCount} />
             <MetricCard label="New Intakes" value={intakesMonth.length} />
             <MetricCard label="New Exits" value={exitsMonth.length} />
+            <MetricCard label="Graduates" value={graduatesMonthFiltered.length} color="#4ade80" />
             <MetricCard label="Avg Length of Stay (days)" value={avgLosMonth ?? '—'} />
             <MetricCard label="On Waiting List" value={waitListCount} />
           </div>
@@ -328,11 +335,13 @@ export default function Reports() {
               <Row label="Men's — Unique Individuals Housed" value={byGender(uniqueHoused, 'Male').length} />
               <Row label="Men's — Intakes" value={byGender(allIntakesMonth, 'Male').length} />
               <Row label="Men's — Exits" value={byGender(allExitsMonth, 'Male').length} />
+              <Row label="Men's — Graduates" value={menGraduatesMonth} />
               <Row label="Men's — Avg Length of Stay (days)" value={avgArr(menStaysMonth.map(s => calcLOS(s.start_date, s.discharge_date))) ?? '—'} />
               <Row label="Men's — On Waiting List" value={menWaitList} />
               <Row label="Women's — Unique Individuals Housed" value={byGender(uniqueHoused, 'Female').length} />
               <Row label="Women's — Intakes" value={byGender(allIntakesMonth, 'Female').length} />
               <Row label="Women's — Exits" value={byGender(allExitsMonth, 'Female').length} />
+              <Row label="Women's — Graduates" value={womenGraduatesMonth} />
               <Row label="Women's — Avg Length of Stay (days)" value={avgArr(womenStaysMonth.map(s => calcLOS(s.start_date, s.discharge_date))) ?? '—'} />
               <Row label="Women's — On Waiting List" value={womenWaitList} />
             </Section>
