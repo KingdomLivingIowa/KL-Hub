@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
+import { InvoiceButton } from './Invoice';
 
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'Cash' },
@@ -252,6 +253,7 @@ function ClientPayments({ client }) {
             {sendingLink ? 'Getting link...' : '🔗 Send Pay Link'}
           </button>
         )}
+        <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
       </div>
 
       {/* Record payment form */}

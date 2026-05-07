@@ -85,7 +85,7 @@ function generateDischargePDF(stay, client, logoSrc) {
   win.document.close();
 }
 
-function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, logoSrc) {
+function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, checkIn, logoSrc) {
   const name = client.full_name || '—';
   const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
   const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
@@ -114,8 +114,8 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   const choreCompleted = recentChores.filter(c => c.event_name === 'Completed').length;
   const choreMissed = recentChores.filter(c => c.event_name === 'Not Completed').length;
 
-  // Stay count
-  const totalStays = stays.length;
+  // Latest weekly check-in
+  const fmtCheckInDate = checkIn?.created_at ? new Date(checkIn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
   const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span style="font-size:14px;color:#555;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#111'};">${value}</span></div>`;
@@ -135,6 +135,7 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
     .stat-box { background: #f5f5f5; border-radius: 8px; padding: 14px; text-align: center; }
     .stat-num { font-size: 28px; font-weight: 700; color: #111; }
     .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+    .checkin-box { background: #f5f5f5; border-radius: 8px; padding: 14px; margin-top: 8px; }
     .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
     @media print { .print-btn { display: none; } body { padding: 20px; } }
   </style></head><body>
@@ -152,15 +153,11 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   ${row('Move-In Date', fmtDate(client.start_date))}
   ${daysInProgram !== null ? row('Days in Program', `${daysInProgram} days`) : ''}
   ${row('PO Name', client.po_name || '—')}
-  ${row('Sponsor', client.sponsor_name || '—')}
   ${row('Recovery Meetings', client.recovery_meetings || '—')}
 
   ${section('Recovery')}
-  ${row('Drug of Choice', client.drug_of_choice || '—')}
-  ${row('Sober Date', fmtDate(client.sober_date))}
-  ${soberDays !== null ? row('Days Sober', `${soberDays} days`, soberDays >= 90 ? '#16a34a' : '#b45309') : ''}
-  ${row('OUD Diagnosis', client.oud || '—')}
-  ${row('Total Stays at KL', totalStays > 0 ? `${totalStays} stay${totalStays !== 1 ? 's' : ''}` : 'First stay')}
+  ${row('Recovery Date', fmtDate(client.sober_date))}
+  ${soberDays !== null ? row('Days in Recovery', `${soberDays} days`, soberDays >= 90 ? '#16a34a' : '#b45309') : ''}
 
   ${section('UA History')}
   <div class="stat-grid">
@@ -183,6 +180,20 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
     <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${choreCompleted}</div><div class="stat-label">Completed</div></div>
     <div class="stat-box"><div class="stat-num" style="color:${choreMissed > 0 ? '#dc2626' : '#16a34a'};">${choreMissed}</div><div class="stat-label">Missed</div></div>
   </div>
+
+  ${section('Latest Weekly Check-In')}
+  ${!checkIn ? '<p style="color:#888;font-size:14px;padding:8px 0;">No weekly check-ins on record.</p>' : `
+  <div class="checkin-box">
+    <div style="font-size:12px;color:#b22222;font-weight:600;margin-bottom:10px;">Submitted ${fmtCheckInDate}${checkIn.author ? ` by ${checkIn.author}` : ''}</div>
+    ${checkIn.checkin_meetings != null ? row('Meetings attended', checkIn.checkin_meetings) : ''}
+    ${checkIn.checkin_sponsor_contacts != null ? row('Sponsor contacts', checkIn.checkin_sponsor_contacts) : ''}
+    ${checkIn.checkin_chore ? row('Assigned chore', checkIn.checkin_chore) : ''}
+    ${checkIn.checkin_chore_completed != null ? row('Chore completed', checkIn.checkin_chore_completed ? 'Yes ✓' : 'No ✗', checkIn.checkin_chore_completed ? '#16a34a' : '#dc2626') : ''}
+    ${checkIn.checkin_employed != null ? row('Employed', checkIn.checkin_employed ? 'Yes' : 'No') : ''}
+    ${checkIn.checkin_employer ? row('Employer', checkIn.checkin_employer) : ''}
+    ${checkIn.checkin_payment_plan ? row('Payment plan', checkIn.checkin_payment_plan) : ''}
+    ${checkIn.notes ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #ddd;"><div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Weekly reflection</div><div style="font-size:14px;color:#333;line-height:1.6;">${checkIn.notes}</div></div>` : ''}
+  </div>`}
 
   <div style="margin-top:32px;text-align:center;color:#aaa;font-size:12px;">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${generatedDate}</div>
   </body></html>`;
@@ -804,6 +815,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
   const [stays, setStays] = useState([]);
   const [staysLoading, setStaysLoading] = useState(false);
+  const [latestCheckIn, setLatestCheckIn] = useState(null);
 
   const [uaRecords, setUaRecords] = useState([]);
   const [meetingRecords, setMeetingRecords] = useState([]);
@@ -1215,10 +1227,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setTimeline([]);
     setTimelineTotal(0);
     setStays([]);
+    setLatestCheckIn(null);
     fetchTimeline(client.id);
     fetchFullHistory(client.id);
     fetchLatestReflection(client.id);
     fetchStays(client.id);
+    supabase.from('client_timeline').select('*').eq('client_id', client.id).eq('entry_type', 'Weekly Check-In')
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => { if (data) setLatestCheckIn(data); });
   };
 
   const updateLevel = async (clientId, lvl) => {
@@ -1543,9 +1559,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           const canvas = document.createElement('canvas');
                           canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
                           canvas.getContext('2d').drawImage(img, 0, 0);
-                          generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, canvas.toDataURL('image/jpeg'));
+                          generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, latestCheckIn, canvas.toDataURL('image/jpeg'));
                         };
-                        img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, null);
+                        img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, latestCheckIn, null);
                         img.src = klLogo;
                       }} style={{ padding: '5px 12px', background: '#1e2d3a', border: '1px solid #2a3d52', borderRadius: '6px', color: '#60a5fa', fontSize: '12px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
                         📄 Progress Report
