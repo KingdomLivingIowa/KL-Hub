@@ -33,7 +33,7 @@ function generateDischargePDF(stay, client, logoSrc) {
     </tr>`;
 
   const choiceRow = (label, options, selected) => {
-    const opts = options.map(o => `<span style="margin-right:24px;">${o === selected ? `<span style="background:#ffd700;padding:0 4px;font-weight:bold;">${o}</span>` : o}</span>`).join('');
+    const opts = options.map(o => `<span style="margin-right:24px;">${o === selected ? `<span style="background:#ffd700;color:#000;padding:1px 6px;border-radius:3px;">${o}</span>` : `<span style="color:#999;">${o}</span>`}</span>`).join('');
     return row(label, `<span style="font-size:13px;">${opts}</span>`);
   };
 
@@ -964,7 +964,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (error) { alert('Error updating status: ' + error.message); return; }
     setStatusModal(null);
     fetchClients();
-    if (selected?.id === client.id) setSelected({ ...selected, ...updates });
+    if (selected?.id === client.id) {
+      setSelected({ ...selected, ...updates });
+      if (newStatus === 'Discharged') fetchStays(client.id);
+    }
   };
 
   const dropPin = () => {
@@ -1893,7 +1896,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
               {statusModal.newStatus === 'Active' && (
                 <>
-                  {!statusModal.client.house_id && (
+                  {!statusModal.client.house_id ? (
                     <div style={{ marginBottom: '16px' }}>
                       <label style={sf.label}>Assign to house</label>
                       <select value={statusForm.house_id} onChange={e => setStatusForm(p => ({ ...p, house_id: e.target.value }))} style={sf.input}>
@@ -1901,11 +1904,23 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         {houses.map(h => <option key={h.id} value={h.id}>{h.name} ({h.type})</option>)}
                       </select>
                     </div>
-                  )}
-                  {statusModal.client.house_id && (
-                    <div style={{ marginBottom: '16px', padding: '10px 12px', background: '#1e2d3a', borderRadius: '8px', border: '1px solid #2a3d52' }}>
-                      <span style={{ fontSize: '13px', color: '#60a5fa' }}>🏠 Already assigned: </span>
-                      <span style={{ fontSize: '13px', color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span>
+                  ) : (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ padding: '10px 12px', background: '#1e2d3a', borderRadius: '8px', border: '1px solid #2a3d52', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', color: '#60a5fa' }}>🏠 Already assigned: <span style={{ color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span></span>
+                        <button
+                          onClick={() => setStatusForm(p => ({ ...p, changingHouse: !p.changingHouse, house_id: p.changingHouse ? statusModal.client.house_id : '' }))}
+                          style={{ fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}
+                        >
+                          {statusForm.changingHouse ? 'Keep current' : 'Change house'}
+                        </button>
+                      </div>
+                      {statusForm.changingHouse && (
+                        <select value={statusForm.house_id} onChange={e => setStatusForm(p => ({ ...p, house_id: e.target.value }))} style={sf.input}>
+                          <option value="">Select a house</option>
+                          {houses.map(h => <option key={h.id} value={h.id}>{h.name} ({h.type})</option>)}
+                        </select>
+                      )}
                     </div>
                   )}
                   <div style={{ marginBottom: '16px' }}>
