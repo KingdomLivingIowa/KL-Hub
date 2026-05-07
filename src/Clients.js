@@ -263,6 +263,8 @@ function generateUAHistoryPDF(client, uaRecords, logoSrc) {
   win.document.close();
 }
 
+const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
+
 const STATUS_FLOW = {
   'Applied': ['Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
   'Accepted': ['Applied', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
