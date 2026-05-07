@@ -85,8 +85,183 @@ function generateDischargePDF(stay, client, logoSrc) {
   win.document.close();
 }
 
+function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, logoSrc) {
+  const name = client.full_name || '—';
+  const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+  const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+  const today = new Date();
+  const generatedDate = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
+  // Sober days
+  const soberDays = client.sober_date ? Math.floor((today - new Date(client.sober_date + 'T12:00:00')) / (1000*60*60*24)) : null;
+
+  // Days in program
+  const daysInProgram = client.start_date ? Math.floor((today - new Date(client.start_date + 'T12:00:00')) / (1000*60*60*24)) : null;
+
+  // Meeting stats (last 4 weeks)
+  const fourWeeksAgo = new Date(today); fourWeeksAgo.setDate(today.getDate() - 28);
+  const recentMeetings = meetingRecords.filter(m => new Date(m.created_at) >= fourWeeksAgo);
+  const totalMeetings = meetingRecords.length;
+
+  // UA stats
+  const totalUAs = uaRecords.length;
+  const negUAs = uaRecords.filter(u => u.event_name === 'Negative').length;
+  const posUAs = uaRecords.filter(u => u.event_name === 'Positive').length;
+  const lastUA = uaRecords[0];
+
+  // Chore stats (last 4 weeks)
+  const recentChores = choreRecords.filter(c => new Date(c.created_at) >= fourWeeksAgo);
+  const choreCompleted = recentChores.filter(c => c.event_name === 'Completed').length;
+  const choreMissed = recentChores.filter(c => c.event_name === 'Not Completed').length;
+
+  // Stay count
+  const totalStays = stays.length;
+
+  const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
+  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span style="font-size:14px;color:#555;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#111'};">${value}</span></div>`;
+  const badge = (text, color) => `<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:600;background:${color};color:#fff;margin-right:6px;">${text}</span>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Progress Report – ${name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #111; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+    .org-name { font-size: 24px; font-weight: 700; }
+    .org-sub { font-size: 13px; color: #888; margin-top: 2px; }
+    .divider { height: 3px; background: #b22222; margin: 14px 0; }
+    .report-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 4px; }
+    .report-sub { font-size: 13px; color: #888; margin-bottom: 20px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
+    .stat-box { background: #f5f5f5; border-radius: 8px; padding: 14px; text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 700; color: #111; }
+    .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+    .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .print-btn { display: none; } body { padding: 20px; } }
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+  <div class="header">${logoHtml}<div><div class="org-name">KINGDOM LIVING IOWA</div><div class="org-sub">Non-Profit Recovery Community</div></div></div>
+  <div class="divider"></div>
+  <div class="report-title">Client Progress Report</div>
+  <div class="report-sub">Generated ${generatedDate}</div>
+
+  ${section('Client Information')}
+  ${row('Name', name)}
+  ${row('House', client.house_name || '—')}
+  ${row('Status', client.status || '—')}
+  ${row('Level', client.level ? `Level ${client.level}` : '—')}
+  ${row('Move-In Date', fmtDate(client.start_date))}
+  ${daysInProgram !== null ? row('Days in Program', `${daysInProgram} days`) : ''}
+  ${row('PO Name', client.po_name || '—')}
+  ${row('Sponsor', client.sponsor_name || '—')}
+  ${row('Recovery Meetings', client.recovery_meetings || '—')}
+
+  ${section('Recovery')}
+  ${row('Drug of Choice', client.drug_of_choice || '—')}
+  ${row('Sober Date', fmtDate(client.sober_date))}
+  ${soberDays !== null ? row('Days Sober', `${soberDays} days`, soberDays >= 90 ? '#16a34a' : '#b45309') : ''}
+  ${row('OUD Diagnosis', client.oud || '—')}
+  ${row('Total Stays at KL', totalStays > 0 ? `${totalStays} stay${totalStays !== 1 ? 's' : ''}` : 'First stay')}
+
+  ${section('UA History')}
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num">${totalUAs}</div><div class="stat-label">Total UAs</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${negUAs}</div><div class="stat-label">Negative</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${posUAs > 0 ? '#dc2626' : '#16a34a'};">${posUAs}</div><div class="stat-label">Positive</div></div>
+  </div>
+  ${lastUA ? row('Most Recent UA', `${lastUA.event_name} — ${new Date(lastUA.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, lastUA.event_name === 'Negative' ? '#16a34a' : '#dc2626') : row('Most Recent UA', 'No UAs on record')}
+
+  ${section('Meeting Attendance')}
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num">${totalMeetings}</div><div class="stat-label">Total Meetings</div></div>
+    <div class="stat-box"><div class="stat-num">${recentMeetings.length}</div><div class="stat-label">Last 4 Weeks</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${recentMeetings.length >= 16 ? '#16a34a' : recentMeetings.length >= 8 ? '#b45309' : '#dc2626'};">${Math.round(recentMeetings.length / 4 * 10) / 10}</div><div class="stat-label">Avg / Week</div></div>
+  </div>
+
+  ${section('Chore Compliance (Last 4 Weeks)')}
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num">${recentChores.length}</div><div class="stat-label">Total Chores</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${choreCompleted}</div><div class="stat-label">Completed</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${choreMissed > 0 ? '#dc2626' : '#16a34a'};">${choreMissed}</div><div class="stat-label">Missed</div></div>
+  </div>
+
+  <div style="margin-top:32px;text-align:center;color:#aaa;font-size:12px;">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${generatedDate}</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=1000');
+  win.document.write(html);
+  win.document.close();
+}
+
+function generateUAHistoryPDF(client, uaRecords, logoSrc) {
+  const name = client.full_name || '—';
+  const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+  const generatedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const negCount = uaRecords.filter(u => u.event_name === 'Negative').length;
+  const posCount = uaRecords.filter(u => u.event_name === 'Positive').length;
+  const incCount = uaRecords.filter(u => u.event_name === 'Inconclusive').length;
+  const refCount = uaRecords.filter(u => u.event_name === 'Refused').length;
+
+  const resultColor = (r) => r === 'Negative' ? '#16a34a' : r === 'Positive' ? '#dc2626' : r === 'Inconclusive' ? '#b45309' : '#888';
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>UA History – ${name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #111; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+    .org-name { font-size: 24px; font-weight: 700; }
+    .org-sub { font-size: 13px; color: #888; margin-top: 2px; }
+    .divider { height: 3px; background: #b22222; margin: 14px 0; }
+    .report-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 4px; }
+    .report-sub { font-size: 13px; color: #888; margin-bottom: 20px; }
+    .summary { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+    .sum-box { background: #f5f5f5; border-radius: 8px; padding: 12px; text-align: center; }
+    .sum-num { font-size: 26px; font-weight: 700; }
+    .sum-label { font-size: 12px; color: #888; margin-top: 3px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: #111; color: #fff; padding: 10px 12px; text-align: left; font-size: 13px; }
+    td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+    tr:nth-child(even) td { background: #f9f9f9; }
+    .result-badge { padding: 2px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #fff; display: inline-block; }
+    .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .print-btn { display: none; } body { padding: 20px; } }
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+  <div class="header">${logoHtml}<div><div class="org-name">KINGDOM LIVING IOWA</div><div class="org-sub">Non-Profit Recovery Community</div></div></div>
+  <div class="divider"></div>
+  <div class="report-title">UA History Report</div>
+  <div class="report-sub">${name} &nbsp;·&nbsp; ${client.house_name || '—'} &nbsp;·&nbsp; Generated ${generatedDate}</div>
+
+  <div class="summary">
+    <div class="sum-box"><div class="sum-num">${uaRecords.length}</div><div class="sum-label">Total UAs</div></div>
+    <div class="sum-box"><div class="sum-num" style="color:#16a34a;">${negCount}</div><div class="sum-label">Negative</div></div>
+    <div class="sum-box"><div class="sum-num" style="color:${posCount > 0 ? '#dc2626' : '#16a34a'};">${posCount}</div><div class="sum-label">Positive</div></div>
+    <div class="sum-box"><div class="sum-num" style="color:#888;">${incCount + refCount}</div><div class="sum-label">Inc. / Refused</div></div>
+  </div>
+
+  ${uaRecords.length === 0 ? '<p style="color:#888;font-size:14px;">No UA records on file.</p>' : `
+  <table>
+    <thead><tr><th>Date</th><th>Result</th><th>Administered By</th><th>Notes</th></tr></thead>
+    <tbody>
+      ${uaRecords.map(u => `<tr>
+        <td>${fmtDate(u.created_at)}</td>
+        <td><span class="result-badge" style="background:${resultColor(u.event_name)};">${u.event_name || '—'}</span></td>
+        <td>${u.author || '—'}</td>
+        <td style="color:#555;">${u.notes || '—'}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`}
+
+  <div style="margin-top:32px;text-align:center;color:#aaa;font-size:12px;">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${generatedDate}</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=1000');
+  win.document.write(html);
+  win.document.close();
+}
 
 const STATUS_FLOW = {
   'Applied': ['Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
@@ -1357,7 +1532,25 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             <div style={st.modalBody}>
               {activeTab === 'overview' && (
                 <>
-                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 12px 0', fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <p style={{ fontSize: '13px', color: '#bbb', margin: 0, fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
+                    {hasFullAccess && (
+                      <button onClick={() => {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = () => {
+                          const canvas = document.createElement('canvas');
+                          canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                          canvas.getContext('2d').drawImage(img, 0, 0);
+                          generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, canvas.toDataURL('image/jpeg'));
+                        };
+                        img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, null);
+                        img.src = klLogo;
+                      }} style={{ padding: '5px 12px', background: '#1e2d3a', border: '1px solid #2a3d52', borderRadius: '6px', color: '#60a5fa', fontSize: '12px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                        📄 Progress Report
+                      </button>
+                    )}
+                  </div>
                   <div style={st.grid}>
                     <Card title="Contact info">
                       <EditableField label="Phone" field="phone" value={selected.phone} />
@@ -1417,7 +1610,24 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'UAs' && (
-                <Card title="UA Records" full>
+                <Card title="UA Records" full action={
+                  uaRecords.length > 0 && hasFullAccess ? (
+                    <button onClick={() => {
+                      const img = new Image();
+                      img.crossOrigin = 'anonymous';
+                      img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                        canvas.getContext('2d').drawImage(img, 0, 0);
+                        generateUAHistoryPDF(selected, uaRecords, canvas.toDataURL('image/jpeg'));
+                      };
+                      img.onerror = () => generateUAHistoryPDF(selected, uaRecords, null);
+                      img.src = klLogo;
+                    }} style={{ padding: '4px 12px', background: '#2d1e3a', border: '1px solid #4a2a5a', borderRadius: '6px', color: '#c084fc', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+                      📄 UA Report
+                    </button>
+                  ) : null
+                }>
                   {uaRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No UA records yet.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -1819,7 +2029,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'payments' && (
-                <Card title="Payments" full>
+                <Card title="Payments" full action={
+                  hasFullAccess ? <InvoiceButton client={selected} style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '4px 12px', borderRadius: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }} /> : null
+                }>
                   <ClientPayments client={selected} />
                 </Card>
               )}
