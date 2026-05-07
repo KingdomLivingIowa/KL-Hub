@@ -119,7 +119,6 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
   const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span style="font-size:14px;color:#555;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#111'};">${value}</span></div>`;
-  const badge = (text, color) => `<span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:13px;font-weight:600;background:${color};color:#fff;margin-right:6px;">${text}</span>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Progress Report – ${name}</title>
