@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import { getCached, setCached } from './dataCache';
 import { useUser } from './UserContext';
 import { ClientLevelProgress } from './LevelRequirements';
+import klLogo from './kingdom-living-logo.jpg';
 import { InvoiceButton } from './Invoice';
 import ClientPayments from './ClientPayments';
 
@@ -10,7 +11,7 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
-function generateDischargePDF(stay, client) {
+function generateDischargePDF(stay, client, logoSrc) {
   const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
   const location = stay.house_name || '—';
   const startDate = stay.start_date ? new Date(stay.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : '—';
@@ -21,7 +22,8 @@ function generateDischargePDF(stay, client) {
   const dischargeType = stay.discharge_type || '';
   const uaResult = stay.ua_at_discharge || '';
   const twoWeek = stay.two_week_notice || '';
-  const reason = stay.discharge_notes || stay.discharge_reason || '—';
+  const reason = stay.discharge_reason || '—';
+  const notes = stay.discharge_notes || '';
   const completedBy = stay.discharged_by || '—';
 
   const row = (label, value, highlight = '') => `
@@ -35,13 +37,16 @@ function generateDischargePDF(stay, client) {
     return row(label, `<span style="font-size:13px;">${opts}</span>`);
   };
 
+  const logoHtml = logoSrc
+    ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />`
+    : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Discharge Sheet – ${name}</title>
   <style>
     @media print { body { margin: 0; } .no-print { display: none; } }
     body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
-    .logo-box { width: 70px; height: 70px; border: 2px solid #8b1c1c; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: bold; color: #8b1c1c; }
     .org-name { font-size: 22px; font-weight: bold; }
     .org-sub { font-size: 13px; color: #555; }
     hr { border: none; border-top: 1px solid #999; margin: 14px 0 20px 0; }
@@ -51,7 +56,7 @@ function generateDischargePDF(stay, client) {
   </style></head><body>
   <button class="no-print print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
   <div class="header">
-    <div class="logo-box">KL</div>
+    ${logoHtml}
     <div>
       <div class="org-name">KINGDOM LIVING IOWA</div>
       <div class="org-sub">Non-Profit Recovery Community</div>
@@ -66,6 +71,7 @@ function generateDischargePDF(stay, client) {
     ${row('Date of Discharge:', dischargeDate)}
     ${choiceRow('Type of Discharge:', ['Complete', 'Incomplete'], dischargeType)}
     ${row('Reason for Discharge:', reason, 'line-height:1.6;')}
+    ${notes ? row('Notes:', notes, 'line-height:1.6;color:#333;') : ''}
     ${choiceRow('UA:', ['Positive', 'Negative', 'N/A'], uaResult)}
     ${choiceRow('Did client give two-week notice?', ['Yes', 'No'], twoWeek)}
     ${row('Completed by:', completedBy)}
@@ -1738,7 +1744,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                   {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
                                   <button
-                                    onClick={() => generateDischargePDF(stay, selected)}
+                                    onClick={() => generateDischargePDF(stay, selected, klLogo)}
                                     style={{ padding: '5px 12px', background: '#1a2a1a', border: '1px solid #2a5a2a', borderRadius: '6px', color: '#4ade80', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}
                                   >
                                     ⬇ Discharge Sheet
