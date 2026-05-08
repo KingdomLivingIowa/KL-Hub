@@ -304,7 +304,8 @@ function DashboardHome({ counts, currentUser }) {
           {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            {/* Waiting List Breakdown */}
+            {/* Waiting List Breakdown — admin/upper management only */}
+            {!isHouseManagerRole && (
             <Section title="Waiting Lists" count={totalWaiting} countColor="#fb923c">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
@@ -323,9 +324,10 @@ function DashboardHome({ counts, currentUser }) {
                 ))}
               </div>
             </Section>
+            )}
 
             {/* Alerts & Notifications */}
-            {(alerts.length > 0 || notifications.length > 0) && (
+            {(alerts.length > 0 || notifications.length > 0 || isHouseManagerRole) && (
               <Section title="Alerts" count={totalUnread > 0 ? totalUnread : undefined} countColor="#f87171">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {/* Unread notifications */}
@@ -395,6 +397,10 @@ function DashboardHome({ counts, currentUser }) {
                       style={{ alignSelf: 'flex-end', background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', marginTop: '4px' }}>
                       Mark all read
                     </button>
+                  )}
+                  {/* Empty state for house managers */}
+                  {alerts.length === 0 && notifications.length === 0 && (
+                    <p style={{ color: '#666', fontSize: '13px', textAlign: 'center', padding: '12px 0', margin: 0 }}>No new notifications</p>
                   )}
                 </div>
               </Section>
@@ -485,7 +491,8 @@ function DashboardHome({ counts, currentUser }) {
               </Section>
             )}
 
-            {/* Recent Activity */}
+            {/* Recent Activity — admin/upper management only */}
+            {!isHouseManagerRole && (
             <Section title="Recent Activity (Last 7 Days)">
               {recentActivity.length === 0 ? (
                 <p style={{ color: '#bbb', fontSize: '14px' }}>No recent activity.</p>
@@ -510,6 +517,7 @@ function DashboardHome({ counts, currentUser }) {
                 </div>
               )}
             </Section>
+            )}
 
           </div>
         </div>

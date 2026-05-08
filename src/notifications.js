@@ -60,17 +60,22 @@ export async function getHouseManagersForHouse(houseId, notifType) {
 
 // Send notification to relevant house managers
 export async function sendHouseNotification({ houseId, type, message, clientId }) {
-  const userIds = await getHouseManagersForHouse(houseId, type);
-  if (!userIds.length) return;
+  try {
+    const userIds = await getHouseManagersForHouse(houseId, type);
+    if (!userIds.length) return;
 
-  const rows = userIds.map(userId => ({
-    user_id: userId,
-    type,
-    message,
-    client_id: clientId || null,
-    house_id: houseId || null,
-    read: false,
-  }));
+    const rows = userIds.map(userId => ({
+      user_id: userId,
+      type,
+      message,
+      client_id: clientId || null,
+      house_id: houseId || null,
+      read: false,
+    }));
 
-  await supabase.from('notifications').insert(rows);
+    const { error } = await supabase.from('notifications').insert(rows);
+    if (error) console.error('Notification insert error:', error);
+  } catch (err) {
+    console.error('sendHouseNotification error:', err);
+  }
 }
