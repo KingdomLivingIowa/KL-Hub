@@ -595,8 +595,8 @@ export function HouseCalendarTab({ houseId, houseType }) {
 // STAFF VACATION CALENDAR
 // ═══════════════════════════════════════════════════════════════════════════════
 function VacationCalendar() {
-  const { user, hasFullAccess, isUpperManagement, isAdmin } = useUser();
-  const canApprove = hasFullAccess || isUpperManagement || isAdmin;
+  const { user, hasFullAccess, isUpperManagement, isAdmin, isHeadHouseManager } = useUser();
+  const canApprove = hasFullAccess || isUpperManagement || isAdmin || isHeadHouseManager;
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
   const [requests, setRequests] = useState([]);
