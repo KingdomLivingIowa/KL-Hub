@@ -190,6 +190,22 @@ function ApplicationForm() {
       return;
     }
 
+    // Notify upper management and admins of new application
+    const { data: managers } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .in('role', ['admin', 'upper_management']);
+    if (managers?.length) {
+      await supabase.from('notifications').insert(
+        managers.map(m => ({
+          user_id: m.id,
+          type: 'new_application',
+          message: `New application submitted by ${fullName}`,
+          read: false,
+        }))
+      );
+    }
+
     setSubmitted(true);
   };
 

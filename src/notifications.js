@@ -58,13 +58,30 @@ export async function getHouseManagersForHouse(houseId, notifType) {
   }).map(p => p.id);
 }
 
-// Send notification to relevant house managers
+// Send notification to relevant house managers AND upper management/admins
 export async function sendHouseNotification({ houseId, type, message, clientId }) {
   try {
-    const userIds = await getHouseManagersForHouse(houseId, type);
-    if (!userIds.length) return;
+    // Get house managers for this specific house
+    const houseManagerIds = await getHouseManagersForHouse(houseId, type);
 
-    const rows = userIds.map(userId => ({
+    // Get upper management and admins (they get all client notifications)
+    const { data: upperProfiles } = await supabase
+      .from('user_profiles')
+      .select('id, notification_preferences, role')
+      .in('role', ['admin', 'upper_management']);
+
+    const upperIds = (upperProfiles || []).filter(p => {
+      const prefs = p.notification_preferences;
+      if (!prefs) return true;
+      if (typeof prefs[type] === 'boolean') return prefs[type];
+      return true;
+    }).map(p => p.id);
+
+    // Combine and deduplicate
+    const allIds = [...new Set([...houseManagerIds, ...upperIds])];
+    if (!allIds.length) return;
+
+    const rows = allIds.map(userId => ({
       user_id: userId,
       type,
       message,

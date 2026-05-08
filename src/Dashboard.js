@@ -20,6 +20,7 @@ const DEFAULT_NOTIF_PREFS = {
   client_level_change: true,
   client_weekly_checkin: true,
   vacation_request: true,
+  new_application: true,
 };
 
 const NOTIF_LABELS_MAP = {
@@ -29,6 +30,7 @@ const NOTIF_LABELS_MAP = {
   client_level_change: 'Client level changes',
   client_weekly_checkin: 'Weekly check-in submitted (portal)',
   vacation_request: 'Staff vacation request submitted',
+  new_application: 'New application submitted',
 };
 
 const WAITING_LISTS = [
@@ -284,12 +286,13 @@ function DashboardHome({ counts, currentUser }) {
     if (type === 'client_level_change') return '⬆️';
     if (type === 'client_weekly_checkin') return '📋';
     if (type === 'vacation_request') return '🏖️';
+    if (type === 'new_application') return '📝';
     return '•';
   };
 
   const notifLevel = (type) => {
     if (type === 'client_positive_ua' || type === 'client_crisis') return 'high';
-    if (type === 'client_status_change' || type === 'vacation_request') return 'medium';
+    if (type === 'client_status_change' || type === 'vacation_request' || type === 'new_application') return 'medium';
     return 'low';
   };
 
@@ -739,7 +742,7 @@ const styles = {
   sidebarLogo: { padding: '24px 20px', borderBottom: '1px solid #333' },
   logoText: { color: '#ffffff', fontSize: '22px', fontWeight: '700', margin: '0' },
   logoSub: { color: '#bbb', fontSize: '13px', margin: '3px 0 0 0' },
-  nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto' },
+  nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
   navItem: { backgroundColor: 'transparent', border: 'none', color: '#bbb', padding: '13px 20px', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
   navItemActive: { backgroundColor: '#252525', color: '#ffffff', borderLeft: '3px solid #b22222', fontWeight: '600' },
   badge: { backgroundColor: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
