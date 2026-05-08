@@ -57,6 +57,10 @@ function DashboardHome({ counts, currentUser }) {
       setTotalOutstanding(cached.outstanding);
       setWaitingListCounts(cached.waitlistCounts);
       setLoadingDashboard(false);
+      // Always fetch user-specific data even from cache
+      fetchAlerts();
+      fetchReadAlerts();
+      fetchNotifications();
       return;
     }
     setLoadingDashboard(true);
@@ -74,6 +78,14 @@ function DashboardHome({ counts, currentUser }) {
       setLoadingDashboard(false);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-fetch notifications whenever currentUser becomes available
+  useEffect(() => {
+    if (currentUser?.id) {
+      fetchNotifications();
+      fetchReadAlerts();
+    }
+  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReadAlerts = async () => {
     if (!currentUser?.id) return;
