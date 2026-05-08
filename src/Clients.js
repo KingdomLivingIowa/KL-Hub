@@ -1858,14 +1858,76 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       {entryType === 'Weekly Reflection' && (
                         <WeeklyReflectionForm entryForm={entryForm} setEntryForm={setEntryForm} />
                       )}
+                      {entryType === 'Weekly Check-In' && (
+                        <>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>How many meetings did you go to in the past week?</label>
+                            <input type="number" min="0" value={entryForm.wci_meetings} onChange={e => setEntryForm(p => ({ ...p, wci_meetings: e.target.value }))} style={sf.input} placeholder="Enter number" />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>How many sponsor contacts in the past week? <span style={{ fontWeight: 400, color: '#888' }}>(Only phone calls and in-person count)</span></label>
+                            <input type="number" min="0" value={entryForm.wci_sponsor_contacts} onChange={e => setEntryForm(p => ({ ...p, wci_sponsor_contacts: e.target.value }))} style={sf.input} placeholder="Enter number" />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>Chore</label>
+                            <input value={entryForm.wci_chore} onChange={e => setEntryForm(p => ({ ...p, wci_chore: e.target.value }))} style={sf.input} placeholder="Enter chore assignment" />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>Did you complete your chores?</label>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                              {[['yes', 'Yes'], ['no', 'No']].map(([val, label]) => (
+                                <button key={val} onClick={() => setEntryForm(p => ({ ...p, wci_chore_completed: val }))}
+                                  style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                                    borderColor: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#4ade80' : '#f87171') : '#555',
+                                    background: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#1a3a2a' : '#3a1a1a') : 'transparent',
+                                    color: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#4ade80' : '#f87171') : '#aaa',
+                                  }}>
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>Are you employed?</label>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                              {[['yes', 'Yes'], ['no', 'No']].map(([val, label]) => (
+                                <button key={val} onClick={() => setEntryForm(p => ({ ...p, wci_employed: val }))}
+                                  style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                                    borderColor: entryForm.wci_employed === val ? '#60a5fa' : '#555',
+                                    background: entryForm.wci_employed === val ? '#1e2d3a' : 'transparent',
+                                    color: entryForm.wci_employed === val ? '#60a5fa' : '#aaa',
+                                  }}>
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {entryForm.wci_employed === 'yes' && (
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={sf.label}>Who is your employer?</label>
+                              <input value={entryForm.wci_employer} onChange={e => setEntryForm(p => ({ ...p, wci_employer: e.target.value }))} style={sf.input} placeholder="Employer name" />
+                            </div>
+                          )}
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>If you are not paid in full for program fees, enter your plan for your next payment <span style={{ fontWeight: 400, color: '#888' }}>(How much and when)</span></label>
+                            <input value={entryForm.wci_payment_plan} onChange={e => setEntryForm(p => ({ ...p, wci_payment_plan: e.target.value }))} style={sf.input} placeholder="e.g. $135 on Friday" />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>Weekly Reflection</label>
+                            <textarea value={entryForm.wci_reflection} onChange={e => setEntryForm(p => ({ ...p, wci_reflection: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={4} placeholder="Describe here any notes on how your week went" />
+                          </div>
+                        </>
+                      )}
                       <div style={{ marginBottom: '12px' }}>
                         <label style={sf.label}>Author *</label>
                         <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={sf.input} placeholder="Your name" />
                       </div>
+                      {entryType !== 'Weekly Check-In' && (
                       <div style={{ marginBottom: '12px' }}>
                         <label style={sf.label}>{entryType === 'Weekly Reflection' ? 'Additional notes (optional)' : 'Notes'}</label>
                         <textarea value={entryForm.notes} onChange={e => setEntryForm(p => ({ ...p, notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={3} placeholder="Add any notes..." />
                       </div>
+                      )}
                       {['UA', 'Check-In', 'General Note', 'Jobs Applied For'].includes(entryType) && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Photo (optional)</label>
