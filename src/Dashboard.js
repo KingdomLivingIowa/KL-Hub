@@ -19,6 +19,7 @@ const DEFAULT_NOTIF_PREFS = {
   client_crisis: true,
   client_level_change: true,
   client_weekly_checkin: true,
+  vacation_request: true,
 };
 
 const NOTIF_LABELS_MAP = {
@@ -27,6 +28,7 @@ const NOTIF_LABELS_MAP = {
   client_crisis: 'Crisis entry logged',
   client_level_change: 'Client level changes',
   client_weekly_checkin: 'Weekly check-in submitted (portal)',
+  vacation_request: 'Staff vacation request submitted',
 };
 
 const WAITING_LISTS = [
@@ -281,12 +283,13 @@ function DashboardHome({ counts, currentUser }) {
     if (type === 'client_crisis') return '⚠️';
     if (type === 'client_level_change') return '⬆️';
     if (type === 'client_weekly_checkin') return '📋';
+    if (type === 'vacation_request') return '🏖️';
     return '•';
   };
 
   const notifLevel = (type) => {
     if (type === 'client_positive_ua' || type === 'client_crisis') return 'high';
-    if (type === 'client_status_change') return 'medium';
+    if (type === 'client_status_change' || type === 'vacation_request') return 'medium';
     return 'low';
   };
 

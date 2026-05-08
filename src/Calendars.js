@@ -641,10 +641,11 @@ function VacationCalendar() {
       start_date: form.start_date, end_date: form.end_date, notes: form.notes || null, status: 'pending',
     }]);
     if (vacErr) { setSaving(false); alert('Error submitting request: ' + vacErr.message); return; }
-    const managers = staffList.filter(s => s.role === 'upper_management' || s.role === 'admin');
+    const managers = staffList.filter(s => s.role === 'upper_management' || s.role === 'admin' || s.role === 'head_house_manager');
     if (managers.length > 0) {
       await supabase.from('notifications').insert(managers.map(m => ({
         user_id: m.id,
+        type: 'vacation_request',
         message: `${profile?.full_name || user.email} submitted a vacation request for ${fmtDate(form.start_date)} – ${fmtDate(form.end_date)}`,
       })));
     }
@@ -659,6 +660,7 @@ function VacationCalendar() {
     await supabase.from('vacation_requests').update({ status, reviewed_by: user.id, reviewed_at: new Date().toISOString() }).eq('id', id);
     await supabase.from('notifications').insert([{
       user_id: requestUserId,
+      type: 'vacation_request',
       message: `Your vacation request (${fmtDate(startDate)} – ${fmtDate(endDate)}) was ${status} by ${me?.full_name || me?.email || 'management'}.`,
     }]);
     fetchRequests();
