@@ -6,6 +6,7 @@ import { ClientLevelProgress } from './LevelRequirements';
 import klLogo from './kingdom-living-logo.jpg';
 import { InvoiceButton } from './Invoice';
 import ClientPayments from './ClientPayments';
+import { sendHouseNotification, NOTIF_TYPES } from './notifications';
 
 const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
@@ -1156,6 +1157,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       setSelected({ ...selected, ...updates });
       if (newStatus === 'Discharged') fetchStays(client.id);
     }
+
+    // Fire notification to house managers of the relevant house
+    const notifHouseId = updates.house_id || client.house_id;
+    if (notifHouseId) {
+      await sendHouseNotification({
+        houseId: notifHouseId,
+        type: NOTIF_TYPES.CLIENT_STATUS_CHANGE,
+        message: `${client.full_name} moved to ${newStatus}`,
+        clientId: client.id,
+      });
+    }
   };
 
   const dropPin = () => {
@@ -1206,6 +1218,27 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       checkin_payment_plan: entryType === 'Weekly Check-In' ? (entryForm.wci_payment_plan || null) : null,
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
+
+    // Fire notifications for relevant entry types
+    if (selected?.house_id) {
+      if (entryType === 'UA' && entryForm.ua_result === 'Positive') {
+        await sendHouseNotification({
+          houseId: selected.house_id,
+          type: NOTIF_TYPES.CLIENT_POSITIVE_UA,
+          message: `Positive UA logged for ${selected.full_name}`,
+          clientId: selected.id,
+        });
+      }
+      if (entryType === 'Crisis') {
+        await sendHouseNotification({
+          houseId: selected.house_id,
+          type: NOTIF_TYPES.CLIENT_CRISIS,
+          message: `Crisis entry logged for ${selected.full_name}${entryForm.severity ? ` (${entryForm.severity})` : ''}`,
+          clientId: selected.id,
+        });
+      }
+    }
+
     setShowAddEntry(false);
     setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null, wci_meetings: '', wci_sponsor_contacts: '', wci_chore: '', wci_chore_completed: '', wci_employed: '', wci_employer: '', wci_payment_plan: '', wci_reflection: '' });
     setEntryType('General Note');
@@ -1241,6 +1274,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     await supabase.from('clients').update({ level: lvl }).eq('id', clientId);
     fetchClients();
     setSelected(prev => prev ? { ...prev, level: lvl } : prev);
+    if (selected?.house_id) {
+      await sendHouseNotification({
+        houseId: selected.house_id,
+        type: NOTIF_TYPES.CLIENT_LEVEL_CHANGE,
+        message: `${selected.full_name} moved to Level ${lvl}`,
+        clientId,
+      });
+    }
   };
 
   const saveNotes = async (e) => {

@@ -13,6 +13,22 @@ import Reports from './Reports';
 import Calendars from './Calendars';
 import Resources from './Resources';
 
+const DEFAULT_NOTIF_PREFS = {
+  client_status_change: true,
+  client_positive_ua: true,
+  client_crisis: true,
+  client_level_change: true,
+  client_weekly_checkin: true,
+};
+
+const NOTIF_LABELS_MAP = {
+  client_status_change: 'Client status changes',
+  client_positive_ua: 'Positive UA logged',
+  client_crisis: 'Crisis entry logged',
+  client_level_change: 'Client level changes',
+  client_weekly_checkin: 'Weekly check-in submitted (portal)',
+};
+
 const WAITING_LISTS = [
   'DOC Men', 'Community Men', 'Treatment Men',
   'DOC Women', 'Community Women', 'Treatment Women',
@@ -24,6 +40,7 @@ function DashboardHome({ counts, currentUser }) {
   const [houses, setHouses] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [readAlertKeys, setReadAlertKeys] = useState(new Set());
   const [waitingListCounts, setWaitingListCounts] = useState({});
   const [openCharges, setOpenCharges] = useState([]);
@@ -48,6 +65,7 @@ function DashboardHome({ counts, currentUser }) {
         fetchHouses(),
         fetchRecentActivity(),
         fetchAlerts(),
+        fetchNotifications(),
         fetchWaitingListCounts(),
         fetchOpenCharges(),
         fetchReadAlerts(),
@@ -67,6 +85,31 @@ function DashboardHome({ counts, currentUser }) {
     if (!currentUser?.id) return;
     await supabase.from('alert_reads').upsert([{ user_id: currentUser.id, alert_key: alertKey }], { onConflict: 'user_id,alert_key' });
     setReadAlertKeys(prev => new Set([...prev, alertKey]));
+  };
+
+  const fetchNotifications = async () => {
+    if (!currentUser?.id) return;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .order('created_at', { ascending: false });
+    setNotifications(data || []);
+  };
+
+  const markNotificationRead = async (id) => {
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  };
+
+  const markAllNotificationsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.read).map(n => n.id);
+    if (!unreadIds.length) return;
+    await supabase.from('notifications').update({ read: true }).in('id', unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const fetchWaitingListCounts = async () => {
@@ -215,7 +258,25 @@ function DashboardHome({ counts, currentUser }) {
 
   const unreadAlerts = alerts.filter(a => !readAlertKeys.has(a.id));
   const readAlerts = alerts.filter(a => readAlertKeys.has(a.id));
+  const unreadNotifications = notifications.filter(n => !n.read);
+  const readNotifications = notifications.filter(n => n.read);
+  const totalUnread = unreadAlerts.length + unreadNotifications.length;
   const totalWaiting = Object.values(waitingListCounts).reduce((sum, n) => sum + n, 0);
+
+  const notifIcon = (type) => {
+    if (type === 'client_status_change') return '🔄';
+    if (type === 'client_positive_ua') return '🚨';
+    if (type === 'client_crisis') return '⚠️';
+    if (type === 'client_level_change') return '⬆️';
+    if (type === 'client_weekly_checkin') return '📋';
+    return '•';
+  };
+
+  const notifLevel = (type) => {
+    if (type === 'client_positive_ua' || type === 'client_crisis') return 'high';
+    if (type === 'client_status_change') return 'medium';
+    return 'low';
+  };
 
   return (
     <div>
@@ -263,10 +324,30 @@ function DashboardHome({ counts, currentUser }) {
               </div>
             </Section>
 
-            {/* Alerts */}
-            {alerts.length > 0 && (
-              <Section title="Alerts" count={unreadAlerts.length > 0 ? unreadAlerts.length : undefined} countColor="#f87171">
+            {/* Alerts & Notifications */}
+            {(alerts.length > 0 || notifications.length > 0) && (
+              <Section title="Alerts" count={totalUnread > 0 ? totalUnread : undefined} countColor="#f87171">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Unread notifications */}
+                  {unreadNotifications.map(notif => {
+                    const col = alertColor(notifLevel(notif.type));
+                    return (
+                      <div key={notif.id} style={{ background: col.bg, border: `1px solid ${col.border}`, borderRadius: '10px', padding: '12px 14px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>{notifIcon(notif.type)}</span>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ color: col.color, fontSize: '13px', fontWeight: '500', margin: 0 }}>{notif.message}</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                          <span style={{ color: col.color, fontSize: '11px', opacity: 0.6 }}>{formatTimeAgo(notif.created_at)}</span>
+                          <button onClick={() => markNotificationRead(notif.id)}
+                            style={{ background: 'transparent', border: `1px solid ${col.border}`, color: col.color, fontSize: '10px', padding: '2px 8px', borderRadius: '6px', cursor: 'pointer', opacity: 0.7, whiteSpace: 'nowrap' }}>
+                            Mark read
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {/* Unread computed alerts */}
                   {unreadAlerts.map(alert => {
                     const col = alertColor(alert.level);
                     return (
@@ -286,9 +367,19 @@ function DashboardHome({ counts, currentUser }) {
                       </div>
                     );
                   })}
-                  {readAlerts.length > 0 && (
+                  {/* Read section */}
+                  {(readNotifications.length > 0 || readAlerts.length > 0) && (
                     <div style={{ marginTop: '4px' }}>
-                      <p style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' }}>Read</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <p style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Read</p>
+                      </div>
+                      {readNotifications.map(notif => (
+                        <div key={notif.id} style={{ background: '#252525', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
+                          <span style={{ fontSize: '13px', flexShrink: 0 }}>{notifIcon(notif.type)}</span>
+                          <p style={{ color: '#999', fontSize: '12px', margin: 0, flex: 1 }}>{notif.message}</p>
+                          <span style={{ color: '#999', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(notif.created_at)}</span>
+                        </div>
+                      ))}
                       {readAlerts.map(alert => (
                         <div key={alert.id} style={{ background: '#252525', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
                           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#999', flexShrink: 0 }} />
@@ -297,6 +388,13 @@ function DashboardHome({ counts, currentUser }) {
                         </div>
                       ))}
                     </div>
+                  )}
+                  {/* Mark all read if there are unread notifications */}
+                  {unreadNotifications.length > 1 && (
+                    <button onClick={markAllNotificationsRead}
+                      style={{ alignSelf: 'flex-end', background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', marginTop: '4px' }}>
+                      Mark all read
+                    </button>
                   )}
                 </div>
               </Section>
@@ -492,6 +590,7 @@ function DashboardInner({ user }) {
 
   const settingsItems = [
     { id: 'users', label: 'User Management', show: canSeeUserManagement },
+    { id: 'profile', label: 'My Profile', show: true },
   ].filter(item => item.show);
 
   const getPageTitle = () => {
@@ -543,6 +642,15 @@ function DashboardInner({ user }) {
               ))}
             </div>
           )}
+          {!isAdmin && (
+            <div style={styles.settingsSection}>
+              <p style={styles.settingsSectionLabel}>Settings</p>
+              <button onClick={() => setActivePage('profile')}
+                style={{ ...styles.navItem, ...(activePage === 'profile' ? styles.navItemActive : {}) }}>
+                My Profile
+              </button>
+            </div>
+          )}
         </nav>
         <div style={styles.sidebarBottom}>
           {role && <p style={styles.userRole}>{roleDisplayName(role)}</p>}
@@ -579,6 +687,7 @@ function DashboardInner({ user }) {
           {activePage === 'calendars' && <Calendars />}
           {activePage === 'resources' && <Resources />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
+          {activePage === 'profile' && <NotificationSettingsPage currentUser={user} />}
         </div>
       </div>
     </div>
@@ -622,5 +731,70 @@ const styles = {
   pageTitle: { color: '#ffffff', fontSize: '26px', fontWeight: '700', margin: '0' },
   content: { padding: '36px' },
 };
+
+function NotificationSettingsPage({ currentUser }) {
+  const [prefs, setPrefs] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    supabase.from('user_profiles').select('notification_preferences').eq('id', currentUser.id).single()
+      .then(({ data }) => {
+        setPrefs(data?.notification_preferences || { ...DEFAULT_NOTIF_PREFS });
+      });
+  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggle = (key) => {
+    setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
+    setSaved(false);
+  };
+
+  const savePrefs = async () => {
+    setSaving(true);
+    await supabase.from('user_profiles').update({ notification_preferences: prefs }).eq('id', currentUser.id);
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  if (!prefs) return <p style={{ color: '#bbb', padding: '20px' }}>Loading...</p>;
+
+  return (
+    <div style={{ maxWidth: '540px' }}>
+      <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '0 0 6px 0' }}>My Profile</h2>
+      <p style={{ color: '#999', fontSize: '14px', margin: '0 0 28px 0' }}>Manage your notification preferences. Changes apply to your account only.</p>
+
+      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
+          <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Notification Preferences</p>
+          <p style={{ color: '#888', fontSize: '13px', margin: '4px 0 0 0' }}>Notifications appear in the Alerts section of your dashboard, scoped to your assigned house(s).</p>
+        </div>
+        {Object.entries(NOTIF_LABELS_MAP).map(([key, label]) => (
+          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #2a2a2a' }}>
+            <span style={{ fontSize: '14px', color: '#ddd' }}>{label}</span>
+            <button onClick={() => toggle(key)}
+              style={{
+                width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                background: prefs[key] !== false ? '#b22222' : '#444',
+                position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+              }}>
+              <span style={{
+                position: 'absolute', top: '3px', width: '18px', height: '18px', borderRadius: '50%',
+                background: '#fff', transition: 'left 0.2s',
+                left: prefs[key] !== false ? '23px' : '3px',
+              }} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={savePrefs} disabled={saving}
+        style={{ padding: '10px 24px', background: saving ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
+        {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save Preferences'}
+      </button>
+    </div>
+  );
+}
 
 export default Dashboard;
