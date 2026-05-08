@@ -772,7 +772,13 @@ function NotificationSettingsPage({ currentUser }) {
 
   const savePrefs = async () => {
     setSaving(true);
-    await supabase.from('user_profiles').update({ notification_preferences: prefs }).eq('id', currentUser.id);
+    const { error } = await supabase.from('user_profiles').update({ notification_preferences: prefs }).eq('id', currentUser.id);
+    if (error) {
+      console.error('Save prefs error:', error);
+      alert('Error saving preferences: ' + error.message);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
