@@ -509,34 +509,6 @@ function DashboardHome({ counts, currentUser }) {
               </Section>
             )}
 
-            {/* Recent Activity — admin/upper management only */}
-            {!isHouseManagerRole && (
-            <Section title="Recent Activity (Last 7 Days)">
-              {recentActivity.length === 0 ? (
-                <p style={{ color: '#bbb', fontSize: '14px' }}>No recent activity.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {recentActivity.map(item => {
-                    const { icon, bg } = activityIcon(item.type);
-                    return (
-                      <div key={item.id} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '10px 0', borderBottom: '1px solid #2a2a2a' }}>
-                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>
-                          {icon}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ color: '#ddd', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>{item.label}</p>
-                          {item.sublabel && <p style={{ color: '#999', fontSize: '11px', margin: '2px 0 0 0' }}>{item.sublabel}</p>}
-                          {item.author && <p style={{ color: '#bbb', fontSize: '11px', margin: '2px 0 0 0' }}>by {item.author}</p>}
-                        </div>
-                        <span style={{ color: '#bbb', fontSize: '11px', flexShrink: 0, paddingTop: '2px' }}>{formatTimeAgo(item.time)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </Section>
-            )}
-
           </div>
         </div>
       )}
