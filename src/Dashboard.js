@@ -42,7 +42,6 @@ function DashboardHome({ counts, currentUser }) {
   const { isHouseManagerRole, assignedHouseIds } = useUser();
 
   const [houses, setHouses] = useState([]);
-  const [recentActivity, setRecentActivity] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [readAlertKeys, setReadAlertKeys] = useState(new Set());
@@ -56,7 +55,6 @@ function DashboardHome({ counts, currentUser }) {
     const cached = getCached('dashboard_main');
     if (cached && !force) {
       setHouses(cached.houses);
-      setRecentActivity(cached.activity);
       setOpenCharges(cached.charges);
       setTotalOutstanding(cached.outstanding);
       setWaitingListCounts(cached.waitlistCounts);
@@ -71,7 +69,6 @@ function DashboardHome({ counts, currentUser }) {
     try {
       await Promise.all([
         fetchHouses(),
-        fetchRecentActivity(),
         fetchAlerts(),
         fetchNotifications(),
         fetchWaitingListCounts(),
@@ -149,24 +146,6 @@ function DashboardHome({ counts, currentUser }) {
     setHouses(enriched);
   };
 
-  const fetchRecentActivity = async () => {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const iso = sevenDaysAgo.toISOString();
-
-    const { data: apps } = await supabase.from('applications').select('id, first_name, last_name, created_at, status').gte('created_at', iso).order('created_at', { ascending: false }).limit(5);
-    const { data: discharges } = await supabase.from('clients').select('id, full_name, discharge_date, reason_for_discharge').eq('status', 'Discharged').gte('discharge_date', iso.split('T')[0]).order('discharge_date', { ascending: false }).limit(5);
-    const { data: crises } = await supabase.from('client_timeline').select('id, client_id, author, severity, created_at, notes, clients(full_name)').eq('entry_type', 'Crisis').gte('created_at', iso).order('created_at', { ascending: false }).limit(5);
-
-    const activity = [
-      ...(apps || []).map(a => ({ id: `app-${a.id}`, type: 'application', label: `${a.first_name} ${a.last_name} submitted an application`, time: a.created_at, status: a.status })),
-      ...(discharges || []).map(d => ({ id: `discharge-${d.id}`, type: 'discharge', label: `${d.full_name} was discharged`, sublabel: d.reason_for_discharge || null, time: d.discharge_date + 'T00:00:00' })),
-      ...(crises || []).map(c => ({ id: `crisis-${c.id}`, type: 'crisis', label: `Crisis logged for ${c.clients?.full_name || 'unknown client'}`, sublabel: c.severity ? `Severity: ${c.severity}` : null, time: c.created_at, author: c.author })),
-    ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 15);
-
-    setRecentActivity(activity);
-  };
-
   const fetchAlerts = async () => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -226,16 +205,15 @@ function DashboardHome({ counts, currentUser }) {
 
   // Write to cache after data settles so next visit is instant
   useEffect(() => {
-    if (!loadingDashboard && (houses.length > 0 || recentActivity.length > 0)) {
+    if (!loadingDashboard && houses.length > 0) {
       setCached('dashboard_main', {
         houses,
-        activity: recentActivity,
         charges: openCharges,
         outstanding: totalOutstanding,
         waitlistCounts: waitingListCounts,
       });
     }
-  }, [loadingDashboard, houses, recentActivity, openCharges, totalOutstanding, waitingListCounts]);
+  }, [loadingDashboard, houses, openCharges, totalOutstanding, waitingListCounts]);
 
   const formatTimeAgo = (dateStr) => {
     if (!dateStr) return '';
@@ -246,13 +224,6 @@ function DashboardHome({ counts, currentUser }) {
     if (mins < 60) return `${mins}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
-  };
-
-  const activityIcon = (type) => {
-    if (type === 'application') return { icon: '📋', bg: '#1e2d3a' };
-    if (type === 'discharge') return { icon: '🚪', bg: '#3a1e1e' };
-    if (type === 'crisis') return { icon: '⚠️', bg: '#3a2d1e' };
-    return { icon: '•', bg: '#333' };
   };
 
   const alertColor = (level) => {
