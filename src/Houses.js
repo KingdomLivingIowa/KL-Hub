@@ -118,15 +118,32 @@ function Houses({ onOpenClient }) {
       }
       const [{ data: housesData }, { data: clientsData }] = await Promise.all([
         query,
-        supabase.from('clients').select('id, full_name, status, level, start_date, phone, balance, staff_notes, house_id, room_type, expected_move_in_date').in('status', ['Active', 'Pending']).order('full_name'),
+        supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, expected_move_in_date').in('status', ['Active', 'Pending']).order('full_name'),
       ]);
+
+      // Calculate real balances from charges and payments
+      const clientIds = (clientsData || []).map(c => c.id);
+      let balanceMap = {};
+      if (clientIds.length > 0) {
+        const [{ data: chargesData }, { data: paymentsData }] = await Promise.all([
+          supabase.from('charges').select('client_id, amount').in('client_id', clientIds),
+          supabase.from('payments').select('client_id, amount').in('client_id', clientIds),
+        ]);
+        clientIds.forEach(id => {
+          const charged = (chargesData || []).filter(c => c.client_id === id).reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+          const paid = (paymentsData || []).filter(p => p.client_id === id).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+          balanceMap[id] = charged - paid;
+        });
+      }
+
+      const clientsWithBalance = (clientsData || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 }));
       const enriched = (housesData || []).map(h => ({
         ...h,
-        occupied_beds: (clientsData || []).filter(c => c.house_id === h.id && c.status === 'Active').length,
-        pending_count: (clientsData || []).filter(c => c.house_id === h.id && c.status === 'Pending').length,
+        occupied_beds: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Active').length,
+        pending_count: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Pending').length,
       }));
       setHouses(enriched);
-      setAllResidents(clientsData || []);
+      setAllResidents(clientsWithBalance);
       setLastRefreshed(new Date());
     } finally {
       setLoading(false);
@@ -141,10 +158,24 @@ function Houses({ onOpenClient }) {
   }, [loadAllData]);
 
   const fetchResidents = useCallback(async (houseId) => {
-    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, balance, staff_notes, email, date_of_birth, house_id, expected_move_in_date').eq('house_id', houseId).in('status', ['Active', 'Pending']);
-    setResidents(data || []);
+    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date').eq('house_id', houseId).in('status', ['Active', 'Pending']);
+    const clientIds = (data || []).map(c => c.id);
+    let balanceMap = {};
+    if (clientIds.length > 0) {
+      const [{ data: chargesData }, { data: paymentsData }] = await Promise.all([
+        supabase.from('charges').select('client_id, amount').in('client_id', clientIds),
+        supabase.from('payments').select('client_id, amount').in('client_id', clientIds),
+      ]);
+      clientIds.forEach(id => {
+        const charged = (chargesData || []).filter(c => c.client_id === id).reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+        const paid = (paymentsData || []).filter(p => p.client_id === id).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+        balanceMap[id] = charged - paid;
+      });
+    }
+    const residentsWithBalance = (data || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 }));
+    setResidents(residentsWithBalance);
     const checks = {};
-    (data || []).forEach(r => { checks[r.id] = { name: r.full_name, value: '' }; });
+    (residentsWithBalance).forEach(r => { checks[r.id] = { name: r.full_name, value: '' }; });
     setResidentChecks(checks);
   }, []);
 
@@ -489,7 +520,7 @@ function Houses({ onOpenClient }) {
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </span>
                           <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.start_date || '—'}</span>
-                          <span style={{ flex: 1, color: parseFloat(r.balance) < 0 ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
+                          <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
                           <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.phone || '—'}</span>
                           <div style={{ flex: 2 }} onClick={e => e.stopPropagation()}>
                             {editingNotes.hasOwnProperty(r.id) ? (
