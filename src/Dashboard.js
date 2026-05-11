@@ -21,6 +21,7 @@ const DEFAULT_NOTIF_PREFS = {
   client_weekly_checkin: true,
   vacation_request: true,
   new_application: true,
+  weekly_charges: true,
 };
 
 const NOTIF_LABELS_MAP = {
@@ -31,6 +32,7 @@ const NOTIF_LABELS_MAP = {
   client_weekly_checkin: 'Weekly check-in submitted (portal)',
   vacation_request: 'Staff vacation request submitted',
   new_application: 'New application submitted',
+  weekly_charges: 'Weekly fees auto-charged',
 };
 
 const WAITING_LISTS = [
@@ -258,6 +260,7 @@ function DashboardHome({ counts, currentUser }) {
     if (type === 'client_weekly_checkin') return '📋';
     if (type === 'vacation_request') return '🏖️';
     if (type === 'new_application') return '📝';
+    if (type === 'weekly_charges') return '💵';
     return '•';
   };
 

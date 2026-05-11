@@ -1108,8 +1108,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         }
       }
       const roomType = client.room_type || 'Double';
-      const feeAmounts = { 'Single': 150, 'Double': 150, 'Houseperson': 150, 'Live-Out': 0 };
-      const moveInAmount = feeAmounts[roomType] ?? 150;
+      const { data: feeData } = await supabase.from('fee_settings').select('move_in_fee').eq('room_type', roomType).maybeSingle();
+      const moveInAmount = feeData ? parseFloat(feeData.move_in_fee) || 0 : 150;
       if (moveInAmount > 0) {
         await supabase.from('charges').insert([{
           client_id: client.id, charge_type: 'move_in_fee', amount: moveInAmount,
