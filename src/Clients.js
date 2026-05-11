@@ -4,7 +4,6 @@ import { getCached, setCached } from './dataCache';
 import { useUser } from './UserContext';
 import { ClientLevelProgress } from './LevelRequirements';
 import klLogo from './kingdom-living-logo.jpg';
-import { InvoiceButton } from './Invoice';
 import ClientPayments from './ClientPayments';
 import { sendHouseNotification, NOTIF_TYPES } from './notifications';
 
@@ -817,6 +816,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [stays, setStays] = useState([]);
   const [staysLoading, setStaysLoading] = useState(false);
   const [latestCheckIn, setLatestCheckIn] = useState(null);
+  const [clientBalance, setClientBalance] = useState(null);
 
   const [uaRecords, setUaRecords] = useState([]);
   const [meetingRecords, setMeetingRecords] = useState([]);
@@ -992,6 +992,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const { data } = await supabase.from('client_stays').select('*').eq('client_id', clientId).order('discharge_date', { ascending: false });
     setStays(data || []);
     setStaysLoading(false);
+  };
+
+  const fetchClientBalance = async (clientId) => {
+    const [{ data: chargesData }, { data: paymentsData }] = await Promise.all([
+      supabase.from('charges').select('amount').eq('client_id', clientId),
+      supabase.from('payments').select('amount').eq('client_id', clientId),
+    ]);
+    const totalCharged = (chargesData || []).reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+    const totalPaid = (paymentsData || []).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+    setClientBalance(totalCharged - totalPaid);
   };
 
   const toggleWeek = (key) => setExpandedWeeks(prev => ({ ...prev, [key]: !prev[key] }));
@@ -1261,10 +1271,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setTimelineTotal(0);
     setStays([]);
     setLatestCheckIn(null);
+    setClientBalance(null);
     fetchTimeline(client.id);
     fetchFullHistory(client.id);
     fetchLatestReflection(client.id);
     fetchStays(client.id);
+    fetchClientBalance(client.id);
     supabase.from('client_timeline').select('*').eq('client_id', client.id).eq('entry_type', 'Weekly Check-In')
       .order('created_at', { ascending: false }).limit(1).maybeSingle()
       .then(({ data }) => { if (data) setLatestCheckIn(data); });
@@ -1555,7 +1567,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 )}
                 {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
                 {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
-                {hasFullAccess && <InvoiceButton client={selected} style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }} />}
                 <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
               </div>
             </div>
@@ -1633,6 +1644,24 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <ReadField label="Move-in date" value={selected.start_date} />
                       {selected.status === 'Pending' && (
                         <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
+                      )}
+                    </Card>
+                    <Card title="Current Balance">
+                      {clientBalance === null ? (
+                        <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Loading...</p>
+                      ) : (
+                        <div>
+                          <div style={{ fontSize: '28px', fontWeight: '700', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb', marginBottom: '6px' }}>
+                            {clientBalance > 0 ? `$${clientBalance.toFixed(2)}` : clientBalance < 0 ? `$${Math.abs(clientBalance).toFixed(2)}` : '$0.00'}
+                          </div>
+                          <div style={{ fontSize: '13px', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
+                            {clientBalance > 0 ? 'Balance owed' : clientBalance < 0 ? 'Credit' : 'Paid in full'}
+                          </div>
+                          <button onClick={() => setActiveTab('payments')}
+                            style={{ marginTop: '12px', fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' }}>
+                            View payments →
+                          </button>
+                        </div>
                       )}
                     </Card>
                     <Card title="PO & legal">
@@ -2150,7 +2179,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
               {activeTab === 'payments' && (
                 <Card title="Payments" full>
-                  <ClientPayments client={selected} />
+                  <ClientPayments client={selected} onPaymentChange={() => fetchClientBalance(selected.id)} />
                 </Card>
               )}
 

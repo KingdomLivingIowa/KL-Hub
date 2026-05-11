@@ -221,7 +221,7 @@ const CHARGE_TYPE_LABELS = {
   other: 'Other',
 };
 
-function ClientPayments({ client }) {
+function ClientPayments({ client, onPaymentChange }) {
   const { user, hasFullAccess } = useUser();
 
   const [charges, setCharges] = useState([]);
@@ -335,6 +335,7 @@ function ClientPayments({ client }) {
     setChargeForm({ charge_type: 'weekly_fee', room_type: client.room_type || 'Double', weeks: '1', custom_amount: '', due_date: new Date().toISOString().split('T')[0], description: '' });
     setSavingCharge(false);
     fetchData();
+    if (onPaymentChange) onPaymentChange();
   };
 
   const savePayment = async () => {
@@ -359,18 +360,21 @@ function ClientPayments({ client }) {
     setPaymentForm({ amount: '', payment_method: 'cash', payer_name: '', notes: '', payment_date: new Date().toISOString().split('T')[0] });
     setSavingPayment(false);
     fetchData();
+    if (onPaymentChange) onPaymentChange();
   };
 
   const deleteCharge = async (id) => {
     if (!window.confirm('Delete this charge?')) return;
     await supabase.from('charges').delete().eq('id', id);
     fetchData();
+    if (onPaymentChange) onPaymentChange();
   };
 
   const deletePayment = async (id) => {
     if (!window.confirm('Delete this payment record?')) return;
     await supabase.from('payments').delete().eq('id', id);
     fetchData();
+    if (onPaymentChange) onPaymentChange();
   };
 
   const handlePayOnline = async () => {
