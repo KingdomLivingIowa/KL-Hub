@@ -2149,9 +2149,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'payments' && (
-                <Card title="Payments" full action={
-                  hasFullAccess ? <InvoiceButton client={selected} style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '4px 12px', borderRadius: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }} /> : null
-                }>
+                <Card title="Payments" full>
                   <ClientPayments client={selected} />
                 </Card>
               )}

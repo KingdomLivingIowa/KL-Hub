@@ -125,10 +125,12 @@ function Houses({ onOpenClient }) {
       const clientIds = (clientsData || []).map(c => c.id);
       let balanceMap = {};
       if (clientIds.length > 0) {
-        const [{ data: chargesData }, { data: paymentsData }] = await Promise.all([
+        const [{ data: chargesData, error: chargesErr }, { data: paymentsData, error: paymentsErr }] = await Promise.all([
           supabase.from('charges').select('client_id, amount').in('client_id', clientIds),
           supabase.from('payments').select('client_id, amount').in('client_id', clientIds),
         ]);
+        if (chargesErr) console.error('Charges fetch error:', chargesErr);
+        if (paymentsErr) console.error('Payments fetch error:', paymentsErr);
         clientIds.forEach(id => {
           const charged = (chargesData || []).filter(c => c.client_id === id).reduce((s, c) => s + parseFloat(c.amount || 0), 0);
           const paid = (paymentsData || []).filter(p => p.client_id === id).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
