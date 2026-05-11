@@ -2,6 +2,92 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { InvoiceButton } from './Invoice';
+import klLogo from './kingdom-living-logo.jpg';
+
+function generateReceiptPDF(payment, client, balance, logoSrc) {
+  const name = client.full_name || '—';
+  const amount = parseFloat(payment.amount || 0);
+  const method = payment.payment_method === 'third_party' ? '3rd Party'
+    : payment.payment_method ? payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1) : '—';
+  const date = payment.payment_date
+    ? new Date(payment.payment_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const generatedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const receiptNum = payment.id ? payment.id.slice(-8).toUpperCase() : Date.now().toString().slice(-8);
+  const remainingBalance = parseFloat(balance || 0);
+
+  const logoHtml = logoSrc
+    ? `<img src="${logoSrc}" style="width:65px;height:65px;object-fit:contain;" />`
+    : `<div style="width:65px;height:65px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+
+  const row = (label, value, bold = false) => `
+    <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee;">
+      <span style="font-size:14px;color:#666;">${label}</span>
+      <span style="font-size:14px;${bold ? 'font-weight:700;' : ''}color:#111;">${value}</span>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Receipt – ${name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .card { background: #fff; border-radius: 12px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #b22222; }
+    .org-name { font-size: 18px; font-weight: 700; color: #111; }
+    .org-sub { font-size: 12px; color: #888; margin-top: 2px; }
+    .receipt-title { text-align: center; margin-bottom: 24px; }
+    .receipt-title h2 { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 4px; }
+    .receipt-title p { font-size: 12px; color: #999; }
+    .amount-box { background: #f0faf4; border: 2px solid #16a34a; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0; }
+    .amount-label { font-size: 13px; color: #16a34a; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .amount-value { font-size: 40px; font-weight: 700; color: #16a34a; }
+    .balance-box { background: ${remainingBalance > 0 ? '#fff5f5' : '#f0faf4'}; border-radius: 8px; padding: 12px 16px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .print-btn { display: block; width: 100%; margin-top: 24px; padding: 12px; background: #b22222; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #bbb; }
+    @media print { body { background: #fff; padding: 0; } .card { box-shadow: none; } .print-btn { display: none; } }
+  </style></head><body>
+  <div class="card">
+    <div class="header">
+      ${logoHtml}
+      <div>
+        <div class="org-name">Kingdom Living Iowa</div>
+        <div class="org-sub">Non-Profit Recovery Community</div>
+      </div>
+    </div>
+
+    <div class="receipt-title">
+      <h2>Payment Receipt</h2>
+      <p>Receipt #${receiptNum} &nbsp;·&nbsp; ${generatedDate}</p>
+    </div>
+
+    ${row('Client', name)}
+    ${row('Payment Date', date)}
+    ${row('Payment Method', method)}
+    ${payment.payer_name ? row('Paid By', payment.payer_name) : ''}
+    ${payment.notes ? row('Notes', payment.notes) : ''}
+    ${payment.created_by ? row('Recorded By', payment.created_by) : ''}
+
+    <div class="amount-box">
+      <div class="amount-label">Amount Paid</div>
+      <div class="amount-value">$${amount.toFixed(2)}</div>
+    </div>
+
+    <div class="balance-box">
+      <span style="font-size:14px;color:#555;">Remaining Balance</span>
+      <span style="font-size:16px;font-weight:700;color:${remainingBalance > 0 ? '#dc2626' : '#16a34a'};">
+        ${remainingBalance > 0 ? `$${remainingBalance.toFixed(2)} owed` : remainingBalance < 0 ? `$${Math.abs(remainingBalance).toFixed(2)} credit` : 'Paid in full'}
+      </span>
+    </div>
+
+    <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+    <div class="footer">Thank you — Kingdom Living Iowa</div>
+  </div>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=520,height=750');
+  win.document.write(html);
+  win.document.close();
+}
 
 const PAYMENT_METHODS = [
   { value: 'cash', label: 'Cash' },
@@ -481,9 +567,20 @@ function ClientPayments({ client }) {
               <span style={{ fontSize: '24px', fontWeight: '700', color: '#16a34a' }}>{formatCurrency(showReceipt.amount)}</span>
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => window.print()}
+              <button onClick={() => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                  canvas.getContext('2d').drawImage(img, 0, 0);
+                  generateReceiptPDF(showReceipt, client, balance, canvas.toDataURL('image/jpeg'));
+                };
+                img.onerror = () => generateReceiptPDF(showReceipt, client, balance, null);
+                img.src = klLogo;
+              }}
                 style={{ flex: 1, background: '#b22222', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
-                Print Receipt
+                ⬇ Download Receipt
               </button>
               <button onClick={() => setShowReceipt(null)}
                 style={{ flex: 1, background: 'transparent', border: '1px solid #ccc', color: '#999', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
