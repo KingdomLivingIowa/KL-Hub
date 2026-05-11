@@ -219,11 +219,11 @@ function Admissions() {
     // Send email via edge function for manual decisions
     if (app.email) {
       const { data: { session } } = await supabase.auth.getSession();
-      const headers = { 'Content-Type': 'application/json' };
-      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+      const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+      const authToken = session?.access_token || ANON_KEY;
       fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
         body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, full_name: fullName, flag: app.auto_flag }),
       }).catch(err => console.error('send-application-email error:', err));
     }

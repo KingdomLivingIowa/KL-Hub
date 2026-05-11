@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
+
+const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 import logo from './kingdom-living-logo.jpg';
 
 const sections = ['General Info', 'Recovery', 'Emergency Contacts', 'Legal History', 'Information Accuracy'];
@@ -172,7 +174,7 @@ function ApplicationForm() {
     const treatmentDetails = form.attended_treatment === 'Yes' ? JSON.stringify(treatments) : null;
     const drugOfChoice = selectedDrugs.length > 0 ? selectedDrugs.join(', ') : '';
 
-    const { error: appError } = await supabase
+    const { data: insertedApp, error: appError } = await supabase
       .from('applications')
       .insert([{
         ...form,
@@ -182,7 +184,9 @@ function ApplicationForm() {
         medication_details: medDetails,
         treatment_details: treatmentDetails,
         photo_url: photoUrl,
-      }]);
+      }])
+      .select('id')
+      .single();
 
     setLoading(false);
     if (appError) {
@@ -190,21 +194,20 @@ function ApplicationForm() {
       return;
     }
 
-    // Notify upper management and admins of new application
-    const { data: managers } = await supabase
-      .from('user_profiles')
-      .select('id')
-      .in('role', ['admin', 'upper_management']);
-    if (managers?.length) {
-      await supabase.from('notifications').insert(
-        managers.map(m => ({
-          user_id: m.id,
-          type: 'new_application',
-          message: `New application submitted by ${fullName}`,
-          read: false,
-        }))
-      );
+    // Trigger auto-processing in the background
+    if (insertedApp?.id) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+      const authToken = session?.access_token || ANON_KEY;
+      fetch(`${SUPABASE_URL}/functions/v1/process-application`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+        body: JSON.stringify({ application_id: insertedApp.id }),
+      }).catch(err => console.error('process-application error:', err));
     }
+
+    // Notify upper management and admins of new application
+    // (handled by process-application edge function)
 
     setSubmitted(true);
   };
