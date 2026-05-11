@@ -1602,7 +1602,23 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               {activeTab === 'overview' && (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <p style={{ fontSize: '13px', color: '#bbb', margin: 0, fontStyle: 'italic' }}>Click any field to edit. Changes save automatically.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      {clientBalance !== null && (
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                          <span style={{ fontSize: '22px', fontWeight: '700', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
+                            {clientBalance > 0 ? `$${clientBalance.toFixed(2)}` : clientBalance < 0 ? `$${Math.abs(clientBalance).toFixed(2)}` : '$0.00'}
+                          </span>
+                          <span style={{ fontSize: '12px', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
+                            {clientBalance > 0 ? 'owed' : clientBalance < 0 ? 'credit' : 'paid in full'}
+                          </span>
+                          <button onClick={() => setActiveTab('payments')}
+                            style={{ fontSize: '11px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', marginLeft: '4px' }}>
+                            View payments →
+                          </button>
+                        </div>
+                      )}
+                      <p style={{ fontSize: '13px', color: '#555', margin: 0, fontStyle: 'italic' }}>Click any field to edit.</p>
+                    </div>
                     {hasFullAccess && (
                       <button onClick={() => {
                         const img = new Image();
@@ -1644,24 +1660,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <ReadField label="Move-in date" value={selected.start_date} />
                       {selected.status === 'Pending' && (
                         <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
-                      )}
-                    </Card>
-                    <Card title="Current Balance">
-                      {clientBalance === null ? (
-                        <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>Loading...</p>
-                      ) : (
-                        <div>
-                          <div style={{ fontSize: '28px', fontWeight: '700', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb', marginBottom: '6px' }}>
-                            {clientBalance > 0 ? `$${clientBalance.toFixed(2)}` : clientBalance < 0 ? `$${Math.abs(clientBalance).toFixed(2)}` : '$0.00'}
-                          </div>
-                          <div style={{ fontSize: '13px', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
-                            {clientBalance > 0 ? 'Balance owed' : clientBalance < 0 ? 'Credit' : 'Paid in full'}
-                          </div>
-                          <button onClick={() => setActiveTab('payments')}
-                            style={{ marginTop: '12px', fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '4px 10px', cursor: 'pointer' }}>
-                            View payments →
-                          </button>
-                        </div>
                       )}
                     </Card>
                     <Card title="PO & legal">
