@@ -89,8 +89,121 @@ function generateReceiptPDF(payment, client, balance, logoSrc) {
   win.document.close();
 }
 
+function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
+  const name = client.full_name || '—';
+  const house = client.house_name || '—';
+  const startDate = client.start_date ? new Date(client.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+  const generatedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  const totalCharged = charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+  const totalPaid = payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+  const balance = totalCharged - totalPaid;
+
+  const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const fmtAmt = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
+  const chargeTypeLabel = (t) => ({ weekly_fee: 'Weekly Fee', move_in_fee: 'Move-In Fee', level4_fee: 'Level 4 Fee', other: 'Other' }[t] || t);
+  const methodLabel = (m) => m === 'third_party' ? '3rd Party' : m ? m.charAt(0).toUpperCase() + m.slice(1) : '—';
+
+  const logoHtml = logoSrc
+    ? `<img src="${logoSrc}" style="width:65px;height:65px;object-fit:contain;" />`
+    : `<div style="width:65px;height:65px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+
+  // Merge charges and payments into a single timeline sorted by date
+  const timeline = [
+    ...charges.map(c => ({ date: c.due_date, type: 'charge', label: chargeTypeLabel(c.charge_type), description: c.description || '', amount: parseFloat(c.amount || 0) })),
+    ...payments.map(p => ({ date: p.payment_date, type: 'payment', label: methodLabel(p.payment_method), description: p.payer_name || p.notes || '', amount: parseFloat(p.amount || 0), by: p.created_by || '' })),
+  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const timelineRows = timeline.map(t => `
+    <tr style="background:${t.type === 'payment' ? '#f0faf4' : '#fff'};">
+      <td style="padding:9px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555;">${fmtDate(t.date)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #eee;">
+        <span style="font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#111'};">${t.type === 'payment' ? 'Payment' : 'Charge'}</span>
+        <span style="font-size:12px;color:#888;margin-left:6px;">${t.label}</span>
+        ${t.description ? `<div style="font-size:12px;color:#aaa;margin-top:2px;">${t.description}</div>` : ''}
+        ${t.by ? `<div style="font-size:11px;color:#bbb;">by ${t.by}</div>` : ''}
+      </td>
+      <td style="padding:9px 12px;border-bottom:1px solid #eee;text-align:right;font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#dc2626'};">
+        ${t.type === 'payment' ? '+' : '-'}${fmtAmt(t.amount)}
+      </td>
+    </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Payment History – ${name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #111; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+    .org-name { font-size: 22px; font-weight: 700; }
+    .org-sub { font-size: 13px; color: #888; margin-top: 2px; }
+    .divider { height: 3px; background: #b22222; margin: 14px 0 20px 0; }
+    .report-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 4px; }
+    .report-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+    .sum-box { background: #f5f5f5; border-radius: 8px; padding: 14px; text-align: center; }
+    .sum-num { font-size: 26px; font-weight: 700; }
+    .sum-label { font-size: 12px; color: #888; margin-top: 4px; }
+    .section-title { font-size: 13px; font-weight: 700; color: #b22222; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; border-left: 4px solid #b22222; padding-left: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 28px; }
+    th { background: #111; color: #fff; padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    th:last-child { text-align: right; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 28px; }
+    .info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; }
+    .info-label { font-size: 13px; color: #888; }
+    .info-value { font-size: 13px; font-weight: 500; color: #111; }
+    .balance-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: ${balance > 0 ? '#fff5f5' : '#f0faf4'}; border-radius: 8px; margin-bottom: 28px; }
+    .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .footer { text-align: center; color: #bbb; font-size: 12px; margin-top: 32px; }
+    @media print { .print-btn { display: none; } body { padding: 20px; } }
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+
+  <div class="header">
+    ${logoHtml}
+    <div><div class="org-name">KINGDOM LIVING IOWA</div><div class="org-sub">Non-Profit Recovery Community</div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="report-title">Payment History Report</div>
+  <div class="report-sub">${name} &nbsp;·&nbsp; ${house} &nbsp;·&nbsp; Generated ${generatedDate}</div>
+
+  <div class="section-title">Client Information</div>
+  <div class="info-grid">
+    <div class="info-row"><span class="info-label">Name</span><span class="info-value">${name}</span></div>
+    <div class="info-row"><span class="info-label">House</span><span class="info-value">${house}</span></div>
+    <div class="info-row"><span class="info-label">Move-In Date</span><span class="info-value">${startDate}</span></div>
+    <div class="info-row"><span class="info-label">PO Name</span><span class="info-value">${client.po_name || '—'}</span></div>
+  </div>
+
+  <div class="section-title">Summary</div>
+  <div class="summary">
+    <div class="sum-box"><div class="sum-num" style="color:#dc2626;">${fmtAmt(totalCharged)}</div><div class="sum-label">Total Charged</div></div>
+    <div class="sum-box"><div class="sum-num" style="color:#16a34a;">${fmtAmt(totalPaid)}</div><div class="sum-label">Total Paid</div></div>
+    <div class="sum-box"><div class="sum-num" style="color:${balance > 0 ? '#dc2626' : '#16a34a'};">${fmtAmt(Math.abs(balance))}</div><div class="sum-label">${balance > 0 ? 'Balance Owed' : balance < 0 ? 'Credit' : 'Paid in Full'}</div></div>
+  </div>
+
+  <div class="balance-row">
+    <span style="font-size:15px;font-weight:600;color:#555;">Current Balance</span>
+    <span style="font-size:20px;font-weight:700;color:${balance > 0 ? '#dc2626' : '#16a34a'};">
+      ${balance > 0 ? `${fmtAmt(balance)} owed` : balance < 0 ? `${fmtAmt(Math.abs(balance))} credit` : 'Paid in full ✓'}
+    </span>
+  </div>
+
+  <div class="section-title">Transaction History</div>
+  ${timeline.length === 0 ? '<p style="color:#888;font-size:14px;margin-bottom:20px;">No transactions on record.</p>' : `
+  <table>
+    <thead><tr><th>Date</th><th>Description</th><th style="text-align:right;">Amount</th></tr></thead>
+    <tbody>${timelineRows}</tbody>
+  </table>`}
+
+  <div class="footer">Kingdom Living Iowa · Non-Profit Recovery Community · Generated ${generatedDate}</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=1000');
+  win.document.write(html);
+  win.document.close();
+}
+
 const PAYMENT_METHODS = [
-  { value: 'cash', label: 'Cash' },
   { value: 'check', label: 'Check' },
   { value: 'online', label: 'Online' },
   { value: 'third_party', label: '3rd Party' },
@@ -340,6 +453,23 @@ function ClientPayments({ client }) {
           </button>
         )}
         <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
+        {hasFullAccess && (charges.length > 0 || payments.length > 0) && (
+          <button onClick={() => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+              canvas.getContext('2d').drawImage(img, 0, 0);
+              generatePaymentHistoryPDF(client, charges, payments, canvas.toDataURL('image/jpeg'));
+            };
+            img.onerror = () => generatePaymentHistoryPDF(client, charges, payments, null);
+            img.src = klLogo;
+          }}
+            style={{ background: 'transparent', border: '1px solid #7c3aed', color: '#a78bfa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            📄 Export History
+          </button>
+        )}
       </div>
 
       {/* Record payment form */}
