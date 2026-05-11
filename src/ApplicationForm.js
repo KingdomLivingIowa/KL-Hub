@@ -190,7 +190,8 @@ function ApplicationForm() {
 
     setLoading(false);
     if (appError) {
-      alert('There was an error submitting. Please try again.');
+      console.error('Application insert error:', appError);
+      alert('There was an error submitting. Please try again. Error: ' + appError.message);
       return;
     }
 
