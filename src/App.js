@@ -3,6 +3,7 @@ import './App.css';
 import { supabase } from './supabaseClient';
 import logo from './kingdom-living-logo.jpg';
 import Dashboard from './Dashboard';
+import ApplicationForm from './ApplicationForm';
 
 function App() {
   const [email, setEmail] = useState('');
@@ -41,6 +42,11 @@ function App() {
         <div style={styles.spinner}></div>
       </div>
     );
+  }
+
+  // Public application form
+  if (window.location.pathname === '/apply') {
+    return <ApplicationForm />;
   }
 
   if (!user) {
