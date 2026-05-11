@@ -1089,6 +1089,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
       updates.level = 1;
+      if (statusForm.room_type) updates.room_type = statusForm.room_type;
       const activeHouseId = statusForm.house_id || client.house_id;
       // If moving to a different house, remove from old house chat first
       if (client.house_id && activeHouseId && client.house_id !== activeHouseId && client.email) {
@@ -2267,8 +2268,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         <span style={{ fontSize: '13px', color: '#60a5fa' }}>🏠 Already assigned: <span style={{ color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span></span>
                         <button
                           onClick={() => setStatusForm(p => ({ ...p, changingHouse: !p.changingHouse, house_id: p.changingHouse ? statusModal.client.house_id : '' }))}
-                          style={{ fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}
-                        >
+                          style={{ fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}>
                           {statusForm.changingHouse ? 'Keep current' : 'Change house'}
                         </button>
                       </div>
@@ -2281,8 +2281,23 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     </div>
                   )}
                   <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Room Type *</label>
+                    <select value={statusForm.room_type || statusModal.client.room_type || 'Double'} onChange={e => setStatusForm(p => ({ ...p, room_type: e.target.value }))} style={sf.input}>
+                      <option value="Single">Single — $160/week</option>
+                      <option value="Double">Double — $135/week</option>
+                      <option value="Houseperson">Houseperson — $110/week</option>
+                      <option value="Live-Out">Live-Out — $35/week</option>
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Move-in date</label>
                     <input type="date" value={statusForm.move_in_date} onChange={e => setStatusForm(p => ({ ...p, move_in_date: e.target.value }))} style={sf.input} />
+                  </div>
+                  <div style={{ background: '#222', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
+                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with the selected move-in date</p>
+                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
+                    <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges start next Sunday</p>
                   </div>
                 </>
               )}
