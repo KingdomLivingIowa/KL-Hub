@@ -451,8 +451,7 @@ function Admissions() {
               }}>
               🔄 Merge with Existing
             </button>
-          )}
-          {app.status === 'pending' && (
+          )}          {app.status === 'pending' && (
             <>
               <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
                 {acceptingId === app.id ? 'Accepting...' : 'Accept'}
@@ -739,6 +738,28 @@ function Admissions() {
               <button style={s.cancelBtn} onClick={() => setDuplicateModal(null)}>
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Merge Returning Client Modal */}
+      {mergeReturningModal && (
+        <div style={s.modalOverlay} onClick={() => setMergeReturningModal(null)}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '16px' }}>Merge with Existing Profile</h3>
+            <p style={{ color: '#999', fontSize: '13px', margin: '0 0 16px 0' }}>
+              This will update <strong style={{ color: '#ddd' }}>{mergeReturningModal.existingClient?.full_name || 'the existing client'}</strong>'s profile with the new application data and set their status to Accepted.
+            </p>
+            <div style={{ background: '#222', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 4px 0' }}>New application from: <strong style={{ color: '#fff' }}>{mergeReturningModal.app.first_name} {mergeReturningModal.app.last_name}</strong></p>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Will merge into: <strong style={{ color: '#60a5fa' }}>{mergeReturningModal.existingClient?.full_name}</strong></p>
+            </div>
+            <div style={s.modalActions}>
+              <button style={s.mergeBtn} onClick={handleMergeReturning} disabled={merging}>
+                {merging ? 'Merging...' : 'Confirm Merge'}
+              </button>
+              <button style={s.cancelBtn} onClick={() => setMergeReturningModal(null)}>Cancel</button>
             </div>
           </div>
         </div>
