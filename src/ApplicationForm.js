@@ -174,10 +174,12 @@ function ApplicationForm() {
     const treatmentDetails = form.attended_treatment === 'Yes' ? JSON.stringify(treatments) : null;
     const drugOfChoice = selectedDrugs.length > 0 ? selectedDrugs.join(', ') : '';
 
+    const { auto_flag, flag_reason, auto_processed, ...formFields } = form;
+
     const { data: insertedApp, error: appError } = await supabase
       .from('applications')
       .insert([{
-        ...form,
+        ...formFields,
         drug_of_choice: drugOfChoice,
         full_name: fullName,
         status: 'pending',
