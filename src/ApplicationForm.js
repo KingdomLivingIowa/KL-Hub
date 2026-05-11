@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
+import logo from './kingdom-living-logo.jpg';
 
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
-import logo from './kingdom-living-logo.jpg';
 
 const sections = ['General Info', 'Recovery', 'Emergency Contacts', 'Legal History', 'Information Accuracy'];
 
