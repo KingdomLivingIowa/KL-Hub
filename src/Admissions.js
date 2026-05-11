@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCached, setCached } from './dataCache';
 import { supabase } from './supabaseClient';
 
+const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 const PAGE_SIZE = 25;
 
 function Admissions() {
@@ -17,6 +18,7 @@ function Admissions() {
 
   const [expanded, setExpanded] = useState(null);
   const [duplicateModal, setDuplicateModal] = useState(null);
+  const [mergeReturningModal, setMergeReturningModal] = useState(null);
   const [merging, setMerging] = useState(false);
   const [acceptingId, setAcceptingId] = useState(null);
 
@@ -202,28 +204,28 @@ function Admissions() {
 
   const updateStatus = async (id, status) => {
     const app = applications.find((a) => a.id === id);
-    if (!app) {
-      alert('Application not found.');
-      return;
-    }
+    if (!app) { alert('Application not found.'); return; }
+    const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
 
     if (status === 'accepted') {
       setAcceptingId(id);
       const clientError = await createClientFromApp(app);
-      // Log error but never block status update — application must go to accepted
       if (clientError) console.error('createClientFromApp error:', clientError);
     }
 
-    const { error } = await supabase
-      .from('applications')
-      .update({ status })
-      .eq('id', id);
+    const { error } = await supabase.from('applications').update({ status }).eq('id', id);
+    if (error) { setAcceptingId(null); alert('Error updating application: ' + error.message); return; }
 
-    if (error) {
-      setAcceptingId(null);
-      alert('Error updating application: ' + error.message);
-      console.error('Application update error:', error);
-      return;
+    // Send email via edge function for manual decisions
+    if (app.email) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers = { 'Content-Type': 'application/json' };
+      if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+      fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, full_name: fullName, flag: app.auto_flag }),
+      }).catch(err => console.error('send-application-email error:', err));
     }
 
     setAcceptingId(null);
@@ -338,6 +340,37 @@ function Admissions() {
     setDuplicateModal(null);
   };
 
+  const handleMergeReturning = async () => {
+    if (!mergeReturningModal) return;
+    setMerging(true);
+    const { app, existingClient } = mergeReturningModal;
+
+    const { error } = await supabase.from('clients').update({
+      first_name: app.first_name || existingClient.first_name,
+      last_name: app.last_name || existingClient.last_name,
+      phone: app.phone || existingClient.phone,
+      email: app.email || existingClient.email,
+      date_of_birth: app.date_of_birth || existingClient.date_of_birth,
+      ssn: app.ssn || existingClient.ssn,
+      gender: app.assigned_sex || app.gender || existingClient.gender,
+      po_name: app.po_name || existingClient.po_name,
+      po_phone: app.po_phone || existingClient.po_phone,
+      sponsor_name: app.sponsor_name || existingClient.sponsor_name,
+      sponsor_phone: app.sponsor_phone || existingClient.sponsor_phone,
+      application_id: app.id,
+      status: 'Accepted',
+    }).eq('id', existingClient.id);
+
+    if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
+
+    await supabase.from('applications').update({ status: 'accepted', auto_flag: null }).eq('id', app.id);
+
+    setMergeReturningModal(null);
+    fetchApplications();
+    fetchClients();
+    setMerging(false);
+  };
+
   const statusColor = (status) => {
     if (status === 'accepted') return '#16a34a';
     if (status === 'denied') return '#dc2626';
@@ -349,6 +382,179 @@ function Admissions() {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalCount);
+
+  const flagInfo = (flag) => {
+    if (flag === 'sex_offender') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Registered sex offender' };
+    if (flag === 'disability_review') return { icon: '♿', color: '#fb923c', label: 'Needs review: Disability indicated — review before accepting or denying' };
+    if (flag === 'past_balance') return { icon: '💰', color: '#fb923c', label: 'Needs review: Returning client with outstanding balance' };
+    if (flag === 'returning_merge') return { icon: '🔄', color: '#60a5fa', label: 'Returning client — merge with existing profile before accepting' };
+    return { icon: '⚠', color: '#fb923c', label: flag };
+  };
+
+  const renderCard = (app, duplicate, isReview) => {
+    const fi = app.auto_flag ? flagInfo(app.auto_flag) : null;
+    return (
+      <div key={app.id} style={{ ...s.card, ...(isReview ? { borderColor: '#fb923c44', borderWidth: '1px', borderStyle: 'solid' } : {}) }}>
+        <div style={s.cardHeader}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={s.name}>{fmt(app.first_name)} {fmt(app.last_name)}</span>
+              {duplicate && app.status === 'pending' && (
+                <button style={s.dupBadge} onClick={() => setDuplicateModal({ app, client: duplicate })}>
+                  ⚠ Possible Duplicate
+                </button>
+              )}
+            </div>
+            <p style={s.meta}>{fmt(app.email)} · {fmt(app.phone)}</p>
+            <p style={s.meta}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
+            {fi && (
+              <div style={{ marginTop: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', borderLeft: `3px solid ${fi.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px' }}>{fi.icon}</span>
+                <span style={{ fontSize: '13px', color: fi.color, fontWeight: '500' }}>{fi.label}</span>
+              </div>
+            )}
+            {app.flag_reason && (
+              <p style={{ fontSize: '12px', color: '#888', margin: '4px 0 0 12px' }}>{app.flag_reason}</p>
+            )}
+          </div>
+          <span style={{ ...s.badge, backgroundColor: statusColor(app.status) }}>
+            {app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1) : 'Pending'}
+          </span>
+        </div>
+
+        <div style={s.snapshot}>
+          {[
+            ['Gender', app.gender || app.assigned_sex], ['Program', app.program],
+            ['Lived Here Before?', app.lived_here_before], ['On Disability?', app.on_disability],
+            ['Substance History?', app.substance_history], ['Registered Sex Offender?', app.sex_offender],
+            ['Correspondence Contact', app.correspondence_contact], ['Current Situation', app.current_situation],
+          ].map(([label, val]) => (
+            <div key={label} style={s.snapshotItem}>
+              <span style={s.snapshotLabel}>{label}</span>
+              <span style={s.snapshotVal}>{fmt(val)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={s.cardActions}>
+          <button style={s.viewBtn} onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
+            {expanded === app.id ? 'Hide Application' : 'View Full Application'}
+          </button>
+          {app.auto_flag === 'returning_merge' && app.status === 'pending' && (
+            <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+              onClick={async () => {
+                const { data: existing } = await supabase.from('clients')
+                  .select('id, full_name, email, status')
+                  .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
+                  .limit(1).maybeSingle();
+                setMergeReturningModal({ app, existingClient: existing || { id: null, full_name: 'unknown', email: '' } });
+              }}>
+              🔄 Merge with Existing
+            </button>
+          )}
+          {app.status === 'pending' && (
+            <>
+              <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
+                {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+              </button>
+              <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>Deny</button>
+            </>
+          )}
+          {app.status === 'accepted' && (
+            <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>Deny</button>
+          )}
+          {app.status === 'denied' && (
+            <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
+              {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+            </button>
+          )}
+        </div>
+
+        {expanded === app.id && (
+          <div style={s.fullApp}>
+            <p style={s.sectionDivider}>General Info</p>
+            <div style={s.fullGrid}>
+              {[
+                ['First Name', app.first_name], ['Last Name', app.last_name],
+                ['Email', app.email], ['Phone', app.phone],
+                ['Date of Birth', app.date_of_birth], ['SSN', app.ssn],
+                ['Gender', app.gender || app.assigned_sex], ['Ethnicity', app.ethnicity],
+                ['Marital Status', app.marital_status], ['Present Residence', app.present_residence],
+                ['Has ID?', app.has_id], ['Has SS Card?', app.has_ss_card],
+                ['Employment Status', app.employment_status], ['Employer Name', app.employer_name],
+                ['Program', app.program], ['Lived Here Before?', app.lived_here_before],
+                ['Current Situation', app.current_situation], ['On Disability?', app.on_disability],
+                ['Difficulty Concentrating?', app.disability_concentrating],
+                ['Difficulty Walking?', app.disability_walking],
+                ['Difficulty Dressing?', app.disability_dressing],
+                ['Able to Work?', app.able_to_work], ['Agree to Volunteer?', app.agree_to_volunteer],
+                ['Allergy Info', app.allergy_info], ['Doctor Info', app.doctor_info],
+                ['Correspondence Contact', app.correspondence_contact],
+              ].map(([label, val]) => val ? (
+                <div key={label} style={s.fullItem}>
+                  <span style={s.fullLabel}>{label}</span>
+                  <span style={s.fullVal}>{val}</span>
+                </div>
+              ) : null)}
+            </div>
+            <p style={s.sectionDivider}>Recovery</p>
+            <div style={s.fullGrid}>
+              {[
+                ['Substance History?', app.substance_history], ['Drug of Choice', app.drug_of_choice],
+                ['Sober Date', app.sober_date], ['OUD Diagnosis', app.oud_diagnosis],
+                ['Recovery Meetings', app.recovery_meetings], ['Attended Treatment?', app.attended_treatment],
+                ['Takes Medication?', app.takes_medication],
+              ].map(([label, val]) => val ? (
+                <div key={label} style={s.fullItem}>
+                  <span style={s.fullLabel}>{label}</span>
+                  <span style={s.fullVal}>{val}</span>
+                </div>
+              ) : null)}
+            </div>
+            <p style={s.sectionDivider}>Emergency Contacts</p>
+            <div style={s.fullGrid}>
+              {[
+                ['Emergency Contact', app.emergency_contact],
+                ['Collateral Contacts', app.collateral_contacts],
+              ].map(([label, val]) => val ? (
+                <div key={label} style={s.fullItem}>
+                  <span style={s.fullLabel}>{label}</span>
+                  <span style={s.fullVal}>{val}</span>
+                </div>
+              ) : null)}
+            </div>
+            <p style={s.sectionDivider}>Legal</p>
+            <div style={s.fullGrid}>
+              {[
+                ['On Probation?', app.on_probation], ['On Parole?', app.on_parole],
+                ['Parole Officer', app.po_name], ['PO Phone', app.po_phone],
+                ['Criminal History', app.criminal_history], ['Sex Offender?', app.sex_offender],
+                ['Sex Offense Details', app.sex_offense_details],
+              ].map(([label, val]) => val ? (
+                <div key={label} style={s.fullItem}>
+                  <span style={s.fullLabel}>{label}</span>
+                  <span style={s.fullVal}>{val}</span>
+                </div>
+              ) : null)}
+            </div>
+            <p style={s.sectionDivider}>Information Accuracy</p>
+            <div style={s.fullGrid}>
+              {[
+                ['Form Completed By', app.form_completed_by], ['Agreed to Rules?', app.agree_to_rules],
+                ['Agreed to KL Levels?', app.agree_to_levels], ['Client Notes', app.client_notes],
+                ['Signature', app.signature],
+              ].map(([label, val]) => val ? (
+                <div key={label} style={s.fullItem}>
+                  <span style={s.fullLabel}>{label}</span>
+                  <span style={s.fullVal}>{val}</span>
+                </div>
+              ) : null)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={s.page}>
@@ -389,326 +595,31 @@ function Admissions() {
         <p style={s.empty}>No applications found.</p>
       ) : (
         <>
-          <div style={s.list}>
-            {applications.map((app) => {
-              const duplicate = findDuplicate(app);
-
-              return (
-                <div key={app.id} style={s.card}>
-                  <div style={s.cardHeader}>
-                    <div style={{ flex: 1 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <span style={s.name}>
-                          {fmt(app.first_name)} {fmt(app.last_name)}
-                        </span>
-
-                        {duplicate && app.status === 'pending' && (
-                          <button
-                            style={s.dupBadge}
-                            onClick={() => setDuplicateModal({ app, client: duplicate })}
-                          >
-                            ⚠ Possible Duplicate
-                          </button>
-                        )}
-                      </div>
-
-                      <p style={s.meta}>
-                        {fmt(app.email)} · {fmt(app.phone)}
-                      </p>
-                      <p style={s.meta}>
-                        Applied:{' '}
-                        {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}
-                      </p>
-                    </div>
-
-                    <span
-                      style={{
-                        ...s.badge,
-                        backgroundColor: statusColor(app.status),
-                      }}
-                    >
-                      {app.status
-                        ? app.status.charAt(0).toUpperCase() + app.status.slice(1)
-                        : 'Pending'}
-                    </span>
-                  </div>
-
-                  <div style={s.snapshot}>
-                    {[
-                      ['Gender', app.gender || app.assigned_sex],
-                      ['Program', app.program],
-                      ['Lived Here Before?', app.lived_here_before],
-                      ['On Disability?', app.on_disability],
-                      ['Substance History?', app.substance_history],
-                      ['Registered Sex Offender?', app.sex_offender],
-                      ['Correspondence Contact', app.correspondence_contact],
-                      ['Current Situation', app.current_situation],
-                    ].map(([label, val]) => (
-                      <div key={label} style={s.snapshotItem}>
-                        <span style={s.snapshotLabel}>{label}</span>
-                        <span style={s.snapshotVal}>{fmt(val)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={s.cardActions}>
-                    <button
-                      style={s.viewBtn}
-                      onClick={() => setExpanded(expanded === app.id ? null : app.id)}
-                    >
-                      {expanded === app.id ? 'Hide Application' : 'View Full Application'}
-                    </button>
-
-                    {app.status === 'pending' && (
-                      <>
-                        <button
-                          style={s.acceptBtn}
-                          onClick={() => updateStatus(app.id, 'accepted')}
-                          disabled={acceptingId === app.id}
-                        >
-                          {acceptingId === app.id ? 'Accepting...' : 'Accept'}
-                        </button>
-                        <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>
-                          Deny
-                        </button>
-                      </>
-                    )}
-
-                    {app.status === 'accepted' && (
-                      <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>
-                        Deny
-                      </button>
-                    )}
-
-                    {app.status === 'denied' && (
-                      <button
-                        style={s.acceptBtn}
-                        onClick={() => updateStatus(app.id, 'accepted')}
-                        disabled={acceptingId === app.id}
-                      >
-                        {acceptingId === app.id ? 'Accepting...' : 'Accept'}
-                      </button>
-                    )}
-                  </div>
-
-                  {expanded === app.id && (
-                    <div style={s.fullApp}>
-                      <p style={s.sectionDivider}>General Info</p>
-                      <div style={s.fullGrid}>
-                        {[
-                          ['First Name', app.first_name],
-                          ['Last Name', app.last_name],
-                          ['Email', app.email],
-                          ['Phone', app.phone],
-                          ['Date of Birth', app.date_of_birth],
-                          ['SSN', app.ssn],
-                          ['Gender', app.gender || app.assigned_sex],
-                          ['Ethnicity', app.ethnicity],
-                          ['Marital Status', app.marital_status],
-                          ['Present Residence', app.present_residence],
-                          ['Has ID?', app.has_id],
-                          ['Has SS Card?', app.has_ss_card],
-                          ['Employment Status', app.employment_status],
-                          ['Employer Name', app.employer_name],
-                          ['Program', app.program],
-                          ['Lived Here Before?', app.lived_here_before],
-                          ['Current Situation', app.current_situation],
-                          ['On Disability?', app.on_disability],
-                          ['Difficulty Concentrating?', app.disability_concentrating],
-                          ['Difficulty Walking?', app.disability_walking],
-                          ['Difficulty Dressing?', app.disability_dressing],
-                          ['Able to Work?', app.able_to_work],
-                          ['Agree to Volunteer?', app.agree_to_volunteer],
-                          ['Allergy Info', app.allergy_info],
-                          ['Doctor Info', app.doctor_info],
-                          ['Correspondence Contact', app.correspondence_contact],
-                        ].map(([label, val]) =>
-                          val ? (
-                            <div key={label} style={s.fullItem}>
-                              <span style={s.fullLabel}>{label}</span>
-                              <span style={s.fullVal}>{val}</span>
-                            </div>
-                          ) : null
-                        )}
-                      </div>
-
-                      <p style={s.sectionDivider}>Recovery</p>
-                      <div style={s.fullGrid}>
-                        {[
-                          ['Substance History?', app.substance_history],
-                          ['Drug of Choice', app.drug_of_choice],
-                          ['Sober Date', app.sober_date],
-                          ['OUD Diagnosis', app.oud_diagnosis],
-                          ['Recovery Meetings', app.recovery_meetings],
-                          ['Attended Treatment?', app.attended_treatment],
-                          ['Takes Medication?', app.takes_medication],
-                        ].map(([label, val]) =>
-                          val ? (
-                            <div key={label} style={s.fullItem}>
-                              <span style={s.fullLabel}>{label}</span>
-                              <span style={s.fullVal}>{val}</span>
-                            </div>
-                          ) : null
-                        )}
-                      </div>
-
-                      {app.medication_details &&
-                        (() => {
-                          try {
-                            const meds = JSON.parse(app.medication_details);
-                            if (meds.length === 0) return null;
-
-                            return (
-                              <>
-                                <p style={s.sectionDivider}>Medications</p>
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '8px',
-                                  }}
-                                >
-                                  {meds.map((med, i) => (
-                                    <div key={i} style={s.subCard}>
-                                      <div style={s.fullGrid}>
-                                        {[
-                                          ['Name', med.name],
-                                          ['Dosage', med.dosage],
-                                          [
-                                            'Frequency',
-                                            med.intake ? `${med.intake}x/day` : null,
-                                          ],
-                                          ['Count', med.count],
-                                          ['Notes', med.notes],
-                                        ].map(([label, val]) =>
-                                          val ? (
-                                            <div key={label} style={s.fullItem}>
-                                              <span style={s.fullLabel}>{label}</span>
-                                              <span style={s.fullVal}>{val}</span>
-                                            </div>
-                                          ) : null
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
-                            );
-                          } catch {
-                            return null;
-                          }
-                        })()}
-
-                      {app.treatment_details &&
-                        (() => {
-                          try {
-                            const treatments = JSON.parse(app.treatment_details);
-                            if (treatments.length === 0) return null;
-
-                            return (
-                              <>
-                                <p style={s.sectionDivider}>Treatment History</p>
-                                <div
-                                  style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '8px',
-                                  }}
-                                >
-                                  {treatments.map((t, i) => (
-                                    <div key={i} style={s.subCard}>
-                                      <div style={s.fullGrid}>
-                                        {[
-                                          ['Name', t.name],
-                                          ['Level of Care', t.level_of_care],
-                                          ['Contact Name', t.contact_name],
-                                          ['Contact Phone', t.contact_phone],
-                                          ['Contact Email', t.contact_email],
-                                          ['Was Referred?', t.was_referred],
-                                          ['Referral Date', t.referral_date],
-                                          ['Discharge Date', t.discharge_date],
-                                        ].map(([label, val]) =>
-                                          val ? (
-                                            <div key={label} style={s.fullItem}>
-                                              <span style={s.fullLabel}>{label}</span>
-                                              <span style={s.fullVal}>{val}</span>
-                                            </div>
-                                          ) : null
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </>
-                            );
-                          } catch {
-                            return null;
-                          }
-                        })()}
-
-                      <p style={s.sectionDivider}>Emergency Contacts</p>
-                      <div style={s.fullGrid}>
-                        {[
-                          ['Emergency Contact', app.emergency_contact],
-                          ['Collateral Contacts', app.collateral_contacts],
-                        ].map(([label, val]) =>
-                          val ? (
-                            <div key={label} style={s.fullItem}>
-                              <span style={s.fullLabel}>{label}</span>
-                              <span style={s.fullVal}>{val}</span>
-                            </div>
-                          ) : null
-                        )}
-                      </div>
-
-                      <p style={s.sectionDivider}>Legal</p>
-                      <div style={s.fullGrid}>
-                        {[
-                          ['On Probation?', app.on_probation],
-                          ['On Parole?', app.on_parole],
-                          ['Parole Officer', app.po_name],
-                          ['PO Phone', app.po_phone],
-                          ['Criminal History', app.criminal_history],
-                          ['Sex Offender?', app.sex_offender],
-                          ['Sex Offense Details', app.sex_offense_details],
-                        ].map(([label, val]) =>
-                          val ? (
-                            <div key={label} style={s.fullItem}>
-                              <span style={s.fullLabel}>{label}</span>
-                              <span style={s.fullVal}>{val}</span>
-                            </div>
-                          ) : null
-                        )}
-                      </div>
-
-                      <p style={s.sectionDivider}>Information Accuracy</p>
-                      <div style={s.fullGrid}>
-                        {[
-                          ['Form Completed By', app.form_completed_by],
-                          ['Agreed to Rules?', app.agree_to_rules],
-                          ['Agreed to KL Levels?', app.agree_to_levels],
-                          ['Client Notes', app.client_notes],
-                          ['Signature', app.signature],
-                        ].map(([label, val]) =>
-                          val ? (
-                            <div key={label} style={s.fullItem}>
-                              <span style={s.fullLabel}>{label}</span>
-                              <span style={s.fullVal}>{val}</span>
-                            </div>
-                          ) : null
-                        )}
-                      </div>
-                    </div>
-                  )}
+          {/* Needs Review section — only show on pending/all tabs */}
+          {(filter === 'pending' || filter === 'all') && (() => {
+            const flagged = applications.filter(a => a.auto_flag && a.status === 'pending');
+            if (!flagged.length) return null;
+            return (
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#fb923c' }}>⚠ Needs Review</span>
+                  <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>{flagged.length}</span>
                 </div>
-              );
+                <div style={s.list}>
+                  {flagged.map(app => {
+                    const duplicate = findDuplicate(app);
+                    return renderCard(app, duplicate, true);
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Regular applications */}
+          <div style={s.list}>
+            {applications.filter(a => !a.auto_flag || a.status !== 'pending').map(app => {
+              const duplicate = findDuplicate(app);
+              return renderCard(app, duplicate, false);
             })}
           </div>
 
