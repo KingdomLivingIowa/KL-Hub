@@ -1,5 +1,11 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
@@ -37,9 +43,16 @@ async function notifyAdmins(supabase, message, type) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  const respond = (body, status = 200) =>
+    new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
   try {
     const { application_id } = await req.json();
-    if (!application_id) return new Response(JSON.stringify({ error: 'Missing application_id' }), { status: 400 });
+    if (!application_id) return respond({ error: 'Missing application_id' }, 400);
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -49,10 +62,11 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('id', application_id)
       .single();
-    if (appErr || !app) return new Response(JSON.stringify({ error: 'Application not found' }), { status: 404 });
+    if (appErr || !app) return respond({ error: 'Application not found' }, 404);
 
     const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
     const email = app.email;
+    const recipients = [...new Set([email, app.correspondence_contact].filter(Boolean))];
 
     // ── RULE 1: Sex offender → auto deny ─────────────────────────────────────
     if (app.sex_offender === 'Yes') {
@@ -63,9 +77,9 @@ Deno.serve(async (req) => {
         auto_processed: true,
       }).eq('id', application_id);
 
-      if (email) {
+      if (recipients.length) {
         await sendEmail(
-          email,
+          recipients,
           'Kingdom Living Iowa — Application Update',
           `<p>Thank you for your interest in Kingdom Living Iowa and for taking the time to submit your application. After a thorough review, we regret to inform you that we are unable to accept your application at this time.</p>
           <p>As part of our admissions policy, we are not able to accept individuals who have been convicted of a sex crime or are listed on the sex offender registry. Unfortunately, this policy prevents us from moving forward with your application.</p>
@@ -74,7 +88,7 @@ Deno.serve(async (req) => {
       }
 
       await notifyAdmins(supabase, `Application from ${fullName} was automatically denied (sex offender).`, 'new_application');
-      return new Response(JSON.stringify({ result: 'denied', reason: 'sex_offender' }), { status: 200 });
+      return respond({ result: 'denied', reason: 'sex_offender' });
     }
 
     // ── RULE 2: Disability → flag for review ──────────────────────────────────
@@ -87,7 +101,7 @@ Deno.serve(async (req) => {
       }).eq('id', application_id);
 
       await notifyAdmins(supabase, `Application from ${fullName} needs review — disability flagged.`, 'new_application');
-      return new Response(JSON.stringify({ result: 'flagged', reason: 'disability_review' }), { status: 200 });
+      return respond({ result: 'flagged', reason: 'disability_review' });
     }
 
     // ── RULE 3: Lived here before → check past balance ────────────────────────
@@ -118,10 +132,10 @@ Deno.serve(async (req) => {
             auto_processed: true,
           }).eq('id', application_id);
 
-          // Send balance email to applicant
-          if (email) {
+          // Send balance email to applicant and correspondence contact
+          if (recipients.length) {
             await sendEmail(
-              email,
+              recipients,
               'Kingdom Living Iowa — Application Update',
               `<p>Thank you for submitting your application. Before I can add you to the waiting list, your outstanding balance of <strong>$${totalPastBalance.toFixed(2)}</strong> will need to be paid in full.</p>
               <p>You have the following payment options:</p>
@@ -135,7 +149,7 @@ Deno.serve(async (req) => {
           }
 
           await notifyAdmins(supabase, `Application from ${fullName} needs review — returning client with past balance of $${totalPastBalance.toFixed(2)}.`, 'new_application');
-          return new Response(JSON.stringify({ result: 'flagged', reason: 'past_balance', balance: totalPastBalance }), { status: 200 });
+          return respond({ result: 'flagged', reason: 'past_balance', balance: totalPastBalance });
         } else {
           // No past balance — flag for merge with existing profile
           await supabase.from('applications').update({
@@ -146,7 +160,7 @@ Deno.serve(async (req) => {
           }).eq('id', application_id);
 
           await notifyAdmins(supabase, `Application from ${fullName} is a returning client with no past balance. Review and merge with existing profile.`, 'new_application');
-          return new Response(JSON.stringify({ result: 'flagged', reason: 'returning_merge' }), { status: 200 });
+          return respond({ result: 'flagged', reason: 'returning_merge' });
         }
       }
     }
@@ -213,9 +227,9 @@ Deno.serve(async (req) => {
     }).eq('id', application_id);
 
     // Send acceptance email
-    if (email) {
+    if (recipients.length) {
       await sendEmail(
-        email,
+        recipients,
         'Kingdom Living Iowa — Application Accepted',
         `<p>I am pleased to inform you that <strong>${fullName}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
         <p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
@@ -225,10 +239,10 @@ Deno.serve(async (req) => {
     }
 
     await notifyAdmins(supabase, `Application from ${fullName} was automatically accepted.`, 'new_application');
-    return new Response(JSON.stringify({ result: 'accepted' }), { status: 200 });
+    return respond({ result: 'accepted' });
 
   } catch (err) {
     console.error('process-application error:', err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return respond({ error: err.message }, 500);
   }
 });
