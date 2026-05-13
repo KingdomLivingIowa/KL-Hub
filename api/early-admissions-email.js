@@ -75,7 +75,18 @@ export default async function handler(req, res) {
       .order('start_date', { ascending: false });
 
     if (!clients?.length) {
-      return res.status(200).json({ message: 'No early admissions in the past 7 days.' });
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+      await resend.emails.send({
+        from: FROM_EMAIL,
+        to: recipients,
+        subject: 'Early Admissions Report — No early admissions this week',
+        html: wrap(`
+          <p style="margin:0 0 6px 0;font-size:13px;color:#999;">${today}</p>
+          <h2 style="margin:0 0 20px 0;font-size:20px;color:#1a1a1a;">⭐ Early Admissions Report</h2>
+          <p style="color:#555;">No clients were marked as early admissions in the past 7 days.</p>
+        `),
+      });
+      return res.status(200).json({ message: 'No early admissions — notification sent.' });
     }
 
     // Group by house
