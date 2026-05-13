@@ -11,6 +11,10 @@
     {
       "path": "/api/overdue-balance-email",
       "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/early-admissions-email",
+      "schedule": "0 10 * * 1"
     }
   ]
 }

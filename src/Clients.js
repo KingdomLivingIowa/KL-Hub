@@ -1069,7 +1069,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '', discharge_type: '', ua_at_discharge: '', two_week_notice: '' });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '', discharge_type: '', ua_at_discharge: '', two_week_notice: '', early_admission: false });
   };
 
   const confirmStatusChange = async () => {
@@ -1097,6 +1097,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (newStatus === 'Active') {
       updates.start_date = statusForm.move_in_date || null;
       updates.level = 1;
+      updates.early_admission = statusForm.early_admission || false;
       if (statusForm.room_type) updates.room_type = statusForm.room_type;
       const activeHouseId = statusForm.house_id || client.house_id;
       // If moving to a different house, remove from old house chat first
@@ -1321,6 +1322,68 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setSelected(prev => ({ ...prev, [field]: value }));
     setClients(prev => prev.map(c => c.id === selected.id ? { ...c, [field]: value } : c));
     setEditingField(null);
+  };
+
+  const EarlyAdmissionField = () => {
+    const [editing, setEditing] = useState(false);
+    const [checked, setChecked] = useState(selected.early_admission || false);
+    const [notes, setNotes] = useState(selected.early_admission_notes || '');
+
+    const save = async () => {
+      await supabase.from('clients').update({
+        early_admission: checked,
+        early_admission_notes: notes || null,
+      }).eq('id', selected.id);
+      setSelected(prev => ({ ...prev, early_admission: checked, early_admission_notes: notes }));
+      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, early_admission: checked, early_admission_notes: notes } : c));
+      setEditing(false);
+    };
+
+    const cancel = () => {
+      setChecked(selected.early_admission || false);
+      setNotes(selected.early_admission_notes || '');
+      setEditing(false);
+    };
+
+    return (
+      <div style={{ padding: '6px 0', borderBottom: '1px solid #333' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>⭐ Early Admission</span>
+          {!editing ? (
+            <span onClick={() => setEditing(true)} title="Click to edit"
+              style={{ fontSize: '13px', color: selected.early_admission ? '#fbbf24' : '#999', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
+              {selected.early_admission ? 'Yes' : 'No'}
+            </span>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)}
+                style={{ width: '15px', height: '15px', accentColor: '#b22222', cursor: 'pointer' }} />
+              <span style={{ fontSize: '13px', color: '#ddd' }}>{checked ? 'Yes' : 'No'}</span>
+            </div>
+          )}
+        </div>
+        {editing && (
+          <div style={{ marginTop: '8px' }}>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Reason for early admission..."
+              rows={3}
+              style={{ width: '100%', background: '#111', border: '1px solid #555', borderRadius: '6px', color: '#fff', fontSize: '13px', padding: '6px 8px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <button onClick={save} style={{ padding: '4px 12px', background: '#b22222', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: '600' }}>Save</button>
+              <button onClick={cancel} style={{ padding: '4px 12px', background: '#2a2a2a', color: '#aaa', border: '1px solid #333', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        )}
+        {!editing && selected.early_admission && selected.early_admission_notes && (
+          <p style={{ fontSize: '12px', color: '#888', margin: '4px 0 0 0', fontStyle: 'italic' }}>{selected.early_admission_notes}</p>
+        )}
+      </div>
+    );
   };
 
   const EditableField = ({ label, field, value, alert: isAlert, options }) => {
@@ -1676,6 +1739,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       {selected.status === 'Pending' && (
                         <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
                       )}
+                      <EarlyAdmissionField />
                     </Card>
                     <Card title="PO & legal">
                       <EditableField label="PO name" field="po_name" value={selected.po_name} />
@@ -2306,6 +2370,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Move-in date</label>
                     <input type="date" value={statusForm.move_in_date} onChange={e => setStatusForm(p => ({ ...p, move_in_date: e.target.value }))} style={sf.input} />
+                  </div>
+                  <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      id="early_admission"
+                      checked={statusForm.early_admission || false}
+                      onChange={e => setStatusForm(p => ({ ...p, early_admission: e.target.checked }))}
+                      style={{ width: '16px', height: '16px', accentColor: '#b22222', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="early_admission" style={{ ...sf.label, margin: 0, cursor: 'pointer' }}>
+                      ⭐ Early Admission
+                    </label>
                   </div>
                   <div style={{ background: '#222', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
                     <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
