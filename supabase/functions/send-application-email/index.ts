@@ -87,15 +87,15 @@ Deno.serve(async (req) => {
     const recipients = [...new Set([email, correspondence_contact].filter(e => e && isValidEmail(e)))];
 
     if (type === 'denied_manual' || type === 'denied_disability') {
-      // Disability denial
-      if (flag === 'disability_review') {
+      if (flag?.includes('disability_review') && !flag?.includes('past_balance')) {
+        // Disability-only denial
         await sendEmail(recipients, 'Kingdom Living Iowa — Application Decision', wrap(
           `<p>Thank you for your interest in Kingdom Living and for taking the time to complete an application with us. After reviewing your responses, we are unfortunately unable to move forward with your application at this time.</p>
           <p>Based on your responses of "yes" to the questions "Do you have serious difficulty walking or climbing stairs?" and "Do you have difficulty dressing or bathing?", we are unable to accommodate these needs within our current housing environment. Our homes are not equipped to provide accessibility features or assistance with activities of daily living, and we want to ensure that all residents are placed in housing that can safely meet their needs.</p>
           <p>We appreciate your understanding and wish you the very best moving forward.</p>`
         ));
       } else {
-        // Generic manual denial
+        // Generic manual denial (covers past_balance denial, multi-flag denial, etc.)
         await sendEmail(recipients, 'Kingdom Living Iowa — Application Decision', wrap(
           `<p>Thank you for your interest in Kingdom Living Iowa. After reviewing your application, we regret to inform you that we are unable to move forward at this time.</p>
           <p>We wish you all the best in your journey ahead.</p>`
