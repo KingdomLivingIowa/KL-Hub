@@ -76,7 +76,18 @@ Deno.serve(async (req) => {
       return `<tr><td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555;">${r}</td><td style="padding:7px 12px;border-bottom:1px solid #eee;font-size:13px;font-weight:600;color:${done ? '#16a34a' : '#dc2626'};">${done ? '✓ Yes' : '○ No'}</td></tr>`;
     }).join('');
 
-    // ── Get admin + upper management ──────────────────────────────────────────
+    // ── Get recipients from email_notification_settings ───────────────────────
+    const { data: settings } = await supabase
+      .from('email_notification_settings')
+      .select('user_id')
+      .eq('notification_type', 'move_out_request');
+
+    const recipientIds = (settings || []).map(s => s.user_id);
+    const { data: emailRecipients } = recipientIds.length
+      ? await supabase.from('user_profiles').select('id, email').in('id', recipientIds)
+      : { data: [] };
+
+    // ── Get admin + upper management for in-app notifications ─────────────────
     const { data: admins } = await supabase
       .from('user_profiles')
       .select('id, email, full_name')
@@ -127,8 +138,8 @@ Deno.serve(async (req) => {
       <p style="color:#888;font-size:13px;margin-top:8px;">Please log into KL Hub to approve or deny this request.</p>
     `);
 
-    // Email admins + upper management
-    const adminEmails = (admins || []).map(a => a.email).filter(Boolean);
+    // Email only those in email_notification_settings
+    const adminEmails = (emailRecipients || []).map(a => a.email).filter(Boolean);
     if (adminEmails.length) {
       await sendEmail(adminEmails, `Move-Out Request — ${client_name} · ${houseName}`, emailHtml);
     }

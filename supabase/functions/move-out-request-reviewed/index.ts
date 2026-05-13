@@ -61,7 +61,18 @@ Deno.serve(async (req) => {
       ? new Date(move_out_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : 'Not specified';
 
-    // Get all admins + upper management
+    // Get recipients from email_notification_settings
+    const { data: settings } = await supabase
+      .from('email_notification_settings')
+      .select('user_id')
+      .eq('notification_type', 'move_out_request');
+
+    const recipientIds = (settings || []).map(s => s.user_id);
+    const { data: emailRecipients } = recipientIds.length
+      ? await supabase.from('user_profiles').select('id, email').in('id', recipientIds)
+      : { data: [] };
+
+    // Get all admins + upper management for in-app notifications
     const { data: admins } = await supabase
       .from('user_profiles')
       .select('id, email')
@@ -78,10 +89,15 @@ Deno.serve(async (req) => {
       ? await supabase.from('user_profiles').select('id, email').in('id', houseManagerIds).in('role', ['house_manager', 'head_house_manager'])
       : { data: [] };
 
-    // Combine all recipients for email
-    const allProfiles = [...(admins || []), ...(houseManagers || [])];
-    const allEmails = [...new Set(allProfiles.map(p => p.email).filter(Boolean))];
-    const allIds = [...new Set(allProfiles.map(p => p.id))];
+    // Combine email recipients: those in settings + house managers
+    const settingsEmails = (emailRecipients || []).map(p => p.email).filter(Boolean);
+    const houseManagerEmails = (houseManagers || []).map(p => p.email).filter(Boolean);
+    const allEmails = [...new Set([...settingsEmails, ...houseManagerEmails])];
+
+    // In-app: all admins + upper management + house managers
+    const adminIds = (admins || []).map(p => p.id);
+    const houseManagerIds2 = (houseManagers || []).map(p => p.id);
+    const allIds = [...new Set([...adminIds, ...houseManagerIds2])];
 
     const emailHtml = wrap(`
       <h2 style="margin:0 0 20px;font-size:20px;color:#1a1a1a;">🚪 Move-Out Request ${actionLabel}</h2>
