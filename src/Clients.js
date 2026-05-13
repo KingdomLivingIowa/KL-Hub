@@ -285,7 +285,7 @@ const STATUS_FLOW = {
   'Denied': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
 };
 
-const ENTRY_TYPES = ['UA', 'Crisis', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
+const ENTRY_TYPES = ['UA', 'Crisis', 'Infraction', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
 
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
 const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
@@ -1043,6 +1043,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (type === 'House Check-In') return '#7F77DD';
     if (type === 'Batch UA') return '#1D9E75';
     if (type === 'Crisis') return '#E24B4A';
+    if (type === 'Infraction') return '#dc2626';
     if (type === 'Event Attendance') return '#378ADD';
     if (type === 'Meeting') return '#60a5fa';
     if (type === 'Mood Check-In') return '#BA7517';
@@ -1220,7 +1221,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const { error } = await supabase.from('client_timeline').insert([{
       client_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryType === 'Weekly Check-In' ? (entryForm.wci_reflection || null) : (entryForm.notes || null),
-      severity: entryType === 'Crisis' ? entryForm.severity : null,
+      severity: entryType === 'Crisis' ? entryForm.severity : entryType === 'Infraction' ? entryForm.severity : null,
       event_name: entryType === 'UA' ? entryForm.ua_result : entryType === 'Chores' ? entryForm.chore_status : null,
       meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : entryType === 'Chores' ? entryForm.chore_name : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
@@ -1951,6 +1952,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           </div>
                         </div>
                       )}
+                      {entryType === 'Infraction' && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={sf.label}>Severity</label>
+                          <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
+                            {['Minor', 'Major', 'Serious'].map(sv => (
+                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                <input type="radio" name="infraction_severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {entryType === 'Meeting' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Meeting Name</label>
@@ -2075,7 +2088,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         <textarea value={entryForm.notes} onChange={e => setEntryForm(p => ({ ...p, notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={3} placeholder="Add any notes..." />
                       </div>
                       )}
-                      {['UA', 'Check-In', 'General Note', 'Jobs Applied For'].includes(entryType) && (
+                      {['UA', 'Check-In', 'General Note', 'Jobs Applied For', 'Infraction'].includes(entryType) && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={sf.label}>Photo (optional)</label>
                           <input type="file" accept="image/*" onChange={e => {
@@ -2105,7 +2118,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {timeline.map(entry => (
-                          <div key={entry.id} style={st.timelineCard}>
+                          <div key={entry.id} style={{ ...st.timelineCard, ...(entry.entry_type === 'Infraction' ? { borderLeft: '3px solid #dc2626', background: '#1a0f0f' } : {}) }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: entryColor(entry.entry_type), flexShrink: 0 }} />
@@ -2113,7 +2126,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 {entry.meeting_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.meeting_name}</span>}
                                 {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
                                 {entry.mood_value && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>Mood: {entry.mood_value}/10</span>}
-                                {entry.severity && <span style={{ ...st.badge, background: entry.severity === 'High' ? '#3a1e1e' : entry.severity === 'Medium' ? '#3a2d1e' : '#1e3a2f', color: entry.severity === 'High' ? '#f87171' : entry.severity === 'Medium' ? '#fb923c' : '#4ade80' }}>{entry.severity}</span>}
+                                {entry.severity && <span style={{ ...st.badge, background: entry.severity === 'High' || entry.severity === 'Serious' ? '#3a1e1e' : entry.severity === 'Medium' || entry.severity === 'Major' ? '#3a2d1e' : '#1e3a2f', color: entry.severity === 'High' || entry.severity === 'Serious' ? '#f87171' : entry.severity === 'Medium' || entry.severity === 'Major' ? '#fb923c' : '#4ade80' }}>{entry.severity}</span>}
                                 {entry.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '12px' }}>House</span>}
                                 {entry.source === 'client' && <span style={{ ...st.badge, background: '#2d1e3a', color: '#c084fc', fontSize: '12px' }}>Self</span>}
                               </div>
