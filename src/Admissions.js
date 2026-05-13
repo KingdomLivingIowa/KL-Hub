@@ -200,6 +200,14 @@ function Admissions() {
       drug_of_choice: app.drug_of_choice || null,
     };
 
+    const { data: existingForApp } = await supabase
+      .from('clients')
+      .select('id')
+      .eq('application_id', app.id)
+      .maybeSingle();
+
+    if (existingForApp) return null; // already merged, skip insert
+
     const { error } = await supabase.from('clients').insert([payload]);
     return error;
   };
@@ -313,6 +321,7 @@ function Admissions() {
         gender: app.assigned_sex || app.gender || null,
         present_residence: app.current_situation || null,
         application_type: app.program || null,
+        application_id: app.id,
       })
       .eq('id', client.id);
 
