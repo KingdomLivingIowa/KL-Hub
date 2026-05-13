@@ -826,10 +826,7 @@ function Houses({ onOpenClient }) {
               )}
 
               {activeTab === 'forms' && (
-                <div>
-                  <p style={s.sectionLabel}>Forms</p>
-                  <p style={{ color: '#999', fontSize: '14px', lineHeight: '1.6' }}>Forms submitted by residents of {selected.name} will appear here once the forms system is built out.</p>
-                </div>
+                <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} />
               )}
             </div>
           </div>
@@ -941,5 +938,215 @@ const s = {
   roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#333', borderRadius: '10px' },
   timelineCard: { background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
 };
+
+function MoveOutRequestsTab({ houseId, houseName }) {
+  const { isAdmin, isUpperManagement } = useUser();
+  const canReview = isAdmin || isUpperManagement;
+
+  const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(null);
+  const [reviewing, setReviewing] = useState(null); // { id, action }
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [filter, setFilter] = useState('pending');
+
+  const { supabase: sb } = { supabase };
+
+  useEffect(() => { fetchRequests(); }, [houseId, filter]);
+
+  const fetchRequests = async () => {
+    setLoading(true);
+    let q = supabase.from('move_out_requests')
+      .select('*, clients(full_name, phone, level)')
+      .eq('house_id', houseId)
+      .order('created_at', { ascending: false });
+    if (filter !== 'all') q = q.eq('status', filter);
+    const { data } = await q;
+    setRequests(data || []);
+    setLoading(false);
+  };
+
+  const handleReview = async (request, action) => {
+    setSaving(true);
+    const { error } = await supabase.from('move_out_requests').update({
+      status: action,
+      reviewed_at: new Date().toISOString(),
+      review_notes: reviewNotes || null,
+    }).eq('id', request.id);
+
+    if (error) { alert('Error: ' + error.message); setSaving(false); return; }
+
+    // Send notifications via edge function
+    await fetch(`${SUPABASE_URL}/functions/v1/move-out-request-reviewed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+      body: JSON.stringify({
+        request_id: request.id,
+        client_id: request.client_id,
+        house_id: houseId,
+        client_name: request.clients?.full_name,
+        house_name: houseName,
+        action,
+        review_notes: reviewNotes || null,
+        move_out_date: request.requested_move_out_date,
+      }),
+    }).catch(err => console.error('Notification error:', err));
+
+    setReviewing(null);
+    setReviewNotes('');
+    fetchRequests();
+    setSaving(false);
+  };
+
+  const LEVEL_REQS = [
+    'Completed Thursday Night Alive Sessions', '90 days in house residency',
+    'Employed (min. 30 hours/week)', 'Sponsor (min. 4 contacts/week)',
+    'Attend 4 AA or NA meetings per week', 'Sunday morning house meeting',
+    'Participate in weekly house dinner', 'Zero balance',
+    'Complete Step 9 with a sponsor', 'Must have a service position in your home group',
+  ];
+
+  const statusColor = (s) => s === 'approved' ? '#4ade80' : s === 'denied' ? '#f87171' : '#fb923c';
+  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#7f1d1d' : '#78350f';
+  const statusLabel = (s) => s === 'approved' ? '✓ Approved' : s === 'denied' ? '✗ Denied' : '⏳ Pending';
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <p style={s.sectionLabel}>Move-Out Requests</p>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {['pending', 'approved', 'denied', 'all'].map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#2a2a2a', color: filter === f ? '#fff' : '#888' }}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <p style={{ color: '#888', fontSize: '14px' }}>Loading...</p>
+      ) : requests.length === 0 ? (
+        <p style={{ color: '#888', fontSize: '14px' }}>No {filter === 'all' ? '' : filter} move-out requests.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {requests.map(r => (
+            <div key={r.id} style={{ background: '#1a1a1a', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#2a2a2a'}`, borderRadius: '10px', overflow: 'hidden' }}>
+              {/* Header */}
+              <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
+                <div>
+                  <p style={{ margin: 0, color: '#fff', fontWeight: '600', fontSize: '15px' }}>{r.clients?.full_name}</p>
+                  <p style={{ margin: '3px 0 0', color: '#888', fontSize: '12px' }}>
+                    Requested: {r.requested_move_out_date ? new Date(r.requested_move_out_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                    &nbsp;·&nbsp; Submitted: {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', background: statusBg(r.status), color: statusColor(r.status) }}>
+                    {statusLabel(r.status)}
+                  </span>
+                  <span style={{ color: '#666', fontSize: '14px' }}>{expanded === r.id ? '▲' : '▼'}</span>
+                </div>
+              </div>
+
+              {/* Expanded details */}
+              {expanded === r.id && (
+                <div style={{ borderTop: '1px solid #2a2a2a', padding: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+                    {[
+                      ['Moving To', r.moving_to],
+                      ['PO Name', r.po_name || '—'],
+                      ['PO Phone', r.po_phone || '—'],
+                      ['Change of Address', r.change_of_address ? 'Yes' : 'No'],
+                      ['Continuing Level 4', r.continuing_level_4 ? 'Yes' : 'No'],
+                      ['All Requirements Met', r.all_requirements_met ? 'Yes' : 'No'],
+                      ['Marketing Permission', r.marketing_permission ? 'Yes' : 'No'],
+                    ].map(([label, val]) => (
+                      <div key={label} style={{ background: '#111', borderRadius: '8px', padding: '10px 12px' }}>
+                        <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#ddd' }}>{val || '—'}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Requirements checklist */}
+                  <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
+                    {LEVEL_REQS.map(req => {
+                      const done = (r.requirements_completed || []).includes(req);
+                      return (
+                        <div key={req} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: done ? '#0f2e1a' : '#111', borderRadius: '6px' }}>
+                          <span style={{ color: done ? '#4ade80' : '#444', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
+                          <span style={{ fontSize: '13px', color: done ? '#4ade80' : '#555' }}>{req}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Feedback */}
+                  {(r.liked || r.disliked || r.other_notes) && (
+                    <>
+                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.liked}</p></div>}
+                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.disliked}</p></div>}
+                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
+                    </>
+                  )}
+
+                  {/* Review notes if already reviewed */}
+                  {r.status !== 'pending' && r.review_notes && (
+                    <div style={{ background: '#111', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Review Notes</p>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.review_notes}</p>
+                    </div>
+                  )}
+
+                  {/* Approve/Deny actions */}
+                  {canReview && r.status === 'pending' && (
+                    reviewing?.id === r.id ? (
+                      <div>
+                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#aaa' }}>
+                          {reviewing.action === 'approved' ? '✓ Approving' : '✗ Denying'} — add a note (optional):
+                        </p>
+                        <textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)}
+                          rows={3} placeholder="Add a note to the resident..."
+                          style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '13px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => handleReview(r, reviewing.action)} disabled={saving}
+                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#7f1d1d', color: reviewing.action === 'approved' ? '#4ade80' : '#f87171', fontSize: '13px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                            {saving ? 'Saving...' : `Confirm ${reviewing.action === 'approved' ? 'Approval' : 'Denial'}`}
+                          </button>
+                          <button onClick={() => { setReviewing(null); setReviewNotes(''); }}
+                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #333', background: 'transparent', color: '#888', fontSize: '13px', cursor: 'pointer' }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={() => setReviewing({ id: r.id, action: 'approved' })}
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #166534', background: '#14532d', color: '#4ade80', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                          ✓ Approve
+                        </button>
+                        <button onClick={() => setReviewing({ id: r.id, action: 'denied' })}
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #7f1d1d', background: '#450a0a', color: '#f87171', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                          ✗ Deny
+                        </button>
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default Houses;

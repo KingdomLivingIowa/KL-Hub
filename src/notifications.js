@@ -7,15 +7,16 @@ export const NOTIF_TYPES = {
   CLIENT_CRISIS: 'client_crisis',
   CLIENT_LEVEL_CHANGE: 'client_level_change',
   CLIENT_WEEKLY_CHECKIN: 'client_weekly_checkin',
+  MOVE_OUT_REQUEST: 'move_out_request',
 };
 
-// Default preferences — all on
 export const DEFAULT_PREFERENCES = {
   [NOTIF_TYPES.CLIENT_STATUS_CHANGE]: true,
   [NOTIF_TYPES.CLIENT_POSITIVE_UA]: true,
   [NOTIF_TYPES.CLIENT_CRISIS]: true,
   [NOTIF_TYPES.CLIENT_LEVEL_CHANGE]: true,
   [NOTIF_TYPES.CLIENT_WEEKLY_CHECKIN]: true,
+  [NOTIF_TYPES.MOVE_OUT_REQUEST]: true,
 };
 
 export const NOTIF_LABELS = {
@@ -24,6 +25,7 @@ export const NOTIF_LABELS = {
   [NOTIF_TYPES.CLIENT_CRISIS]: 'Crisis entry logged',
   [NOTIF_TYPES.CLIENT_LEVEL_CHANGE]: 'Client level changes',
   [NOTIF_TYPES.CLIENT_WEEKLY_CHECKIN]: 'Weekly check-in submitted (portal)',
+  [NOTIF_TYPES.MOVE_OUT_REQUEST]: 'Move-out request submitted',
 };
 
 // Get house managers assigned to a given house, filtered by their preferences
