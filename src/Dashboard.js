@@ -530,6 +530,7 @@ function DashboardInner({ user }) {
     canSeeReports,
     canSeeUserManagement,
     isAdmin,
+    isUpperManagement,
   } = useUser();
 
   useEffect(() => {
