@@ -12,6 +12,7 @@ import Messaging from './Messaging';
 import Reports from './Reports';
 import Calendars from './Calendars';
 import Resources from './Resources';
+import EmailSettings from './EmailSettings';
 
 const DEFAULT_NOTIF_PREFS = {
   client_status_change: true,
@@ -562,6 +563,7 @@ function DashboardInner({ user }) {
 
   const settingsItems = [
     { id: 'users', label: 'User Management', show: canSeeUserManagement },
+    { id: 'email_settings', label: 'Email Settings', show: isAdmin || isUpperManagement },
     { id: 'profile', label: 'My Profile', show: true },
   ].filter(item => item.show);
 
@@ -659,6 +661,7 @@ function DashboardInner({ user }) {
           {activePage === 'calendars' && <Calendars />}
           {activePage === 'resources' && <Resources />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
+          {activePage === 'email_settings' && (isAdmin || isUpperManagement) && <EmailSettings />}
           {activePage === 'profile' && <NotificationSettingsPage currentUser={user} />}
         </div>
       </div>
