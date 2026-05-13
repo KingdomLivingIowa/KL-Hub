@@ -381,7 +381,7 @@ function Admissions() {
 
     if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
 
-    await supabase.from('applications').update({ status: 'accepted', auto_flag: null }).eq('id', app.id);
+    await supabase.from('applications').update({ merged: true }).eq('id', app.id);
 
     setMergeReturningModal(null);
     fetchApplications();
