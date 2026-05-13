@@ -785,7 +785,7 @@ function LatestCheckIn({ clientId }) {
 }
 
 function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
-  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, isAdmin } = useUser();
 
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1058,6 +1058,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatDateShort = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const formatDateFull = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+
+  const deleteClient = async (client) => {
+    if (!window.confirm(`Permanently delete ${client.full_name}? This cannot be undone.`)) return;
+    const { error } = await supabase.from('clients').delete().eq('id', client.id);
+    if (error) { alert('Error deleting client: ' + error.message); return; }
+    setSelected(null);
+    fetchClients(true);
+  };
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
@@ -1568,6 +1576,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 )}
                 {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
                 {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
+                {isAdmin && (
+                  <button onClick={() => deleteClient(selected)}
+                    style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    🗑 Delete
+                  </button>
+                )}
                 <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
               </div>
             </div>

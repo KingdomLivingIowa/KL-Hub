@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCached, setCached } from './dataCache';
 import { supabase } from './supabaseClient';
+import { useUser } from './UserContext';
 
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 const PAGE_SIZE = 25;
 
 function Admissions() {
+  const { isAdmin } = useUser();
   const [applications, setApplications] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -200,6 +202,13 @@ function Admissions() {
 
     const { error } = await supabase.from('clients').insert([payload]);
     return error;
+  };
+
+  const deleteApplication = async (id) => {
+    if (!window.confirm('Permanently delete this application? This cannot be undone.')) return;
+    const { error } = await supabase.from('applications').delete().eq('id', id);
+    if (error) { alert('Error deleting application: ' + error.message); return; }
+    fetchApplications();
   };
 
   const updateStatus = async (id, status) => {
@@ -465,6 +474,12 @@ function Admissions() {
           {app.status === 'denied' && (
             <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
               {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+            </button>
+          )}
+          {isAdmin && (
+            <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#f87171', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+              onClick={() => deleteApplication(app.id)}>
+              🗑 Delete
             </button>
           )}
         </div>
