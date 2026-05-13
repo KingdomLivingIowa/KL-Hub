@@ -416,7 +416,6 @@ function Admissions() {
 
   const renderCard = (app, duplicate, isReview) => {
     const flags = getFlags(app.auto_flag);
-    const fi = flags[0] || null;
     return (
       <div key={app.id} style={{ ...s.card, ...(isReview ? { borderColor: '#fb923c44', borderWidth: '1px', borderStyle: 'solid' } : {}) }}>
         <div style={s.cardHeader}>
