@@ -4,6 +4,7 @@
     { "path": "/api/ua-overdue-email", "schedule": "0 8 * * 1" },
     { "path": "/api/overdue-balance-email", "schedule": "0 9 * * 1" },
     { "path": "/api/early-admissions-email", "schedule": "0 10 * * 1" },
-    { "path": "/api/infractions-email", "schedule": "0 11 * * 1" }
+    { "path": "/api/infractions-email", "schedule": "0 11 * * 1" },
+    { "path": "/api/ride-needed-email", "schedule": "0 12 * * 1" }
   ]
 }
