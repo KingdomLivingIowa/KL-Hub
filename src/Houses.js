@@ -954,11 +954,7 @@ function MoveOutRequestsTab({ houseId, houseName }) {
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState('pending');
 
-  const { supabase: sb } = { supabase };
-
-  useEffect(() => { fetchRequests(); }, [houseId, filter]);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     let q = supabase.from('move_out_requests')
       .select('*, clients(full_name, phone, level)')
@@ -968,7 +964,9 @@ function MoveOutRequestsTab({ houseId, houseName }) {
     const { data } = await q;
     setRequests(data || []);
     setLoading(false);
-  };
+  }, [houseId, filter]);
+
+  useEffect(() => { fetchRequests(); }, [houseId, filter, fetchRequests]);
 
   const handleReview = async (request, action) => {
     setSaving(true);
