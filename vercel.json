@@ -3,6 +3,10 @@
     {
       "path": "/api/weekly-charge",
       "schedule": "0 8 * * 0"
+    },
+    {
+      "path": "/api/ua-overdue-email",
+      "schedule": "0 8 * * 1"
     }
   ]
 }
