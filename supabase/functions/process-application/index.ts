@@ -66,7 +66,8 @@ Deno.serve(async (req) => {
 
     const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
     const email = app.email;
-    const recipients = [...new Set([email, app.correspondence_contact].filter(Boolean))];
+    const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
+    const recipients = [...new Set([email, app.correspondence_contact].filter(e => e && isValidEmail(e)))];
 
     // ── RULE 1: Sex offender → auto deny ─────────────────────────────────────
     if (app.sex_offender === 'Yes') {
@@ -92,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     // ── RULE 2: Disability → flag for review ──────────────────────────────────
-    if (app.on_disability === 'Yes' && (app.disability_concentrating === 'Yes' || app.disability_dressing === 'Yes')) {
+    if (app.on_disability === 'Yes') {
       await supabase.from('applications').update({
         status: 'pending',
         auto_flag: 'disability_review',
@@ -115,13 +116,20 @@ Deno.serve(async (req) => {
       if (existingClients?.length > 0) {
         const existingClient = existingClients[0];
 
-        // Check for past balance in client_stays
-        const { data: stays } = await supabase
-          .from('client_stays')
-          .select('balance_at_discharge')
+        // Check for past balance using charges - payments
+        const { data: charges } = await supabase
+          .from('charges')
+          .select('amount')
           .eq('client_id', existingClient.id);
 
-        const totalPastBalance = (stays || []).reduce((sum, s) => sum + (parseFloat(s.balance_at_discharge) || 0), 0);
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('amount')
+          .eq('client_id', existingClient.id);
+
+        const totalCharged = (charges || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+        const totalPaid = (payments || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+        const totalPastBalance = Math.max(0, totalCharged - totalPaid);
 
         if (totalPastBalance > 0) {
           // Has past balance — flag for review, notify admins
@@ -131,22 +139,6 @@ Deno.serve(async (req) => {
             flag_reason: `Needs review: returning client with outstanding balance of $${totalPastBalance.toFixed(2)}.`,
             auto_processed: true,
           }).eq('id', application_id);
-
-          // Send balance email to applicant and correspondence contact
-          if (recipients.length) {
-            await sendEmail(
-              recipients,
-              'Kingdom Living Iowa — Application Update',
-              `<p>Thank you for submitting your application. Before I can add you to the waiting list, your outstanding balance of <strong>$${totalPastBalance.toFixed(2)}</strong> will need to be paid in full.</p>
-              <p>You have the following payment options:</p>
-              <ol>
-                <li><strong>Mail a Check:</strong><br/>Payable to Kingdom Living IA<br/>Address: Rise Recovery Center, 3120 SW 9th St., Des Moines, IA 50009</li>
-                <li><strong>Online Payment:</strong><br/>Use the Donate button on our website: <a href="https://www.kingdomlivingia.com">www.kingdomlivingia.com</a><br/>Be sure to include your name and indicate that the payment is for your outstanding balance in the notes section.</li>
-                <li><strong>In-Person Payment:</strong><br/>Payments can be made on Thursdays at 6 PM at Rise Recovery Center.</li>
-              </ol>
-              <p>Please let me know once the payment has been made or if you have any questions. I appreciate your prompt attention to this matter.</p>`
-            );
-          }
 
           await notifyAdmins(supabase, `Application from ${fullName} needs review — returning client with past balance of $${totalPastBalance.toFixed(2)}.`, 'new_application');
           return respond({ result: 'flagged', reason: 'past_balance', balance: totalPastBalance });

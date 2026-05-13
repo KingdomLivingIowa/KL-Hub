@@ -32,8 +32,9 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   try {
-    const { type, email, correspondence_contact, full_name, flag } = await req.json();
-    const recipients = [...new Set([email, correspondence_contact].filter(Boolean))];
+    const { type, email, correspondence_contact, full_name, flag, balance } = await req.json();
+    const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
+    const recipients = [...new Set([email, correspondence_contact].filter(e => e && isValidEmail(e)))];
 
     if (type === 'denied_manual' || type === 'denied_disability') {
       // Disability denial
@@ -53,12 +54,26 @@ Deno.serve(async (req) => {
     }
 
     if (type === 'accepted_manual') {
-      await sendEmail(recipients, 'Kingdom Living Iowa — Application Accepted', wrap(
-        `<p>I am pleased to inform you that <strong>${full_name}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
-        <p>Currently, we are at full capacity; however, we would like to know when <strong>${full_name}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
-        <p>Once you receive confirmation of <strong>${full_name}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>
-        <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`
-      ));
+      if (flag === 'past_balance' && balance) {
+        // Accepted with outstanding balance — send balance payment email
+        await sendEmail(recipients, 'Kingdom Living Iowa — Application Update', wrap(
+          `<p>Thank you for submitting your application. Before I can add you to the waiting list, your outstanding balance of <strong>$${parseFloat(balance).toFixed(2)}</strong> will need to be paid in full.</p>
+          <p>You have the following payment options:</p>
+          <ol>
+            <li><strong>Mail a Check:</strong><br/>Payable to Kingdom Living IA<br/>Address: Rise Recovery Center, 3120 SW 9th St., Des Moines, IA 50009</li>
+            <li><strong>Online Payment:</strong><br/>Use the Donate button on our website: <a href="https://www.kingdomlivingia.com">www.kingdomlivingia.com</a><br/>Be sure to include your name and indicate that the payment is for your outstanding balance in the notes section.</li>
+            <li><strong>In-Person Payment:</strong><br/>Payments can be made on Thursdays at 6 PM at Rise Recovery Center.</li>
+          </ol>
+          <p>Please let me know once the payment has been made or if you have any questions. I appreciate your prompt attention to this matter.</p>`
+        ));
+      } else {
+        await sendEmail(recipients, 'Kingdom Living Iowa — Application Accepted', wrap(
+          `<p>I am pleased to inform you that <strong>${full_name}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
+          <p>Currently, we are at full capacity; however, we would like to know when <strong>${full_name}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
+          <p>Once you receive confirmation of <strong>${full_name}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>
+          <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`
+        ));
+      }
     }
 
     return respond({ success: true });
