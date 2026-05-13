@@ -241,7 +241,7 @@ function Admissions() {
       fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag === 'past_balance' ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null }),
+        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null }),
       }).catch(err => console.error('send-application-email error:', err));
     }
 
@@ -403,14 +403,20 @@ function Admissions() {
 
   const flagInfo = (flag) => {
     if (flag === 'sex_offender') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Registered sex offender' };
-    if (flag === 'disability_review') return { icon: '♿', color: '#fb923c', label: 'Needs review: Disability indicated — review before accepting or denying' };
+    if (flag === 'disability_review') return { icon: '♿', color: '#fb923c', label: 'Needs review: Disability indicated' };
     if (flag === 'past_balance') return { icon: '💰', color: '#fb923c', label: 'Needs review: Returning client with outstanding balance' };
-    if (flag === 'returning_merge') return { icon: '🔄', color: '#60a5fa', label: 'Returning client — merge with existing profile before accepting' };
+    if (flag === 'returning_merge') return { icon: '🔄', color: '#60a5fa', label: 'Returning client — merge with existing profile' };
     return { icon: '⚠', color: '#fb923c', label: flag };
   };
 
+  const getFlags = (auto_flag) => {
+    if (!auto_flag) return [];
+    return auto_flag.split(',').map(f => flagInfo(f.trim()));
+  };
+
   const renderCard = (app, duplicate, isReview) => {
-    const fi = app.auto_flag ? flagInfo(app.auto_flag) : null;
+    const flags = getFlags(app.auto_flag);
+    const fi = flags[0] || null;
     return (
       <div key={app.id} style={{ ...s.card, ...(isReview ? { borderColor: '#fb923c44', borderWidth: '1px', borderStyle: 'solid' } : {}) }}>
         <div style={s.cardHeader}>
@@ -425,14 +431,15 @@ function Admissions() {
             </div>
             <p style={s.meta}>{fmt(app.email)} · {fmt(app.phone)}</p>
             <p style={s.meta}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
-            {fi && (
-              <div style={{ marginTop: '8px', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', borderLeft: `3px solid ${fi.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px' }}>{fi.icon}</span>
-                <span style={{ fontSize: '13px', color: fi.color, fontWeight: '500' }}>{fi.label}</span>
+            {flags.length > 0 && (
+              <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                {flags.map((f, i) => (
+                  <div key={i} style={{ padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', borderLeft: `3px solid ${f.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>{f.icon}</span>
+                    <span style={{ fontSize: '13px', color: f.color, fontWeight: '500' }}>{f.label}</span>
+                  </div>
+                ))}
               </div>
-            )}
-            {app.flag_reason && (
-              <p style={{ fontSize: '12px', color: '#888', margin: '4px 0 0 12px' }}>{app.flag_reason}</p>
             )}
           </div>
           <span style={{ ...s.badge, backgroundColor: statusColor(app.status) }}>
@@ -458,7 +465,7 @@ function Admissions() {
           <button style={s.viewBtn} onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
             {expanded === app.id ? 'Hide Application' : 'View Full Application'}
           </button>
-          {app.auto_flag === 'returning_merge' && app.status === 'pending' && (
+          {app.auto_flag?.includes('returning_merge') && app.status === 'pending' && (
             <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
                 const { data: existing } = await supabase.from('clients')

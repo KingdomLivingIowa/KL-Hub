@@ -11,6 +11,33 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
 const FROM_EMAIL = 'admissions@kingdomlivingia.com';
 
+const LOGO_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co/storage/v1/object/public/assets/kingdom-living-logo.jpg';
+
+function wrap(body) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:30px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <tr><td style="background-color:#1a1a1a;padding:28px 40px;text-align:center;">
+          <img src="${LOGO_URL}" alt="Kingdom Living Iowa" width="160" style="display:block;margin:0 auto 12px auto;border-radius:6px;" onerror="this.style.display='none'"/>
+          <p style="margin:0;color:#b22222;font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Non-Profit Recovery Community</p>
+        </td></tr>
+        <tr><td style="background-color:#b22222;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
+        <tr><td style="padding:36px 40px;color:#333333;font-size:15px;line-height:1.7;">${body}</td></tr>
+        <tr><td style="background-color:#f9f9f9;border-top:1px solid #eeeeee;padding:20px 40px;text-align:center;">
+          <p style="margin:0 0 4px 0;font-size:13px;color:#666666;font-weight:600;">Kingdom Living Iowa</p>
+          <p style="margin:0 0 4px 0;font-size:12px;color:#999999;">Rise Recovery Center · 3120 SW 9th St. · Des Moines, IA 50009</p>
+          <p style="margin:8px 0 0 0;font-size:12px;color:#999999;"><a href="https://www.kingdomlivingia.com" style="color:#b22222;text-decoration:none;">www.kingdomlivingia.com</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
 async function sendEmail(to, subject, html) {
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -69,7 +96,7 @@ Deno.serve(async (req) => {
     const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
     const recipients = [...new Set([email, app.correspondence_contact].filter(e => e && isValidEmail(e)))];
 
-    // ── RULE 1: Sex offender → auto deny ─────────────────────────────────────
+    // ── RULE 1: Sex offender → auto deny immediately, no further checks ──────
     if (app.sex_offender === 'Yes') {
       await supabase.from('applications').update({
         status: 'denied',
@@ -82,9 +109,9 @@ Deno.serve(async (req) => {
         await sendEmail(
           recipients,
           'Kingdom Living Iowa — Application Update',
-          `<p>Thank you for your interest in Kingdom Living Iowa and for taking the time to submit your application. After a thorough review, we regret to inform you that we are unable to accept your application at this time.</p>
+          wrap(`<p>Thank you for your interest in Kingdom Living Iowa and for taking the time to submit your application. After a thorough review, we regret to inform you that we are unable to accept your application at this time.</p>
           <p>As part of our admissions policy, we are not able to accept individuals who have been convicted of a sex crime or are listed on the sex offender registry. Unfortunately, this policy prevents us from moving forward with your application.</p>
-          <p>We understand this may be disappointing, and we encourage you to seek out other programs that may better align with your needs. We wish you all the best in your journey ahead.</p>`
+          <p>We understand this may be disappointing, and we encourage you to seek out other programs that may better align with your needs. We wish you all the best in your journey ahead.</p>`)
         );
       }
 
@@ -92,22 +119,18 @@ Deno.serve(async (req) => {
       return respond({ result: 'denied', reason: 'sex_offender' });
     }
 
-    // ── RULE 2: Disability → flag for review ──────────────────────────────────
-    if (app.on_disability === 'Yes') {
-      await supabase.from('applications').update({
-        status: 'pending',
-        auto_flag: 'disability_review',
-        flag_reason: 'Needs review: applicant reported difficulty with physical activities of daily living.',
-        auto_processed: true,
-      }).eq('id', application_id);
+    // ── RULES 2-4: Collect all flags that apply ───────────────────────────────
+    const flags = [];
+    const flagReasons = [];
 
-      await notifyAdmins(supabase, `Application from ${fullName} needs review — disability flagged.`, 'new_application');
-      return respond({ result: 'flagged', reason: 'disability_review' });
+    // Rule 2: Disability
+    if (app.on_disability === 'Yes') {
+      flags.push('disability_review');
+      flagReasons.push('Needs review: applicant reported a disability.');
     }
 
-    // ── RULE 3: Lived here before → check past balance ────────────────────────
+    // Rule 3: Returning client
     if (app.lived_here_before === 'Yes') {
-      // Look for existing client by name + DOB or email
       const { data: existingClients } = await supabase
         .from('clients')
         .select('id, full_name, email')
@@ -116,45 +139,36 @@ Deno.serve(async (req) => {
       if (existingClients?.length > 0) {
         const existingClient = existingClients[0];
 
-        // Check for past balance using charges - payments
-        const { data: charges } = await supabase
-          .from('charges')
-          .select('amount')
-          .eq('client_id', existingClient.id);
-
-        const { data: payments } = await supabase
-          .from('payments')
-          .select('amount')
-          .eq('client_id', existingClient.id);
-
+        const { data: charges } = await supabase.from('charges').select('amount').eq('client_id', existingClient.id);
+        const { data: payments } = await supabase.from('payments').select('amount').eq('client_id', existingClient.id);
         const totalCharged = (charges || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
         const totalPaid = (payments || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
         const totalPastBalance = Math.max(0, totalCharged - totalPaid);
 
         if (totalPastBalance > 0) {
-          // Has past balance — flag for review, notify admins
-          await supabase.from('applications').update({
-            status: 'pending',
-            auto_flag: 'past_balance',
-            flag_reason: `Needs review: returning client with outstanding balance of $${totalPastBalance.toFixed(2)}.`,
-            auto_processed: true,
-          }).eq('id', application_id);
-
-          await notifyAdmins(supabase, `Application from ${fullName} needs review — returning client with past balance of $${totalPastBalance.toFixed(2)}.`, 'new_application');
-          return respond({ result: 'flagged', reason: 'past_balance', balance: totalPastBalance });
+          flags.push('past_balance');
+          flagReasons.push(`Needs review: returning client with outstanding balance of $${totalPastBalance.toFixed(2)}.`);
         } else {
-          // No past balance — flag for merge with existing profile
-          await supabase.from('applications').update({
-            status: 'pending',
-            auto_flag: 'returning_merge',
-            flag_reason: `Returning client — no past balance. Please merge with existing profile for ${existingClient.full_name}.`,
-            auto_processed: true,
-          }).eq('id', application_id);
-
-          await notifyAdmins(supabase, `Application from ${fullName} is a returning client with no past balance. Review and merge with existing profile.`, 'new_application');
-          return respond({ result: 'flagged', reason: 'returning_merge' });
+          flags.push('returning_merge');
+          flagReasons.push(`Returning client — no past balance. Please merge with existing profile for ${existingClient.full_name}.`);
         }
       }
+    }
+
+    // If any flags, update application and notify admins
+    if (flags.length > 0) {
+      await supabase.from('applications').update({
+        status: 'pending',
+        auto_flag: flags.join(','),
+        flag_reason: flagReasons.join(' | '),
+        auto_processed: true,
+      }).eq('id', application_id);
+
+      for (const reason of flagReasons) {
+        await notifyAdmins(supabase, `Application from ${fullName} needs review — ${reason}`, 'new_application');
+      }
+
+      return respond({ result: 'flagged', reasons: flags });
     }
 
     // ── RULE 4: Everything else → auto accept ─────────────────────────────────
@@ -223,10 +237,10 @@ Deno.serve(async (req) => {
       await sendEmail(
         recipients,
         'Kingdom Living Iowa — Application Accepted',
-        `<p>I am pleased to inform you that <strong>${fullName}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
+        wrap(`<p>I am pleased to inform you that <strong>${fullName}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
         <p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
         <p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>
-        <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`
+        <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`)
       );
     }
 

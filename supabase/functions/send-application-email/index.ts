@@ -19,8 +19,58 @@ async function sendEmail(to, subject, html) {
   if (!res.ok) { const err = await res.text(); console.error('Resend error:', err); }
 }
 
+const LOGO_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co/storage/v1/object/public/assets/kingdom-living-logo.jpg';
+
 function wrap(body) {
-  return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#333;max-width:600px;margin:0 auto;padding:20px;line-height:1.6;">${body}<br/><br/><hr style="border:none;border-top:1px solid #eee;"/><p style="font-size:12px;color:#999;">Kingdom Living Iowa · Non-Profit Recovery Community</p></body></html>`;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:30px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#1a1a1a;padding:28px 40px;text-align:center;">
+              <img src="${LOGO_URL}" alt="Kingdom Living Iowa" width="160" style="display:block;margin:0 auto 12px auto;border-radius:6px;" onerror="this.style.display='none'"/>
+              <p style="margin:0;color:#b22222;font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">Non-Profit Recovery Community</p>
+            </td>
+          </tr>
+
+          <!-- Red accent bar -->
+          <tr>
+            <td style="background-color:#b22222;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:36px 40px;color:#333333;font-size:15px;line-height:1.7;">
+              ${body}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color:#f9f9f9;border-top:1px solid #eeeeee;padding:20px 40px;text-align:center;">
+              <p style="margin:0 0 4px 0;font-size:13px;color:#666666;font-weight:600;">Kingdom Living Iowa</p>
+              <p style="margin:0 0 4px 0;font-size:12px;color:#999999;">Rise Recovery Center · 3120 SW 9th St. · Des Moines, IA 50009</p>
+              <p style="margin:8px 0 0 0;font-size:12px;color:#999999;">
+                <a href="https://www.kingdomlivingia.com" style="color:#b22222;text-decoration:none;">www.kingdomlivingia.com</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 }
 
 Deno.serve(async (req) => {
@@ -54,7 +104,7 @@ Deno.serve(async (req) => {
     }
 
     if (type === 'accepted_manual') {
-      if (flag === 'past_balance' && balance) {
+      if (flag?.includes('past_balance') && balance) {
         // Accepted with outstanding balance — send balance payment email
         await sendEmail(recipients, 'Kingdom Living Iowa — Application Update', wrap(
           `<p>Thank you for submitting your application. Before I can add you to the waiting list, your outstanding balance of <strong>$${parseFloat(balance).toFixed(2)}</strong> will need to be paid in full.</p>
