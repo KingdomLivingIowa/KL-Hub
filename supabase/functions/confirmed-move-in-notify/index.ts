@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const FROM_EMAIL = 'admissions@kingdomlivingia.com';
 const LOGO_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co/storage/v1/object/public/assets/kingdom-living-logo.jpg';
 
@@ -40,9 +42,26 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   try {
-    const { client_name, house_name, move_in_date, level, early_admission, emails } = await req.json();
+    const { client_name, house_name, move_in_date, level, early_admission } = await req.json();
 
-    if (!emails?.length) return respond({ message: 'No recipients.' });
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Get recipients from email_notification_settings
+    const { data: settings } = await supabase
+      .from('email_notification_settings')
+      .select('user_id')
+      .eq('notification_type', 'confirmed_move_in');
+
+    if (!settings?.length) return respond({ message: 'No recipients configured.' });
+
+    const userIds = settings.map(s => s.user_id);
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('email')
+      .in('id', userIds);
+
+    const emails = (profiles || []).map(r => r.email).filter(Boolean);
+    if (!emails.length) return respond({ message: 'No valid emails found.' });
 
     const html = wrap(`
       <h2 style="margin:0 0 20px;font-size:20px;color:#1a1a1a;">🏠 Move-In Confirmed</h2>
