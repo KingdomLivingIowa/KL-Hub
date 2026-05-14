@@ -63,21 +63,21 @@ function DashboardHome({ counts, currentUser }) {
       setWaitingListCounts(cached.waitlistCounts);
       setLoadingDashboard(false);
       // Always fetch user-specific data even from cache
-      fetchAlerts();
-      fetchReadAlerts();
+      const cachedReadKeys = await fetchReadAlerts();
+      fetchAlerts(cachedReadKeys);
       fetchNotifications();
       return;
     }
     setLoadingDashboard(true);
     try {
-      await Promise.all([
+      const [freshReadKeys] = await Promise.all([
+        fetchReadAlerts(),
         fetchHouses(),
-        fetchAlerts(),
         fetchNotifications(),
         fetchWaitingListCounts(),
         fetchOpenCharges(),
-        fetchReadAlerts(),
       ]);
+      fetchAlerts(freshReadKeys);
     } finally {
       setLoadingDashboard(false);
     }
@@ -92,15 +92,18 @@ function DashboardHome({ counts, currentUser }) {
   }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchReadAlerts = async () => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) return new Set();
     const { data } = await supabase.from('alert_reads').select('alert_key').eq('user_id', currentUser.id);
-    setReadAlertKeys(new Set((data || []).map(r => r.alert_key)));
+    const keys = new Set((data || []).map(r => r.alert_key));
+    setReadAlertKeys(keys);
+    return keys;
   };
 
   const markAlertRead = async (alertKey) => {
     if (!currentUser?.id) return;
     await supabase.from('alert_reads').upsert([{ user_id: currentUser.id, alert_key: alertKey }], { onConflict: 'user_id,alert_key' });
     setReadAlertKeys(prev => new Set([...prev, alertKey]));
+    setAlerts(prev => prev.filter(a => a.id !== alertKey));
   };
 
   const fetchNotifications = async () => {
@@ -149,7 +152,7 @@ function DashboardHome({ counts, currentUser }) {
     setHouses(enriched);
   };
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = async (readKeys = readAlertKeys) => {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const iso = sevenDaysAgo.toISOString();
@@ -175,14 +178,16 @@ function DashboardHome({ counts, currentUser }) {
     const noCheckIn = (activeClients || []).filter(c => !checkedInIds.has(c.id));
 
     const alertList = [
-      ...filteredCrises.map(c => ({
-        id: `alert-crisis-${c.id}`, type: 'crisis',
-        level: c.severity === 'High' ? 'high' : c.severity === 'Medium' ? 'medium' : 'low',
-        label: `Crisis — ${c.clients?.full_name || 'Unknown'}`,
-        sublabel: c.severity ? `${c.severity} severity` : null,
-        time: c.created_at,
-      })),
-      ...(noCheckIn.length > 0 ? [{
+      ...filteredCrises
+        .filter(c => !readKeys.has(`alert-crisis-${c.id}`))
+        .map(c => ({
+          id: `alert-crisis-${c.id}`, type: 'crisis',
+          level: c.severity === 'High' ? 'high' : c.severity === 'Medium' ? 'medium' : 'low',
+          label: `Crisis — ${c.clients?.full_name || 'Unknown'}`,
+          sublabel: c.severity ? `${c.severity} severity` : null,
+          time: c.created_at,
+        })),
+      ...(noCheckIn.length > 0 && !readKeys.has('alert-no-checkin') ? [{
         id: 'alert-no-checkin', type: 'no_checkin', level: 'medium',
         label: `${noCheckIn.length} active client${noCheckIn.length !== 1 ? 's' : ''} with no check-in this week`,
         sublabel: noCheckIn.slice(0, 3).map(c => c.full_name).join(', ') + (noCheckIn.length > 3 ? ` +${noCheckIn.length - 3} more` : ''),
