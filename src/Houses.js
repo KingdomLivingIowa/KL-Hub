@@ -104,6 +104,8 @@ function Houses({ onOpenClient }) {
   const [moveInModal, setMoveInModal] = useState(null);
   const [moveInRoomType, setMoveInRoomType] = useState('Double');
   const [savingMoveIn, setSavingMoveIn] = useState(false);
+  const [didNotMoveInMode, setDidNotMoveInMode] = useState(false);
+  const [didNotMoveInReason, setDidNotMoveInReason] = useState('');
 
   const loadAllData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -243,6 +245,49 @@ function Houses({ onOpenClient }) {
 
     setMoveInModal(null);
     setMoveInRoomType('Double');
+    setSavingMoveIn(false);
+    loadAllData(true);
+    if (selected) fetchResidents(selected.id);
+  };
+
+  const handleDidNotMoveIn = async () => {
+    if (!moveInModal) return;
+    if (!didNotMoveInReason.trim()) { alert('Please provide a reason.'); return; }
+    setSavingMoveIn(true);
+
+    // Revert client back to Accepted status
+    await supabase.from('clients').update({
+      status: 'Accepted',
+      house_id: null,
+      start_date: null,
+      room_type: null,
+    }).eq('id', moveInModal.id);
+
+    // Record in client_stays
+    await supabase.from('client_stays').insert([{
+      client_id: moveInModal.id,
+      house_id: selected?.id || null,
+      house_name: selected?.name || null,
+      discharge_reason: 'Did Not Move In',
+      discharge_notes: didNotMoveInReason.trim(),
+      discharge_date: new Date().toISOString().split('T')[0],
+      balance_at_discharge: 0,
+      successful_discharge: false,
+    }]);
+
+    // Log to client timeline
+    await supabase.from('client_timeline').insert([{
+      client_id: moveInModal.id,
+      entry_type: 'General Note',
+      author: user?.email || 'Staff',
+      notes: `Did not move in. Reason: ${didNotMoveInReason.trim()}`,
+      source: 'staff',
+    }]);
+
+    setMoveInModal(null);
+    setMoveInRoomType('Double');
+    setDidNotMoveInMode(false);
+    setDidNotMoveInReason('');
     setSavingMoveIn(false);
     loadAllData(true);
     if (selected) fetchResidents(selected.id);
@@ -890,37 +935,71 @@ function Houses({ onOpenClient }) {
 
       {/* Confirm Move-In modal */}
       {moveInModal && (
-        <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => setMoveInModal(null)}>
+        <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => { setMoveInModal(null); setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}>
           <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
-              <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>Confirm Move-In</h3>
+              <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>{didNotMoveInMode ? 'Did Not Move In' : 'Confirm Move-In'}</h3>
               <p style={{ color: '#999', fontSize: '13px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
-              <div style={{ marginBottom: '16px' }}>
-                <label style={s.label}>Room Type *</label>
-                <select value={moveInRoomType} onChange={e => setMoveInRoomType(e.target.value)} style={s.input}>
-                  <option value="Single">Single — $160/week</option>
-                  <option value="Double">Double — $135/week</option>
-                  <option value="Houseperson">Houseperson — $110/week</option>
-                </select>
-              </div>
-              <div style={{ background: '#333', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={confirmMoveIn} disabled={savingMoveIn}
-                  style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
-                  {savingMoveIn ? 'Confirming...' : 'Confirm Move-In'}
-                </button>
-                <button onClick={() => setMoveInModal(null)}
-                  style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                  Cancel
-                </button>
-              </div>
+              {!didNotMoveInMode ? (
+                <>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={s.label}>Room Type *</label>
+                    <select value={moveInRoomType} onChange={e => setMoveInRoomType(e.target.value)} style={s.input}>
+                      <option value="Single">Single — $160/week</option>
+                      <option value="Double">Double — $135/week</option>
+                      <option value="Houseperson">Houseperson — $110/week</option>
+                    </select>
+                  </div>
+                  <div style={{ background: '#333', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
+                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
+                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
+                    <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                    <button onClick={confirmMoveIn} disabled={savingMoveIn}
+                      style={{ flex: 2, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      {savingMoveIn ? 'Confirming...' : 'Confirm Move-In'}
+                    </button>
+                    <button onClick={() => setDidNotMoveInMode(true)}
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+                      Did Not Move In
+                    </button>
+                  </div>
+                  <button onClick={() => setMoveInModal(null)}
+                    style={{ width: '100%', background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 12px 0' }}>
+                    This will revert <strong style={{ color: '#fff' }}>{moveInModal.full_name}</strong> back to Accepted status and log the reason in their stays history.
+                  </p>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={s.label}>Reason *</label>
+                    <textarea
+                      value={didNotMoveInReason}
+                      onChange={e => setDidNotMoveInReason(e.target.value)}
+                      rows={3}
+                      placeholder="e.g. Chose another facility, violated terms before move-in, could not be reached..."
+                      style={{ ...s.input, resize: 'vertical', height: 'auto', fontFamily: 'inherit' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button onClick={handleDidNotMoveIn} disabled={savingMoveIn}
+                      style={{ flex: 1, background: '#7f1d1d', border: 'none', color: '#f87171', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      {savingMoveIn ? 'Saving...' : 'Confirm Did Not Move In'}
+                    </button>
+                    <button onClick={() => { setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      Back
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
