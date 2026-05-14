@@ -48,6 +48,7 @@ function DashboardHome({ counts, currentUser }) {
   const [alerts, setAlerts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [readAlertKeys, setReadAlertKeys] = useState(new Set());
+  const [showReadNotifications, setShowReadNotifications] = useState(false);
   const [waitingListCounts, setWaitingListCounts] = useState({});
   const [openCharges, setOpenCharges] = useState([]);
   const [totalOutstanding, setTotalOutstanding] = useState(0);
@@ -366,13 +367,15 @@ function DashboardHome({ counts, currentUser }) {
                       </div>
                     );
                   })}
-                  {/* Read section — notifications only, alerts disappear when read */}
+                  {/* Read section — hidden by default with toggle */}
                   {readNotifications.length > 0 && (
                     <div style={{ marginTop: '4px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                        <p style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Read</p>
-                      </div>
-                      {readNotifications.map(notif => (
+                      <button onClick={() => setShowReadNotifications(p => !p)}
+                        style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '11px', padding: '4px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{showReadNotifications ? '▲' : '▼'}</span>
+                        {showReadNotifications ? 'Hide' : `Show ${readNotifications.length} read`}
+                      </button>
+                      {showReadNotifications && readNotifications.map(notif => (
                         <div key={notif.id} style={{ background: '#252525', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
                           <span style={{ fontSize: '13px', flexShrink: 0 }}>{notifIcon(notif.type)}</span>
                           <p style={{ color: '#999', fontSize: '12px', margin: 0, flex: 1 }}>{notif.message}</p>
