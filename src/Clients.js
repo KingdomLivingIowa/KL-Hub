@@ -276,13 +276,14 @@ function generateUAHistoryPDF(client, uaRecords, logoSrc) {
 const LISTS = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
 
 const STATUS_FLOW = {
-  'Applied': ['Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
-  'Accepted': ['Applied', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
-  'Waiting List': ['Applied', 'Accepted', 'Pending', 'Active', 'Discharged', 'Denied'],
-  'Pending': ['Applied', 'Accepted', 'Waiting List', 'Active', 'Discharged', 'Denied'],
-  'Active': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Discharged', 'Denied'],
-  'Discharged': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Denied'],
-  'Denied': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged'],
+  'Applied': ['Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied', 'Archived'],
+  'Accepted': ['Applied', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied', 'Archived'],
+  'Waiting List': ['Applied', 'Accepted', 'Pending', 'Active', 'Discharged', 'Denied', 'Archived'],
+  'Pending': ['Applied', 'Accepted', 'Waiting List', 'Active', 'Discharged', 'Denied', 'Archived'],
+  'Active': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Discharged', 'Denied', 'Archived'],
+  'Discharged': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Denied', 'Archived'],
+  'Denied': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Archived'],
+  'Archived': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
 };
 
 const ENTRY_TYPES = ['UA', 'Crisis', 'Infraction', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
@@ -866,10 +867,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const applyClientFilters = useCallback((query) => {
     if (debouncedSearch) query = query.ilike('full_name', `%${debouncedSearch}%`);
-    if (statusFilter !== 'All') query = query.eq('status', statusFilter);
+    if (statusFilter !== 'All') {
+      query = query.eq('status', statusFilter);
+    } else if (viewMode === 'operational') {
+      query = query.not('status', 'in', '("Archived","Discharged","Denied")');
+    } else {
+      query = query.in('status', ['Archived', 'Discharged', 'Denied']);
+    }
     if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('house_id', assignedHouseIds);
     return query;
-  }, [debouncedSearch, statusFilter, isHouseManagerRole, assignedHouseIds]);
+  }, [debouncedSearch, statusFilter, viewMode, isHouseManagerRole, assignedHouseIds]);
 
   const fetchClients = useCallback(async (force = false) => {
     const cacheKey = `clients_${statusFilter}_${debouncedSearch}_${currentPage}`;
@@ -1010,7 +1017,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const hasMoreTimeline = timeline.length < timelineTotal;
 
   const statusFilters = hasFullAccess
-    ? viewMode === 'operational' ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active'] : ['All', 'Discharged', 'Denied']
+    ? viewMode === 'operational' ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active'] : ['All', 'Archived', 'Discharged', 'Denied']
     : ['All', 'Active', 'Pending'];
 
   const statusColor = (s) => {
@@ -1573,7 +1580,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         {hasFullAccess && (
           <div style={st.viewToggleWrap}>
             <button onClick={() => { setViewMode('operational'); setStatusFilter('Active'); setCurrentPage(1); }} style={{ ...st.filterBtn, ...(viewMode === 'operational' ? st.filterActive : {}) }}>Operational</button>
-            <button onClick={() => { setViewMode('archive'); setStatusFilter('Discharged'); setCurrentPage(1); }} style={{ ...st.filterBtn, ...(viewMode === 'archive' ? st.filterActive : {}) }}>Archive</button>
+            <button onClick={() => { setViewMode('archive'); setStatusFilter('All'); setCurrentPage(1); }} style={{ ...st.filterBtn, ...(viewMode === 'archive' ? st.filterActive : {}) }}>Archive</button>
           </div>
         )}
         <div style={st.filters}>
