@@ -16,6 +16,12 @@ const NOTIFICATION_TYPES = [
     description: 'Weekly list of clients who received an infraction in the past 7 days.',
   },
   {
+    id: 'house_report',
+    icon: '📋',
+    label: 'Weekly House Report',
+    description: 'Sent every Friday with a full weekly summary per house — move-ins, discharges, infractions, UAs, balances, and house updates.',
+  },
+  {
     id: 'confirmed_move_in',
     icon: '🏠',
     label: 'Confirmed Move-In',

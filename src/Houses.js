@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
-const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection'];
+const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection', 'Maintenance/Repair', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -327,6 +327,8 @@ function Houses({ onOpenClient }) {
       event_name: entryType === 'Event Attendance' ? entryForm.event_name : null,
       resident_data: resData.length ? resData : null,
       reflection_data: reflectionData,
+      inspection_result: entryType === 'House Inspection' ? entryForm.inspection_result : null,
+      maintenance_status: entryType === 'Maintenance/Repair' ? entryForm.maintenance_status : null,
     }]);
     if (error) { alert('Error: ' + error.message); return; }
     if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
@@ -387,6 +389,10 @@ function Houses({ onOpenClient }) {
     if (type === 'Event Attendance') return '#378ADD';
     if (type === 'General Note') return '#f59e0b';
     if (type === 'Weekly Reflection') return '#a78bfa';
+    if (type === 'Maintenance/Repair') return '#f97316';
+    if (type === 'House Inspection') return '#06b6d4';
+    if (type === 'House Meeting Notes') return '#84cc16';
+    if (type === 'Supplies/Inventory') return '#e879f9';
     return '#bbb';
   };
 
@@ -676,6 +682,30 @@ function Houses({ onOpenClient }) {
                           </div>
                         </div>
                       )}
+                      {entryType === 'House Inspection' && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={s.label}>Result *</label>
+                          <div style={{ display: 'flex', gap: '16px' }}>
+                            {['Pass', 'Fail'].map(opt => (
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                <input type="radio" name="inspection_result" value={opt} checked={entryForm.inspection_result === opt} onChange={() => setEntryForm(p => ({ ...p, inspection_result: opt }))} />{opt}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {entryType === 'Maintenance/Repair' && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <label style={s.label}>Status</label>
+                          <div style={{ display: 'flex', gap: '16px' }}>
+                            {['Reported', 'In Progress', 'Completed'].map(opt => (
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                <input type="radio" name="maintenance_status" value={opt} checked={entryForm.maintenance_status === opt} onChange={() => setEntryForm(p => ({ ...p, maintenance_status: opt }))} />{opt}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {entryType === 'Event Attendance' && (
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Event Name *</label>
@@ -787,6 +817,16 @@ function Houses({ onOpenClient }) {
                                     <span key={r.id} style={{ ...s.typeBadge, background: '#1e2d3a', color: '#60a5fa', fontSize: '13px' }}>{r.name}</span>
                                   ))}
                                 </div>
+                              )}
+                              {entry.entry_type === 'House Inspection' && entry.inspection_result && (
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: entry.inspection_result === 'Pass' ? '#14532d' : '#7f1d1d', color: entry.inspection_result === 'Pass' ? '#4ade80' : '#f87171' }}>
+                                  {entry.inspection_result}
+                                </span>
+                              )}
+                              {entry.entry_type === 'Maintenance/Repair' && entry.maintenance_status && (
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: entry.maintenance_status === 'Completed' ? '#14532d' : entry.maintenance_status === 'In Progress' ? '#78350f' : '#1e3a5f', color: entry.maintenance_status === 'Completed' ? '#4ade80' : entry.maintenance_status === 'In Progress' ? '#fb923c' : '#60a5fa' }}>
+                                  {entry.maintenance_status}
+                                </span>
                               )}
                             </div>
                           )}
