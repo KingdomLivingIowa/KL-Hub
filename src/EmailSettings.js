@@ -16,6 +16,12 @@ const NOTIFICATION_TYPES = [
     description: 'Weekly list of clients who received an infraction in the past 7 days.',
   },
   {
+    id: 'confirmed_move_in',
+    icon: '🏠',
+    label: 'Confirmed Move-In',
+    description: 'Sent immediately when a house manager confirms a client move-in.',
+  },
+  {
     id: 'move_out_request',
     label: 'Move-Out Request',
     icon: '🚪',

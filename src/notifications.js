@@ -8,6 +8,7 @@ export const NOTIF_TYPES = {
   CLIENT_LEVEL_CHANGE: 'client_level_change',
   CLIENT_WEEKLY_CHECKIN: 'client_weekly_checkin',
   MOVE_OUT_REQUEST: 'move_out_request',
+  CONFIRMED_MOVE_IN: 'confirmed_move_in',
 };
 
 export const DEFAULT_PREFERENCES = {
@@ -17,6 +18,7 @@ export const DEFAULT_PREFERENCES = {
   [NOTIF_TYPES.CLIENT_LEVEL_CHANGE]: true,
   [NOTIF_TYPES.CLIENT_WEEKLY_CHECKIN]: true,
   [NOTIF_TYPES.MOVE_OUT_REQUEST]: true,
+  [NOTIF_TYPES.CONFIRMED_MOVE_IN]: true,
 };
 
 export const NOTIF_LABELS = {
@@ -26,6 +28,7 @@ export const NOTIF_LABELS = {
   [NOTIF_TYPES.CLIENT_LEVEL_CHANGE]: 'Client level changes',
   [NOTIF_TYPES.CLIENT_WEEKLY_CHECKIN]: 'Weekly check-in submitted (portal)',
   [NOTIF_TYPES.MOVE_OUT_REQUEST]: 'Move-out request submitted',
+  [NOTIF_TYPES.CONFIRMED_MOVE_IN]: 'Confirmed move-in',
 };
 
 // Get house managers assigned to a given house, filtered by their preferences

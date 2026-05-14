@@ -1189,6 +1189,45 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         clientId: client.id,
       });
     }
+
+    // Fire confirmed move-in email to recipients in email_notification_settings
+    if (newStatus === 'Active') {
+      const { data: moveInSettings } = await supabase
+        .from('email_notification_settings')
+        .select('user_id')
+        .eq('notification_type', 'confirmed_move_in');
+
+      if (moveInSettings?.length) {
+        const userIds = moveInSettings.map(s => s.user_id);
+        const { data: recipients } = await supabase
+          .from('user_profiles')
+          .select('email')
+          .in('id', userIds);
+
+        const emails = (recipients || []).map(r => r.email).filter(Boolean);
+        const houseName = houses.find(h => h.id === (updates.house_id || client.house_id))?.name || client.house_name || 'Unknown House';
+        const moveInDate = statusForm.move_in_date
+          ? new Date(statusForm.move_in_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : 'Not specified';
+
+        if (emails.length) {
+          const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
+          const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+          fetch(`${SUPABASE_URL}/functions/v1/confirmed-move-in-notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+            body: JSON.stringify({
+              client_name: client.full_name,
+              house_name: houseName,
+              move_in_date: moveInDate,
+              level: updates.level || 1,
+              early_admission: statusForm.early_admission || false,
+              emails,
+            }),
+          }).catch(err => console.error('Move-in notify error:', err));
+        }
+      }
+    }
   };
 
   const dropPin = () => {

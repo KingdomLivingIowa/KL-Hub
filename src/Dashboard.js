@@ -362,8 +362,8 @@ function DashboardHome({ counts, currentUser }) {
                       </div>
                     );
                   })}
-                  {/* Read section */}
-                  {(readNotifications.length > 0 || readAlerts.length > 0) && (
+                  {/* Read section — notifications only, alerts disappear when read */}
+                  {readNotifications.length > 0 && (
                     <div style={{ marginTop: '4px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                         <p style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>Read</p>
@@ -373,13 +373,6 @@ function DashboardHome({ counts, currentUser }) {
                           <span style={{ fontSize: '13px', flexShrink: 0 }}>{notifIcon(notif.type)}</span>
                           <p style={{ color: '#999', fontSize: '12px', margin: 0, flex: 1 }}>{notif.message}</p>
                           <span style={{ color: '#999', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(notif.created_at)}</span>
-                        </div>
-                      ))}
-                      {readAlerts.map(alert => (
-                        <div key={alert.id} style={{ background: '#252525', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
-                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#999', flexShrink: 0 }} />
-                          <p style={{ color: '#999', fontSize: '12px', margin: 0, flex: 1 }}>{alert.label}</p>
-                          {alert.time && <span style={{ color: '#999', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(alert.time)}</span>}
                         </div>
                       ))}
                     </div>
