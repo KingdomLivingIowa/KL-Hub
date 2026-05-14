@@ -247,7 +247,6 @@ function DashboardHome({ counts, currentUser }) {
   }, {});
 
   const unreadAlerts = alerts.filter(a => !readAlertKeys.has(a.id));
-  const readAlerts = alerts.filter(a => readAlertKeys.has(a.id));
   const unreadNotifications = notifications.filter(n => !n.read);
   const readNotifications = notifications.filter(n => n.read);
   const totalUnread = unreadAlerts.length + unreadNotifications.length;
