@@ -255,9 +255,9 @@ function Houses({ onOpenClient }) {
     if (!didNotMoveInReason.trim()) { alert('Please provide a reason.'); return; }
     setSavingMoveIn(true);
 
-    // Revert client back to Accepted status
+    // Revert client to Archived status
     await supabase.from('clients').update({
-      status: 'Accepted',
+      status: 'Archived',
       house_id: null,
       start_date: null,
       room_type: null,
@@ -675,10 +675,16 @@ function Houses({ onOpenClient }) {
                                   </span>
                                 </div>
                               )}
-                              <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); }}
-                                style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', width: '100%' }}>
-                                ✓ Confirm Move-In
-                              </button>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); setDidNotMoveInMode(false); }}
+                                  style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', flex: 2 }}>
+                                  ✓ Confirm Move-In
+                                </button>
+                                <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setDidNotMoveInMode(true); }}
+                                  style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500', flex: 1 }}>
+                                  Did Not Move In
+                                </button>
+                              </div>
                             </div>
                           )}
                           {r.status === 'Active' && (
