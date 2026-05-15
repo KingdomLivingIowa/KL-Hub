@@ -850,7 +850,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     return () => clearTimeout(debounceTimer.current);
   }, [search]);
 
-  useEffect(() => { setCurrentPage(1); }, [statusFilter]);
+  useEffect(() => { setCurrentPage(1); }, [statusFilter, viewMode]);
 
   // Auto-open client when coming from Houses
   useEffect(() => {
@@ -870,7 +870,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (statusFilter !== 'All') {
       query = query.eq('status', statusFilter);
     } else if (viewMode === 'operational') {
-      query = query.not('status', 'in', '("Archived","Discharged","Denied")');
+      query = query.in('status', ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active']);
     } else {
       query = query.in('status', ['Archived', 'Discharged', 'Denied']);
     }
@@ -903,7 +903,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       setCached(cacheKey, { clients: mapped, total: count || 0 });
     } catch (err) { console.error(err); setClients([]); setTotalCount(0); }
     finally { setLoading(false); }
-  }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters, statusFilter, debouncedSearch]);
+  }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters, statusFilter, viewMode, debouncedSearch]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
