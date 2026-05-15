@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 
-function WaitingList() {
+function WaitingList({ onOpenClient, setActivePage }) {
   const { hasFullAccess } = useUser();
   const [waitingClients, setWaitingClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,7 +146,17 @@ function WaitingList() {
 
                 {/* Name */}
                 <div>
-                  <div style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{client.full_name}</div>
+                  <div
+                    style={{ fontSize: 14, color: client.client_id ? '#e57373' : '#fff', fontWeight: 500, cursor: client.client_id ? 'pointer' : 'default', textDecoration: client.client_id ? 'underline' : 'none' }}
+                    onClick={() => {
+                      if (client.client_id && onOpenClient && setActivePage) {
+                        onOpenClient(client.client_id);
+                        setActivePage('clients');
+                      }
+                    }}
+                  >
+                    {client.full_name}
+                  </div>
                   {client.email && <div style={{ fontSize: 12, color: '#666' }}>{client.email}</div>}
                 </div>
 

@@ -641,7 +641,7 @@ function DashboardInner({ user }) {
         <div style={styles.content}>
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
           {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
-          {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList />}
+          {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList onOpenClient={(id) => setPendingClientId(id)} setActivePage={setActivePage} />}
           {activePage === 'clients' && (
             <Clients
               pendingClientId={pendingClientId}

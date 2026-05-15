@@ -1084,12 +1084,21 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const { client, newStatus } = statusModal;
     const updates = { status: newStatus };
 
+    // If moving away from Waiting List, remove from waiting list
+    if (client.status === 'Waiting List' && newStatus !== 'Waiting List') {
+      await supabase.from('waiting_list')
+        .update({ status: 'removed' })
+        .eq('client_id', client.id)
+        .eq('status', 'waiting');
+    }
+
     if (newStatus === 'Waiting List') {
       const { error: wlError } = await supabase.from('waiting_list').insert([{
         full_name: client.full_name, email: client.email || null, phone: client.phone || null,
         list_type: statusForm.list_type, position: 999, status: 'waiting',
         ready_date: statusForm.ready_date || null,
         application_id: client.application_id || null,
+        client_id: client.id,
       }]);
       if (wlError) { alert('Error adding to waiting list: ' + wlError.message); return; }
     }
