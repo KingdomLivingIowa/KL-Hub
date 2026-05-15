@@ -879,7 +879,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   }, [debouncedSearch, statusFilter, viewMode, isHouseManagerRole, assignedHouseIds]);
 
   const fetchClients = useCallback(async (force = false) => {
-    const cacheKey = `clients_${statusFilter}_${debouncedSearch}_${currentPage}`;
+    const cacheKey = `clients_${viewMode}_${statusFilter}_${debouncedSearch}_${currentPage}`;
     if (!force) {
       const cached = getCached(cacheKey);
       if (cached) { setClients(cached.clients); setTotalCount(cached.total); setLoading(false); return; }
