@@ -903,7 +903,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       setCached(cacheKey, { clients: mapped, total: count || 0 });
     } catch (err) { console.error(err); setClients([]); setTotalCount(0); }
     finally { setLoading(false); }
-  }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters, statusFilter, debouncedSearch]);
+  }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters, statusFilter, viewMode, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
