@@ -218,6 +218,12 @@ function Houses({ onOpenClient }) {
     const { error } = await supabase.from('clients').update({
       status: 'Active', start_date: today, room_type: moveInRoomType,
     }).eq('id', moveInModal.id);
+
+    // Remove from waiting list
+    await supabase.from('waiting_list')
+      .update({ status: 'removed' })
+      .eq('client_id', moveInModal.id)
+      .eq('status', 'waiting');
     if (error) { alert('Error confirming move-in: ' + error.message); setSavingMoveIn(false); return; }
     await supabase.from('charges').insert([{
       client_id: moveInModal.id, charge_type: 'move_in_fee', amount: 150, due_date: today,
@@ -274,6 +280,12 @@ function Houses({ onOpenClient }) {
       balance_at_discharge: 0,
       successful_discharge: false,
     }]);
+
+    // Remove from waiting list
+    await supabase.from('waiting_list')
+      .update({ status: 'removed' })
+      .eq('client_id', moveInModal.id)
+      .eq('status', 'waiting');
 
     // Log to client timeline
     await supabase.from('client_timeline').insert([{
