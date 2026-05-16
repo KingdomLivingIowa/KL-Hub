@@ -10,11 +10,13 @@ export default function PODashboard() {
 
   const fetchClients = useCallback(async () => {
     if (!user?.email) return;
+    const emailLower = user.email.toLowerCase();
     const { data, error } = await supabase
       .from('clients')
       .select('id, full_name, first_name, last_name, status, level, house_id, start_date, photo_url, program_type, application_type, houses(name)')
-      .ilike('po_email', user.email);
+      .filter('po_email', 'ilike', emailLower);
     if (error) console.error('PODashboard fetch error:', error);
+    console.log('PO email:', emailLower, 'Results:', data?.length, data);
     setClients(data || []);
     setLoading(false);
   }, [user?.email]);
