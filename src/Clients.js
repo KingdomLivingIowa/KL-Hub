@@ -2264,7 +2264,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     onClick={() => {
                                       const img = new Image();
                                       img.crossOrigin = 'anonymous';
-                                      img.onload = () => {
+                                      img.onload = async () => {
                                         const canvas = document.createElement('canvas');
                                         canvas.width = img.naturalWidth;
                                         canvas.height = img.naturalHeight;
