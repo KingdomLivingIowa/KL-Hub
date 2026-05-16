@@ -236,7 +236,7 @@ function ClientPayments({ client, onPaymentChange }) {
   const [savingCharge, setSavingCharge] = useState(false);
   const [chargeForm, setChargeForm] = useState({
     charge_type: 'weekly_fee',
-    room_type: client.room_type || 'Double',
+    room_type: client.level === 4 ? 'Level 4' : (client.room_type || 'Double'),
     weeks: '1',
     custom_amount: '',
     due_date: new Date().toISOString().split('T')[0],
@@ -258,7 +258,7 @@ function ClientPayments({ client, onPaymentChange }) {
   const [sendingLink, setSendingLink] = useState(false);
 
   const ROOM_TYPE_FEES = {
-    'Single': 160, 'Double': 135, 'Houseperson': 110, 'Live-Out': 35,
+    'Single': 160, 'Double': 135, 'Houseperson': 110, 'Live-Out': 35, 'Level 4': 10,
   };
 
   const fetchData = useCallback(async () => {
@@ -285,9 +285,9 @@ function ClientPayments({ client, onPaymentChange }) {
   const isCredit = balance < 0;
 
   // Get weekly rate for this client
-  const roomType = client.room_type || 'Double';
-  const settings = feeSettings[roomType];
-  const weeklyRate = settings ? parseFloat(settings.weekly_fee) : (ROOM_TYPE_FEES[roomType] || 135);
+  const effectiveRoomType = client.level === 4 ? 'Level 4' : (client.room_type || 'Double');
+  const settings = feeSettings[effectiveRoomType];
+  const weeklyRate = settings ? parseFloat(settings.weekly_fee) : (ROOM_TYPE_FEES[effectiveRoomType] || 135);
 
   const getChargeAmount = () => {
     const { charge_type, room_type, weeks, custom_amount } = chargeForm;
@@ -333,7 +333,7 @@ function ClientPayments({ client, onPaymentChange }) {
 
     if (error) { alert('Error creating charge: ' + error.message); setSavingCharge(false); return; }
     setShowAddCharge(false);
-    setChargeForm({ charge_type: 'weekly_fee', room_type: client.room_type || 'Double', weeks: '1', custom_amount: '', due_date: new Date().toISOString().split('T')[0], description: '' });
+    setChargeForm({ charge_type: 'weekly_fee', room_type: client.level === 4 ? 'Level 4' : (client.room_type || 'Double'), weeks: '1', custom_amount: '', due_date: new Date().toISOString().split('T')[0], description: '' });
     setSavingCharge(false);
     fetchData();
     if (onPaymentChange) onPaymentChange();
