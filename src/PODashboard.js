@@ -10,11 +10,11 @@ export default function PODashboard() {
 
   const fetchClients = useCallback(async () => {
     if (!user?.email) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('clients')
       .select('id, full_name, first_name, last_name, status, level, house_id, start_date, photo_url, program_type, application_type, houses(name)')
-      .eq('po_email', user.email)
-      .order('full_name');
+      .ilike('po_email', user.email);
+    if (error) console.error('PODashboard fetch error:', error);
     setClients(data || []);
     setLoading(false);
   }, [user?.email]);
@@ -45,6 +45,7 @@ export default function PODashboard() {
       <div style={s.header}>
         <h1 style={s.title}>My Clients</h1>
         <p style={s.subtitle}>{clients.length} client{clients.length !== 1 ? 's' : ''} assigned to you</p>
+        <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>Logged in as: {user?.email}</p>
       </div>
 
       {clients.length === 0 ? (
