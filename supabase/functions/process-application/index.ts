@@ -133,11 +133,33 @@ Deno.serve(async (req) => {
     if (app.lived_here_before === 'Yes') {
       const { data: existingClients } = await supabase
         .from('clients')
-        .select('id, full_name, email')
+        .select('id, full_name, email, not_allowed_back, needs_review_before_readmit')
         .or(`email.eq.${app.email},full_name.eq.${fullName}`);
 
       if (existingClients?.length > 0) {
         const existingClient = existingClients[0];
+
+        // Auto-deny if not allowed back
+        if (existingClient.not_allowed_back) {
+          await supabase.from('applications').update({
+            status: 'denied', auto_flag: 'not_allowed_back',
+            flag_reason: 'Automatically denied: client is flagged as not allowed back.',
+            auto_processed: true,
+          }).eq('id', application_id);
+          if (recipients.length) {
+            await sendEmail(recipients, 'Kingdom Living Iowa — Application Update', wrap(
+              `<p>Thank you for your interest in Kingdom Living Iowa. After reviewing your record with us, we are unable to accept your application at this time.</p><p>If you have questions, please contact us directly.</p>`
+            ));
+          }
+          await notifyAdmins(supabase, `Application from ${fullName} was automatically denied — flagged as not allowed back.`, 'new_application');
+          return respond({ result: 'denied', reason: 'not_allowed_back' });
+        }
+
+        // Flag for upper management review if needed
+        if (existingClient.needs_review_before_readmit) {
+          flags.push('needs_review_before_readmit');
+          flagReasons.push('Needs review by upper management before re-admitting — flagged from previous stay.');
+        }
 
         const { data: charges } = await supabase.from('charges').select('amount').eq('client_id', existingClient.id);
         const { data: payments } = await supabase.from('payments').select('amount').eq('client_id', existingClient.id);

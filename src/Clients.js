@@ -11,7 +11,7 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
-function generateDischargePDF(stay, client, logoSrc) {
+function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
   const location = stay.house_name || '—';
   const startDate = stay.start_date ? new Date(stay.start_date + 'T12:00:00').toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' }) : '—';
@@ -25,6 +25,8 @@ function generateDischargePDF(stay, client, logoSrc) {
   const reason = stay.discharge_reason || '—';
   const notes = stay.discharge_notes || '';
   const completedBy = stay.discharged_by || '—';
+  const notAllowedBack = stay.not_allowed_back || false;
+  const needsReview = stay.needs_review_before_readmit || false;
 
   const row = (label, value, highlight = '') => `
     <tr>
@@ -77,7 +79,15 @@ function generateDischargePDF(stay, client, logoSrc) {
     ${row('Completed by:', completedBy)}
     ${row('Date of Completion:', completionDate)}
     ${row('Final Balance:', balanceStr, balance > 0 ? 'color:#b22222;font-weight:bold;' : '')}
+    ${notAllowedBack ? row('🚫 Not Allowed Back:', 'Yes', 'color:#b22222;font-weight:bold;') : ''}
+    ${needsReview ? row('⚠️ Needs Review Before Re-admitting:', 'Yes', 'color:#d97706;font-weight:bold;') : ''}
   </table>
+  ${photoUrls?.length ? `
+    <h3 style="margin:28px 0 12px;font-size:15px;">Discharge Photos</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;">
+      ${photoUrls.map(url => `<img src="${url}" style="width:200px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #ccc;" />`).join('')}
+    </div>` : ''
+  }
   </body></html>`;
 
   const win = window.open('', '_blank', 'width=800,height=900');
@@ -1077,7 +1087,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const openStatusModal = (client, newStatus) => {
     setStatusModal({ client, newStatus });
-    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '', discharge_type: '', ua_at_discharge: '', two_week_notice: '', early_admission: false });
+    setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '', discharge_type: '', ua_at_discharge: '', two_week_notice: '', early_admission: false, not_allowed_back: false, needs_review_before_readmit: false, discharge_photos: [] });
   };
 
   const confirmStatusChange = async () => {
@@ -1178,7 +1188,25 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         discharge_type: statusForm.discharge_type || null,
         ua_at_discharge: statusForm.ua_at_discharge || null,
         two_week_notice: statusForm.two_week_notice || null,
+        not_allowed_back: statusForm.not_allowed_back || false,
+        needs_review_before_readmit: statusForm.needs_review_before_readmit || false,
       }]);
+
+      // Upload discharge photos
+      if (statusForm.discharge_photos?.length) {
+        for (const file of statusForm.discharge_photos) {
+          const path = `discharge/${client.id}/${Date.now()}-${file.name}`;
+          await supabase.storage.from('discharge-photos').upload(path, file, { upsert: true });
+        }
+      }
+
+      // Update client flags
+      if (statusForm.not_allowed_back || statusForm.needs_review_before_readmit) {
+        await supabase.from('clients').update({
+          not_allowed_back: statusForm.not_allowed_back || false,
+          needs_review_before_readmit: statusForm.needs_review_before_readmit || false,
+        }).eq('id', client.id);
+      }
 
       if (client.house_id) {
         const { data: houseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
@@ -2241,7 +2269,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                         canvas.width = img.naturalWidth;
                                         canvas.height = img.naturalHeight;
                                         canvas.getContext('2d').drawImage(img, 0, 0);
-                                        generateDischargePDF(stay, selected, canvas.toDataURL('image/jpeg'));
+                                        // Fetch discharge photos
+                                        const { data: photoFiles } = await supabase.storage.from('discharge-photos').list(`discharge/${selected.id}`);
+                                        const photoUrls = (photoFiles || []).map(f => supabase.storage.from('discharge-photos').getPublicUrl(`discharge/${selected.id}/${f.name}`).data.publicUrl);
+                                        generateDischargePDF(stay, selected, canvas.toDataURL('image/jpeg'), photoUrls);
                                       };
                                       img.onerror = () => generateDischargePDF(stay, selected, null);
                                       img.src = klLogo;
@@ -2526,6 +2557,34 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Discharge notes</label>
                     <textarea value={statusForm.discharge_notes} onChange={e => setStatusForm(p => ({ ...p, discharge_notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={4} placeholder="Add any details about why the client was discharged..." />
+                  </div>
+                  <div style={{ marginBottom: '12px', padding: '12px 14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #2a2a2a' }}>
+                    <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Flags</p>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '10px' }}>
+                      <input type="checkbox" checked={statusForm.not_allowed_back || false}
+                        onChange={e => setStatusForm(p => ({ ...p, not_allowed_back: e.target.checked }))}
+                        style={{ width: '16px', height: '16px', accentColor: '#b22222', cursor: 'pointer' }} />
+                      <span style={{ fontSize: '13px', color: statusForm.not_allowed_back ? '#f87171' : '#aaa', fontWeight: statusForm.not_allowed_back ? '600' : '400' }}>
+                        🚫 Not allowed back
+                      </span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={statusForm.needs_review_before_readmit || false}
+                        onChange={e => setStatusForm(p => ({ ...p, needs_review_before_readmit: e.target.checked }))}
+                        style={{ width: '16px', height: '16px', accentColor: '#fb923c', cursor: 'pointer' }} />
+                      <span style={{ fontSize: '13px', color: statusForm.needs_review_before_readmit ? '#fb923c' : '#aaa', fontWeight: statusForm.needs_review_before_readmit ? '600' : '400' }}>
+                        ⚠️ Needs reviewed by upper management before re-admitting
+                      </span>
+                    </label>
+                  </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={sf.label}>Discharge photos (optional)</label>
+                    <input type="file" accept="image/*" multiple
+                      onChange={e => setStatusForm(p => ({ ...p, discharge_photos: Array.from(e.target.files) }))}
+                      style={{ ...sf.input, padding: '8px', cursor: 'pointer' }} />
+                    {statusForm.discharge_photos?.length > 0 && (
+                      <p style={{ fontSize: '12px', color: '#888', margin: '6px 0 0 0' }}>{statusForm.discharge_photos.length} photo{statusForm.discharge_photos.length !== 1 ? 's' : ''} selected</p>
+                    )}
                   </div>
                 </>
               )}

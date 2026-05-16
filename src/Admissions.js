@@ -403,9 +403,11 @@ function Admissions() {
 
   const flagInfo = (flag) => {
     if (flag === 'sex_offender') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Registered sex offender' };
+    if (flag === 'not_allowed_back') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Client is flagged as not allowed back' };
     if (flag === 'disability_review') return { icon: '♿', color: '#fb923c', label: 'Needs review: Disability indicated' };
     if (flag === 'past_balance') return { icon: '💰', color: '#fb923c', label: 'Needs review: Returning client with outstanding balance' };
     if (flag === 'returning_merge') return { icon: '🔄', color: '#60a5fa', label: 'Returning client — merge with existing profile' };
+    if (flag === 'needs_review_before_readmit') return { icon: '⚠️', color: '#fb923c', label: 'Needs review by upper management before re-admitting' };
     return { icon: '⚠', color: '#fb923c', label: flag };
   };
 
