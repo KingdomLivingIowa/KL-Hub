@@ -299,7 +299,7 @@ const STATUS_FLOW = {
 const ENTRY_TYPES = ['UA', 'Crisis', 'Infraction', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
 
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
-const MORE_TABS = ['stays', 'application', 'documents', 'notes'];
+const MORE_TABS = ['stays', 'forms', 'application', 'documents', 'notes'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -791,6 +791,180 @@ function LatestCheckIn({ clientId }) {
           <p style={{ fontSize: 14, color: '#ccc', lineHeight: 1.6, margin: 0 }}>{entry.notes}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function ClientFormsTab({ client }) {
+  const [packet, setPacket] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from('welcome_packets').select('*').eq('client_id', client.id).maybeSingle()
+      .then(({ data }) => { setPacket(data); setLoading(false); });
+  }, [client.id]);
+
+  const generateWelcomePDF = (p) => {
+    const submitted = p.submitted_at ? new Date(p.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+    const row = (label, value) => `<tr><td style="padding:8px 12px;color:#666;font-size:13px;width:55%;border-bottom:1px solid #f0f0f0;vertical-align:top;">${label}</td><td style="padding:8px 12px;font-size:13px;border-bottom:1px solid #f0f0f0;vertical-align:top;font-weight:500;">${value || '—'}</td></tr>`;
+    const section = (title) => `<tr><td colspan="2" style="padding:14px 12px 6px;background:#f9f9f9;font-size:12px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #eee;">${title}</td></tr>`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+    <style>body{font-family:Arial,sans-serif;margin:0;padding:0;background:#fff;}
+    .header{background:#1a1a1a;padding:24px 32px;display:flex;align-items:center;gap:16px;}
+    .title{color:#fff;font-size:20px;font-weight:700;margin:0;}
+    .subtitle{color:#b22222;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:4px 0 0;}
+    .red-bar{background:#b22222;height:4px;}
+    .content{padding:24px 32px;}
+    .meta{color:#999;font-size:12px;margin-bottom:20px;}
+    table{width:100%;border-collapse:collapse;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;}
+    </style></head><body>
+    <div class="header">
+      <div><p class="title">Kingdom Living Iowa — Welcome Packet</p><p class="subtitle">Resident Submission</p></div>
+    </div>
+    <div class="red-bar"></div>
+    <div class="content">
+      <p class="meta">Submitted by <strong>${client.full_name}</strong> on ${submitted}</p>
+      <table>
+        ${section('Basic Information')}
+        ${row('Resident Name', client.full_name)}
+        ${row('Program', p.program)}
+        ${row('Phone', p.phone)}
+        ${row('Email', p.email)}
+        ${row('Knows House Manager', p.know_house_manager)}
+        ${row('Knows Head House Manager', p.know_head_house_manager)}
+        ${row('Knows Houseperson', p.know_houseperson)}
+        ${row('Assigned Mentor', p.assigned_mentor)}
+        ${row('On Band App', p.on_band_app)}
+        ${section('Level 1 Agreements')}
+        ${row('Agrees to Employment Requirements', p.agree_employment)}
+        ${row('Agrees to Sponsor Requirements', p.agree_sponsor)}
+        ${row('Agrees to Meeting Requirements', p.agree_meetings)}
+        ${row('Agrees to Sunday Morning Meeting', p.agree_sunday_meeting)}
+        ${row('Agrees to Thursday Night Alive', p.agree_thursday_alive)}
+        ${row('Agrees to Employment Lab', p.agree_employment_lab)}
+        ${row('Commits to Positive Financial Balance', p.agree_financial_balance)}
+        ${row('Understands Level Requirements', p.understand_level_requirements)}
+        ${section('Program Policies')}
+        ${row('Agrees to Levels', p.agree_levels)}
+        ${row('Agrees to Rules', p.agree_rules)}
+        ${row('Understands Services', p.understand_services)}
+        ${row('Understands Supplies Policy', p.understand_supplies)}
+        ${row('Commits to Graduating', p.commit_graduating)}
+        ${row('Understands Fees', p.understand_fees)}
+        ${row('Understands Refund Policy', p.understand_refund_policy)}
+        ${row('Understands Third Party Payments', p.understand_third_party)}
+        ${row('Understands Property Removal', p.understand_property_removal)}
+        ${row('Understands Grievances Policy', p.understand_grievances)}
+        ${row('Understands Relapse Policy', p.understand_relapse)}
+        ${row('Emergency Procedures Reviewed', p.emergency_procedures)}
+        ${row('Understands Naloxone Availability', p.understand_naloxone)}
+        ${row('Agrees to Social Media Policy', p.agree_social_media)}
+        ${row('Understands Neighbor Policy', p.understand_neighbor)}
+        ${row('Understands Parking Policy', p.understand_parking)}
+        ${row('Understands Mail Policy', p.understand_mail)}
+        ${row('Understands Location Verification', p.understand_location_verification)}
+        ${row('Understands Payment Processing Fees', p.understand_payment_fees)}
+        ${row('Understands AI Policy', p.understand_ai_policy)}
+        ${section('Signature')}
+        ${row('I Testify That', p.signature_testify)}
+        ${row('I Understand That', p.signature_understand)}
+        ${row('Submission Date', submitted)}
+      </table>
+    </div></body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.print(); };
+  };
+
+  if (loading) return <div style={{ padding: '20px', color: '#888' }}>Loading...</div>;
+
+  const s = { padding: '0 2px' };
+  const labelStyle = { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' };
+  const valueStyle = { fontSize: '13px', color: '#ddd', margin: 0 };
+
+  if (!packet) return (
+    <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+      <p style={{ color: '#888', fontSize: '15px' }}>No welcome packet submitted yet.</p>
+      <p style={{ color: '#666', fontSize: '13px' }}>The client can submit this from their portal under the Forms tab.</p>
+    </div>
+  );
+
+  const Row = ({ label, value }) => (
+    <div style={{ padding: '8px 0', borderBottom: '1px solid #222' }}>
+      <p style={labelStyle}>{label}</p>
+      <p style={{ ...valueStyle, color: value === 'Yes' ? '#4ade80' : value === 'No' ? '#f87171' : '#ddd' }}>{value || '—'}</p>
+    </div>
+  );
+
+  const Section = ({ title }) => (
+    <div style={{ padding: '12px 0 4px', marginTop: '8px' }}>
+      <p style={{ fontSize: '11px', color: '#b22222', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', margin: 0 }}>{title}</p>
+    </div>
+  );
+
+  return (
+    <div style={s}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div>
+          <p style={{ color: '#fff', fontWeight: '600', margin: '0 0 3px' }}>Welcome Packet</p>
+          <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>
+            Submitted {packet.submitted_at ? new Date(packet.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
+          </p>
+        </div>
+        <button onClick={() => generateWelcomePDF(packet)}
+          style={{ background: '#1a2a1a', border: '1px solid #2a5a2a', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+          ⬇ Export PDF
+        </button>
+      </div>
+
+      <Section title="Basic Information" />
+      <Row label="Program" value={packet.program} />
+      <Row label="Phone" value={packet.phone} />
+      <Row label="Email" value={packet.email} />
+      <Row label="Knows House Manager" value={packet.know_house_manager} />
+      <Row label="Knows Head House Manager" value={packet.know_head_house_manager} />
+      <Row label="Knows Houseperson" value={packet.know_houseperson} />
+      <Row label="Assigned Mentor" value={packet.assigned_mentor} />
+      <Row label="On Band App" value={packet.on_band_app} />
+
+      <Section title="Level 1 Agreements" />
+      <Row label="Employment Requirements" value={packet.agree_employment} />
+      <Row label="Sponsor Requirements" value={packet.agree_sponsor} />
+      <Row label="Meeting Requirements" value={packet.agree_meetings} />
+      <Row label="Sunday Morning Meeting" value={packet.agree_sunday_meeting} />
+      <Row label="Thursday Night Alive" value={packet.agree_thursday_alive} />
+      <Row label="Employment Lab" value={packet.agree_employment_lab} />
+      <Row label="Financial Balance Commitment" value={packet.agree_financial_balance} />
+      <Row label="Understands Level Requirements" value={packet.understand_level_requirements} />
+
+      <Section title="Program Policies" />
+      <Row label="Agrees to Levels" value={packet.agree_levels} />
+      <Row label="Agrees to Rules" value={packet.agree_rules} />
+      <Row label="Understands Services" value={packet.understand_services} />
+      <Row label="Understands Supplies Policy" value={packet.understand_supplies} />
+      <Row label="Commits to Graduating" value={packet.commit_graduating} />
+      <Row label="Understands Fees" value={packet.understand_fees} />
+      <Row label="Understands Refund Policy" value={packet.understand_refund_policy} />
+      <Row label="Understands Third Party Payments" value={packet.understand_third_party} />
+      <Row label="Property Removal Policy" value={packet.understand_property_removal} />
+      <Row label="Grievances Policy" value={packet.understand_grievances} />
+      <Row label="Relapse Policy" value={packet.understand_relapse} />
+      <Row label="Emergency Procedures Reviewed" value={packet.emergency_procedures} />
+      <Row label="Naloxone Availability" value={packet.understand_naloxone} />
+      <Row label="Social Media Policy" value={packet.agree_social_media} />
+      <Row label="Neighbor Policy" value={packet.understand_neighbor} />
+      <Row label="Parking Policy" value={packet.understand_parking} />
+      <Row label="Mail Policy" value={packet.understand_mail} />
+      <Row label="Location Verification" value={packet.understand_location_verification} />
+      <Row label="Payment Processing Fees" value={packet.understand_payment_fees} />
+      <Row label="AI & Recording Policy" value={packet.understand_ai_policy} />
+
+      <Section title="Signature" />
+      <Row label="I Testify That" value={packet.signature_testify} />
+      <Row label="I Understand That" value={packet.signature_understand} />
     </div>
   );
 }
@@ -2376,6 +2550,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     </>
                   )}
                 </Card>
+              )}
+
+              {activeTab === 'forms' && (
+                <ClientFormsTab client={selected} />
               )}
 
               {activeTab === 'application' && (
