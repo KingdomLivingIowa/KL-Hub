@@ -214,9 +214,9 @@ function Admissions() {
       .not('status', 'in', '("Applied","Accepted","Waiting List","Pending","Active")')
       .maybeSingle() : { data: null };
 
-    const existingClient = existingForApp || existingByName;
+    const matchedClient = existingForApp || existingByName;
 
-    if (existingClient) {
+    if (matchedClient) {
       // Already exists — update status to Accepted
       await supabase.from('clients').update({
         status: 'Accepted',
@@ -224,7 +224,7 @@ function Admissions() {
         start_date: null,
         discharge_date: null,
         application_id: app.id,
-      }).eq('id', existingClient.id);
+      }).eq('id', matchedClient.id);
       return null;
     }
 
