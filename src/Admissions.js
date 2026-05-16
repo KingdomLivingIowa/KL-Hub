@@ -206,7 +206,27 @@ function Admissions() {
       .eq('application_id', app.id)
       .maybeSingle();
 
-    if (existingForApp) return null; // already merged, skip insert
+    // Also check by name for clients merged without application_id linkage
+    const { data: existingByName } = !existingForApp ? await supabase
+      .from('clients')
+      .select('id')
+      .eq('full_name', fullName)
+      .not('status', 'in', '("Applied","Accepted","Waiting List","Pending","Active")')
+      .maybeSingle() : { data: null };
+
+    const existingClient = existingForApp || existingByName;
+
+    if (existingClient) {
+      // Already exists — update status to Accepted
+      await supabase.from('clients').update({
+        status: 'Accepted',
+        house_id: null,
+        start_date: null,
+        discharge_date: null,
+        application_id: app.id,
+      }).eq('id', existingClient.id);
+      return null;
+    }
 
     const { error } = await supabase.from('clients').insert([payload]);
     return error;
