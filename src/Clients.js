@@ -795,6 +795,31 @@ function LatestCheckIn({ clientId }) {
   );
 }
 
+function StayPhotos({ clientId, stayId }) {
+  const [photos, setPhotos] = useState([]);
+  useEffect(() => {
+    if (!clientId || !stayId) return;
+    supabase.storage.from('discharge-photos').list(`discharge/${clientId}/${stayId}`)
+      .then(({ data }) => {
+        if (data?.length) {
+          setPhotos(data.map(f => supabase.storage.from('discharge-photos').getPublicUrl(`discharge/${clientId}/${stayId}/${f.name}`).data.publicUrl));
+        }
+      });
+  }, [clientId, stayId]);
+  if (!photos.length) return null;
+  return (
+    <div style={{ gridColumn: 'span 2', marginTop: '8px' }}>
+      <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge Photos</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {photos.map((url, i) => (
+          <img key={i} src={url} alt="" onClick={() => window.open(url, '_blank')}
+            style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #333', cursor: 'pointer' }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, isAdmin } = useUser();
 
@@ -1178,7 +1203,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       const balanceAtDischarge = totalCharged - totalPaid;
       const houseName = client.house_name || houses.find(h => h.id === client.house_id)?.name || null;
 
-      await supabase.from('client_stays').insert([{
+      const { data: stayData } = await supabase.from('client_stays').insert([{
         client_id: client.id, house_id: client.house_id || null, house_name: houseName,
         start_date: client.start_date || null, discharge_date: updates.discharge_date,
         discharge_reason: statusForm.discharge_reason, discharge_notes: statusForm.discharge_notes || null,
@@ -1190,12 +1215,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         two_week_notice: statusForm.two_week_notice || null,
         not_allowed_back: statusForm.not_allowed_back || false,
         needs_review_before_readmit: statusForm.needs_review_before_readmit || false,
-      }]);
+      }]).select('id').single();
+
+      const stayId = stayData?.id;
 
       // Upload discharge photos
-      if (statusForm.discharge_photos?.length) {
+      if (statusForm.discharge_photos?.length && stayId) {
         for (const file of statusForm.discharge_photos) {
-          const path = `discharge/${client.id}/${Date.now()}-${file.name}`;
+          const path = `discharge/${client.id}/${stayId}/${Date.now()}-${file.name}`;
           await supabase.storage.from('discharge-photos').upload(path, file, { upsert: true });
         }
       }
@@ -2269,9 +2296,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                         canvas.width = img.naturalWidth;
                                         canvas.height = img.naturalHeight;
                                         canvas.getContext('2d').drawImage(img, 0, 0);
-                                        // Fetch discharge photos
-                                        const { data: photoFiles } = await supabase.storage.from('discharge-photos').list(`discharge/${selected.id}`);
-                                        const photoUrls = (photoFiles || []).map(f => supabase.storage.from('discharge-photos').getPublicUrl(`discharge/${selected.id}/${f.name}`).data.publicUrl);
+                                        // Fetch discharge photos for this stay
+                                        const { data: photoFiles } = await supabase.storage.from('discharge-photos').list(`discharge/${selected.id}/${stay.id}`);
+                                        const photoUrls = (photoFiles || []).map(f => supabase.storage.from('discharge-photos').getPublicUrl(`discharge/${selected.id}/${stay.id}/${f.name}`).data.publicUrl);
                                         generateDischargePDF(stay, selected, canvas.toDataURL('image/jpeg'), photoUrls);
                                       };
                                       img.onerror = () => generateDischargePDF(stay, selected, null);
@@ -2313,6 +2340,21 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Discharged by {stay.discharged_by}</p>
                                   </div>
                                 )}
+                                {(stay.not_allowed_back || stay.needs_review_before_readmit) && (
+                                  <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
+                                    {stay.not_allowed_back && (
+                                      <span style={{ padding: '4px 10px', background: '#3a0f0f', border: '1px solid #7f1d1d', borderRadius: '6px', color: '#f87171', fontSize: '12px', fontWeight: '600', display: 'inline-block' }}>
+                                        🚫 Not allowed back
+                                      </span>
+                                    )}
+                                    {stay.needs_review_before_readmit && (
+                                      <span style={{ padding: '4px 10px', background: '#3a2a0f', border: '1px solid #92400e', borderRadius: '6px', color: '#fb923c', fontSize: '12px', fontWeight: '600', display: 'inline-block' }}>
+                                        ⚠️ Needs upper management review before re-admitting
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                <StayPhotos clientId={selected.id} stayId={stay.id} />
                               </div>
                             </div>
                           );
