@@ -2309,6 +2309,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                   >
                                     ⬇ Discharge Sheet
                                   </button>
+                                  {isAdmin && (
+                                    <button
+                                      onClick={async () => {
+                                        if (!window.confirm('Delete this stay record? This cannot be undone.')) return;
+                                        await supabase.from('client_stays').delete().eq('id', stay.id);
+                                        setStays(prev => prev.filter(s => s.id !== stay.id));
+                                      }}
+                                      style={{ padding: '5px 12px', background: '#2a1a1a', border: '1px solid #7f1d1d', borderRadius: '6px', color: '#f87171', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}
+                                    >
+                                      🗑 Delete
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                               <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>

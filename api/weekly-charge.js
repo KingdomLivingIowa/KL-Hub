@@ -41,11 +41,23 @@ export default async function handler(req, res) {
     const skipped = [];
 
     for (const client of (clients || [])) {
-      // Determine room type:
+      // Determine room type / rate:
+      // - Level 4 clients pay $10/week (their own rate)
       // - Live-Out clients pay $35/week
-      // - Level 4 clients pay $35/week (Live-Out rate)
-      // - Everyone else pays their room rate
-      const roomType = (client.is_live_out || client.level === 4) ? 'Live-Out' : (client.room_type || 'Double');
+      // - Everyone else pays their room rate (Single/Double/Houseperson)
+      let roomType;
+      let description;
+      if (client.level === 4) {
+        roomType = 'Level 4';
+        description = 'Weekly program fee — Level 4';
+      } else if (client.is_live_out) {
+        roomType = 'Live-Out';
+        description = 'Weekly program fee — Live-Out';
+      } else {
+        roomType = client.room_type || 'Double';
+        description = `Weekly program fee — ${roomType}`;
+      }
+
       const settings = feeMap[roomType];
 
       if (!settings || !settings.weekly_fee) {
@@ -73,7 +85,7 @@ export default async function handler(req, res) {
         charge_type: 'weekly_fee',
         amount: parseFloat(settings.weekly_fee),
         due_date: today,
-        description: `Weekly program fee — ${client.level === 4 ? 'Level 4 (Live-Out rate)' : roomType}`,
+        description: description,
         status: 'unpaid',
         amount_paid: 0,
         created_by: 'system',

@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
 
     const { data: clients, error } = await serviceClient
       .from('clients')
-      .select('id, full_name, first_name, last_name, status, level, house_id, start_date, photo_url, program_type, application_type, houses(name)')
+      .select('id, full_name, first_name, last_name, status, level, house_id, start_date, photo_url, application_type, houses(name)')
       .ilike('po_email', poEmail)
       .order('full_name');
 

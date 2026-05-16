@@ -204,6 +204,7 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
 }
 
 const PAYMENT_METHODS = [
+  { value: 'cash', label: 'Cash' },
   { value: 'check', label: 'Check' },
   { value: 'online', label: 'Online' },
   { value: 'third_party', label: '3rd Party' },
