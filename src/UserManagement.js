@@ -21,7 +21,7 @@ const ROLE_COLORS = {
 const PRESET_GROUP_NAMES = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
 
 function UserManagement({ currentUser }) {
-  const { canCreatePOAccounts, isAdmin, isUpperManagement } = useUser();
+  const { isAdmin, isUpperManagement } = useUser();
 
   // Roles available to create based on current user's role
   const availableRoles = ROLES.filter(r => {
