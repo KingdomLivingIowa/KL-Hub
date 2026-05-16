@@ -13,6 +13,12 @@ export default function PODashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+      if (!token) {
+        console.error('No session token available');
+        setLoading(false);
+        return;
+      }
+      console.log('Calling get-po-clients with token length:', token?.length);
       const res = await fetch('https://pmvxnetpbxuzkrxitioc.supabase.co/functions/v1/get-po-clients', {
         method: 'POST',
         headers: {
@@ -22,7 +28,8 @@ export default function PODashboard() {
         },
       });
       const json = await res.json();
-      if (json.error) console.error('PO clients error:', json.error);
+      console.log('get-po-clients response:', json);
+      if (json.error) console.error('PO clients error:', json.error, json.detail);
       setClients(json.clients || []);
     } catch (err) {
       console.error('fetchClients error:', err);
@@ -330,7 +337,23 @@ function POClientView({ client, onBack }) {
                 )}
                 <span style={s.timelineDate}>{fmtShort(entry.created_at)}</span>
               </div>
-              {entry.notes && <p style={s.timelineNotes}>{entry.notes}</p>}
+              {entry.entry_type === 'Mood Check-In' && entry.mood_value && (
+                <p style={s.timelineNotes}>Mood: {entry.mood_value}/10</p>
+              )}
+              {entry.entry_type === 'UA' && entry.result && (
+                <p style={{ ...s.timelineNotes, color: entry.result === 'Positive' ? '#f87171' : '#4ade80', fontWeight: '600' }}>Result: {entry.result}</p>
+              )}
+              {entry.entry_type === 'Meeting' && entry.meeting_name && (
+                <p style={s.timelineNotes}>Meeting: {entry.meeting_name}</p>
+              )}
+              {entry.entry_type === 'Chores' && entry.meeting_name && (
+                <p style={s.timelineNotes}>Chore: {entry.meeting_name}</p>
+              )}
+              {entry.notes && entry.notes !== 'Notes' && <p style={s.timelineNotes}>{entry.notes}</p>}
+              {entry.photo_url && (
+                <img src={entry.photo_url} alt="" onClick={() => window.open(entry.photo_url, '_blank')}
+                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', cursor: 'pointer', border: '1px solid #2a2a2a' }} />
+              )}
             </div>
           </div>
         ))}
