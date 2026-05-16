@@ -1837,6 +1837,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <Card title="PO & legal">
                       <EditableField label="PO name" field="po_name" value={selected.po_name} />
                       <EditableField label="PO phone" field="po_phone" value={selected.po_phone} />
+                      <EditableField label="PO email" field="po_email" value={selected.po_email} />
                       <EditableField label="Personal status" field="personal_status" value={selected.personal_status} alert={selected.personal_status === 'Currently Incarcerated'} options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} />
                       <EditableField label="Sex offense" field="sex_offender" value={selected.sex_offender} options={['Yes', 'No']} />
                       <EditableField label="On probation" field="on_probation" value={selected.on_probation} options={['Yes', 'No']} />

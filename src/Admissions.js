@@ -184,6 +184,7 @@ function Admissions() {
 
       po_name: app.po_name || null,
       po_phone: app.po_phone || null,
+      po_email: app.po_email || null,
       on_probation: app.on_probation || null,
       on_parole: app.on_parole || null,
       sex_offender: app.sex_offender || null,

@@ -53,7 +53,7 @@ function ApplicationForm() {
     recovery_meetings: '', attended_treatment: '',
     takes_medication: '',
     emergency_contact: '', collateral_contacts: '',
-    on_probation: '', on_parole: '', po_name: '', po_phone: '',
+    on_probation: '', on_parole: '', po_name: '', po_phone: '', po_email: '',
     criminal_history: '', sex_offender: '', sex_offense_details: '',
     form_completed_by: '', agree_to_rules: '', agree_to_levels: '',
     client_notes: '', signature: '',
@@ -403,6 +403,7 @@ function ApplicationForm() {
             {(form.on_probation === 'Yes' || form.on_parole === 'Yes') && <>
               <Row label="Probation / Parole Officer Name"><Input value={form.po_name} onChange={v => set('po_name', v)} /></Row>
               <Row label="Probation / Parole Officer Phone"><Input value={form.po_phone} onChange={v => set('po_phone', v)} /></Row>
+              <Row label="Probation / Parole Officer Email"><Input value={form.po_email} onChange={v => set('po_email', v)} /></Row>
             </>}
             <Row label="Criminal History (describe everything in last 5 years) *"><Textarea value={form.criminal_history} onChange={v => set('criminal_history', v)} /></Row>
             <Row label="Are you a Registered Sex Offender? *"><Select value={form.sex_offender} onChange={v => set('sex_offender', v)} options={['Yes', 'No']} /></Row>
