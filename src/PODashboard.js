@@ -9,17 +9,26 @@ export default function PODashboard() {
   const [selected, setSelected] = useState(null);
 
   const fetchClients = useCallback(async () => {
-    if (!user?.email) return;
-    const emailLower = user.email.toLowerCase();
-    const { data, error } = await supabase
-      .from('clients')
-      .select('id, full_name, first_name, last_name, status, level, house_id, start_date, photo_url, program_type, application_type, houses(name)')
-      .filter('po_email', 'ilike', emailLower);
-    if (error) console.error('PODashboard fetch error:', error);
-    console.log('PO email:', emailLower, 'Results:', data?.length, data);
-    setClients(data || []);
+    if (!user?.id) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch('https://pmvxnetpbxuzkrxitioc.supabase.co/functions/v1/get-po-clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc',
+        },
+      });
+      const json = await res.json();
+      if (json.error) console.error('PO clients error:', json.error);
+      setClients(json.clients || []);
+    } catch (err) {
+      console.error('fetchClients error:', err);
+    }
     setLoading(false);
-  }, [user?.email]);
+  }, [user?.id]);
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
