@@ -45,6 +45,7 @@ export function UserProvider({ user, children }) {
   const isUpperManagement = role === 'upper_management';
   const isHeadHouseManager = role === 'head_house_manager';
   const isHouseManager = role === 'house_manager';
+  const isParoleOfficer = role === 'parole_officer';
 
   // Full access roles
   const hasFullAccess = isAdmin || isUpperManagement;
@@ -59,6 +60,7 @@ export function UserProvider({ user, children }) {
   const canSeeReports = hasFullAccess;
   const canSeeUserManagement = isAdmin;
   const canAddOrgEvents = isAdmin || isUpperManagement || canManageOrgEvents;
+  const canCreatePOAccounts = isAdmin || isUpperManagement;
   const canSeeHouses = true; // all roles
   const canSeeClients = true; // all roles, but filtered for house managers
 
@@ -80,6 +82,8 @@ export function UserProvider({ user, children }) {
       canSeeReports,
       canSeeUserManagement,
       canAddOrgEvents,
+      canCreatePOAccounts,
+      isParoleOfficer,
       canSeeHouses,
       canSeeClients,
     }}>

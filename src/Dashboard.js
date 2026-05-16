@@ -13,6 +13,8 @@ import Reports from './Reports';
 import Calendars from './Calendars';
 import Resources from './Resources';
 import EmailSettings from './EmailSettings';
+import PODashboard from './PODashboard';
+import klLogo from './kingdom-living-logo.jpg';
 
 const DEFAULT_NOTIF_PREFS = {
   client_status_change: true,
@@ -531,6 +533,7 @@ function DashboardInner({ user }) {
     canSeeUserManagement,
     isAdmin,
     isUpperManagement,
+    isParoleOfficer,
   } = useUser();
 
   useEffect(() => {
@@ -582,6 +585,27 @@ function DashboardInner({ user }) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#1a1a1a' }}>
         <p style={{ color: '#999', fontSize: '14px' }}>Loading...</p>
+      </div>
+    );
+  }
+
+  // Parole Officer gets their own restricted view
+  if (isParoleOfficer) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#111', padding: '32px 24px', maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <img src={klLogo} alt="KL" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover' }} />
+            <div>
+              <p style={{ color: '#fff', fontWeight: '700', fontSize: '16px', margin: 0 }}>KL Hub</p>
+              <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>Parole Officer Portal</p>
+            </div>
+          </div>
+          <button onClick={() => supabase.auth.signOut()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            Sign Out
+          </button>
+        </div>
+        <PODashboard />
       </div>
     );
   }

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { useUser } from './UserContext';
 
 const ROLES = [
   { value: 'admin', label: 'Admin' },
   { value: 'upper_management', label: 'Upper Management' },
   { value: 'head_house_manager', label: 'Head House Manager' },
   { value: 'house_manager', label: 'House Manager' },
+  { value: 'parole_officer', label: 'Parole Officer' },
 ];
 
 const ROLE_COLORS = {
@@ -13,11 +15,20 @@ const ROLE_COLORS = {
   upper_management: { bg: '#3a1e1e', color: '#f87171' },
   head_house_manager: { bg: '#2d1e3a', color: '#c084fc' },
   house_manager: { bg: '#1e3a2f', color: '#4ade80' },
+  parole_officer: { bg: '#1e2d3a', color: '#60a5fa' },
 };
 
 const PRESET_GROUP_NAMES = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
 
 function UserManagement({ currentUser }) {
+  const { canCreatePOAccounts, isAdmin, isUpperManagement } = useUser();
+
+  // Roles available to create based on current user's role
+  const availableRoles = ROLES.filter(r => {
+    if (isAdmin) return true; // admin can create all roles
+    if (isUpperManagement) return ['upper_management', 'head_house_manager', 'house_manager', 'parole_officer'].includes(r.value);
+    return ['head_house_manager', 'house_manager'].includes(r.value); // house managers can only create house manager roles
+  });
   const [users, setUsers] = useState([]);
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -318,7 +329,7 @@ function UserManagement({ currentUser }) {
             <div>
               <label style={s.label}>Role *</label>
               <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} style={s.input}>
-                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                {availableRoles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </div>
           </div>
