@@ -129,16 +129,18 @@ export default function Reports() {
   const [waitingList, setWaitingList] = useState([]);
   const [houses, setHouses] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [maintenanceRequests, setMaintenanceRequests] = useState([]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [clientsRes, staysRes, paymentsRes, waitingRes, housesRes, appsRes] = await Promise.all([
+    const [clientsRes, staysRes, paymentsRes, waitingRes, housesRes, appsRes, maintRes] = await Promise.all([
       supabase.from('clients').select('*'),
       supabase.from('client_stays').select('*'),
       supabase.from('payments').select('*'),
       supabase.from('waiting_list').select('*'),
       supabase.from('houses').select('*'),
       supabase.from('applications').select('id, gender, created_at, status'),
+      supabase.from('maintenance_requests').select('*'),
     ]);
     setClients(clientsRes.data || []);
     setStays(staysRes.data || []);
@@ -146,6 +148,7 @@ export default function Reports() {
     setWaitingList(waitingRes.data || []);
     setHouses(housesRes.data || []);
     setApplications(appsRes.data || []);
+    setMaintenanceRequests(maintRes.data || []);
     setLoading(false);
   }, []);
 
@@ -271,6 +274,7 @@ export default function Reports() {
         <button style={tabBtn('monthly')} onClick={() => setActiveTab('monthly')}>Monthly Report</button>
         <button style={tabBtn('yearly')} onClick={() => setActiveTab('yearly')}>Year-by-Year</button>
         <button style={tabBtn('levels')} onClick={() => setActiveTab('levels')}>Levels</button>
+        <button style={tabBtn('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
       </div>
 
       {/* ── WEEKLY ──────────────────────────────────────────────────────────── */}
@@ -565,6 +569,131 @@ function LevelsReport({ clients, houses }) {
           </table>
         </div>
       </div>
+
+      {/* ── MAINTENANCE ─────────────────────────────────────────────────────── */}
+      {activeTab === 'maintenance' && (() => {
+        const open = maintenanceRequests.filter(r => r.status === 'Open');
+        const inProgress = maintenanceRequests.filter(r => r.status === 'In Progress');
+        const completed = maintenanceRequests.filter(r => r.status === 'Completed');
+
+        // Average resolution time (days from submitted_at to service_date for completed)
+        const resolved = completed.filter(r => r.submitted_at && r.service_date);
+        const avgDays = resolved.length
+          ? Math.round(resolved.reduce((sum, r) => {
+              return sum + (new Date(r.service_date) - new Date(r.submitted_at)) / (1000 * 60 * 60 * 24);
+            }, 0) / resolved.length)
+          : null;
+
+        // By house
+        const byHouse = {};
+        maintenanceRequests.forEach(r => {
+          const key = r.house_name || 'Unknown';
+          if (!byHouse[key]) byHouse[key] = { Open: 0, 'In Progress': 0, Completed: 0, total: 0 };
+          byHouse[key][r.status] = (byHouse[key][r.status] || 0) + 1;
+          byHouse[key].total++;
+        });
+
+        // By issue type
+        const byType = {};
+        maintenanceRequests.forEach(r => {
+          const key = r.issue_type || 'Other';
+          byType[key] = (byType[key] || 0) + 1;
+        });
+
+        const statBox = (label, value, color) => (
+          <div style={{ background: '#1e1e1e', borderRadius: 10, padding: '18px 24px', border: `1px solid ${color}33` }}>
+            <div style={{ fontSize: 32, fontWeight: 700, color }}>{value}</div>
+            <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: '0.07em', marginTop: 4 }}>{label}</div>
+          </div>
+        );
+
+        return (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 28 }}>
+              {statBox('Open', open.length, '#f87171')}
+              {statBox('In Progress', inProgress.length, '#fb923c')}
+              {statBox('Completed', completed.length, '#4ade80')}
+              {statBox('Total', maintenanceRequests.length, '#60a5fa')}
+              {statBox('Avg Days to Resolve', avgDays !== null ? avgDays : '—', '#a78bfa')}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+              {/* By House */}
+              <div>
+                <div style={{ fontSize: 13, color: '#aaa', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.07em' }}>By House</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #333' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#666', fontWeight: 600 }}>House</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#f87171', fontWeight: 600 }}>Open</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#fb923c', fontWeight: 600 }}>In Progress</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#4ade80', fontWeight: 600 }}>Done</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(byHouse).sort((a, b) => b[1].total - a[1].total).map(([house, counts]) => (
+                      <tr key={house} style={{ borderBottom: '1px solid #222' }}>
+                        <td style={{ padding: '7px 10px', color: '#ddd' }}>{house}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#f87171' }}>{counts['Open'] || 0}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#fb923c' }}>{counts['In Progress'] || 0}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#4ade80' }}>{counts['Completed'] || 0}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* By Issue Type */}
+              <div>
+                <div style={{ fontSize: 13, color: '#aaa', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.07em' }}>By Issue Type</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #333' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#666', fontWeight: 600 }}>Type</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#666', fontWeight: 600 }}>Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
+                      <tr key={type} style={{ borderBottom: '1px solid #222' }}>
+                        <td style={{ padding: '7px 10px', color: '#ddd' }}>{type}</td>
+                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#60a5fa', fontWeight: 600 }}>{count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Recent completions */}
+            <div style={{ fontSize: 13, color: '#aaa', fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Recent Completions</div>
+            {completed.length === 0 ? (
+              <p style={{ color: '#666', fontSize: 13, fontStyle: 'italic' }}>No completed requests yet.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #333' }}>
+                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#666', fontWeight: 600 }}>House</th>
+                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#666', fontWeight: 600 }}>Issue</th>
+                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#666', fontWeight: 600 }}>Submitted</th>
+                    <th style={{ textAlign: 'left', padding: '6px 10px', color: '#666', fontWeight: 600 }}>Resolved</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completed.slice(0, 10).map(r => (
+                    <tr key={r.id} style={{ borderBottom: '1px solid #222' }}>
+                      <td style={{ padding: '7px 10px', color: '#ddd' }}>{r.house_name || '—'}</td>
+                      <td style={{ padding: '7px 10px', color: '#ddd' }}>{r.issue_type || '—'}</td>
+                      <td style={{ padding: '7px 10px', color: '#888' }}>{r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
+                      <td style={{ padding: '7px 10px', color: '#4ade80' }}>{r.service_date ? new Date(r.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
