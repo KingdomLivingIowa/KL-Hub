@@ -572,6 +572,9 @@ function LevelsReport({ clients, houses }) {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
 
 // ─── Maintenance Report Component ────────────────────────────────────────────
 function MaintenanceReport({ maintenanceRequests }) {
