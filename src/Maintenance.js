@@ -18,7 +18,7 @@ const ISSUE_TYPE_COLORS = {
 };
 
 export default function Maintenance() {
-  const { isAdmin, isUpperManagement, hasFullAccess, assignedHouseIds, isHouseManagerRole } = useUser();
+  const { assignedHouseIds, isHouseManagerRole } = useUser();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
