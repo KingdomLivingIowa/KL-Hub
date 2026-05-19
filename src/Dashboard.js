@@ -14,6 +14,7 @@ import Calendars from './Calendars';
 import Resources from './Resources';
 import EmailSettings from './EmailSettings';
 import PODashboard from './PODashboard';
+import Maintenance from './Maintenance';
 import klLogo from './kingdom-living-logo.jpg';
 
 const DEFAULT_NOTIF_PREFS = {
@@ -534,6 +535,7 @@ function DashboardInner({ user }) {
     isAdmin,
     isUpperManagement,
     isParoleOfficer,
+    canSeeMaintenancePage,
   } = useUser();
 
   useEffect(() => {
@@ -561,6 +563,7 @@ function DashboardInner({ user }) {
     { id: 'messages', label: 'Messages', show: true },
     { id: 'payments', label: 'Payments', show: hasFullAccess },
     { id: 'reports', label: 'Reports', show: canSeeReports },
+    { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage },
     { id: 'calendars', label: 'Calendars', show: true },
     { id: 'resources', label: 'Resources', show: true },
   ].filter(item => item.show);
@@ -683,6 +686,7 @@ function DashboardInner({ user }) {
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'reports' && canSeeReports && <Reports />}
+          {activePage === 'maintenance' && canSeeMaintenancePage && <Maintenance />}
           {activePage === 'calendars' && <Calendars />}
           {activePage === 'resources' && <Resources />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}

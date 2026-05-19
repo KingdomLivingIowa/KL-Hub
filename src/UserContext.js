@@ -6,6 +6,8 @@ const UserContext = createContext(null);
 export function UserProvider({ user, children }) {
   const [role, setRole] = useState(null);
   const [canManageOrgEvents, setCanManageOrgEvents] = useState(false);
+  const [canSeeMaintenance, setCanSeeMaintenance] = useState(false);
+  const [canSeeReports, setCanSeeReports] = useState(false);
   const [assignedHouseIds, setAssignedHouseIds] = useState([]);
   const [loadingRole, setLoadingRole] = useState(true);
 
@@ -20,13 +22,15 @@ export function UserProvider({ user, children }) {
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role, can_manage_org_events')
+      .select('role, can_manage_org_events, can_see_maintenance, can_see_reports')
       .eq('id', user.id)
       .single();
 
     if (profile) {
       setRole(profile.role);
       setCanManageOrgEvents(profile.can_manage_org_events || false);
+      setCanSeeMaintenance(profile.can_see_maintenance || false);
+      setCanSeeReports(profile.can_see_reports || false);
 
       // Only fetch house assignments for house manager roles
       if (profile.role === 'house_manager' || profile.role === 'head_house_manager') {
@@ -57,10 +61,11 @@ export function UserProvider({ user, children }) {
   const canSeeAdmissions = hasFullAccess;
   const canSeeWaitingList = hasFullAccess;
   const canSeeIntake = hasFullAccess;
-  const canSeeReports = hasFullAccess;
+  const canSeeReportsPage = hasFullAccess || canSeeReports;
   const canSeeUserManagement = isAdmin;
   const canAddOrgEvents = isAdmin || isUpperManagement || canManageOrgEvents;
   const canCreatePOAccounts = isAdmin || isUpperManagement;
+  const canSeeMaintenancePage = hasFullAccess || canSeeMaintenance;
   const canSeeHouses = true; // all roles
   const canSeeClients = true; // all roles, but filtered for house managers
 
@@ -79,11 +84,12 @@ export function UserProvider({ user, children }) {
       canSeeAdmissions,
       canSeeWaitingList,
       canSeeIntake,
-      canSeeReports,
+      canSeeReports: canSeeReportsPage,
       canSeeUserManagement,
       canAddOrgEvents,
       canCreatePOAccounts,
       isParoleOfficer,
+      canSeeMaintenancePage,
       canSeeHouses,
       canSeeClients,
     }}>

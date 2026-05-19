@@ -16,6 +16,12 @@ const NOTIFICATION_TYPES = [
     description: 'Weekly list of clients who received an infraction in the past 7 days.',
   },
   {
+    id: 'maintenance_request',
+    icon: '🔧',
+    label: 'Maintenance Request',
+    description: 'Sent when a house manager submits a new maintenance request.',
+  },
+  {
     id: 'house_report',
     icon: '📋',
     label: 'Weekly House Report',

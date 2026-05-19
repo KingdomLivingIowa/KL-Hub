@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
-const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection', 'Maintenance/Repair', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory'];
+const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection', 'Maintenance/Repair', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory', 'Maintenance Request'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -387,6 +387,35 @@ function Houses({ onOpenClient }) {
       inspection_result: entryType === 'House Inspection' ? entryForm.inspection_result : null,
       maintenance_status: entryType === 'Maintenance/Repair' ? entryForm.maintenance_status : null,
     }]);
+
+    // If Maintenance Request, also create in maintenance_requests table
+    if (entryType === 'Maintenance Request') {
+      await supabase.from('maintenance_requests').insert([{
+        house_id: selected.id,
+        house_name: selected.name,
+        issue_type: entryForm.issue_type || null,
+        issue_location: entryForm.issue_location || null,
+        description: entryForm.notes || null,
+        previously_submitted: entryForm.previously_submitted || 'No',
+        submitted_by: entryForm.author,
+        status: 'Open',
+      }]);
+
+      // Fire email notification
+      const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+      fetch('https://pmvxnetpbxuzkrxitioc.supabase.co/functions/v1/maintenance-request-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+        body: JSON.stringify({
+          house_name: selected.name,
+          issue_type: entryForm.issue_type,
+          issue_location: entryForm.issue_location,
+          description: entryForm.notes,
+          submitted_by: entryForm.author,
+          previously_submitted: entryForm.previously_submitted,
+        }),
+      }).catch(err => console.error('Maintenance notify error:', err));
+    }
     if (error) { alert('Error: ' + error.message); return; }
     if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
       const relevantResidents = resData.filter(r => r.value);
@@ -450,6 +479,7 @@ function Houses({ onOpenClient }) {
     if (type === 'House Inspection') return '#06b6d4';
     if (type === 'House Meeting Notes') return '#84cc16';
     if (type === 'Supplies/Inventory') return '#e879f9';
+    if (type === 'Maintenance Request') return '#f97316';
     return '#bbb';
   };
 
@@ -768,6 +798,33 @@ function Houses({ onOpenClient }) {
                             ))}
                           </div>
                         </div>
+                      )}
+                      {entryType === 'Maintenance Request' && (
+                        <>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={s.label}>Issue Type *</label>
+                            <select value={entryForm.issue_type || ''} onChange={e => setEntryForm(p => ({ ...p, issue_type: e.target.value }))} style={s.input}>
+                              <option value="">Select issue type...</option>
+                              {['Safety & Security', 'Plumbing', 'Electrical', 'HVAC', 'Appliances', 'Other'].map(t => (
+                                <option key={t} value={t}>{t}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={s.label}>Location in house *</label>
+                            <input value={entryForm.issue_location || ''} onChange={e => setEntryForm(p => ({ ...p, issue_location: e.target.value }))} style={s.input} placeholder="e.g. Upstairs bathroom, left bedroom..." />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={s.label}>Previously submitted?</label>
+                            <div style={{ display: 'flex', gap: '16px' }}>
+                              {['Yes', 'No'].map(opt => (
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                  <input type="radio" name="prev_submitted" value={opt} checked={entryForm.previously_submitted === opt} onChange={() => setEntryForm(p => ({ ...p, previously_submitted: opt }))} />{opt}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </>
                       )}
                       {entryType === 'Event Attendance' && (
                         <div style={{ marginBottom: '12px' }}>

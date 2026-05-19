@@ -168,6 +168,18 @@ function UserManagement({ currentUser }) {
     setUsers(prev => prev.map(u => u.id === userId ? { ...u, can_manage_org_events: newValue } : u));
   };
 
+  const toggleMaintenancePermission = async (userId, currentValue) => {
+    const newValue = !currentValue;
+    await supabase.from('user_profiles').update({ can_see_maintenance: newValue }).eq('id', userId);
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, can_see_maintenance: newValue } : u));
+  };
+
+  const toggleReportsPermission = async (userId, currentValue) => {
+    const newValue = !currentValue;
+    await supabase.from('user_profiles').update({ can_see_reports: newValue }).eq('id', userId);
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, can_see_reports: newValue } : u));
+  };
+
   const toggleGroupMembership = async (userId, groupId, isMember) => {
     const key = `${userId}-${groupId}`;
     setTogglingGroup(prev => ({ ...prev, [key]: true }));
@@ -418,14 +430,18 @@ function UserManagement({ currentUser }) {
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => toggleOrgEventPermission(u.id, u.can_manage_org_events)}
-                        style={{
-                          padding: '4px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontWeight: '500',
-                          border: u.can_manage_org_events ? 'none' : '1px dashed #444',
-                          background: u.can_manage_org_events ? '#1e3a2a' : 'transparent',
-                          color: u.can_manage_org_events ? '#4ade80' : '#bbb',
-                          transition: 'all 0.15s',
-                        }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontWeight: '500', border: u.can_manage_org_events ? 'none' : '1px dashed #444', background: u.can_manage_org_events ? '#1e3a2a' : 'transparent', color: u.can_manage_org_events ? '#4ade80' : '#bbb', transition: 'all 0.15s' }}>
                         {u.can_manage_org_events ? '✓ ' : '+ '}Can Add Org Events
+                      </button>
+                      <button
+                        onClick={() => toggleMaintenancePermission(u.id, u.can_see_maintenance)}
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontWeight: '500', border: u.can_see_maintenance ? 'none' : '1px dashed #444', background: u.can_see_maintenance ? '#1e3a2a' : 'transparent', color: u.can_see_maintenance ? '#4ade80' : '#bbb', transition: 'all 0.15s' }}>
+                        {u.can_see_maintenance ? '✓ ' : '+ '}Can See Maintenance
+                      </button>
+                      <button
+                        onClick={() => toggleReportsPermission(u.id, u.can_see_reports)}
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', cursor: 'pointer', fontWeight: '500', border: u.can_see_reports ? 'none' : '1px dashed #444', background: u.can_see_reports ? '#1e3a2a' : 'transparent', color: u.can_see_reports ? '#4ade80' : '#bbb', transition: 'all 0.15s' }}>
+                        {u.can_see_reports ? '✓ ' : '+ '}Can See Reports
                       </button>
                     </div>
                   </div>
