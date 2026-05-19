@@ -1939,12 +1939,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 )}
                 {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
                 {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
-                {isAdmin && (
-                  <button onClick={() => deleteClient(selected)}
-                    style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    🗑 Delete
-                  </button>
-                )}
                 <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
               </div>
             </div>
@@ -2608,6 +2602,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#999', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
+
+              {/* Delete button at bottom — admin only */}
+              {isAdmin && (
+                <div style={{ padding: '20px 0 8px', display: 'flex', justifyContent: 'center' }}>
+                  <button onClick={() => deleteClient(selected)}
+                    style={{ background: 'transparent', border: '1px solid #3a1a1a', color: '#666', fontSize: '11px', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', letterSpacing: '0.5px' }}>
+                    🗑 Delete Client
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
