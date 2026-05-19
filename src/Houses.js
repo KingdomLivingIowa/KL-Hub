@@ -1001,7 +1001,10 @@ function Houses({ onOpenClient }) {
               )}
 
               {activeTab === 'forms' && (
-                <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} />
+                <div>
+                  <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} />
+                  <OvernightRequestsTab houseId={selected.id} houseName={selected.name} />
+                </div>
               )}
             </div>
           </div>
@@ -1352,6 +1355,143 @@ function MoveOutRequestsTab({ houseId, houseName }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function OvernightRequestsTab({ houseId, houseName }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('pending');
+  const [reviewing, setReviewing] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ decision: '', notes: '' });
+  const [saving, setSaving] = useState(false);
+  const { user } = useUser();
+
+  const fetchRequests = async () => {
+    let q = supabase.from('overnight_requests').select('*').eq('house_id', houseId).order('created_at', { ascending: false });
+    if (filter !== 'all') q = q.eq('status', filter);
+    const { data } = await q;
+    setRequests(data || []);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchRequests(); }, [houseId, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleReview = async (decision) => {
+    if (!reviewing) return;
+    setSaving(true);
+    await supabase.from('overnight_requests').update({
+      status: decision,
+      review_notes: reviewForm.notes || null,
+      reviewed_by: user?.email || null,
+      reviewed_at: new Date().toISOString(),
+    }).eq('id', reviewing.id);
+
+    // Notify client via in-app notification
+    const { data: clientData } = await supabase.from('clients').select('auth_user_id').eq('id', reviewing.client_id).single();
+    if (clientData?.auth_user_id) {
+      await supabase.from('notifications').insert([{
+        user_id: clientData.auth_user_id,
+        type: 'overnight_request',
+        message: `Your overnight pass request (${new Date(reviewing.departure_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}) has been ${decision}.${reviewForm.notes ? ` Note: ${reviewForm.notes}` : ''}`,
+        read: false,
+      }]);
+    }
+
+    setReviewing(null);
+    setReviewForm({ decision: '', notes: '' });
+    setSaving(false);
+    fetchRequests();
+  };
+
+  const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+  const statusColor = (s) => s === 'approved' ? '#4ade80' : s === 'denied' ? '#f87171' : '#fb923c';
+  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#3a0f0f' : '#3a2d1e';
+
+  return (
+    <div style={{ marginTop: '28px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <h4 style={{ color: '#fff', margin: 0, fontSize: '15px' }}>🌙 Overnight Pass Requests</h4>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {['pending', 'approved', 'denied', 'all'].map(f => (
+            <button key={f} onClick={() => setFilter(f)}
+              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #333', color: filter === f ? '#fff' : '#888', textTransform: 'capitalize' }}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? <p style={{ color: '#888', fontSize: '13px' }}>Loading...</p>
+        : requests.length === 0 ? <p style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>No overnight requests found.</p>
+        : requests.map(req => (
+          <div key={req.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+              <div>
+                <p style={{ color: '#fff', fontWeight: '600', fontSize: '14px', margin: '0 0 3px' }}>{req.client_name}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>
+                  {fmt(req.departure_datetime)} → {fmt(req.return_datetime)}
+                </p>
+              </div>
+              <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', background: statusBg(req.status), color: statusColor(req.status), textTransform: 'capitalize' }}>
+                {req.status}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+              <div>
+                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>{req.reason || '—'}</p>
+              </div>
+              <div>
+                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>{req.location || '—'}</p>
+              </div>
+              <div>
+                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>{req.who_seeing || '—'}</p>
+              </div>
+              <div>
+                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
+                <p style={{ color: '#ddd', fontSize: '13px', margin: 0, fontStyle: 'italic' }}>{req.signature || '—'}</p>
+              </div>
+            </div>
+            {req.review_notes && (
+              <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 10px', padding: '6px 10px', background: '#111', borderRadius: '6px' }}>
+                Review note: {req.review_notes}
+              </p>
+            )}
+            {req.status === 'pending' && (
+              reviewing?.id === req.id ? (
+                <div>
+                  <textarea value={reviewForm.notes} onChange={e => setReviewForm(p => ({ ...p, notes: e.target.value }))}
+                    placeholder="Optional note to client..." rows={2}
+                    style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '13px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => handleReview('approved')} disabled={saving}
+                      style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                      ✓ Approve
+                    </button>
+                    <button onClick={() => handleReview('denied')} disabled={saving}
+                      style={{ flex: 1, background: '#b22222', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                      ✗ Deny
+                    </button>
+                    <button onClick={() => setReviewing(null)}
+                      style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => { setReviewing(req); setReviewForm({ decision: '', notes: '' }); }}
+                  style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+                  Review Request
+                </button>
+              )
+            )}
+          </div>
+        ))
+      }
     </div>
   );
 }

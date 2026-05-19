@@ -797,11 +797,18 @@ function LatestCheckIn({ clientId }) {
 
 function ClientFormsTab({ client }) {
   const [packet, setPacket] = useState(null);
+  const [overnights, setOvernights] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('welcome_packets').select('*').eq('client_id', client.id).maybeSingle()
-      .then(({ data }) => { setPacket(data); setLoading(false); });
+    Promise.all([
+      supabase.from('welcome_packets').select('*').eq('client_id', client.id).maybeSingle(),
+      supabase.from('overnight_requests').select('*').eq('client_id', client.id).order('created_at', { ascending: false }),
+    ]).then(([wpRes, orRes]) => {
+      setPacket(wpRes.data);
+      setOvernights(orRes.data || []);
+      setLoading(false);
+    });
   }, [client.id]);
 
   const generateWelcomePDF = (p) => {
@@ -965,6 +972,32 @@ function ClientFormsTab({ client }) {
       <Section title="Signature" />
       <Row label="I Testify That" value={packet.signature_testify} />
       <Row label="I Understand That" value={packet.signature_understand} />
+
+      {/* Overnight Requests */}
+      {overnights.length > 0 && (
+        <div style={{ marginTop: '24px' }}>
+          <div style={{ padding: '12px 0 8px', borderTop: '1px solid #222' }}>
+            <p style={{ fontSize: '11px', color: '#b22222', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', margin: 0 }}>Overnight Pass Requests</p>
+          </div>
+          {overnights.map(req => {
+            const sc = req.status === 'approved' ? { bg: '#14532d', color: '#4ade80' } : req.status === 'denied' ? { bg: '#3a0f0f', color: '#f87171' } : { bg: '#3a2d1e', color: '#fb923c' };
+            const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
+            return (
+              <div key={req.id} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <p style={{ color: '#ddd', fontSize: '13px', margin: 0, fontWeight: '500' }}>
+                    {fmt(req.departure_datetime)} → {fmt(req.return_datetime)}
+                  </p>
+                  <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '600', background: sc.bg, color: sc.color, textTransform: 'capitalize' }}>{req.status}</span>
+                </div>
+                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>📍 {req.location || '—'} · 👤 {req.who_seeing || '—'}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Reason: {req.reason || '—'}</p>
+                {req.review_notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0', fontStyle: 'italic' }}>Note: {req.review_notes}</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

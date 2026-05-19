@@ -9,6 +9,7 @@ export const NOTIF_TYPES = {
   CLIENT_WEEKLY_CHECKIN: 'client_weekly_checkin',
   MOVE_OUT_REQUEST: 'move_out_request',
   CONFIRMED_MOVE_IN: 'confirmed_move_in',
+  OVERNIGHT_REQUEST: 'overnight_request',
 };
 
 export const DEFAULT_PREFERENCES = {
@@ -19,6 +20,7 @@ export const DEFAULT_PREFERENCES = {
   [NOTIF_TYPES.CLIENT_WEEKLY_CHECKIN]: true,
   [NOTIF_TYPES.MOVE_OUT_REQUEST]: true,
   [NOTIF_TYPES.CONFIRMED_MOVE_IN]: true,
+  [NOTIF_TYPES.OVERNIGHT_REQUEST]: true,
 };
 
 export const NOTIF_LABELS = {
@@ -29,6 +31,7 @@ export const NOTIF_LABELS = {
   [NOTIF_TYPES.CLIENT_WEEKLY_CHECKIN]: 'Weekly check-in submitted (portal)',
   [NOTIF_TYPES.MOVE_OUT_REQUEST]: 'Move-out request submitted',
   [NOTIF_TYPES.CONFIRMED_MOVE_IN]: 'Confirmed move-in',
+  [NOTIF_TYPES.OVERNIGHT_REQUEST]: 'Overnight pass request submitted',
 };
 
 // Get house managers assigned to a given house, filtered by their preferences
