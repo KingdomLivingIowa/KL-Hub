@@ -783,8 +783,13 @@ function Admissions() {
 
             <div style={s.modalActions}>
               {!duplicateModal.client.isApplication && (
-                <button style={s.mergeBtn} onClick={handleMerge} disabled={merging}>
-                  {merging ? 'Merging...' : 'Merge into Existing Client'}
+                <button style={s.mergeBtn} onClick={async () => {
+                  // Fetch full client data then open wizard
+                  const { data: fullClient } = await supabase.from('clients').select('*').eq('id', duplicateModal.client.id).single();
+                  setMergeReturningModal({ app: duplicateModal.app, existingClient: fullClient || duplicateModal.client });
+                  setDuplicateModal(null);
+                }}>
+                  🧙 Open Merge Wizard
                 </button>
               )}
               <button style={s.ignoreBtn} onClick={handleIgnore}>
