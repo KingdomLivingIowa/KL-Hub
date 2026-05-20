@@ -21,6 +21,7 @@ function Admissions() {
   const [expanded, setExpanded] = useState(null);
   const [duplicateModal, setDuplicateModal] = useState(null);
   const [mergeReturningModal, setMergeReturningModal] = useState(null);
+  const [mergeWizardOpen, setMergeWizardOpen] = useState(false);
   const [merging, setMerging] = useState(false);
   const [acceptingId, setAcceptingId] = useState(null);
 
@@ -487,18 +488,19 @@ function Admissions() {
           <button style={s.viewBtn} onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
             {expanded === app.id ? 'Hide Application' : 'View Full Application'}
           </button>
-          {app.auto_flag?.includes('returning_merge') && app.status === 'pending' && (
+            {app.auto_flag?.includes('returning_merge') && app.status === 'pending' && (
             <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
                 const { data: existing } = await supabase.from('clients')
-                  .select('id, full_name, email, status')
+                  .select('*')
                   .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
                   .limit(1).maybeSingle();
                 setMergeReturningModal({ app, existingClient: existing || { id: null, full_name: 'unknown', email: '' } });
+                setMergeWizardOpen(false);
               }}>
               🔄 Merge with Existing
             </button>
-          )}          {app.status === 'pending' && (
+            )}          {app.status === 'pending' && (
             <>
               <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
                 {acceptingId === app.id ? 'Accepting...' : 'Accept'}
@@ -797,25 +799,72 @@ function Admissions() {
       )}
 
       {/* Merge Returning Client Modal */}
-      {mergeReturningModal && (
+      {mergeReturningModal && !mergeWizardOpen && (
         <div style={s.modalOverlay} onClick={() => setMergeReturningModal(null)}>
-          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+          <div style={{ ...s.modalBox, maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '16px' }}>Merge with Existing Profile</h3>
-            <p style={{ color: '#999', fontSize: '13px', margin: '0 0 16px 0' }}>
-              This will update <strong style={{ color: '#ddd' }}>{mergeReturningModal.existingClient?.full_name || 'the existing client'}</strong>'s profile with the new application data and set their status to Accepted.
+            <p style={{ color: '#999', fontSize: '13px', margin: '0 0 20px 0' }}>
+              Choose how to handle the merge — quick auto-merge or review each field with the wizard.
             </p>
-            <div style={{ background: '#222', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-              <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 4px 0' }}>New application from: <strong style={{ color: '#fff' }}>{mergeReturningModal.app.first_name} {mergeReturningModal.app.last_name}</strong></p>
-              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Will merge into: <strong style={{ color: '#60a5fa' }}>{mergeReturningModal.existingClient?.full_name}</strong></p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ background: '#1e3a2f', border: '1px solid #2a5a3a', borderRadius: '10px', padding: '14px' }}>
+                <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>Existing Client</p>
+                <p style={{ color: '#fff', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.existingClient?.full_name}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>{mergeReturningModal.existingClient?.email}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Status: {mergeReturningModal.existingClient?.status}</p>
+              </div>
+              <div style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', borderRadius: '10px', padding: '14px' }}>
+                <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>New Application</p>
+                <p style={{ color: '#fff', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.app.first_name} {mergeReturningModal.app.last_name}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>{mergeReturningModal.app.email}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Applied: {mergeReturningModal.app.created_at ? new Date(mergeReturningModal.app.created_at).toLocaleDateString() : '—'}</p>
+              </div>
             </div>
-            <div style={s.modalActions}>
-              <button style={s.mergeBtn} onClick={handleMergeReturning} disabled={merging}>
-                {merging ? 'Merging...' : 'Confirm Merge'}
+            <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', marginBottom: '20px' }}>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>
+                ℹ️ The existing client's ID and history (payments, timeline, UAs, stays) will be fully preserved. Only profile fields will be updated.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleMergeReturning} disabled={merging}
+                style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                {merging ? 'Merging...' : '⚡ Quick Merge'}
               </button>
-              <button style={s.cancelBtn} onClick={() => setMergeReturningModal(null)}>Cancel</button>
+              <button onClick={() => setMergeWizardOpen(true)}
+                style={{ flex: 1, background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                🧙 Merge Wizard
+              </button>
+              <button onClick={() => setMergeReturningModal(null)}
+                style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                Cancel
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Merge Wizard */}
+      {mergeReturningModal && mergeWizardOpen && (
+        <MergeWizard
+          app={mergeReturningModal.app}
+          existingClient={mergeReturningModal.existingClient}
+          onClose={() => { setMergeReturningModal(null); setMergeWizardOpen(false); }}
+          onMerge={async (mergedFields) => {
+            setMerging(true);
+            const { error } = await supabase.from('clients').update({
+              ...mergedFields,
+              application_id: mergeReturningModal.app.id,
+              status: 'Accepted',
+            }).eq('id', mergeReturningModal.existingClient.id);
+            if (error) { alert('Error merging: ' + error.message); setMerging(false); return; }
+            await supabase.from('applications').update({ merged: true }).eq('id', mergeReturningModal.app.id);
+            setMergeReturningModal(null);
+            setMergeWizardOpen(false);
+            fetchApplications();
+            fetchClients();
+            setMerging(false);
+          }}
+        />
       )}
     </div>
   );
@@ -1074,5 +1123,165 @@ const s = {
   ellipsis: { color: '#bbb', fontSize: '13px', padding: '0 4px' },
   pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
+
+// ── Merge Wizard ──────────────────────────────────────────────────────────────
+function MergeWizard({ app, existingClient, onClose, onMerge }) {
+  const FIELDS = [
+    { key: 'first_name', label: 'First Name', appKey: 'first_name' },
+    { key: 'last_name', label: 'Last Name', appKey: 'last_name' },
+    { key: 'date_of_birth', label: 'Date of Birth', appKey: 'date_of_birth' },
+    { key: 'email', label: 'Email', appKey: 'email' },
+    { key: 'phone', label: 'Phone', appKey: 'phone' },
+    { key: 'gender', label: 'Gender', appKey: 'assigned_sex' },
+    { key: 'ethnicity', label: 'Ethnicity', appKey: 'ethnicity' },
+    { key: 'marital_status', label: 'Marital Status', appKey: 'marital_status' },
+    { key: 'emergency_contact', label: 'Emergency Contact', appKey: 'emergency_contact' },
+    { key: 'po_name', label: 'PO Name', appKey: 'po_name' },
+    { key: 'po_phone', label: 'PO Phone', appKey: 'po_phone' },
+    { key: 'po_email', label: 'PO Email', appKey: 'po_email' },
+    { key: 'substance_history', label: 'Substance History', appKey: 'substance_history' },
+    { key: 'drug_of_choice', label: 'Drug of Choice', appKey: 'drug_of_choice' },
+    { key: 'sober_date', label: 'Sober Date', appKey: 'sober_date' },
+    { key: 'treatment_history', label: 'Treatment History', appKey: 'treatment_history' },
+    { key: 'on_probation', label: 'On Probation', appKey: 'on_probation' },
+    { key: 'on_parole', label: 'On Parole', appKey: 'on_parole' },
+    { key: 'sex_offender', label: 'Sex Offender', appKey: 'sex_offender' },
+  ];
+
+  // Initialize merged values — prefer existing client, fill gaps with app
+  const init = {};
+  FIELDS.forEach(f => {
+    const clientVal = existingClient[f.key];
+    const appVal = app[f.appKey];
+    init[f.key] = clientVal || appVal || '';
+  });
+
+  const [merged, setMerged] = useState(init);
+  const [editing, setEditing] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  const getAppVal = (f) => app[f.appKey] ?? '';
+  const getClientVal = (f) => existingClient[f.key] ?? '';
+  const fmt = (v) => v === null || v === undefined || v === '' ? '—' : String(v);
+
+  const handleMerge = async () => {
+    setSaving(true);
+    await onMerge(merged);
+    setSaving(false);
+  };
+
+  const ws = {
+    overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', overflowY: 'auto' },
+    box: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '820px', marginTop: '20px', marginBottom: '40px', overflow: 'hidden' },
+    header: { padding: '20px 24px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    colHeader: { padding: '10px 14px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' },
+    row: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #1e1e1e' },
+    cell: { padding: '10px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' },
+    label: { padding: '6px 14px 2px', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', background: '#141414' },
+    arrow: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '2px 6px', borderRadius: '4px', color: '#60a5fa' },
+    input: { background: '#111', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '5px 8px', fontSize: '13px', width: '100%', boxSizing: 'border-box' },
+  };
+
+  return (
+    <div style={ws.overlay} onClick={onClose}>
+      <div style={ws.box} onClick={e => e.stopPropagation()}>
+        <div style={ws.header}>
+          <div>
+            <p style={{ color: '#fff', fontWeight: '700', fontSize: '16px', margin: 0 }}>Merge Wizard</p>
+            <p style={{ color: '#888', fontSize: '12px', margin: '3px 0 0' }}>
+              Choose which value to keep for each field. The existing client's history is always preserved.
+            </p>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#888', fontSize: '20px', cursor: 'pointer' }}>×</button>
+        </div>
+
+        {/* Column headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#141414', borderBottom: '1px solid #2a2a2a' }}>
+          <div style={{ ...ws.colHeader, color: '#4ade80' }}>← Existing Client</div>
+          <div style={{ ...ws.colHeader, color: '#aaa' }}>Will Be Saved</div>
+          <div style={{ ...ws.colHeader, color: '#60a5fa' }}>New Application →</div>
+        </div>
+
+        {/* Client summary row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#1a2a1a', borderBottom: '1px solid #2a2a2a' }}>
+          <div style={{ ...ws.cell, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '13px', margin: 0 }}>{existingClient.full_name}</p>
+            <p style={{ color: '#888', fontSize: '11px', margin: 0 }}>Status: {existingClient.status}</p>
+          </div>
+          <div style={{ ...ws.cell, justifyContent: 'center' }}>
+            <span style={{ color: '#666', fontSize: '12px' }}>Merged result will update existing</span>
+          </div>
+          <div style={{ ...ws.cell, flexDirection: 'column', alignItems: 'flex-end' }}>
+            <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '13px', margin: 0 }}>{app.first_name} {app.last_name}</p>
+            <p style={{ color: '#888', fontSize: '11px', margin: 0 }}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
+          </div>
+        </div>
+
+        {/* Fields */}
+        <div style={{ maxHeight: '55vh', overflowY: 'auto' }}>
+          {FIELDS.map(f => {
+            const clientVal = getClientVal(f);
+            const appVal = getAppVal(f);
+            const isEditing = editing[f.key];
+            const same = fmt(clientVal) === fmt(appVal);
+
+            return (
+              <div key={f.key}>
+                <div style={{ ...ws.row, background: '#111' }}>
+                  <div style={{ ...ws.cell, fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', padding: '5px 14px 2px', background: '#141414' }}>
+                    {f.label}
+                  </div>
+                </div>
+                <div style={{ ...ws.row, background: same ? '#141414' : '#1a1a1a' }}>
+                  {/* Existing client value */}
+                  <div style={{ ...ws.cell, background: merged[f.key] === clientVal && !isEditing && clientVal ? '#1e3a2f' : 'transparent' }}>
+                    <button onClick={() => { setMerged(p => ({ ...p, [f.key]: clientVal })); setEditing(p => ({ ...p, [f.key]: false })); }}
+                      style={{ ...ws.arrow, color: '#4ade80' }} title="Use this value">→</button>
+                    <span style={{ color: clientVal ? '#ddd' : '#444' }}>{fmt(clientVal)}</span>
+                  </div>
+
+                  {/* Merged value (center) */}
+                  <div style={{ ...ws.cell, background: '#1a1a1a', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
+                    {isEditing ? (
+                      <input value={merged[f.key]} onChange={e => setMerged(p => ({ ...p, [f.key]: e.target.value }))}
+                        style={ws.input} autoFocus onBlur={() => setEditing(p => ({ ...p, [f.key]: false }))} />
+                    ) : (
+                      <span style={{ color: '#fff', fontWeight: '500', fontSize: '13px', textAlign: 'center' }}>
+                        {fmt(merged[f.key])}
+                      </span>
+                    )}
+                    <button onClick={() => setEditing(p => ({ ...p, [f.key]: true }))}
+                      style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '11px', cursor: 'pointer', padding: '0' }}>
+                      ✏️ edit
+                    </button>
+                  </div>
+
+                  {/* App value */}
+                  <div style={{ ...ws.cell, justifyContent: 'flex-end', background: merged[f.key] === appVal && !isEditing && appVal ? '#1e2d3a' : 'transparent' }}>
+                    <span style={{ color: appVal ? '#ddd' : '#444' }}>{fmt(appVal)}</span>
+                    <button onClick={() => { setMerged(p => ({ ...p, [f.key]: appVal })); setEditing(p => ({ ...p, [f.key]: false })); }}
+                      style={{ ...ws.arrow, color: '#60a5fa' }} title="Use this value">←</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #2a2a2a', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#141414' }}>
+          <button onClick={onClose}
+            style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            Cancel
+          </button>
+          <button onClick={handleMerge} disabled={saving}
+            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', opacity: saving ? 0.6 : 1 }}>
+            {saving ? 'Merging...' : '✓ Confirm Merge'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Admissions;
