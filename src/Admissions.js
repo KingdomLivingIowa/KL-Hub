@@ -1135,7 +1135,7 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
     { key: 'gender', label: 'Gender', appKey: 'assigned_sex' },
     { key: 'ethnicity', label: 'Ethnicity', appKey: 'ethnicity' },
     { key: 'marital_status', label: 'Marital Status', appKey: 'marital_status' },
-    { key: 'emergency_contact', label: 'Emergency Contact', appKey: 'emergency_contact' },
+    { key: 'emergency_contact_name', label: 'Emergency Contact', appKey: 'emergency_contact' },
     { key: 'po_name', label: 'PO Name', appKey: 'po_name' },
     { key: 'po_phone', label: 'PO Phone', appKey: 'po_phone' },
     { key: 'po_email', label: 'PO Email', appKey: 'po_email' },
