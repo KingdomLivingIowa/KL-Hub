@@ -334,7 +334,7 @@ function Admissions() {
 
     if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
 
-    await supabase.from('applications').update({ merged: true }).eq('id', app.id);
+    await supabase.from('applications').update({ merged: true, status: 'accepted' }).eq('id', app.id);
 
     setMergeReturningModal(null);
     fetchApplications();
@@ -794,7 +794,7 @@ function Admissions() {
               status: 'Accepted',
             }).eq('id', mergeReturningModal.existingClient.id);
             if (error) { alert('Error merging: ' + error.message); setMerging(false); return; }
-            await supabase.from('applications').update({ merged: true }).eq('id', mergeReturningModal.app.id);
+            await supabase.from('applications').update({ merged: true, status: 'accepted' }).eq('id', mergeReturningModal.app.id);
             setMergeReturningModal(null);
             setMergeWizardOpen(false);
             fetchApplications();
@@ -1085,12 +1085,12 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
     { key: 'sex_offender', label: 'Sex Offender', appKey: 'sex_offender' },
   ];
 
-  // Initialize merged values — prefer existing client, fill gaps with app
+  // Initialize merged values — prefer new application, fall back to existing client
   const init = {};
   FIELDS.forEach(f => {
     const clientVal = existingClient[f.key];
     const appVal = app[f.appKey];
-    init[f.key] = clientVal || appVal || '';
+    init[f.key] = appVal || clientVal || '';
   });
 
   const [merged, setMerged] = useState(init);
