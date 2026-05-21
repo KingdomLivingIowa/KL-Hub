@@ -787,6 +787,7 @@ function Admissions() {
                   // Fetch full client data then open wizard
                   const { data: fullClient } = await supabase.from('clients').select('*').eq('id', duplicateModal.client.id).single();
                   setMergeReturningModal({ app: duplicateModal.app, existingClient: fullClient || duplicateModal.client });
+                  setMergeWizardOpen(true);
                   setDuplicateModal(null);
                 }}>
                   🧙 Open Merge Wizard

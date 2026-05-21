@@ -129,8 +129,9 @@ Deno.serve(async (req) => {
       flagReasons.push('Needs review: applicant reported a disability.');
     }
 
-    // Rule 3: Returning client
-    if (app.lived_here_before === 'Yes') {
+    // Rule 3: Returning client — always check regardless of lived_here_before answer
+    // (applicants sometimes answer "No" even when they've stayed here before)
+    {
       const { data: existingClients } = await supabase
         .from('clients')
         .select('id, full_name, email, not_allowed_back, needs_review_before_readmit')
