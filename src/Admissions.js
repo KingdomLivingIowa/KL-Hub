@@ -334,7 +334,7 @@ function Admissions() {
 
     if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
 
-    await supabase.from('applications').update({ merged: true, status: 'accepted' }).eq('id', app.id);
+    await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
 
     setMergeReturningModal(null);
     fetchApplications();
@@ -794,7 +794,7 @@ function Admissions() {
               status: 'Accepted',
             }).eq('id', mergeReturningModal.existingClient.id);
             if (error) { alert('Error merging: ' + error.message); setMerging(false); return; }
-            await supabase.from('applications').update({ merged: true, status: 'accepted' }).eq('id', mergeReturningModal.app.id);
+            await supabase.from('applications').update({ status: 'accepted' }).eq('id', mergeReturningModal.app.id);
             setMergeReturningModal(null);
             setMergeWizardOpen(false);
             fetchApplications();
