@@ -964,6 +964,15 @@ const s = {
     zIndex: 1000,
     padding: '20px',
   },
+  modalOverlay: {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', zIndex: 2000, padding: '20px',
+  },
+  modalBox: {
+    background: '#1a1a1a', borderRadius: '16px', padding: '28px',
+    width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333',
+  },
   modal: {
     background: '#333',
     borderRadius: '16px',
