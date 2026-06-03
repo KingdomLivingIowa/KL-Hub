@@ -496,7 +496,7 @@ function DashboardHome({ counts, currentUser }) {
 
 function Section({ title, children, count, countColor }) {
   const storageKey = 'dashboard_collapsed_' + title.replace(/\s+/g, '_');
-  const [collapsed, setCollapsed] = React.useState(() => {
+  const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(storageKey) === 'true'; } catch { return false; }
   });
   const toggle = () => {
