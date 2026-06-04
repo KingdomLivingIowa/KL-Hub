@@ -57,6 +57,18 @@ const NOTIFICATION_TYPES = [
     icon: '🚗',
     description: 'Weekly list of clients who have indicated they need a ride to the all-house meeting.',
   },
+  {
+    id: 'new_application',
+    label: 'New Application',
+    icon: '📝',
+    description: 'Sent immediately when a new application is submitted through the public application form.',
+  },
+  {
+    id: 'overnight_pass_request',
+    label: 'Overnight Pass Request',
+    icon: '🌙',
+    description: 'Sent immediately when a resident submits an overnight pass request.',
+  },
 ];
 
 export default function EmailSettings() {

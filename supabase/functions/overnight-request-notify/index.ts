@@ -36,15 +36,10 @@ Deno.serve(async (req) => {
     const fmtDate = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
     const submitted = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
-    // Get house managers for this house
-    const { data: assignments } = await supabase.from('user_house_assignments').select('user_id').eq('house_id', house_id);
-    const userIds = (assignments || []).map(a => a.user_id);
-
-    // Get admins/upper management too
-    const { data: upper } = await supabase.from('user_profiles').select('id').in('role', ['admin', 'upper_management']);
-    const upperIds = (upper || []).map(p => p.id);
-
-    const allIds = [...new Set([...userIds, ...upperIds])];
+    // Get recipients from email notification settings only
+    const { data: settingsRows } = await supabase.from('email_notification_settings')
+      .select('user_id').eq('notification_type', 'overnight_pass_request');
+    const allIds = [...new Set((settingsRows || []).map(r => r.user_id))];
 
     // Send in-app notifications
     if (allIds.length) {

@@ -94,6 +94,51 @@ Deno.serve(async (req) => {
     const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
     const email = app.email;
     const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
+
+    // Notify new_application recipients
+    const { data: newAppRecipients } = await supabase
+      .from('email_notification_settings')
+      .select('user_id').eq('notification_type', 'new_application');
+    const newAppUserIds = (newAppRecipients || []).map(r => r.user_id);
+    if (newAppUserIds.length) {
+      const { data: recipientProfiles } = await supabase
+        .from('user_profiles').select('email').in('id', newAppUserIds);
+      const recipientEmails = (recipientProfiles || []).map(p => p.email).filter(Boolean);
+      if (recipientEmails.length) {
+        const submitted = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: FROM_EMAIL,
+            to: recipientEmails,
+            subject: `New Application — ${fullName}`,
+            html: `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f4f4f4;padding:30px;">
+              <table width="600" style="background:#fff;border-radius:10px;padding:32px;margin:0 auto;">
+                <tr><td style="background:#1a1a1a;padding:20px;border-radius:8px 8px 0 0;text-align:center;">
+                  <p style="margin:0;color:#b22222;font-size:13px;letter-spacing:2px;text-transform:uppercase;font-weight:600;">New Application Received</p>
+                </td></tr>
+                <tr><td style="background:#b22222;height:4px;"></td></tr>
+                <tr><td style="padding:28px;">
+                  <p style="font-size:16px;font-weight:600;color:#1a1a1a;margin:0 0 6px;">${fullName}</p>
+                  <p style="color:#888;font-size:13px;margin:0 0 20px;">${submitted}</p>
+                  <table width="100%" style="border:1px solid #eee;border-radius:8px;overflow:hidden;">
+                    <tr><td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;color:#666;">Email</td><td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;">${app.email || '—'}</td></tr>
+                    <tr><td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;color:#666;">Phone</td><td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;">${app.phone || '—'}</td></tr>
+                    <tr><td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;color:#666;">Program</td><td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;">${app.program || '—'}</td></tr>
+                    <tr><td style="padding:10px 16px;color:#666;">Current Situation</td><td style="padding:10px 16px;">${app.current_situation || '—'}</td></tr>
+                  </table>
+                  <p style="margin:20px 0 0;color:#888;font-size:13px;">Log in to KL Hub to review this application.</p>
+                </td></tr>
+                <tr><td style="background:#f9f9f9;border-top:1px solid #eee;padding:16px;text-align:center;">
+                  <p style="margin:0;font-size:13px;color:#666;font-weight:600;">Kingdom Living Iowa</p>
+                </td></tr>
+              </table>
+            </body></html>`,
+          }),
+        });
+      }
+    }
     const recipients = [...new Set([email, app.correspondence_contact].filter(e => e && isValidEmail(e)))];
 
     // ── RULE 1: Sex offender → auto deny immediately, no further checks ──────
@@ -129,9 +174,8 @@ Deno.serve(async (req) => {
       flagReasons.push('Needs review: applicant reported a disability.');
     }
 
-    // Rule 3: Returning client — always check regardless of lived_here_before answer
-    // (applicants sometimes answer "No" even when they've stayed here before)
-    {
+    // Rule 3: Returning client
+    if (app.lived_here_before === 'Yes') {
       const { data: existingClients } = await supabase
         .from('clients')
         .select('id, full_name, email, not_allowed_back, needs_review_before_readmit')
@@ -261,9 +305,8 @@ Deno.serve(async (req) => {
         recipients,
         'Kingdom Living Iowa — Application Accepted',
         wrap(`<p>I am pleased to inform you that <strong>${fullName}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
-        ${app.current_situation === 'Currently Incarcerated'
-          ? `<p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>`
-          : `<p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>`}
+        <p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
+        <p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>
         <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`)
       );
     }
