@@ -1067,6 +1067,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const [locationLabels, setLocationLabels] = useState({});
   const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showTimelinePDFModal, setShowTimelinePDFModal] = useState(false);
+  const [pdfRange, setPdfRange] = useState({ startDate: '', endDate: '', eventType: 'All' });
   const [entryType, setEntryType] = useState('General Note');
   const [entryForm, setEntryForm] = useState({
     author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
@@ -1148,15 +1150,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   }, [currentPage, isHouseManagerRole, assignedHouseIds, applyClientFilters, statusFilter, viewMode, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
-
-  // Real-time: client list updates
-  useEffect(() => {
-    const channel = supabase.channel('clients_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
-        () => { fetchClients(true); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchHouses = useCallback(async () => {
     const { data } = await supabase.from('houses').select('id, name, type').order('name');
@@ -1311,6 +1304,74 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (type === 'Chores') return '#34d399';
     if (type === 'Weekly Reflection') return '#a78bfa';
     return '#bbb';
+  };
+
+  const generateTimelinePDF = async (client, startDate, endDate, eventType) => {
+    let query = supabase.from('client_timeline').select('*').eq('client_id', client.id).order('created_at', { ascending: false });
+    if (startDate) query = query.gte('created_at', new Date(startDate + 'T00:00:00').toISOString());
+    if (endDate) query = query.lte('created_at', new Date(endDate + 'T23:59:59').toISOString());
+    if (eventType && eventType !== 'All') query = query.eq('entry_type', eventType);
+    const { data: entries } = await query;
+    if (!entries?.length) { alert('No entries found for the selected range.'); return; }
+
+    const typeColors = {
+      'Crisis': '#dc2626', 'Infraction': '#dc2626', 'UA': '#f472b6',
+      'Meeting': '#60a5fa', 'Mood Check-In': '#BA7517', 'Check-In': '#c084fc',
+      'General Note': '#f59e0b', 'Chores': '#34d399', 'Weekly Check-In': '#a78bfa',
+      'Weekly Reflection': '#a78bfa', 'House Check-In': '#7F77DD', 'Batch UA': '#1D9E75',
+      'Event Attendance': '#378ADD',
+    };
+
+    const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const rangeLabel = startDate && endDate ? `${new Date(startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${new Date(endDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      : startDate ? `From ${new Date(startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      : endDate ? `Until ${new Date(endDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      : 'All Time';
+
+    const rows = entries.map(e => {
+      const color = typeColors[e.entry_type] || '#888';
+      let detail = '';
+      if (e.ua_result) detail = `Result: ${e.ua_result}`;
+      else if (e.severity) detail = `Severity: ${e.severity}`;
+      else if (e.mood_value) detail = `Mood: ${e.mood_value}/10`;
+      else if (e.meeting_name) detail = e.meeting_name;
+      const notes = e.notes ? `<div style="color:#444;font-size:13px;margin-top:4px;line-height:1.5;">${e.notes}</div>` : '';
+      const author = e.author ? `<div style="color:#888;font-size:12px;margin-top:4px;">By ${e.author}</div>` : '';
+      return `<tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #eee;vertical-align:top;white-space:nowrap;color:#555;font-size:13px;">${fmt(e.created_at)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #eee;vertical-align:top;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span>
+          <strong style="font-size:13px;">${e.entry_type}</strong>
+          ${detail ? `<span style="color:#666;font-size:12px;margin-left:6px;">${detail}</span>` : ''}
+          ${notes}${author}
+        </td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Timeline – ${client.full_name}</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; color: #111; }
+      @media print { body { padding: 16px; } .no-print { display: none; } }
+      h1 { font-size: 22px; margin: 0 0 4px 0; }
+      .sub { color: #555; font-size: 14px; margin: 0 0 24px 0; }
+      table { width: 100%; border-collapse: collapse; }
+      th { background: #f5f5f5; text-align: left; padding: 10px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; border-bottom: 2px solid #ddd; }
+      tr:hover td { background: #fafafa; }
+      .print-btn { background: #8b1c1c; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; cursor: pointer; margin-bottom: 24px; }
+    </style></head><body>
+    <button class="print-btn no-print" onclick="window.print()">⬇ Print / Save PDF</button>
+    <h1>${client.full_name} — Timeline</h1>
+    <p class="sub">${rangeLabel}${eventType !== 'All' ? ` · ${eventType}` : ''} · ${entries.length} entries · Generated ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+    <table>
+      <thead><tr><th style="width:180px;">Date</th><th>Entry</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -2221,7 +2282,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <p style={{ ...st.sectionLabel, margin: 0 }}>Timeline</p>
                       {timelineTotal > 0 && <p style={{ color: '#bbb', fontSize: '13px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
                     </div>
-                    <button onClick={() => setShowAddEntry(!showAddEntry)} style={st.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => setShowTimelinePDFModal(true)} style={{ ...st.smallAddBtn, background: '#1e3a2f', color: '#4ade80', border: '1px solid #2d5a3d' }}>⬇ Export PDF</button>
+                      <button onClick={() => setShowAddEntry(!showAddEntry)} style={st.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
+                    </div>
                   </div>
                   {showAddEntry && (
                     <div style={st.miniForm}>
@@ -2464,6 +2528,57 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   )}
                 </>
               )}
+
+                {showTimelinePDFModal && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}
+                    onClick={() => setShowTimelinePDFModal(false)}>
+                    <div style={{ background: '#1a1a1a', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '440px', border: '1px solid #333' }}
+                      onClick={e => e.stopPropagation()}>
+                      <h3 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: '18px' }}>Generate Timeline PDF</h3>
+                      <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 20px 0' }}>Choose a date range and optional event type filter.</p>
+                      <p style={{ color: '#bbb', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px 0' }}>Common Ranges</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+                        {[
+                          { label: 'Last 7 Days', days: 7 },
+                          { label: 'This Week', week: true },
+                          { label: 'Last 30 Days', days: 30 },
+                          { label: 'This Month', month: true },
+                          { label: 'Last Month', lastMonth: true },
+                          { label: 'All Time', all: true },
+                        ].map(opt => {
+                          const today = new Date();
+                          let start = '', end = '';
+                          if (opt.days) { const d = new Date(today); d.setDate(d.getDate() - opt.days); start = d.toISOString().slice(0,10); end = today.toISOString().slice(0,10); }
+                          else if (opt.week) { const d = new Date(today); d.setDate(d.getDate() - (d.getDay() || 7) + 1); start = d.toISOString().slice(0,10); end = today.toISOString().slice(0,10); }
+                          else if (opt.month) { start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0,10); end = today.toISOString().slice(0,10); }
+                          else if (opt.lastMonth) { const d = new Date(today.getFullYear(), today.getMonth() - 1, 1); start = d.toISOString().slice(0,10); end = new Date(today.getFullYear(), today.getMonth(), 0).toISOString().slice(0,10); }
+                          else if (opt.all) { start = ''; end = ''; }
+                          const active = pdfRange.startDate === start && pdfRange.endDate === end;
+                          return <button key={opt.label} onClick={() => setPdfRange(p => ({ ...p, startDate: start, endDate: end }))}
+                            style={{ padding: '6px 12px', borderRadius: '20px', border: `1px solid ${active ? '#4ade80' : '#444'}`, background: active ? '#1e3a2f' : 'transparent', color: active ? '#4ade80' : '#aaa', fontSize: '13px', cursor: 'pointer' }}>{opt.label}</button>;
+                        })}
+                      </div>
+                      <label style={{ color: '#bbb', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Start Date</label>
+                      <input type="date" value={pdfRange.startDate} onChange={e => setPdfRange(p => ({ ...p, startDate: e.target.value }))}
+                        style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', marginBottom: '14px', boxSizing: 'border-box' }} />
+                      <label style={{ color: '#bbb', fontSize: '13px', display: 'block', marginBottom: '6px' }}>End Date <span style={{ color: '#666' }}>(optional)</span></label>
+                      <input type="date" value={pdfRange.endDate} onChange={e => setPdfRange(p => ({ ...p, endDate: e.target.value }))}
+                        style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', marginBottom: '14px', boxSizing: 'border-box' }} />
+                      <label style={{ color: '#bbb', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Event Type <span style={{ color: '#666' }}>(optional)</span></label>
+                      <select value={pdfRange.eventType} onChange={e => setPdfRange(p => ({ ...p, eventType: e.target.value }))}
+                        style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', marginBottom: '20px', boxSizing: 'border-box' }}>
+                        <option value="All">All Event Types</option>
+                        {['UA', 'Crisis', 'Infraction', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In', 'Weekly Reflection', 'House Check-In', 'Batch UA', 'Event Attendance'].map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <button onClick={() => setShowTimelinePDFModal(false)}
+                          style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+                        <button onClick={() => { generateTimelinePDF(selected, pdfRange.startDate, pdfRange.endDate, pdfRange.eventType); setShowTimelinePDFModal(false); }}
+                          style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: '#4ade80', color: '#000', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Generate PDF</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               {activeTab === 'stays' && (
                 <Card title="Stay History" full>
