@@ -495,15 +495,33 @@ function DashboardHome({ counts, currentUser }) {
 }
 
 function Section({ title, children, count, countColor }) {
+  const storageKey = 'dashboard_collapsed_' + title.replace(/\s+/g, '_');
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(storageKey) === 'true'; } catch { return false; }
+  });
+  const toggle = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem(storageKey, String(next)); } catch {}
+      return next;
+    });
+  };
   return (
-    <div style={{ background: '#333', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-        <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
-        {count !== undefined && (
-          <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: countColor || '#f87171', fontWeight: '600' }}>{count}</span>
-        )}
+    <div style={{ background: '#26262e', borderRadius: '12px', border: '1px solid #32323e', overflow: 'hidden' }}>
+      <div onClick={toggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', cursor: 'pointer', userSelect: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
+          {count !== undefined && (
+            <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: countColor || '#f87171', fontWeight: '600' }}>{count}</span>
+          )}
+        </div>
+        <span style={{ color: '#666', fontSize: '13px', display: 'inline-block', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</span>
       </div>
-      {children}
+      {!collapsed && (
+        <div style={{ padding: '0 20px 18px 20px' }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
