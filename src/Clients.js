@@ -1058,6 +1058,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [timelineLoadingMore, setTimelineLoadingMore] = useState(false);
   const [stays, setStays] = useState([]);
   const [staysLoading, setStaysLoading] = useState(false);
+  const [expandedStay, setExpandedStay] = useState(null);
+  const [stayHistory, setStayHistory] = useState({});
+  const [stayHistoryLoading, setStayHistoryLoading] = useState({});
   const [latestCheckIn, setLatestCheckIn] = useState(null);
   const [clientBalance, setClientBalance] = useState(null);
 
@@ -1372,6 +1375,46 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const win = window.open('', '_blank');
     win.document.write(html);
     win.document.close();
+  };
+
+  const loadStayHistory = async (stay, client) => {
+    const stayId = stay.id;
+    if (stayHistory[stayId]) return; // already loaded
+    setStayHistoryLoading(p => ({ ...p, [stayId]: true }));
+    const start = stay.start_date;
+    const end = stay.discharge_date || new Date().toISOString().slice(0, 10);
+
+    const [timelineRes, overnightRes, welcomeRes, checkinRes, chargesRes, paymentsRes] = await Promise.all([
+      supabase.from('client_timeline').select('*').eq('client_id', client.id)
+        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
+        .order('created_at', { ascending: false }),
+      supabase.from('overnight_requests').select('*').eq('client_id', client.id)
+        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
+        .order('created_at', { ascending: false }),
+      supabase.from('welcome_packets').select('*').eq('client_id', client.id)
+        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
+        .maybeSingle(),
+      supabase.from('client_timeline').select('*').eq('client_id', client.id)
+        .eq('entry_type', 'Weekly Check-In')
+        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
+        .order('created_at', { ascending: false }),
+      supabase.from('charges').select('*').eq('client_id', client.id)
+        .gte('due_date', start).lte('due_date', end)
+        .order('due_date', { ascending: false }),
+      supabase.from('payments').select('*').eq('client_id', client.id)
+        .gte('payment_date', start).lte('payment_date', end)
+        .order('payment_date', { ascending: false }),
+    ]);
+
+    setStayHistory(p => ({ ...p, [stayId]: {
+      timeline: (timelineRes.data || []).filter(e => e.entry_type !== 'Weekly Check-In'),
+      overnights: overnightRes.data || [],
+      welcomePacket: welcomeRes.data || null,
+      checkIns: checkinRes.data || [],
+      charges: chargesRes.data || [],
+      payments: paymentsRes.data || [],
+    }}));
+    setStayHistoryLoading(p => ({ ...p, [stayId]: false }));
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -2605,13 +2648,19 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           const balance = parseFloat(stay.balance_at_discharge) || 0;
                           return (
                             <div key={stay.id} style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #333', overflow: 'hidden' }}>
-                              <div style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div
+                                onClick={() => {
+                                  const isOpen = expandedStay === stay.id;
+                                  setExpandedStay(isOpen ? null : stay.id);
+                                  if (!isOpen) loadStayHistory(stay, selected);
+                                }}
+                                style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f87171', flexShrink: 0 }} />
+                                  <span style={{ color: '#666', fontSize: '12px', transform: expandedStay === stay.id ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▾</span>
                                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>Stay #{stays.length - i}</span>
                                   {stay.house_name && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>}
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
                                   {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
                                   <button
                                     onClick={() => {
@@ -2694,9 +2743,141 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 )}
                                 <StayPhotos clientId={selected.id} stayId={stay.id} />
                               </div>
+
+                              {expandedStay === stay.id && (() => {
+                                const h = stayHistory[stay.id];
+                                const loading = stayHistoryLoading[stay.id];
+                                const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                                const fmtFull = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                                const tColors = { 'Crisis': '#dc2626', 'Infraction': '#dc2626', 'UA': '#f472b6', 'Meeting': '#60a5fa', 'Mood Check-In': '#BA7517', 'Check-In': '#c084fc', 'General Note': '#f59e0b', 'Chores': '#34d399', 'Weekly Reflection': '#a78bfa', 'House Check-In': '#7F77DD', 'Batch UA': '#1D9E75', 'Event Attendance': '#378ADD' };
+                                if (loading) return <div style={{ padding: '16px', borderTop: '1px solid #2a2a2a', color: '#999', fontSize: '13px' }}>Loading history...</div>;
+                                if (!h) return null;
+
+                                const HistSection = ({ title, count, children, color }) => count === 0 ? null : (
+                                  <div style={{ marginBottom: '18px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                      <span style={{ color: color || '#60a5fa', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</span>
+                                      <span style={{ background: '#2a2a2a', color: '#999', fontSize: '11px', padding: '1px 6px', borderRadius: '10px' }}>{count}</span>
+                                    </div>
+                                    {children}
+                                  </div>
+                                );
+
+                                const totalCharged = h.charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+                                const totalPaid = h.payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+
+                                const noHistory = h.timeline.length === 0 && h.checkIns.length === 0 && h.overnights.length === 0 && !h.welcomePacket && h.charges.length === 0 && h.payments.length === 0;
+
+                                return (
+                                  <div style={{ borderTop: '1px solid #2a2a2a', padding: '16px', background: '#111' }}>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                                      {[
+                                        { label: 'Timeline Entries', val: h.timeline.length, color: '#a78bfa' },
+                                        { label: 'Check-Ins', val: h.checkIns.length, color: '#60a5fa' },
+                                        { label: 'Overnight Requests', val: h.overnights.length, color: '#fb923c' },
+                                        { label: 'Charged', val: '$' + totalCharged.toFixed(2), color: '#f87171' },
+                                        { label: 'Paid', val: '$' + totalPaid.toFixed(2), color: '#4ade80' },
+                                      ].map(s => (
+                                        <div key={s.label} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 12px' }}>
+                                          <div style={{ color: s.color, fontSize: '15px', fontWeight: '700' }}>{s.val}</div>
+                                          <div style={{ color: '#666', fontSize: '11px' }}>{s.label}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    <HistSection title="Timeline" count={h.timeline.length} color="#a78bfa">
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {h.timeline.map(e => (
+                                          <div key={e.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tColors[e.entry_type] || '#bbb', flexShrink: 0 }} />
+                                              <span style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{e.entry_type}</span>
+                                              {e.ua_result && <span style={{ color: '#f472b6', fontSize: '12px' }}>{e.ua_result}</span>}
+                                              {e.severity && <span style={{ color: '#fb923c', fontSize: '12px' }}>{e.severity}</span>}
+                                              {e.mood_value && <span style={{ color: '#fb923c', fontSize: '12px' }}>Mood: {e.mood_value}/10</span>}
+                                              <span style={{ color: '#666', fontSize: '12px', marginLeft: 'auto' }}>{fmtFull(e.created_at)}</span>
+                                            </div>
+                                            {e.notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0 0', lineHeight: 1.5 }}>{e.notes}</p>}
+                                            {e.author && <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>By {e.author}</p>}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </HistSection>
+
+                                    <HistSection title="Weekly Check-Ins" count={h.checkIns.length} color="#60a5fa">
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {h.checkIns.map(e => (
+                                          <div key={e.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ color: '#ddd', fontSize: '13px' }}>Weekly Check-In</span>
+                                            <span style={{ color: '#666', fontSize: '12px' }}>{fmtFull(e.created_at)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </HistSection>
+
+                                    <HistSection title="Overnight Requests" count={h.overnights.length} color="#fb923c">
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {h.overnights.map(r => (
+                                          <div key={r.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                              <span style={{ color: '#ddd', fontSize: '13px' }}>{fmt(r.start_date)} - {fmt(r.end_date)}</span>
+                                              {r.destination && <span style={{ color: '#999', fontSize: '12px', marginLeft: '8px' }}>{r.destination}</span>}
+                                            </div>
+                                            <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '10px', background: r.status === 'approved' ? '#1e3a2f' : r.status === 'denied' ? '#3a1e1e' : '#2a2a2a', color: r.status === 'approved' ? '#4ade80' : r.status === 'denied' ? '#f87171' : '#aaa' }}>{r.status || 'pending'}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </HistSection>
+
+                                    {h.welcomePacket && (
+                                      <div style={{ marginBottom: '18px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                          <span style={{ color: '#34d399', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Welcome Packet</span>
+                                        </div>
+                                        <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <span style={{ color: '#4ade80', fontSize: '13px' }}>Completed</span>
+                                          <span style={{ color: '#666', fontSize: '12px' }}>{fmtFull(h.welcomePacket.created_at)}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <HistSection title="Charges" count={h.charges.length} color="#f87171">
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {h.charges.map(c => (
+                                          <div key={c.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                              <span style={{ color: '#ddd', fontSize: '13px' }}>{c.description || c.charge_type || 'Charge'}</span>
+                                              {c.due_date && <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>Due {fmt(c.due_date)}</span>}
+                                            </div>
+                                            <span style={{ color: '#f87171', fontSize: '13px', fontWeight: '600' }}>${parseFloat(c.amount || 0).toFixed(2)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </HistSection>
+
+                                    <HistSection title="Payments" count={h.payments.length} color="#4ade80">
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {h.payments.map(p => (
+                                          <div key={p.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                              <span style={{ color: '#ddd', fontSize: '13px' }}>{p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}</span>
+                                              {p.payment_date && <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>{fmt(p.payment_date)}</span>}
+                                              {p.notes && <span style={{ color: '#999', fontSize: '12px', marginLeft: '8px' }}>{p.notes}</span>}
+                                            </div>
+                                            <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: '600' }}>${parseFloat(p.amount || 0).toFixed(2)}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </HistSection>
+
+                                    {noHistory && <p style={{ color: '#666', fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>No history found for this stay.</p>}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           );
-                        })}
+                        })}"
+
                       </div>
                     </>
                   )}
