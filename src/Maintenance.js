@@ -79,13 +79,12 @@ export default function Maintenance() {
       if (editForm.service_notes && editForm.service_notes !== req.service_notes) parts.push(`Service notes: ${editForm.service_notes}`);
       if (editForm.service_date && editForm.service_date !== req.service_date) parts.push(`Service date: ${editForm.service_date}`);
       if (parts.length > 0) {
-        await supabase.from('client_timeline').insert({
+        await supabase.from('house_timeline').insert([{
           house_id: req.house_id,
           entry_type: 'Maintenance Request',
           notes: `[${req.description || 'Maintenance'}${req.issue_location ? ` – ${req.issue_location}` : ''}] ${parts.join(' · ')}`,
-          author: 'System',
-          created_at: new Date().toISOString(),
-        });
+          author: 'Staff',
+        }]);
       }
     }
 
