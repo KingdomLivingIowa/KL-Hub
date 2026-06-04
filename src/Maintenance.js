@@ -43,16 +43,6 @@ export default function Maintenance() {
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
-  // Real-time subscriptions
-  useEffect(() => {
-    const channel = supabase
-      .channel('maintenance_requests_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_requests' },
-        () => { fetchRequests(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   useEffect(() => {
     supabase.from('houses').select('id, name').order('name')
       .then(({ data }) => setHouses(data || []));
@@ -155,7 +145,7 @@ export default function Maintenance() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                       <span style={{ ...s.badge, background: sc.bg, color: sc.color }}>{req.status}</span>
                       {req.issue_type && (
-                        <span style={{ ...s.badge, background: '#1a1a1a', color: ISSUE_TYPE_COLORS[req.issue_type] || '#aaa', border: `1px solid ${ISSUE_TYPE_COLORS[req.issue_type] || '#333'}` }}>
+                        <span style={{ ...s.badge, background: '#1c1c24', color: ISSUE_TYPE_COLORS[req.issue_type] || '#aaa', border: `1px solid ${ISSUE_TYPE_COLORS[req.issue_type] || '#333'}` }}>
                           {req.issue_type}
                         </span>
                       )}
@@ -205,11 +195,11 @@ export default function Maintenance() {
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                           <button onClick={() => saveEdit(req.id)} disabled={saving}
-                            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                             {saving ? 'Saving...' : 'Save'}
                           </button>
                           <button onClick={() => setEditingId(null)}
-                            style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                             Cancel
                           </button>
                         </div>
@@ -239,7 +229,7 @@ export default function Maintenance() {
                           </div>
                         )}
                         <button onClick={() => startEdit(req)}
-                          style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', marginTop: '8px' }}>
+                          style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginTop: '8px' }}>
                           ✏️ Update Request
                         </button>
                       </div>
@@ -259,30 +249,30 @@ const s = {
   page: { padding: '0 0 60px' },
   title: { color: '#fff', fontSize: '26px', fontWeight: '700', margin: '0 0 24px' },
   statsRow: { display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' },
-  stat: { background: '#1a1a1a', border: '1px solid', borderRadius: '10px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' },
+  stat: { background: '#1c1c24', border: '1px solid', borderRadius: '10px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' },
   statNum: { fontSize: '28px', fontWeight: '700' },
-  statLabel: { fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  statLabel: { fontSize: '13px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
   filters: { display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' },
   filterGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  filterLabel: { fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  select: { background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '7px 12px', fontSize: '13px', cursor: 'pointer' },
+  filterLabel: { fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  select: { background: '#1c1c24', border: '1px solid #32323e', borderRadius: '8px', color: '#fff', padding: '7px 12px', fontSize: '14px', cursor: 'pointer' },
   empty: { padding: '60px 0', textAlign: 'center' },
   list: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px', overflow: 'hidden' },
+  card: { background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '12px', overflow: 'hidden' },
   cardHeader: { padding: '14px 16px', display: 'flex', gap: '12px', justifyContent: 'space-between', cursor: 'pointer' },
   cardLeft: { flex: 1 },
   cardRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 },
-  badge: { padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', display: 'inline-block' },
+  badge: { padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', display: 'inline-block' },
   cardHouse: { color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' },
-  cardLocation: { color: '#888', fontSize: '12px', margin: '0 0 4px' },
-  cardDesc: { color: '#aaa', fontSize: '13px', margin: 0, lineHeight: 1.5 },
-  cardDate: { color: '#666', fontSize: '11px', margin: 0 },
-  cardBy: { color: '#555', fontSize: '11px', margin: 0 },
+  cardLocation: { color: '#888', fontSize: '13px', margin: '0 0 4px' },
+  cardDesc: { color: '#aaa', fontSize: '14px', margin: 0, lineHeight: 1.5 },
+  cardDate: { color: '#666', fontSize: '12px', margin: 0 },
+  cardBy: { color: '#555', fontSize: '12px', margin: 0 },
   cardBody: { padding: '14px 16px', borderTop: '1px solid #222', background: '#141414' },
   detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' },
-  detailLabel: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
-  detailValue: { color: '#ddd', fontSize: '13px', margin: 0, lineHeight: 1.5 },
+  detailLabel: { fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
+  detailValue: { color: '#ddd', fontSize: '14px', margin: 0, lineHeight: 1.5 },
   editRow: { marginBottom: '12px' },
-  editLabel: { display: 'block', fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
-  editInput: { width: '100%', background: '#1a1a1a', border: '1px solid #333', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '13px', boxSizing: 'border-box' },
+  editLabel: { display: 'block', fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
+  editInput: { width: '100%', background: '#1c1c24', border: '1px solid #32323e', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '14px', boxSizing: 'border-box' },
 };

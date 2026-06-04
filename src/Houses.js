@@ -29,7 +29,7 @@ function HouseWeeklyReflectionForm({ entryForm, setEntryForm }) {
         <label style={s.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
         <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
           onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#bbb', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#bbb', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
       </div>
@@ -59,14 +59,14 @@ function HouseWeeklyReflectionCard({ entry }) {
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#bbb' }}>Mood:</span>
-          <span style={{ fontSize: '13px', padding: '2px 8px', borderRadius: '20px', background: '#3a2d1e', color: '#fb923c', fontWeight: '500' }}>{data.mood}/10</span>
+          <span style={{ fontSize: '14px', color: '#bbb' }}>Mood:</span>
+          <span style={{ fontSize: '14px', padding: '2px 8px', borderRadius: '20px', background: '#3a2d1e', color: '#fb923c', fontWeight: '500' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
-      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
-      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
-      {entry.notes && <div><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -503,12 +503,12 @@ function Houses({ onOpenClient }) {
     const address = locationLabels[entryId];
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
     return (
-      <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+      <div style={{ background: '#1c1c24', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '13px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          <span style={{ fontSize: '14px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
   };
@@ -533,10 +533,10 @@ function Houses({ onOpenClient }) {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {lastRefreshed && (
-            <span style={{ fontSize: '13px', color: '#bbb' }}>{formatRefreshed()}</span>
+            <span style={{ fontSize: '14px', color: '#bbb' }}>{formatRefreshed()}</span>
           )}
           <button onClick={() => loadAllData(true)} disabled={refreshing}
-            style={{ background: 'transparent', border: '1px solid #444', color: refreshing ? '#bbb' : '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '13px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #3a3a48', color: refreshing ? '#bbb' : '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
             {refreshing ? '↻ Refreshing...' : '↻ Refresh'}
           </button>
           <div style={s.viewToggle}>
@@ -623,15 +623,15 @@ function Houses({ onOpenClient }) {
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div>
                               <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
-                              <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
+                              <p style={{ color: '#999', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
                           </div>
                           <span style={{ flex: 1 }}>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </span>
-                          <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.start_date || '—'}</span>
-                          <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#f87171' : '#4ade80', fontSize: '13px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
-                          <span style={{ flex: 1, color: '#aaa', fontSize: '13px' }}>{r.phone || '—'}</span>
+                          <span style={{ flex: 1, color: '#aaa', fontSize: '14px' }}>{r.start_date || '—'}</span>
+                          <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#f87171' : '#4ade80', fontSize: '14px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
+                          <span style={{ flex: 1, color: '#aaa', fontSize: '14px' }}>{r.phone || '—'}</span>
                           <div style={{ flex: 2 }} onClick={e => e.stopPropagation()}>
                             {editingNotes.hasOwnProperty(r.id) ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -640,12 +640,12 @@ function Houses({ onOpenClient }) {
                                   onBlur={() => saveNotes(r.id)}
                                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes(r.id); } }}
                                   rows={2} placeholder="Add a note..."
-                                  style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '13px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
-                                <span style={{ color: '#bbb', fontSize: '12px' }}>Enter to save · Shift+Enter for new line</span>
+                                  style={{ width: '100%', backgroundColor: '#1c1c24', border: '1px solid #555', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
+                                <span style={{ color: '#bbb', fontSize: '13px' }}>Enter to save · Shift+Enter for new line</span>
                               </div>
                             ) : (
                               <div onClick={e => { e.stopPropagation(); startEditingNotes(r.id, r.staff_notes); }}
-                                style={{ color: r.staff_notes ? '#aaa' : '#999', fontSize: '13px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+                                style={{ color: r.staff_notes ? '#aaa' : '#999', fontSize: '14px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
                                 onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
                                 {r.staff_notes || <span style={{ fontStyle: 'italic' }}>Click to add notes...</span>}
@@ -677,7 +677,7 @@ function Houses({ onOpenClient }) {
                   <span style={{ ...s.typeBadge, background: '#2d1e3a', color: '#c084fc' }}>{selected.occupied_beds || 0} active</span>
                   <span style={{ ...s.typeBadge, background: '#2d2d1e', color: '#facc15' }}>{selected.pending_count || 0} pending</span>
                   <span style={{ ...s.typeBadge, background: '#1e3a2f', color: '#4ade80' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
-                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#333', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
+                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#26262e', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
                 </div>
               </div>
               <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
@@ -708,22 +708,22 @@ function Houses({ onOpenClient }) {
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
                           {r.status === 'Pending' && (
-                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #333' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #32323e' }} onClick={e => e.stopPropagation()}>
                               {r.expected_move_in_date && (
                                 <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#2d2d1e', borderRadius: '6px', border: '1px solid #3a3a1e' }}>
-                                  <span style={{ fontSize: '13px', color: '#bbb' }}>Expected move-in: </span>
-                                  <span style={{ fontSize: '13px', color: '#facc15', fontWeight: '600' }}>
+                                  <span style={{ fontSize: '14px', color: '#bbb' }}>Expected move-in: </span>
+                                  <span style={{ fontSize: '14px', color: '#facc15', fontWeight: '600' }}>
                                     {new Date(r.expected_move_in_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                   </span>
                                 </div>
                               )}
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); setDidNotMoveInMode(false); }}
-                                  style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', flex: 2 }}>
+                                  style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', flex: 2 }}>
                                   ✓ Confirm Move-In
                                 </button>
                                 <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setDidNotMoveInMode(true); }}
-                                  style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500', flex: 1 }}>
+                                  style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '7px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', flex: 1 }}>
                                   Did Not Move In
                                 </button>
                               </div>
@@ -768,7 +768,7 @@ function Houses({ onOpenClient }) {
                           <label style={s.label}>Severity *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
-                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
@@ -780,7 +780,7 @@ function Houses({ onOpenClient }) {
                           <label style={s.label}>Result *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Pass', 'Fail'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="inspection_result" value={opt} checked={entryForm.inspection_result === opt} onChange={() => setEntryForm(p => ({ ...p, inspection_result: opt }))} />{opt}
                               </label>
                             ))}
@@ -792,7 +792,7 @@ function Houses({ onOpenClient }) {
                           <label style={s.label}>Status</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Reported', 'In Progress', 'Completed'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="maintenance_status" value={opt} checked={entryForm.maintenance_status === opt} onChange={() => setEntryForm(p => ({ ...p, maintenance_status: opt }))} />{opt}
                               </label>
                             ))}
@@ -818,7 +818,7 @@ function Houses({ onOpenClient }) {
                             <label style={s.label}>Previously submitted?</label>
                             <div style={{ display: 'flex', gap: '16px' }}>
                               {['Yes', 'No'].map(opt => (
-                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                   <input type="radio" name="prev_submitted" value={opt} checked={entryForm.previously_submitted === opt} onChange={() => setEntryForm(p => ({ ...p, previously_submitted: opt }))} />{opt}
                                 </label>
                               ))}
@@ -836,11 +836,11 @@ function Houses({ onOpenClient }) {
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Residents</label>
                           {residents.map(r => (
-                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #333' }}>
-                              <span style={{ color: '#ddd', fontSize: '13px' }}>{r.full_name}</span>
+                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #32323e' }}>
+                              <span style={{ color: '#ddd', fontSize: '14px' }}>{r.full_name}</span>
                               <div style={{ display: 'flex', gap: '12px' }}>
                                 {['Here', 'Not Here'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                     <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -853,11 +853,11 @@ function Houses({ onOpenClient }) {
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Results</label>
                           {residents.map(r => (
-                            <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #333' }}>
-                              <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>{r.full_name}</p>
+                            <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #32323e' }}>
+                              <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>{r.full_name}</p>
                               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                     <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -871,7 +871,7 @@ function Houses({ onOpenClient }) {
                           <label style={s.label}>Attendance</label>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                             {residents.map(r => (
-                              <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'} onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />{r.full_name}
                               </label>
                             ))}
@@ -901,11 +901,11 @@ function Houses({ onOpenClient }) {
                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: entryColor(entry.entry_type), flexShrink: 0 }} />
                               <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{entry.entry_type}</span>
                               {entry.severity && <span style={{ ...s.typeBadge, background: severityColor(entry.severity).bg, color: severityColor(entry.severity).color }}>{entry.severity}</span>}
-                              {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
+                              {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '14px' }}>{entry.event_name}</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDate(entry.created_at)}</span>
-                              <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '13px' }}>×</button>
+                              <span style={{ color: '#bbb', fontSize: '14px' }}>{formatDate(entry.created_at)}</span>
+                              <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '14px' }}>×</button>
                             </div>
                           </div>
                           {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
@@ -914,9 +914,9 @@ function Houses({ onOpenClient }) {
                               {entry.entry_type === 'House Check-In' && (
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
-                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#222', borderRadius: '4px' }}>
-                                      <span style={{ color: '#aaa', fontSize: '13px' }}>{r.name}</span>
-                                      <span style={{ fontSize: '13px', color: r.value === 'Here' ? '#4ade80' : '#f87171', fontWeight: '600' }}>{r.value}</span>
+                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#26262e', borderRadius: '4px' }}>
+                                      <span style={{ color: '#aaa', fontSize: '14px' }}>{r.name}</span>
+                                      <span style={{ fontSize: '14px', color: r.value === 'Here' ? '#4ade80' : '#f87171', fontWeight: '600' }}>{r.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -924,9 +924,9 @@ function Houses({ onOpenClient }) {
                               {entry.entry_type === 'Batch UA' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
-                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#222', borderRadius: '4px' }}>
-                                      <span style={{ color: '#aaa', fontSize: '13px' }}>{r.name}</span>
-                                      <span style={{ fontSize: '13px', fontWeight: '600', color: r.value === 'Negative' ? '#4ade80' : r.value === 'Positive' ? '#f87171' : '#fb923c' }}>{r.value}</span>
+                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#26262e', borderRadius: '4px' }}>
+                                      <span style={{ color: '#aaa', fontSize: '14px' }}>{r.name}</span>
+                                      <span style={{ fontSize: '14px', fontWeight: '600', color: r.value === 'Negative' ? '#4ade80' : r.value === 'Positive' ? '#f87171' : '#fb923c' }}>{r.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -934,17 +934,17 @@ function Houses({ onOpenClient }) {
                               {entry.entry_type === 'Event Attendance' && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value === 'Attended').map(r => (
-                                    <span key={r.id} style={{ ...s.typeBadge, background: '#1e2d3a', color: '#60a5fa', fontSize: '13px' }}>{r.name}</span>
+                                    <span key={r.id} style={{ ...s.typeBadge, background: '#1e2d3a', color: '#60a5fa', fontSize: '14px' }}>{r.name}</span>
                                   ))}
                                 </div>
                               )}
                               {entry.entry_type === 'House Inspection' && entry.inspection_result && (
-                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: entry.inspection_result === 'Pass' ? '#14532d' : '#7f1d1d', color: entry.inspection_result === 'Pass' ? '#4ade80' : '#f87171' }}>
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', background: entry.inspection_result === 'Pass' ? '#14532d' : '#7f1d1d', color: entry.inspection_result === 'Pass' ? '#4ade80' : '#f87171' }}>
                                   {entry.inspection_result}
                                 </span>
                               )}
                               {entry.entry_type === 'Maintenance/Repair' && entry.maintenance_status && (
-                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: entry.maintenance_status === 'Completed' ? '#14532d' : entry.maintenance_status === 'In Progress' ? '#78350f' : '#1e3a5f', color: entry.maintenance_status === 'Completed' ? '#4ade80' : entry.maintenance_status === 'In Progress' ? '#fb923c' : '#60a5fa' }}>
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', background: entry.maintenance_status === 'Completed' ? '#14532d' : entry.maintenance_status === 'In Progress' ? '#78350f' : '#1e3a5f', color: entry.maintenance_status === 'Completed' ? '#4ade80' : entry.maintenance_status === 'In Progress' ? '#fb923c' : '#60a5fa' }}>
                                   {entry.maintenance_status}
                                 </span>
                               )}
@@ -952,10 +952,10 @@ function Houses({ onOpenClient }) {
                           )}
                           {entry.entry_type === 'Weekly Reflection'
                             ? <HouseWeeklyReflectionCard entry={entry} />
-                            : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
+                            : entry.notes && <p style={{ color: '#aaa', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                           }
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                            <span style={{ color: '#bbb', fontSize: '13px' }}>By {entry.author}</span>
+                            <span style={{ color: '#bbb', fontSize: '14px' }}>By {entry.author}</span>
                           </div>
                         </div>
                       ))}
@@ -986,7 +986,7 @@ function Houses({ onOpenClient }) {
                         <div key={r.id} style={s.roomRow}>
                           <div style={{ flex: 1 }}>
                             <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
-                            <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
+                            <p style={{ color: '#999', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
                           </div>
                           <button onClick={() => deleteRoom(r.id)} style={s.deleteBtn}>Remove</button>
                         </div>
@@ -1014,10 +1014,10 @@ function Houses({ onOpenClient }) {
       {/* Confirm Move-In modal */}
       {moveInModal && (
         <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => { setMoveInModal(null); setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}>
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
+          <div style={{ background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #32323e' }}>
               <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>{didNotMoveInMode ? 'Did Not Move In' : 'Confirm Move-In'}</h3>
-              <p style={{ color: '#999', fontSize: '13px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
+              <p style={{ color: '#999', fontSize: '14px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
               {!didNotMoveInMode ? (
@@ -1030,11 +1030,11 @@ function Houses({ onOpenClient }) {
                       <option value="Houseperson">Houseperson — $110/week</option>
                     </select>
                   </div>
-                  <div style={{ background: '#333', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                    <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
-                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
-                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
-                    <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
+                  <div style={{ background: '#26262e', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
+                    <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
+                    <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
+                    <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                     <button onClick={confirmMoveIn} disabled={savingMoveIn}
@@ -1042,18 +1042,18 @@ function Houses({ onOpenClient }) {
                       {savingMoveIn ? 'Confirming...' : 'Confirm Move-In'}
                     </button>
                     <button onClick={() => setDidNotMoveInMode(true)}
-                      style={{ flex: 1, background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
                       Did Not Move In
                     </button>
                   </div>
                   <button onClick={() => setMoveInModal(null)}
-                    style={{ width: '100%', background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                    style={{ width: '100%', background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </>
               ) : (
                 <>
-                  <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 12px 0' }}>
+                  <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 12px 0' }}>
                     This will revert <strong style={{ color: '#fff' }}>{moveInModal.full_name}</strong> back to Accepted status and log the reason in their stays history.
                   </p>
                   <div style={{ marginBottom: '16px' }}>
@@ -1072,7 +1072,7 @@ function Houses({ onOpenClient }) {
                       {savingMoveIn ? 'Saving...' : 'Confirm Did Not Move In'}
                     </button>
                     <button onClick={() => { setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}
-                      style={{ flex: 1, background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                       Back
                     </button>
                   </div>
@@ -1090,65 +1090,65 @@ function Houses({ onOpenClient }) {
 // Suppress unused warning
 
 const s = {
-  page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
+  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#fff' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
   sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
   addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
-  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
-  addForm: { background: '#333', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #333' },
-  miniForm: { background: '#222', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #333' },
+  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
+  addForm: { background: '#26262e', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #32323e' },
+  miniForm: { background: '#26262e', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #32323e' },
   addTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
-  label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  label: { display: 'block', color: '#aaa', fontSize: '14px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
-  deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
-  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
-  viewToggle: { display: 'flex', background: '#333', borderRadius: '8px', border: '1px solid #333', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#bbb', cursor: 'pointer', fontSize: '13px' },
+  deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
+  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
+  viewToggle: { display: 'flex', background: '#26262e', borderRadius: '8px', border: '1px solid #32323e', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#bbb', cursor: 'pointer', fontSize: '14px' },
   toggleBtnActive: { background: '#999', color: '#fff' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  houseCard: { background: '#333', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333', cursor: 'pointer' },
+  houseCard: { background: '#26262e', borderRadius: '12px', padding: '18px 20px', border: '1px solid #32323e', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
   houseName: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' },
-  houseAddress: { color: '#999', fontSize: '13px', margin: 0 },
-  typeBadge: { fontSize: '13px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
-  bedBar: { height: '4px', background: '#333', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
+  houseAddress: { color: '#999', fontSize: '14px', margin: 0 },
+  typeBadge: { fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
+  bedBar: { height: '4px', background: '#26262e', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
   bedBarFill: (house) => ({ height: '100%', width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`, background: '#c084fc', borderRadius: '2px' }),
   houseStats: { display: 'flex', gap: '16px', marginBottom: '10px' },
   statItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   statNum: { fontSize: '18px', fontWeight: '700', color: '#fff' },
-  statLbl: { fontSize: '13px', color: '#999' },
-  manager: { color: '#bbb', fontSize: '13px', margin: 0 },
+  statLbl: { fontSize: '14px', color: '#999' },
+  manager: { color: '#bbb', fontSize: '14px', margin: 0 },
   houseGroup: { marginBottom: '32px' },
-  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #333' },
+  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #32323e' },
   houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  houseGroupCount: { fontSize: '13px', color: '#999', marginLeft: 'auto' },
-  residentTable: { background: '#333', borderRadius: '10px', overflow: 'hidden', border: '1px solid #333' },
-  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#222', fontSize: '13px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
-  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #333', gap: '12px' },
+  houseGroupCount: { fontSize: '14px', color: '#999', marginLeft: 'auto' },
+  residentTable: { background: '#26262e', borderRadius: '10px', overflow: 'hidden', border: '1px solid #32323e' },
+  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#26262e', fontSize: '14px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
+  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #32323e', gap: '12px' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
-  modal: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '680px', overflow: 'hidden' },
-  modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #333' },
+  modal: { background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '680px', overflow: 'hidden' },
+  modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #32323e' },
   modalName: { fontSize: '20px', fontWeight: '600', margin: 0, color: '#fff' },
-  modalSub: { fontSize: '13px', color: '#999', margin: '4px 0 0 0' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px' },
-  tab: { padding: '10px 16px', fontSize: '13px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
+  modalSub: { fontSize: '14px', color: '#999', margin: '4px 0 0 0' },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #3a3a48', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  tabs: { display: 'flex', borderBottom: '1px solid #32323e', padding: '0 20px' },
+  tab: { padding: '10px 16px', fontSize: '14px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
   tabActive: { color: '#fff', borderBottomColor: '#fff' },
   modalBody: { padding: '20px 24px', maxHeight: '520px', overflowY: 'auto' },
-  sectionLabel: { fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  residentCard: { background: '#333', borderRadius: '10px', padding: '14px 16px', border: '1px solid #333' },
-  resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#2d1e3a', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '500', flexShrink: 0 },
+  sectionLabel: { fontSize: '14px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
+  residentCard: { background: '#26262e', borderRadius: '10px', padding: '14px 16px', border: '1px solid #32323e' },
+  resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#2d1e3a', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '500', flexShrink: 0 },
   resName: { color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 },
-  resMeta: { color: '#999', fontSize: '13px', margin: '2px 0 0 0' },
+  resMeta: { color: '#999', fontSize: '14px', margin: '2px 0 0 0' },
   resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '10px' },
   resDetailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  resDetailLabel: { fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  resDetailVal: { fontSize: '13px', color: '#ddd' },
-  roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#333', borderRadius: '10px' },
-  timelineCard: { background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
+  resDetailLabel: { fontSize: '13px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  resDetailVal: { fontSize: '14px', color: '#ddd' },
+  roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#26262e', borderRadius: '10px' },
+  timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
 };
 
 function MoveOutRequestsTab({ houseId, houseName }) {
@@ -1179,18 +1179,6 @@ function MoveOutRequestsTab({ houseId, houseName }) {
   }, [houseId, filter]);
 
   useEffect(() => { fetchRequests(); }, [houseId, filter, fetchRequests]);
-
-  // Real-time subscriptions for overnight passes
-  useEffect(() => {
-    if (!houseId) return;
-    const channel = supabase
-      .channel(`overnight_passes_${houseId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'move_out_requests',
-        filter: `house_id=eq.${houseId}` },
-        () => { fetchRequests(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [houseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReview = async (request, action) => {
     setSaving(true);
@@ -1243,7 +1231,7 @@ function MoveOutRequestsTab({ houseId, houseName }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#2a2a2a', color: filter === f ? '#fff' : '#888' }}>
+              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#2a2a2a', color: filter === f ? '#fff' : '#888' }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
@@ -1257,19 +1245,19 @@ function MoveOutRequestsTab({ houseId, houseName }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {requests.map(r => (
-            <div key={r.id} style={{ background: '#1a1a1a', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#2a2a2a'}`, borderRadius: '10px', overflow: 'hidden' }}>
+            <div key={r.id} style={{ background: '#1c1c24', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#2a2a2a'}`, borderRadius: '10px', overflow: 'hidden' }}>
               {/* Header */}
               <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                 onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
                 <div>
                   <p style={{ margin: 0, color: '#fff', fontWeight: '600', fontSize: '15px' }}>{r.clients?.full_name}</p>
-                  <p style={{ margin: '3px 0 0', color: '#888', fontSize: '12px' }}>
+                  <p style={{ margin: '3px 0 0', color: '#888', fontSize: '13px' }}>
                     Requested: {r.requested_move_out_date ? new Date(r.requested_move_out_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     &nbsp;·&nbsp; Submitted: {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', background: statusBg(r.status), color: statusColor(r.status) }}>
+                  <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', background: statusBg(r.status), color: statusColor(r.status) }}>
                     {statusLabel(r.status)}
                   </span>
                   <span style={{ color: '#666', fontSize: '14px' }}>{expanded === r.id ? '▲' : '▼'}</span>
@@ -1289,22 +1277,22 @@ function MoveOutRequestsTab({ houseId, houseName }) {
                       ['All Requirements Met', r.all_requirements_met ? 'Yes' : 'No'],
                       ['Marketing Permission', r.marketing_permission ? 'Yes' : 'No'],
                     ].map(([label, val]) => (
-                      <div key={label} style={{ background: '#111', borderRadius: '8px', padding: '10px 12px' }}>
-                        <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#ddd' }}>{val || '—'}</p>
+                      <div key={label} style={{ background: '#1e1e24', borderRadius: '8px', padding: '10px 12px' }}>
+                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#ddd' }}>{val || '—'}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* Requirements checklist */}
-                  <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
+                  <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
                     {LEVEL_REQS.map(req => {
                       const done = (r.requirements_completed || []).includes(req);
                       return (
                         <div key={req} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: done ? '#0f2e1a' : '#111', borderRadius: '6px' }}>
                           <span style={{ color: done ? '#4ade80' : '#444', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
-                          <span style={{ fontSize: '13px', color: done ? '#4ade80' : '#555' }}>{req}</span>
+                          <span style={{ fontSize: '14px', color: done ? '#4ade80' : '#555' }}>{req}</span>
                         </div>
                       );
                     })}
@@ -1313,17 +1301,17 @@ function MoveOutRequestsTab({ houseId, houseName }) {
                   {/* Feedback */}
                   {(r.liked || r.disliked || r.other_notes) && (
                     <>
-                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.liked}</p></div>}
-                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.disliked}</p></div>}
-                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
+                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.liked}</p></div>}
+                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.disliked}</p></div>}
+                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
                     </>
                   )}
 
                   {/* Review notes if already reviewed */}
                   {r.status !== 'pending' && r.review_notes && (
-                    <div style={{ background: '#111', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#666', textTransform: 'uppercase' }}>Review Notes</p>
-                      <p style={{ margin: 0, fontSize: '13px', color: '#aaa', fontStyle: 'italic' }}>{r.review_notes}</p>
+                    <div style={{ background: '#1e1e24', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Review Notes</p>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.review_notes}</p>
                     </div>
                   )}
 
@@ -1331,19 +1319,19 @@ function MoveOutRequestsTab({ houseId, houseName }) {
                   {canReview && r.status === 'pending' && (
                     reviewing?.id === r.id ? (
                       <div>
-                        <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#aaa' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#aaa' }}>
                           {reviewing.action === 'approved' ? '✓ Approving' : '✗ Denying'} — add a note (optional):
                         </p>
                         <textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)}
                           rows={3} placeholder="Add a note to the resident..."
-                          style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '8px', color: '#fff', fontSize: '13px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
+                          style={{ width: '100%', background: '#1e1e24', border: '1px solid #32323e', borderRadius: '8px', color: '#fff', fontSize: '14px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button onClick={() => handleReview(r, reviewing.action)} disabled={saving}
-                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#7f1d1d', color: reviewing.action === 'approved' ? '#4ade80' : '#f87171', fontSize: '13px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#7f1d1d', color: reviewing.action === 'approved' ? '#4ade80' : '#f87171', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                             {saving ? 'Saving...' : `Confirm ${reviewing.action === 'approved' ? 'Approval' : 'Denial'}`}
                           </button>
                           <button onClick={() => { setReviewing(null); setReviewNotes(''); }}
-                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #333', background: 'transparent', color: '#888', fontSize: '13px', cursor: 'pointer' }}>
+                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #32323e', background: 'transparent', color: '#888', fontSize: '14px', cursor: 'pointer' }}>
                             Cancel
                           </button>
                         </div>
@@ -1351,11 +1339,11 @@ function MoveOutRequestsTab({ houseId, houseName }) {
                     ) : (
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => setReviewing({ id: r.id, action: 'approved' })}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #166534', background: '#14532d', color: '#4ade80', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #166534', background: '#14532d', color: '#4ade80', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                           ✓ Approve
                         </button>
                         <button onClick={() => setReviewing({ id: r.id, action: 'denied' })}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #7f1d1d', background: '#450a0a', color: '#f87171', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #7f1d1d', background: '#450a0a', color: '#f87171', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                           ✗ Deny
                         </button>
                       </div>
@@ -1428,48 +1416,48 @@ function OvernightRequestsTab({ houseId, houseName }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #333', color: filter === f ? '#fff' : '#888', textTransform: 'capitalize' }}>
+              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #333', color: filter === f ? '#fff' : '#888', textTransform: 'capitalize' }}>
               {f}
             </button>
           ))}
         </div>
       </div>
 
-      {loading ? <p style={{ color: '#888', fontSize: '13px' }}>Loading...</p>
-        : requests.length === 0 ? <p style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>No overnight requests found.</p>
+      {loading ? <p style={{ color: '#888', fontSize: '14px' }}>Loading...</p>
+        : requests.length === 0 ? <p style={{ color: '#666', fontSize: '14px', fontStyle: 'italic' }}>No overnight requests found.</p>
         : requests.map(req => (
-          <div key={req.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
+          <div key={req.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
               <div>
                 <p style={{ color: '#fff', fontWeight: '600', fontSize: '14px', margin: '0 0 3px' }}>{req.client_name}</p>
-                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>
+                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
                   {fmt(req.departure_datetime)} → {fmt(req.return_datetime)}
                 </p>
               </div>
-              <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', background: statusBg(req.status), color: statusColor(req.status), textTransform: 'capitalize' }}>
+              <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: statusBg(req.status), color: statusColor(req.status), textTransform: 'capitalize' }}>
                 {req.status}
               </span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
               <div>
-                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>{req.reason || '—'}</p>
+                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
+                <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>{req.reason || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>{req.location || '—'}</p>
+                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
+                <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>{req.location || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>{req.who_seeing || '—'}</p>
+                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
+                <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>{req.who_seeing || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
-                <p style={{ color: '#ddd', fontSize: '13px', margin: 0, fontStyle: 'italic' }}>{req.signature || '—'}</p>
+                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
+                <p style={{ color: '#ddd', fontSize: '14px', margin: 0, fontStyle: 'italic' }}>{req.signature || '—'}</p>
               </div>
             </div>
             {req.review_notes && (
-              <p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 10px', padding: '6px 10px', background: '#111', borderRadius: '6px' }}>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 10px', padding: '6px 10px', background: '#1e1e24', borderRadius: '6px' }}>
                 Review note: {req.review_notes}
               </p>
             )}
@@ -1478,25 +1466,25 @@ function OvernightRequestsTab({ houseId, houseName }) {
                 <div>
                   <textarea value={reviewForm.notes} onChange={e => setReviewForm(p => ({ ...p, notes: e.target.value }))}
                     placeholder="Optional note to client..." rows={2}
-                    style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '13px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                    style={{ width: '100%', background: '#1e1e24', border: '1px solid #32323e', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '14px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => handleReview('approved')} disabled={saving}
-                      style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       ✓ Approve
                     </button>
                     <button onClick={() => handleReview('denied')} disabled={saving}
-                      style={{ flex: 1, background: '#b22222', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 1, background: '#b22222', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       ✗ Deny
                     </button>
                     <button onClick={() => setReviewing(null)}
-                      style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
+                      style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => { setReviewing(req); setReviewForm({ decision: '', notes: '' }); }}
-                  style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+                  style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
                   Review Request
                 </button>
               )

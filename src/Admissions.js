@@ -142,19 +142,6 @@ function Admissions() {
     fetchClients();
   }, [fetchClients]);
 
-  // Real-time subscriptions
-  useEffect(() => {
-    const channel = supabase
-      .channel('admissions_applications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'applications' },
-        () => { fetchApplications(true); })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'applications' },
-        () => { fetchApplications(true); })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const createClientFromApp = async (app) => {
     const { data: existingClient, error: existingError } = await supabase
       .from('clients')
@@ -276,7 +263,7 @@ function Admissions() {
       fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null, current_situation: app.current_situation || null }),
+        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null }),
       }).catch(err => console.error('send-application-email error:', err));
     }
 
@@ -319,6 +306,75 @@ function Admissions() {
     return null;
   };
 
+  const handleMerge = async () => {
+    if (!duplicateModal) return;
+
+    setMerging(true);
+    const { app, client } = duplicateModal;
+
+    if (client.isApplication) {
+      const { error } = await supabase
+        .from('applications')
+        .update({ status: 'accepted' })
+        .eq('id', app.id);
+
+      if (error) {
+        alert('Error updating duplicate application: ' + error.message);
+        console.error(error);
+        setMerging(false);
+        return;
+      }
+
+      setDuplicateModal(null);
+      fetchApplications();
+      setMerging(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('clients')
+      .update({
+        first_name: app.first_name || client.first_name,
+        last_name: app.last_name || client.last_name,
+        phone: app.phone || null,
+        email: app.email || null,
+        date_of_birth: app.date_of_birth || client.date_of_birth,
+        ssn: app.ssn || client.ssn,
+        gender: app.assigned_sex || app.gender || null,
+        present_residence: app.current_situation || null,
+        application_type: app.program || null,
+        application_id: app.id,
+      })
+      .eq('id', client.id);
+
+    if (error) {
+      alert('Error merging into existing client: ' + error.message);
+      console.error(error);
+      setMerging(false);
+      return;
+    }
+
+    const { error: appUpdateError } = await supabase
+      .from('applications')
+      .update({ status: 'accepted' })
+      .eq('id', app.id);
+
+    if (appUpdateError) {
+      alert(
+        'Client was updated, but application status could not be changed: ' +
+          appUpdateError.message
+      );
+      console.error(appUpdateError);
+      setMerging(false);
+      return;
+    }
+
+    setDuplicateModal(null);
+    fetchApplications();
+    fetchClients();
+    setMerging(false);
+  };
+
   const handleIgnore = () => {
     if (!duplicateModal) return;
     setDuplicateModal(null);
@@ -347,7 +403,7 @@ function Admissions() {
 
     if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
 
-    await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
+    await supabase.from('applications').update({ merged: true }).eq('id', app.id);
 
     setMergeReturningModal(null);
     fetchApplications();
@@ -391,9 +447,9 @@ function Admissions() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <span style={s.name}>{fmt(app.first_name)} {fmt(app.last_name)}</span>
               {duplicate && app.status === 'pending' && (
-                <span style={s.dupBadge}>
+                <button style={s.dupBadge} onClick={() => setDuplicateModal({ app, client: duplicate })}>
                   ⚠ Possible Duplicate
-                </span>
+                </button>
               )}
             </div>
             <p style={s.meta}>{fmt(app.email)} · {fmt(app.phone)}</p>
@@ -401,9 +457,9 @@ function Admissions() {
             {flags.length > 0 && (
               <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {flags.map((f, i) => (
-                  <div key={i} style={{ padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', borderLeft: `3px solid ${f.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div key={i} style={{ padding: '8px 12px', background: '#1c1c24', borderRadius: '8px', borderLeft: `3px solid ${f.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>{f.icon}</span>
-                    <span style={{ fontSize: '13px', color: f.color, fontWeight: '500' }}>{f.label}</span>
+                    <span style={{ fontSize: '14px', color: f.color, fontWeight: '500' }}>{f.label}</span>
                   </div>
                 ))}
               </div>
@@ -433,7 +489,7 @@ function Admissions() {
             {expanded === app.id ? 'Hide Application' : 'View Full Application'}
           </button>
             {app.auto_flag?.includes('returning_merge') && app.status === 'pending' && (
-            <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+            <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
                 const { data: existing } = await supabase.from('clients')
                   .select('*')
@@ -461,7 +517,7 @@ function Admissions() {
             </button>
           )}
           {isAdmin && (
-            <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#f87171', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+            <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#f87171', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={() => deleteApplication(app.id)}>
               🗑 Delete
             </button>
@@ -601,7 +657,7 @@ function Admissions() {
               <div style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                   <span style={{ fontSize: '16px', fontWeight: '700', color: '#fb923c' }}>⚠ Needs Review</span>
-                  <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>{flagged.length}</span>
+                  <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '13px', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>{flagged.length}</span>
                 </div>
                 <div style={s.list}>
                   {flagged.map(app => {
@@ -731,7 +787,6 @@ function Admissions() {
                   // Fetch full client data then open wizard
                   const { data: fullClient } = await supabase.from('clients').select('*').eq('id', duplicateModal.client.id).single();
                   setMergeReturningModal({ app: duplicateModal.app, existingClient: fullClient || duplicateModal.client });
-                  setMergeWizardOpen(true);
                   setDuplicateModal(null);
                 }}>
                   🧙 Open Merge Wizard
@@ -753,39 +808,39 @@ function Admissions() {
         <div style={s.modalOverlay} onClick={() => setMergeReturningModal(null)}>
           <div style={{ ...s.modalBox, maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '16px' }}>Merge with Existing Profile</h3>
-            <p style={{ color: '#999', fontSize: '13px', margin: '0 0 20px 0' }}>
+            <p style={{ color: '#999', fontSize: '14px', margin: '0 0 20px 0' }}>
               Choose how to handle the merge — quick auto-merge or review each field with the wizard.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
               <div style={{ background: '#1e3a2f', border: '1px solid #2a5a3a', borderRadius: '10px', padding: '14px' }}>
-                <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>Existing Client</p>
+                <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>Existing Client</p>
                 <p style={{ color: '#fff', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.existingClient?.full_name}</p>
-                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>{mergeReturningModal.existingClient?.email}</p>
-                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Status: {mergeReturningModal.existingClient?.status}</p>
+                <p style={{ color: '#888', fontSize: '13px', margin: '0 0 2px' }}>{mergeReturningModal.existingClient?.email}</p>
+                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Status: {mergeReturningModal.existingClient?.status}</p>
               </div>
               <div style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', borderRadius: '10px', padding: '14px' }}>
-                <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '13px', margin: '0 0 4px' }}>New Application</p>
+                <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>New Application</p>
                 <p style={{ color: '#fff', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.app.first_name} {mergeReturningModal.app.last_name}</p>
-                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>{mergeReturningModal.app.email}</p>
-                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Applied: {mergeReturningModal.app.created_at ? new Date(mergeReturningModal.app.created_at).toLocaleDateString() : '—'}</p>
+                <p style={{ color: '#888', fontSize: '13px', margin: '0 0 2px' }}>{mergeReturningModal.app.email}</p>
+                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Applied: {mergeReturningModal.app.created_at ? new Date(mergeReturningModal.app.created_at).toLocaleDateString() : '—'}</p>
               </div>
             </div>
-            <div style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', marginBottom: '20px' }}>
-              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>
+            <div style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', marginBottom: '20px' }}>
+              <p style={{ color: '#aaa', fontSize: '14px', margin: 0 }}>
                 ℹ️ The existing client's ID and history (payments, timeline, UAs, stays) will be fully preserved. Only profile fields will be updated.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={handleMergeReturning} disabled={merging}
-                style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 {merging ? 'Merging...' : '⚡ Quick Merge'}
               </button>
               <button onClick={() => setMergeWizardOpen(true)}
-                style={{ flex: 1, background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '10px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+                style={{ flex: 1, background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 🧙 Merge Wizard
               </button>
               <button onClick={() => setMergeReturningModal(null)}
-                style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Cancel
               </button>
             </div>
@@ -807,7 +862,7 @@ function Admissions() {
               status: 'Accepted',
             }).eq('id', mergeReturningModal.existingClient.id);
             if (error) { alert('Error merging: ' + error.message); setMerging(false); return; }
-            await supabase.from('applications').update({ status: 'accepted' }).eq('id', mergeReturningModal.app.id);
+            await supabase.from('applications').update({ merged: true }).eq('id', mergeReturningModal.app.id);
             setMergeReturningModal(null);
             setMergeWizardOpen(false);
             fetchApplications();
@@ -823,10 +878,10 @@ function Admissions() {
 const s = {
   page: {
     padding: '32px',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#1c1c24',
     minHeight: '100vh',
     color: '#fff',
-    fontFamily: 'sans-serif',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   title: { fontSize: '24px', fontWeight: '600', margin: '0 0 24px 0' },
   toolbar: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' },
@@ -834,8 +889,8 @@ const s = {
   search: {
     width: '100%',
     maxWidth: '360px',
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #444',
+    backgroundColor: '#1c1c24',
+    border: '1px solid #3a3a48',
     borderRadius: '8px',
     padding: '10px 14px',
     color: '#fff',
@@ -845,20 +900,20 @@ const s = {
   tab: {
     padding: '8px 18px',
     borderRadius: '20px',
-    border: '1px solid #444',
+    border: '1px solid #3a3a48',
     background: 'transparent',
     color: '#bbb',
     cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: '14px',
   },
   tabActive: { background: '#b22222', color: '#fff', borderColor: '#b22222' },
   empty: { color: '#999', fontSize: '14px' },
   list: { display: 'flex', flexDirection: 'column', gap: '16px' },
   card: {
-    background: '#333',
+    background: '#26262e',
     borderRadius: '12px',
     padding: '20px',
-    border: '1px solid #333',
+    border: '1px solid #32323e',
   },
   cardHeader: {
     display: 'flex',
@@ -867,9 +922,9 @@ const s = {
     marginBottom: '16px',
   },
   name: { fontSize: '18px', fontWeight: '600', color: '#fff' },
-  meta: { fontSize: '13px', color: '#bbb', margin: '2px 0 0 0' },
+  meta: { fontSize: '14px', color: '#bbb', margin: '2px 0 0 0' },
   badge: {
-    fontSize: '12px',
+    fontSize: '13px',
     padding: '4px 12px',
     borderRadius: '20px',
     color: '#fff',
@@ -877,19 +932,20 @@ const s = {
     flexShrink: 0,
   },
   dupBadge: {
-    fontSize: '11px',
+    fontSize: '12px',
     padding: '3px 10px',
     borderRadius: '20px',
     background: '#78350f',
     color: '#fbbf24',
     border: '1px solid #92400e',
-    fontFamily: 'sans-serif',
+    cursor: 'pointer',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   snapshot: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '12px',
-    background: '#222',
+    background: '#26262e',
     borderRadius: '8px',
     padding: '14px',
     marginBottom: '16px',
@@ -901,17 +957,17 @@ const s = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  snapshotVal: { fontSize: '13px', color: '#fff' },
+  snapshotVal: { fontSize: '14px', color: '#fff' },
   cardActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   viewBtn: {
     padding: '7px 14px',
     borderRadius: '8px',
-    border: '1px solid #444',
+    border: '1px solid #3a3a48',
     background: 'transparent',
     color: '#aaa',
     cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'sans-serif',
+    fontSize: '14px',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   acceptBtn: {
     padding: '7px 14px',
@@ -920,8 +976,8 @@ const s = {
     background: '#16a34a',
     color: '#fff',
     cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'sans-serif',
+    fontSize: '14px',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   denyBtn: {
     padding: '7px 14px',
@@ -930,19 +986,19 @@ const s = {
     background: '#dc2626',
     color: '#fff',
     cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'sans-serif',
+    fontSize: '14px',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
-  fullApp: { marginTop: '16px', borderTop: '1px solid #333', paddingTop: '16px' },
+  fullApp: { marginTop: '16px', borderTop: '1px solid #32323e', paddingTop: '16px' },
   sectionDivider: {
-    fontSize: '11px',
+    fontSize: '12px',
     fontWeight: '600',
     color: '#999',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     margin: '16px 0 10px 0',
     paddingBottom: '6px',
-    borderBottom: '1px solid #333',
+    borderBottom: '1px solid #32323e',
   },
   fullGrid: {
     display: 'grid',
@@ -956,12 +1012,12 @@ const s = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  fullVal: { fontSize: '13px', color: '#ddd', lineHeight: '1.4' },
+  fullVal: { fontSize: '14px', color: '#ddd', lineHeight: '1.4' },
   subCard: {
-    background: '#1a1a1a',
+    background: '#1c1c24',
     borderRadius: '8px',
     padding: '12px 14px',
-    border: '1px solid #333',
+    border: '1px solid #32323e',
   },
   overlay: {
     position: 'fixed',
@@ -976,37 +1032,28 @@ const s = {
     zIndex: 1000,
     padding: '20px',
   },
-  modalOverlay: {
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', zIndex: 2000, padding: '20px',
-  },
-  modalBox: {
-    background: '#1a1a1a', borderRadius: '16px', padding: '28px',
-    width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333',
-  },
   modal: {
-    background: '#333',
+    background: '#26262e',
     borderRadius: '16px',
     padding: '28px',
     maxWidth: '700px',
     width: '100%',
     maxHeight: '90vh',
     overflowY: 'auto',
-    border: '1px solid #444',
+    border: '1px solid #3a3a48',
   },
   modalHeader: { marginBottom: '20px' },
   modalTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 6px 0', color: '#fff' },
-  modalSub: { fontSize: '13px', color: '#bbb', margin: 0 },
+  modalSub: { fontSize: '14px', color: '#bbb', margin: 0 },
   compareGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '16px',
     marginBottom: '24px',
   },
-  compareCol: { background: '#1a1a1a', borderRadius: '10px', padding: '14px' },
+  compareCol: { background: '#1c1c24', borderRadius: '10px', padding: '14px' },
   compareColHeader: {
-    fontSize: '11px',
+    fontSize: '12px',
     fontWeight: '600',
     color: '#bbb',
     textTransform: 'uppercase',
@@ -1020,7 +1067,7 @@ const s = {
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  compareVal: { fontSize: '13px', color: '#fff' },
+  compareVal: { fontSize: '14px', color: '#fff' },
   modalActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   mergeBtn: {
     padding: '10px 18px',
@@ -1029,29 +1076,29 @@ const s = {
     background: '#b22222',
     color: '#fff',
     cursor: 'pointer',
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: '600',
-    fontFamily: 'sans-serif',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   ignoreBtn: {
     padding: '10px 18px',
     borderRadius: '8px',
-    border: '1px solid #444',
+    border: '1px solid #3a3a48',
     background: 'transparent',
     color: '#aaa',
     cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'sans-serif',
+    fontSize: '14px',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   cancelBtn: {
     padding: '10px 18px',
     borderRadius: '8px',
-    border: '1px solid #444',
+    border: '1px solid #3a3a48',
     background: 'transparent',
     color: '#999',
     cursor: 'pointer',
-    fontSize: '13px',
-    fontFamily: 'sans-serif',
+    fontSize: '14px',
+    fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   pagination: {
     display: 'flex',
@@ -1064,10 +1111,10 @@ const s = {
   pageBtn: {
     padding: '6px 12px',
     borderRadius: '8px',
-    border: '1px solid #444',
+    border: '1px solid #3a3a48',
     background: 'transparent',
     color: '#aaa',
-    fontSize: '13px',
+    fontSize: '14px',
     cursor: 'pointer',
     transition: 'all 0.15s',
   },
@@ -1078,7 +1125,7 @@ const s = {
     fontWeight: '600',
   },
   pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
-  ellipsis: { color: '#bbb', fontSize: '13px', padding: '0 4px' },
+  ellipsis: { color: '#bbb', fontSize: '14px', padding: '0 4px' },
   pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
 
@@ -1106,12 +1153,12 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
     { key: 'sex_offender', label: 'Sex Offender', appKey: 'sex_offender' },
   ];
 
-  // Initialize merged values — prefer new application, fall back to existing client
+  // Initialize merged values — prefer existing client, fill gaps with app
   const init = {};
   FIELDS.forEach(f => {
     const clientVal = existingClient[f.key];
     const appVal = app[f.appKey];
-    init[f.key] = appVal || clientVal || '';
+    init[f.key] = clientVal || appVal || '';
   });
 
   const [merged, setMerged] = useState(init);
@@ -1130,14 +1177,14 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
 
   const ws = {
     overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', overflowY: 'auto' },
-    box: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '820px', marginTop: '20px', marginBottom: '40px', overflow: 'hidden' },
+    box: { background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '820px', marginTop: '20px', marginBottom: '40px', overflow: 'hidden' },
     header: { padding: '20px 24px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    colHeader: { padding: '10px 14px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' },
+    colHeader: { padding: '10px 14px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' },
     row: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #1e1e1e' },
-    cell: { padding: '10px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' },
+    cell: { padding: '10px 14px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' },
     label: { padding: '6px 14px 2px', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', background: '#141414' },
     arrow: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '2px 6px', borderRadius: '4px', color: '#60a5fa' },
-    input: { background: '#111', border: '1px solid #333', borderRadius: '6px', color: '#fff', padding: '5px 8px', fontSize: '13px', width: '100%', boxSizing: 'border-box' },
+    input: { background: '#1e1e24', border: '1px solid #32323e', borderRadius: '6px', color: '#fff', padding: '5px 8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
   };
 
   return (
@@ -1146,7 +1193,7 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
         <div style={ws.header}>
           <div>
             <p style={{ color: '#fff', fontWeight: '700', fontSize: '16px', margin: 0 }}>Merge Wizard</p>
-            <p style={{ color: '#888', fontSize: '12px', margin: '3px 0 0' }}>
+            <p style={{ color: '#888', fontSize: '13px', margin: '3px 0 0' }}>
               Choose which value to keep for each field. The existing client's history is always preserved.
             </p>
           </div>
@@ -1163,15 +1210,15 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
         {/* Client summary row */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#1a2a1a', borderBottom: '1px solid #2a2a2a' }}>
           <div style={{ ...ws.cell, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '13px', margin: 0 }}>{existingClient.full_name}</p>
-            <p style={{ color: '#888', fontSize: '11px', margin: 0 }}>Status: {existingClient.status}</p>
+            <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '14px', margin: 0 }}>{existingClient.full_name}</p>
+            <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Status: {existingClient.status}</p>
           </div>
           <div style={{ ...ws.cell, justifyContent: 'center' }}>
-            <span style={{ color: '#666', fontSize: '12px' }}>Merged result will update existing</span>
+            <span style={{ color: '#666', fontSize: '13px' }}>Merged result will update existing</span>
           </div>
           <div style={{ ...ws.cell, flexDirection: 'column', alignItems: 'flex-end' }}>
-            <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '13px', margin: 0 }}>{app.first_name} {app.last_name}</p>
-            <p style={{ color: '#888', fontSize: '11px', margin: 0 }}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
+            <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '14px', margin: 0 }}>{app.first_name} {app.last_name}</p>
+            <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
           </div>
         </div>
 
@@ -1185,7 +1232,7 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
 
             return (
               <div key={f.key}>
-                <div style={{ ...ws.row, background: '#111' }}>
+                <div style={{ ...ws.row, background: '#1e1e24' }}>
                   <div style={{ ...ws.cell, fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', padding: '5px 14px 2px', background: '#141414' }}>
                     {f.label}
                   </div>
@@ -1199,17 +1246,17 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
                   </div>
 
                   {/* Merged value (center) */}
-                  <div style={{ ...ws.cell, background: '#1a1a1a', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ ...ws.cell, background: '#1c1c24', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
                     {isEditing ? (
                       <input value={merged[f.key]} onChange={e => setMerged(p => ({ ...p, [f.key]: e.target.value }))}
                         style={ws.input} autoFocus onBlur={() => setEditing(p => ({ ...p, [f.key]: false }))} />
                     ) : (
-                      <span style={{ color: '#fff', fontWeight: '500', fontSize: '13px', textAlign: 'center' }}>
+                      <span style={{ color: '#fff', fontWeight: '500', fontSize: '14px', textAlign: 'center' }}>
                         {fmt(merged[f.key])}
                       </span>
                     )}
                     <button onClick={() => setEditing(p => ({ ...p, [f.key]: true }))}
-                      style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '11px', cursor: 'pointer', padding: '0' }}>
+                      style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '12px', cursor: 'pointer', padding: '0' }}>
                       ✏️ edit
                     </button>
                   </div>
@@ -1229,11 +1276,11 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
         {/* Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid #2a2a2a', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#141414' }}>
           <button onClick={onClose}
-            style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '10px 20px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             Cancel
           </button>
           <button onClick={handleMerge} disabled={saving}
-            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600', opacity: saving ? 0.6 : 1 }}>
+            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Merging...' : '✓ Confirm Merge'}
           </button>
         </div>

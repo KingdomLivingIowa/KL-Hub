@@ -384,14 +384,14 @@ function InvitePortalButton({ client }) {
     }
   };
   const btnStyles = {
-    idle:    { background: 'transparent', border: '1px solid #444', color: '#aaa' },
-    sending: { background: 'transparent', border: '1px solid #444', color: '#aaa', opacity: 0.6 },
+    idle:    { background: 'transparent', border: '1px solid #3a3a48', color: '#aaa' },
+    sending: { background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', opacity: 0.6 },
     sent:    { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80' },
     error:   { background: '#3a1e1e', border: '1px solid #f87171', color: '#f87171' },
   };
   const btnLabel = { idle: '✉ Invite', sending: '...', sent: '✓ Sent', error: 'Error' };
   return (
-    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '14px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
       {btnLabel[status]}
     </button>
   );
@@ -411,14 +411,14 @@ function MoveToButton({ client, onSelect }) {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
-        style={{ background: '#333', border: '1px solid #444', color: '#ddd', fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
+        style={{ background: '#26262e', border: '1px solid #3a3a48', color: '#ddd', fontSize: '14px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap' }}>
         Move to {open ? '▲' : '▼'}
       </button>
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', overflow: 'hidden', zIndex: 100, minWidth: '160px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', overflow: 'hidden', zIndex: 100, minWidth: '160px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
           {statuses.map(ns => (
             <button key={ns} onClick={e => { e.stopPropagation(); setOpen(false); onSelect(ns); }}
-              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', color: '#ddd', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', color: '#ddd', fontSize: '14px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
               onMouseEnter={e => e.currentTarget.style.background = '#333'}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
               {ns}
@@ -489,31 +489,31 @@ function MoveHouseModal({ client, houses, onClose, onSuccess }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
-      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: '#1e1e26', border: '1px solid #32323e', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '420px', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
         <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '600', color: '#fff' }}>Move to a Different House</h3>
-        <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#888' }}>
+        <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#888' }}>
           Currently at <strong style={{ color: '#ddd' }}>{client.house_name || 'Unknown'}</strong>. Status stays Active — no discharge recorded.
         </p>
         <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Destination House *</label>
+          <label style={{ display: 'block', fontSize: '14px', color: '#aaa', marginBottom: '5px' }}>Destination House *</label>
           <select value={toHouseId} onChange={e => setToHouseId(e.target.value)}
-            style={{ width: '100%', background: '#111', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: toHouseId ? '#fff' : '#666', fontSize: '14px', boxSizing: 'border-box' }}>
+            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: toHouseId ? '#fff' : '#666', fontSize: '14px', boxSizing: 'border-box' }}>
             <option value="">Select a house...</option>
             {eligibleHouses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
           </select>
         </div>
         <div style={{ marginBottom: '14px' }}>
-          <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Transfer Date</label>
+          <label style={{ display: 'block', fontSize: '14px', color: '#aaa', marginBottom: '5px' }}>Transfer Date</label>
           <input type="date" value={moveDate} onChange={e => setMoveDate(e.target.value)}
-            style={{ width: '100%', background: '#111', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
         </div>
         <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '5px' }}>Note (optional)</label>
+          <label style={{ display: 'block', fontSize: '14px', color: '#aaa', marginBottom: '5px' }}>Note (optional)</label>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Reason for transfer, room change, etc."
-            style={{ width: '100%', background: '#111', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: 'sans-serif', boxSizing: 'border-box' }} />
+            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: "'Inter', 'system-ui', sans-serif", boxSizing: 'border-box' }} />
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid #444', borderRadius: '9px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid #3a3a48', borderRadius: '9px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
             Cancel
           </button>
           <button onClick={handleMove} disabled={saving || !toHouseId}
@@ -534,7 +534,7 @@ function WeeklyReflectionForm({ entryForm, setEntryForm }) {
         <label style={sf.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
         <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
           onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#bbb', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#bbb', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
       </div>
@@ -565,14 +565,14 @@ function WeeklyReflectionCard({ entry }) {
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#bbb' }}>Mood:</span>
+          <span style={{ fontSize: '14px', color: '#bbb' }}>Mood:</span>
           <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
-      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
-      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
-      {entry.notes && <div><p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -612,7 +612,7 @@ function ClientApplicationView({ client }) {
       <div style={{ fontSize: 11, fontWeight: 700, color: '#b22222', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>{title}</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px' }}>
         {fields.filter(([,v]) => v != null && v !== '').map(([label, val]) => (
-          <div key={label} style={{ padding: '7px 0', borderBottom: '1px solid #333' }}>
+          <div key={label} style={{ padding: '7px 0', borderBottom: '1px solid #32323e' }}>
             <div style={{ fontSize: 12, color: '#999', marginBottom: 2 }}>{label}</div>
             <div style={{ fontSize: 14, color: '#ddd', lineHeight: 1.4 }}>{String(val)}</div>
           </div>
@@ -694,7 +694,7 @@ function ClientApplicationView({ client }) {
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#b22222', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Medications</div>
             {parsedMeds.map((med, i) => (
-              <div key={i} style={{ background: '#1e1e1e', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #333' }}>
+              <div key={i} style={{ background: '#1e1e26', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #32323e' }}>
                 <div style={{ fontSize: 14, color: '#fff', fontWeight: 600, marginBottom: 4 }}>{med.name || 'Medication ' + (i+1)}</div>
                 {[['Dosage', med.dosage], ['Times/day', med.intake], ['Notes', med.notes]].filter(([,v]) => v).map(([l,v]) => (
                   <div key={l} style={{ fontSize: 13, color: '#aaa' }}>{l}: {v}</div>
@@ -708,7 +708,7 @@ function ClientApplicationView({ client }) {
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#b22222', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Treatment History</div>
             {parsedTreatments.map((t, i) => (
-              <div key={i} style={{ background: '#1e1e1e', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #333' }}>
+              <div key={i} style={{ background: '#1e1e26', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #32323e' }}>
                 <div style={{ fontSize: 14, color: '#fff', fontWeight: 600, marginBottom: 4 }}>{t.name || 'Treatment ' + (i+1)}</div>
                 {[['Level of Care', t.level_of_care], ['Contact', t.contact_name], ['Phone', t.contact_phone], ['Discharge Date', t.discharge_date]].filter(([,v]) => v).map(([l,v]) => (
                   <div key={l} style={{ fontSize: 13, color: '#aaa' }}>{l}: {v}</div>
@@ -726,8 +726,8 @@ function ClientApplicationView({ client }) {
 function WeeklyCheckInCard({ entry }) {
   const Row = ({ label, value }) => value != null && value !== '' ? (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #2a2a2a' }}>
-      <span style={{ fontSize: '13px', color: '#999' }}>{label}</span>
-      <span style={{ fontSize: '13px', color: '#ddd', fontWeight: 500 }}>{String(value)}</span>
+      <span style={{ fontSize: '14px', color: '#999' }}>{label}</span>
+      <span style={{ fontSize: '14px', color: '#ddd', fontWeight: 500 }}>{String(value)}</span>
     </div>
   ) : null;
 
@@ -742,8 +742,8 @@ function WeeklyCheckInCard({ entry }) {
       <Row label="Payment plan" value={entry.checkin_payment_plan} />
       {entry.notes && (
         <div style={{ marginTop: '8px' }}>
-          <p style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px 0' }}>Weekly reflection</p>
-          <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p>
+          <p style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px 0' }}>Weekly reflection</p>
+          <p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p>
         </div>
       )}
     </div>
@@ -767,7 +767,7 @@ function LatestCheckIn({ clientId }) {
 
   const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const Row = ({ label, value }) => value != null && value !== '' ? (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #333' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #32323e' }}>
       <span style={{ fontSize: 14, color: '#999' }}>{label}</span>
       <span style={{ fontSize: 14, color: '#fff', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>{value}</span>
     </div>
@@ -889,13 +889,13 @@ function ClientFormsTab({ client }) {
   if (loading) return <div style={{ padding: '20px', color: '#888' }}>Loading...</div>;
 
   const s = { padding: '0 2px' };
-  const labelStyle = { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' };
-  const valueStyle = { fontSize: '13px', color: '#ddd', margin: 0 };
+  const labelStyle = { fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' };
+  const valueStyle = { fontSize: '14px', color: '#ddd', margin: 0 };
 
   if (!packet) return (
     <div style={{ padding: '40px 20px', textAlign: 'center' }}>
       <p style={{ color: '#888', fontSize: '15px' }}>No welcome packet submitted yet.</p>
-      <p style={{ color: '#666', fontSize: '13px' }}>The client can submit this from their portal under the Forms tab.</p>
+      <p style={{ color: '#666', fontSize: '14px' }}>The client can submit this from their portal under the Forms tab.</p>
     </div>
   );
 
@@ -908,7 +908,7 @@ function ClientFormsTab({ client }) {
 
   const Section = ({ title }) => (
     <div style={{ padding: '12px 0 4px', marginTop: '8px' }}>
-      <p style={{ fontSize: '11px', color: '#b22222', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', margin: 0 }}>{title}</p>
+      <p style={{ fontSize: '12px', color: '#b22222', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', margin: 0 }}>{title}</p>
     </div>
   );
 
@@ -917,12 +917,12 @@ function ClientFormsTab({ client }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <p style={{ color: '#fff', fontWeight: '600', margin: '0 0 3px' }}>Welcome Packet</p>
-          <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>
+          <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
             Submitted {packet.submitted_at ? new Date(packet.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
           </p>
         </div>
         <button onClick={() => generateWelcomePDF(packet)}
-          style={{ background: '#1a2a1a', border: '1px solid #2a5a2a', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+          style={{ background: '#1a2a1a', border: '1px solid #2a5a2a', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
           ⬇ Export PDF
         </button>
       </div>
@@ -977,7 +977,7 @@ function ClientFormsTab({ client }) {
       {overnights.length > 0 && (
         <div style={{ marginTop: '24px' }}>
           <div style={{ padding: '12px 0 8px', borderTop: '1px solid #222' }}>
-            <p style={{ fontSize: '11px', color: '#b22222', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', margin: 0 }}>Overnight Pass Requests</p>
+            <p style={{ fontSize: '12px', color: '#b22222', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700', margin: 0 }}>Overnight Pass Requests</p>
           </div>
           {overnights.map(req => {
             const sc = req.status === 'approved' ? { bg: '#14532d', color: '#4ade80' } : req.status === 'denied' ? { bg: '#3a0f0f', color: '#f87171' } : { bg: '#3a2d1e', color: '#fb923c' };
@@ -985,14 +985,14 @@ function ClientFormsTab({ client }) {
             return (
               <div key={req.id} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <p style={{ color: '#ddd', fontSize: '13px', margin: 0, fontWeight: '500' }}>
+                  <p style={{ color: '#ddd', fontSize: '14px', margin: 0, fontWeight: '500' }}>
                     {fmt(req.departure_datetime)} → {fmt(req.return_datetime)}
                   </p>
-                  <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '11px', fontWeight: '600', background: sc.bg, color: sc.color, textTransform: 'capitalize' }}>{req.status}</span>
+                  <span style={{ padding: '2px 8px', borderRadius: '10px', fontSize: '12px', fontWeight: '600', background: sc.bg, color: sc.color, textTransform: 'capitalize' }}>{req.status}</span>
                 </div>
-                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>📍 {req.location || '—'} · 👤 {req.who_seeing || '—'}</p>
-                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Reason: {req.reason || '—'}</p>
-                {req.review_notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0', fontStyle: 'italic' }}>Note: {req.review_notes}</p>}
+                <p style={{ color: '#888', fontSize: '13px', margin: '0 0 2px' }}>📍 {req.location || '—'} · 👤 {req.who_seeing || '—'}</p>
+                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Reason: {req.reason || '—'}</p>
+                {req.review_notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0', fontStyle: 'italic' }}>Note: {req.review_notes}</p>}
               </div>
             );
           })}
@@ -1016,11 +1016,11 @@ function StayPhotos({ clientId, stayId }) {
   if (!photos.length) return null;
   return (
     <div style={{ gridColumn: 'span 2', marginTop: '8px' }}>
-      <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge Photos</p>
+      <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge Photos</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
         {photos.map((url, i) => (
           <img key={i} src={url} alt="" onClick={() => window.open(url, '_blank')}
-            style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #333', cursor: 'pointer' }} />
+            style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #32323e', cursor: 'pointer' }} />
         ))}
       </div>
     </div>
@@ -1759,12 +1759,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     };
 
     return (
-      <div style={{ padding: '6px 0', borderBottom: '1px solid #333' }}>
+      <div style={{ padding: '6px 0', borderBottom: '1px solid #32323e' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>⭐ Early Admission</span>
+          <span style={{ fontSize: '14px', color: '#999', flexShrink: 0 }}>⭐ Early Admission</span>
           {!editing ? (
             <span onClick={() => setEditing(true)} title="Click to edit"
-              style={{ fontSize: '13px', color: selected.early_admission ? '#fbbf24' : '#999', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+              style={{ fontSize: '14px', color: selected.early_admission ? '#fbbf24' : '#999', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
               {selected.early_admission ? 'Yes' : 'No'}
@@ -1773,7 +1773,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <input type="checkbox" checked={checked} onChange={e => setChecked(e.target.checked)}
                 style={{ width: '15px', height: '15px', accentColor: '#b22222', cursor: 'pointer' }} />
-              <span style={{ fontSize: '13px', color: '#ddd' }}>{checked ? 'Yes' : 'No'}</span>
+              <span style={{ fontSize: '14px', color: '#ddd' }}>{checked ? 'Yes' : 'No'}</span>
             </div>
           )}
         </div>
@@ -1784,16 +1784,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               onChange={e => setNotes(e.target.value)}
               placeholder="Reason for early admission..."
               rows={3}
-              style={{ width: '100%', background: '#111', border: '1px solid #555', borderRadius: '6px', color: '#fff', fontSize: '13px', padding: '6px 8px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: '#1e1e24', border: '1px solid #555', borderRadius: '6px', color: '#fff', fontSize: '14px', padding: '6px 8px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
             />
             <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-              <button onClick={save} style={{ padding: '4px 12px', background: '#b22222', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: '600' }}>Save</button>
-              <button onClick={cancel} style={{ padding: '4px 12px', background: '#2a2a2a', color: '#aaa', border: '1px solid #333', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={save} style={{ padding: '4px 12px', background: '#b22222', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>Save</button>
+              <button onClick={cancel} style={{ padding: '4px 12px', background: '#26262e', color: '#aaa', border: '1px solid #32323e', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
             </div>
           </div>
         )}
         {!editing && selected.early_admission && selected.early_admission_notes && (
-          <p style={{ fontSize: '12px', color: '#888', margin: '4px 0 0 0', fontStyle: 'italic' }}>{selected.early_admission_notes}</p>
+          <p style={{ fontSize: '13px', color: '#888', margin: '4px 0 0 0', fontStyle: 'italic' }}>{selected.early_admission_notes}</p>
         )}
       </div>
     );
@@ -1802,23 +1802,23 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const EditableField = ({ label, field, value, alert: isAlert, options }) => {
     const isEditing = editingField?.field === field;
     return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
-        <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>{label}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #32323e', gap: '12px' }}>
+        <span style={{ fontSize: '14px', color: '#999', flexShrink: 0 }}>{label}</span>
         {isEditing ? (
           options ? (
             <select autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
-              style={{ background: '#111', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '13px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
+              style={{ background: '#1e1e24', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '14px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
               <option value="">—</option>
               {options.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           ) : (
             <input autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
               onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
-              style={{ background: '#111', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '13px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
+              style={{ background: '#1e1e24', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '14px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
           )
         ) : (
           <span onClick={() => startEdit(field, value)} title="Click to edit"
-            style={{ fontSize: '13px', color: isAlert ? '#f87171' : value ? '#ddd' : '#999', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+            style={{ fontSize: '14px', color: isAlert ? '#f87171' : value ? '#ddd' : '#999', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
             onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
             {value || '—'}
@@ -1829,9 +1829,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   };
 
   const ReadField = ({ label, value, alert: isAlert }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #333', gap: '12px' }}>
-      <span style={{ fontSize: '13px', color: '#999', flexShrink: 0 }}>{label}</span>
-      <span style={{ fontSize: '13px', color: isAlert ? '#f87171' : value ? '#ddd' : '#999', textAlign: 'right', wordBreak: 'break-word' }}>{value || '—'}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #32323e', gap: '12px' }}>
+      <span style={{ fontSize: '14px', color: '#999', flexShrink: 0 }}>{label}</span>
+      <span style={{ fontSize: '14px', color: isAlert ? '#f87171' : value ? '#ddd' : '#999', textAlign: 'right', wordBreak: 'break-word' }}>{value || '—'}</span>
     </div>
   );
 
@@ -1845,12 +1845,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const address = locationLabels[entryId];
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
     return (
-      <div style={{ background: '#222', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+      <div style={{ background: '#26262e', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '13px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          <span style={{ fontSize: '14px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
   };
@@ -1862,31 +1862,31 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const count = entries.length;
     const meetsGoal = count >= 4;
     return (
-      <div style={{ background: '#1a1a1a', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#2a3d52' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
+      <div style={{ background: '#1c1c24', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#2a3d52' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
         <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
-            {isThisWeek && <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '600' }}>This week</span>}
+            <span style={{ fontSize: '14px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
+            {isThisWeek && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa', fontWeight: '600' }}>This week</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '700', color: meetsGoal ? '#4ade80' : '#f87171' }}>{count} / 4 meetings</span>
-            <span style={{ fontSize: '13px', color: meetsGoal ? '#4ade80' : '#f87171' }}>{meetsGoal ? '✓' : '✗'}</span>
-            <span style={{ color: '#bbb', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
+            <span style={{ fontSize: '14px', fontWeight: '700', color: meetsGoal ? '#4ade80' : '#f87171' }}>{count} / 4 meetings</span>
+            <span style={{ fontSize: '14px', color: meetsGoal ? '#4ade80' : '#f87171' }}>{meetsGoal ? '✓' : '✗'}</span>
+            <span style={{ color: '#bbb', fontSize: '14px' }}>{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
         {isExpanded && (
-          <div style={{ borderTop: '1px solid #333', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ borderTop: '1px solid #32323e', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {entries.map(m => (
               <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '13px', color: '#60a5fa', fontWeight: '500' }}>{m.meeting_name || 'Meeting'}</span>
-                    <span style={{ fontSize: '13px', color: '#bbb' }}>by {m.author}</span>
+                    <span style={{ fontSize: '14px', color: '#60a5fa', fontWeight: '500' }}>{m.meeting_name || 'Meeting'}</span>
+                    <span style={{ fontSize: '14px', color: '#bbb' }}>by {m.author}</span>
                   </div>
                   {m.latitude && m.longitude && <LocationPin entryId={m.id} lat={m.latitude} lng={m.longitude} />}
-                  {m.notes && <p style={{ color: '#bbb', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
+                  {m.notes && <p style={{ color: '#bbb', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
                 </div>
-                <span style={{ fontSize: '13px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
+                <span style={{ fontSize: '14px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
               </div>
             ))}
           </div>
@@ -1905,35 +1905,35 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const total = entries.length;
     const allDone = total > 0 && notCompleted === 0 && partial === 0;
     return (
-      <div style={{ background: '#1a1a1a', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#1a3a2a' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
+      <div style={{ background: '#1c1c24', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#1a3a2a' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
         <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
-            {isThisWeek && <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
+            <span style={{ fontSize: '14px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
+            {isThisWeek && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ display: 'flex', gap: '6px' }}>
-              {completed > 0 && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>{completed} done</span>}
-              {partial > 0 && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
-              {notCompleted > 0 && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
+              {completed > 0 && <span style={{ fontSize: '14px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>{completed} done</span>}
+              {partial > 0 && <span style={{ fontSize: '14px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
+              {notCompleted > 0 && <span style={{ fontSize: '14px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
             </div>
-            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '13px' }}>{allDone ? '✓' : '✗'}</span>
-            <span style={{ color: '#bbb', fontSize: '13px' }}>{isExpanded ? '▲' : '▼'}</span>
+            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '14px' }}>{allDone ? '✓' : '✗'}</span>
+            <span style={{ color: '#bbb', fontSize: '14px' }}>{isExpanded ? '▲' : '▼'}</span>
           </div>
         </div>
         {isExpanded && (
-          <div style={{ borderTop: '1px solid #333', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ borderTop: '1px solid #32323e', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {entries.map(c => {
               const col = choreStatusColor(c.event_name);
               return (
                 <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
-                    <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '13px' }}>{c.event_name}</span>
-                    {c.meeting_name && <span style={{ fontSize: '13px', color: '#ddd', fontWeight: '500' }}>{c.meeting_name}</span>}
-                    <span style={{ fontSize: '13px', color: '#bbb' }}>by {c.author}</span>
-                    {c.notes && <span style={{ fontSize: '13px', color: '#999' }}>— {c.notes}</span>}
+                    <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '14px' }}>{c.event_name}</span>
+                    {c.meeting_name && <span style={{ fontSize: '14px', color: '#ddd', fontWeight: '500' }}>{c.meeting_name}</span>}
+                    <span style={{ fontSize: '14px', color: '#bbb' }}>by {c.author}</span>
+                    {c.notes && <span style={{ fontSize: '14px', color: '#999' }}>— {c.notes}</span>}
                   </div>
-                  <span style={{ fontSize: '13px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(c.created_at)}</span>
+                  <span style={{ fontSize: '14px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(c.created_at)}</span>
                 </div>
               );
             })}
@@ -2034,7 +2034,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <span style={{ ...st.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
                   {selected.status === 'Active' && (
                     <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
-                      style={{ fontSize: '13px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
+                      style={{ fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#1e2d3a', color: '#60a5fa', border: '1px solid #2a3d52', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
                       <option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option><option value={4}>Level 4</option>
                     </select>
                   )}
@@ -2046,7 +2046,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {onBackToHouses && (
                   <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
-                    style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '13px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', fontSize: '14px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     ← Houses
                   </button>
                 )}
@@ -2069,10 +2069,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   {isMoreTabActive ? activeTab.charAt(0).toUpperCase() + activeTab.slice(1) : 'More'} {showMoreTabs ? '▲' : '▼'}
                 </button>
                 {showMoreTabs && (
-                  <div style={{ position: 'absolute', top: '100%', right: 0, background: '#1a1a1a', border: '1px solid #333', borderRadius: '10px', overflow: 'hidden', zIndex: 50, minWidth: '140px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
+                  <div style={{ position: 'absolute', top: '100%', right: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', overflow: 'hidden', zIndex: 50, minWidth: '140px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)' }}>
                     {MORE_TABS.map(t => (
                       <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); setShowMoreTabs(false); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: activeTab === t ? '#333' : 'transparent', border: 'none', color: activeTab === t ? '#fff' : '#aaa', fontSize: '13px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 16px', background: activeTab === t ? '#333' : 'transparent', border: 'none', color: activeTab === t ? '#fff' : '#aaa', fontSize: '14px', cursor: 'pointer', borderBottom: '1px solid #2a2a2a' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#333'}
                         onMouseLeave={e => e.currentTarget.style.background = activeTab === t ? '#333' : 'transparent'}>
                         {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -2093,16 +2093,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <span style={{ fontSize: '22px', fontWeight: '700', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
                             {clientBalance > 0 ? `$${clientBalance.toFixed(2)}` : clientBalance < 0 ? `$${Math.abs(clientBalance).toFixed(2)}` : '$0.00'}
                           </span>
-                          <span style={{ fontSize: '12px', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
+                          <span style={{ fontSize: '13px', color: clientBalance > 0 ? '#f87171' : clientBalance < 0 ? '#4ade80' : '#bbb' }}>
                             {clientBalance > 0 ? 'owed' : clientBalance < 0 ? 'credit' : 'paid in full'}
                           </span>
                           <button onClick={() => setActiveTab('payments')}
-                            style={{ fontSize: '11px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', marginLeft: '4px' }}>
+                            style={{ fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '2px 8px', cursor: 'pointer', marginLeft: '4px' }}>
                             View payments →
                           </button>
                         </div>
                       )}
-                      <p style={{ fontSize: '13px', color: '#555', margin: 0, fontStyle: 'italic' }}>Click any field to edit.</p>
+                      <p style={{ fontSize: '14px', color: '#555', margin: 0, fontStyle: 'italic' }}>Click any field to edit.</p>
                     </div>
                     {hasFullAccess && (
                       <button onClick={() => {
@@ -2116,7 +2116,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         };
                         img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, latestCheckIn, null);
                         img.src = klLogo;
-                      }} style={{ padding: '5px 12px', background: '#1e2d3a', border: '1px solid #2a3d52', borderRadius: '6px', color: '#60a5fa', fontSize: '12px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                      }} style={{ padding: '5px 12px', background: '#1e2d3a', border: '1px solid #2a3d52', borderRadius: '6px', color: '#60a5fa', fontSize: '13px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
                         📄 Progress Report
                       </button>
                     )}
@@ -2134,7 +2134,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <Card title="House assignment" action={
                       selected.status === 'Active' && selected.house_id && hasFullAccess ? (
                         <button onClick={() => { setSelected(null); setEditingField(null); setMoveHouseModal(selected); }}
-                          style={{ padding: '2px 8px', background: 'transparent', border: 'none', borderRadius: '4px', color: '#60a5fa', fontSize: '11px', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                          style={{ padding: '2px 8px', background: 'transparent', border: 'none', borderRadius: '4px', color: '#60a5fa', fontSize: '12px', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           ⇄ Transfer
                         </button>
                       ) : null
@@ -2195,7 +2195,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       };
                       img.onerror = () => generateUAHistoryPDF(selected, uaRecords, null);
                       img.src = klLogo;
-                    }} style={{ padding: '4px 12px', background: '#2d1e3a', border: '1px solid #4a2a5a', borderRadius: '6px', color: '#c084fc', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}>
+                    }} style={{ padding: '4px 12px', background: '#2d1e3a', border: '1px solid #4a2a5a', borderRadius: '6px', color: '#c084fc', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
                       📄 UA Report
                     </button>
                   ) : null
@@ -2210,28 +2210,28 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           return (
                             <div key={result} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
-                              <span style={{ color: col.color, fontSize: '13px', opacity: 0.8 }}>{result}</span>
+                              <span style={{ color: col.color, fontSize: '14px', opacity: 0.8 }}>{result}</span>
                             </div>
                           );
                         })}
-                        <div style={{ background: '#333', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ background: '#26262e', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{uaRecords.length}</span>
-                          <span style={{ color: '#bbb', fontSize: '13px' }}>Total</span>
+                          <span style={{ color: '#bbb', fontSize: '14px' }}>Total</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {uaRecords.map(ua => {
                           const col = uaResultColor(ua.event_name);
                           return (
-                            <div key={ua.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
+                            <div key={ua.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#1c1c24', borderRadius: '8px', border: '1px solid #32323e' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '13px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
-                                <span style={{ color: '#aaa', fontSize: '13px' }}>By {ua.author}</span>
-                                {ua.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '12px' }}>House</span>}
+                                <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '14px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
+                                <span style={{ color: '#aaa', fontSize: '14px' }}>By {ua.author}</span>
+                                {ua.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '13px' }}>House</span>}
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDateShort(ua.created_at)}</span>
-                                {ua.notes && <span style={{ color: '#999', fontSize: '13px', maxWidth: '200px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ua.notes}</span>}
+                                <span style={{ color: '#bbb', fontSize: '14px' }}>{formatDateShort(ua.created_at)}</span>
+                                {ua.notes && <span style={{ color: '#999', fontSize: '14px', maxWidth: '200px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ua.notes}</span>}
                               </div>
                             </div>
                           );
@@ -2249,10 +2249,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
                         <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#60a5fa', fontSize: '18px', fontWeight: '700' }}>{meetingRecords.length}</span>
-                          <span style={{ color: '#60a5fa', fontSize: '13px', opacity: 0.8 }}>Total Meetings</span>
+                          <span style={{ color: '#60a5fa', fontSize: '14px', opacity: 0.8 }}>Total Meetings</span>
                         </div>
                       </div>
-                      <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 12px 0' }}>Goal: 4 meetings per week. Current week expands automatically.</p>
+                      <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 12px 0' }}>Goal: 4 meetings per week. Current week expands automatically.</p>
                       {groupByWeek(meetingRecords).map(({ weekStart, entries }) => (
                         <MeetingWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
                       ))}
@@ -2273,16 +2273,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           return (
                             <div key={status} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
-                              <span style={{ color: col.color, fontSize: '13px', opacity: 0.8 }}>{status}</span>
+                              <span style={{ color: col.color, fontSize: '14px', opacity: 0.8 }}>{status}</span>
                             </div>
                           );
                         })}
-                        <div style={{ background: '#333', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <div style={{ background: '#26262e', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{choreRecords.length}</span>
-                          <span style={{ color: '#bbb', fontSize: '13px' }}>Total</span>
+                          <span style={{ color: '#bbb', fontSize: '14px' }}>Total</span>
                         </div>
                       </div>
-                      <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 12px 0' }}>Current week expands automatically. ✓ = all chores completed that week.</p>
+                      <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 12px 0' }}>Current week expands automatically. ✓ = all chores completed that week.</p>
                       {groupByWeek(choreRecords).map(({ weekStart, entries }) => (
                         <ChoreWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
                       ))}
@@ -2300,13 +2300,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         return meds.length > 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {meds.map((med, i) => (
-                              <div key={i} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '12px 14px', border: '1px solid #333' }}>
+                              <div key={i} style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', border: '1px solid #32323e' }}>
                                 <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: '0 0 8px 0' }}>{med.name || 'Unnamed medication'}</p>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
-                                  {med.dosage && <div><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Dosage</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.dosage}</p></div>}
-                                  {med.intake && <div><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Frequency</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.intake}x/day</p></div>}
-                                  {med.count && <div><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Count</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.count}</p></div>}
-                                  {med.notes && <div style={{ gridColumn: 'span 2' }}><span style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase' }}>Notes</span><p style={{ color: '#ddd', fontSize: '13px', margin: '2px 0 0 0' }}>{med.notes}</p></div>}
+                                  {med.dosage && <div><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Dosage</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.dosage}</p></div>}
+                                  {med.intake && <div><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Frequency</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.intake}x/day</p></div>}
+                                  {med.count && <div><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Count</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.count}</p></div>}
+                                  {med.notes && <div style={{ gridColumn: 'span 2' }}><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Notes</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.notes}</p></div>}
                                 </div>
                               </div>
                             ))}
@@ -2323,7 +2323,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <div>
                       <p style={{ ...st.sectionLabel, margin: 0 }}>Timeline</p>
-                      {timelineTotal > 0 && <p style={{ color: '#bbb', fontSize: '13px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
+                      {timelineTotal > 0 && <p style={{ color: '#bbb', fontSize: '14px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={() => setShowTimelinePDFModal(true)} style={{ ...st.smallAddBtn, background: '#1e3a2f', color: '#4ade80', border: '1px solid #2d5a3d' }}>⬇ Export PDF</button>
@@ -2343,7 +2343,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <label style={sf.label}>Result</label>
                           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                             {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="ua_result" value={opt} checked={entryForm.ua_result === opt} onChange={() => setEntryForm(p => ({ ...p, ua_result: opt }))} />{opt}
                               </label>
                             ))}
@@ -2355,7 +2355,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <label style={sf.label}>Severity</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
-                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
@@ -2367,7 +2367,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <label style={sf.label}>Severity</label>
                           <div style={{ display: 'flex', gap: '16px', marginBottom: '10px' }}>
                             {['Minor', 'Major', 'Serious'].map(sv => (
-                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="infraction_severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
@@ -2390,7 +2390,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             <label style={sf.label}>Status</label>
                             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                               {['Completed', 'Not Completed', 'Partial'].map(opt => (
-                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                   <input type="radio" name="chore_status" value={opt} checked={entryForm.chore_status === opt} onChange={() => setEntryForm(p => ({ ...p, chore_status: opt }))} />{opt}
                                 </label>
                               ))}
@@ -2409,7 +2409,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <label style={sf.label}>Status</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Here', 'Not Here'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '13px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="checkin" value={opt} checked={entryForm.checkin_status === opt} onChange={() => setEntryForm(p => ({ ...p, checkin_status: opt }))} />{opt}
                               </label>
                             ))}
@@ -2447,7 +2447,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                               {[['yes', 'Yes'], ['no', 'No']].map(([val, label]) => (
                                 <button key={val} onClick={() => setEntryForm(p => ({ ...p, wci_chore_completed: val }))}
-                                  style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                                  style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
                                     borderColor: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#4ade80' : '#f87171') : '#555',
                                     background: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#1a3a2a' : '#3a1a1a') : 'transparent',
                                     color: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#4ade80' : '#f87171') : '#aaa',
@@ -2462,7 +2462,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                               {[['yes', 'Yes'], ['no', 'No']].map(([val, label]) => (
                                 <button key={val} onClick={() => setEntryForm(p => ({ ...p, wci_employed: val }))}
-                                  style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                                  style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
                                     borderColor: entryForm.wci_employed === val ? '#60a5fa' : '#555',
                                     background: entryForm.wci_employed === val ? '#1e2d3a' : 'transparent',
                                     color: entryForm.wci_employed === val ? '#60a5fa' : '#aaa',
@@ -2507,12 +2507,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             const reader = new FileReader();
                             reader.onload = ev => setEntryForm(p => ({ ...p, photo_file: file, photo_preview: ev.target.result }));
                             reader.readAsDataURL(file);
-                          }} style={{ color: '#aaa', fontSize: '13px', marginBottom: '8px', display: 'block' }} />
+                          }} style={{ color: '#aaa', fontSize: '14px', marginBottom: '8px', display: 'block' }} />
                           {entryForm.photo_preview && (
                             <div style={{ position: 'relative', display: 'inline-block' }}>
-                              <img src={entryForm.photo_preview} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #444' }} />
+                              <img src={entryForm.photo_preview} alt="Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #3a3a48' }} />
                               <button onClick={() => setEntryForm(p => ({ ...p, photo_file: null, photo_preview: null }))}
-                                style={{ position: 'absolute', top: 4, right: 4, background: '#b22222', border: 'none', color: '#fff', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>×</button>
+                                style={{ position: 'absolute', top: 4, right: 4, background: '#b22222', border: 'none', color: '#fff', borderRadius: '50%', width: 22, height: 22, cursor: 'pointer', fontSize: '13px', fontWeight: '700' }}>×</button>
                             </div>
                           )}
                         </div>
@@ -2533,16 +2533,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: entryColor(entry.entry_type), flexShrink: 0 }} />
                                 <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{entry.entry_type}</span>
-                                {entry.meeting_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.meeting_name}</span>}
-                                {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '13px' }}>{entry.event_name}</span>}
+                                {entry.meeting_name && <span style={{ color: '#60a5fa', fontSize: '14px' }}>{entry.meeting_name}</span>}
+                                {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '14px' }}>{entry.event_name}</span>}
                                 {entry.mood_value && <span style={{ ...st.badge, background: '#3a2d1e', color: '#fb923c' }}>Mood: {entry.mood_value}/10</span>}
                                 {entry.severity && <span style={{ ...st.badge, background: entry.severity === 'High' || entry.severity === 'Serious' ? '#3a1e1e' : entry.severity === 'Medium' || entry.severity === 'Major' ? '#3a2d1e' : '#1e3a2f', color: entry.severity === 'High' || entry.severity === 'Serious' ? '#f87171' : entry.severity === 'Medium' || entry.severity === 'Major' ? '#fb923c' : '#4ade80' }}>{entry.severity}</span>}
-                                {entry.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '12px' }}>House</span>}
-                                {entry.source === 'client' && <span style={{ ...st.badge, background: '#2d1e3a', color: '#c084fc', fontSize: '12px' }}>Self</span>}
+                                {entry.source === 'house' && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa', fontSize: '13px' }}>House</span>}
+                                {entry.source === 'client' && <span style={{ ...st.badge, background: '#2d1e3a', color: '#c084fc', fontSize: '13px' }}>Self</span>}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ color: '#bbb', fontSize: '13px', whiteSpace: 'nowrap' }}>{formatDate(entry.created_at)}</span>
-                                <button onClick={() => deleteTimelineEntry(entry.id)} style={{ background: 'transparent', border: '1px solid #444', color: '#999', borderRadius: '4px', padding: '2px 8px', fontSize: '13px', cursor: 'pointer' }}>×</button>
+                                <span style={{ color: '#bbb', fontSize: '14px', whiteSpace: 'nowrap' }}>{formatDate(entry.created_at)}</span>
+                                <button onClick={() => deleteTimelineEntry(entry.id)} style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#999', borderRadius: '4px', padding: '2px 8px', fontSize: '14px', cursor: 'pointer' }}>×</button>
                               </div>
                             </div>
                             {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
@@ -2550,19 +2550,19 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               ? <WeeklyReflectionCard entry={entry} />
                               : entry.entry_type === 'Weekly Check-In'
                               ? <WeeklyCheckInCard entry={entry} />
-                              : entry.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
+                              : entry.notes && <p style={{ color: '#aaa', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
                             {entry.photo_url && (
                                 <img src={entry.photo_url} alt="" onClick={() => setLightboxUrl(entry.photo_url)}
-                                  style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #444', cursor: 'pointer' }} />
+                                  style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #3a3a48', cursor: 'pointer' }} />
                               )}
-                            {entry.author && <p style={{ color: '#bbb', fontSize: '13px', margin: '6px 0 0 0' }}>By {entry.author}</p>}
+                            {entry.author && <p style={{ color: '#bbb', fontSize: '14px', margin: '6px 0 0 0' }}>By {entry.author}</p>}
                           </div>
                         ))}
                       </div>
                       {hasMoreTimeline && (
                         <div style={{ textAlign: 'center', marginTop: '16px' }}>
                           <button onClick={() => fetchTimeline(selected.id, true)} disabled={timelineLoadingMore}
-                            style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 20px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                             {timelineLoadingMore ? 'Loading...' : `Load more (${timelineTotal - timeline.length} remaining)`}
                           </button>
                         </div>
@@ -2575,11 +2575,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 {showTimelinePDFModal && (
                   <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}
                     onClick={() => setShowTimelinePDFModal(false)}>
-                    <div style={{ background: '#1a1a1a', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '440px', border: '1px solid #333' }}
+                    <div style={{ background: '#1c1c24', borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '440px', border: '1px solid #32323e' }}
                       onClick={e => e.stopPropagation()}>
                       <h3 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: '18px' }}>Generate Timeline PDF</h3>
-                      <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 20px 0' }}>Choose a date range and optional event type filter.</p>
-                      <p style={{ color: '#bbb', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px 0' }}>Common Ranges</p>
+                      <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 20px 0' }}>Choose a date range and optional event type filter.</p>
+                      <p style={{ color: '#bbb', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px 0' }}>Common Ranges</p>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
                         {[
                           { label: 'Last 7 Days', days: 7 },
@@ -2598,24 +2598,24 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           else if (opt.all) { start = ''; end = ''; }
                           const active = pdfRange.startDate === start && pdfRange.endDate === end;
                           return <button key={opt.label} onClick={() => setPdfRange(p => ({ ...p, startDate: start, endDate: end }))}
-                            style={{ padding: '6px 12px', borderRadius: '20px', border: `1px solid ${active ? '#4ade80' : '#444'}`, background: active ? '#1e3a2f' : 'transparent', color: active ? '#4ade80' : '#aaa', fontSize: '13px', cursor: 'pointer' }}>{opt.label}</button>;
+                            style={{ padding: '6px 12px', borderRadius: '20px', border: `1px solid ${active ? '#4ade80' : '#444'}`, background: active ? '#1e3a2f' : 'transparent', color: active ? '#4ade80' : '#aaa', fontSize: '14px', cursor: 'pointer' }}>{opt.label}</button>;
                         })}
                       </div>
-                      <label style={{ color: '#bbb', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Start Date</label>
+                      <label style={{ color: '#bbb', fontSize: '14px', display: 'block', marginBottom: '6px' }}>Start Date</label>
                       <input type="date" value={pdfRange.startDate} onChange={e => setPdfRange(p => ({ ...p, startDate: e.target.value }))}
-                        style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', marginBottom: '14px', boxSizing: 'border-box' }} />
-                      <label style={{ color: '#bbb', fontSize: '13px', display: 'block', marginBottom: '6px' }}>End Date <span style={{ color: '#666' }}>(optional)</span></label>
+                        style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '14px', marginBottom: '14px', boxSizing: 'border-box' }} />
+                      <label style={{ color: '#bbb', fontSize: '14px', display: 'block', marginBottom: '6px' }}>End Date <span style={{ color: '#666' }}>(optional)</span></label>
                       <input type="date" value={pdfRange.endDate} onChange={e => setPdfRange(p => ({ ...p, endDate: e.target.value }))}
-                        style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', marginBottom: '14px', boxSizing: 'border-box' }} />
-                      <label style={{ color: '#bbb', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Event Type <span style={{ color: '#666' }}>(optional)</span></label>
+                        style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '14px', marginBottom: '14px', boxSizing: 'border-box' }} />
+                      <label style={{ color: '#bbb', fontSize: '14px', display: 'block', marginBottom: '6px' }}>Event Type <span style={{ color: '#666' }}>(optional)</span></label>
                       <select value={pdfRange.eventType} onChange={e => setPdfRange(p => ({ ...p, eventType: e.target.value }))}
-                        style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '13px', marginBottom: '20px', boxSizing: 'border-box' }}>
+                        style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 12px', color: '#fff', fontSize: '14px', marginBottom: '20px', boxSizing: 'border-box' }}>
                         <option value="All">All Event Types</option>
                         {['UA', 'Crisis', 'Infraction', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In', 'Weekly Reflection', 'House Check-In', 'Batch UA', 'Event Attendance'].map(t => <option key={t}>{t}</option>)}
                       </select>
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => setShowTimelinePDFModal(false)}
-                          style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+                          style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #3a3a48', background: 'transparent', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
                         <button onClick={() => { generateTimelinePDF(selected, pdfRange.startDate, pdfRange.endDate, pdfRange.eventType); setShowTimelinePDFModal(false); }}
                           style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: '#4ade80', color: '#000', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Generate PDF</button>
                       </div>
@@ -2630,14 +2630,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   ) : stays.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '30px 0' }}>
                       <p style={{ color: '#bbb', fontSize: '14px', margin: 0 }}>No previous stays recorded.</p>
-                      <p style={{ color: '#999', fontSize: '13px', margin: '6px 0 0 0' }}>Stay history is saved automatically when a client is discharged.</p>
+                      <p style={{ color: '#999', fontSize: '14px', margin: '6px 0 0 0' }}>Stay history is saved automatically when a client is discharged.</p>
                     </div>
                   ) : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                         <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           <span style={{ color: '#60a5fa', fontSize: '20px', fontWeight: '700' }}>{stays.length}</span>
-                          <span style={{ color: '#60a5fa', fontSize: '13px', opacity: 0.8 }}>Total Stays</span>
+                          <span style={{ color: '#60a5fa', fontSize: '14px', opacity: 0.8 }}>Total Stays</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -2647,7 +2647,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                             : null;
                           const balance = parseFloat(stay.balance_at_discharge) || 0;
                           return (
-                            <div key={stay.id} style={{ background: '#1a1a1a', borderRadius: '12px', border: '1px solid #333', overflow: 'hidden' }}>
+                            <div key={stay.id} style={{ background: '#1c1c24', borderRadius: '12px', border: '1px solid #32323e', overflow: 'hidden' }}>
                               <div
                                 onClick={() => {
                                   const isOpen = expandedStay === stay.id;
@@ -2656,12 +2656,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 }}
                                 style={{ padding: '12px 16px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <span style={{ color: '#666', fontSize: '12px', transform: expandedStay === stay.id ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▾</span>
+                                  <span style={{ color: '#666', fontSize: '13px', transform: expandedStay === stay.id ? 'rotate(0deg)' : 'rotate(-90deg)', display: 'inline-block', transition: 'transform 0.2s' }}>▾</span>
                                   <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>Stay #{stays.length - i}</span>
                                   {stay.house_name && <span style={{ ...st.badge, background: '#1e2d3a', color: '#60a5fa' }}>{stay.house_name}</span>}
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
-                                  {lengthDays !== null && <span style={{ fontSize: '13px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
+                                  {lengthDays !== null && <span style={{ fontSize: '14px', color: '#bbb' }}>{lengthDays} day{lengthDays !== 1 ? 's' : ''}</span>}
                                   <button
                                     onClick={() => {
                                       const img = new Image();
@@ -2679,7 +2679,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                       img.onerror = () => generateDischargePDF(stay, selected, null);
                                       img.src = klLogo;
                                     }}
-                                    style={{ padding: '5px 12px', background: '#1a2a1a', border: '1px solid #2a5a2a', borderRadius: '6px', color: '#4ade80', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}
+                                    style={{ padding: '5px 12px', background: '#1a2a1a', border: '1px solid #2a5a2a', borderRadius: '6px', color: '#4ade80', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
                                   >
                                     ⬇ Discharge Sheet
                                   </button>
@@ -2690,7 +2690,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                         await supabase.from('client_stays').delete().eq('id', stay.id);
                                         setStays(prev => prev.filter(s => s.id !== stay.id));
                                       }}
-                                      style={{ padding: '5px 12px', background: '#2a1a1a', border: '1px solid #7f1d1d', borderRadius: '6px', color: '#f87171', fontSize: '12px', cursor: 'pointer', fontWeight: '500' }}
+                                      style={{ padding: '5px 12px', background: '#2a1a1a', border: '1px solid #7f1d1d', borderRadius: '6px', color: '#f87171', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
                                     >
                                       🗑 Delete
                                     </button>
@@ -2699,43 +2699,43 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               </div>
                               <div style={{ padding: '12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                 <div>
-                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Move-in</p>
-                                  <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.start_date)}</p>
+                                  <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Move-in</p>
+                                  <p style={{ fontSize: '14px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.start_date)}</p>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge</p>
-                                  <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.discharge_date)}</p>
+                                  <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Discharge</p>
+                                  <p style={{ fontSize: '14px', color: '#ddd', margin: 0 }}>{formatDateFull(stay.discharge_date)}</p>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reason</p>
-                                  <p style={{ fontSize: '13px', color: '#ddd', margin: 0 }}>{stay.discharge_reason || '—'}</p>
+                                  <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Reason</p>
+                                  <p style={{ fontSize: '14px', color: '#ddd', margin: 0 }}>{stay.discharge_reason || '—'}</p>
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Balance at discharge</p>
-                                  <p style={{ fontSize: '13px', fontWeight: '600', margin: 0, color: balance > 0 ? '#f87171' : balance < 0 ? '#4ade80' : '#bbb' }}>
+                                  <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Balance at discharge</p>
+                                  <p style={{ fontSize: '14px', fontWeight: '600', margin: 0, color: balance > 0 ? '#f87171' : balance < 0 ? '#4ade80' : '#bbb' }}>
                                     {balance > 0 ? `$${balance.toFixed(2)} owed` : balance < 0 ? `$${Math.abs(balance).toFixed(2)} credit` : '$0.00'}
                                   </p>
                                 </div>
                                 {stay.discharge_notes && (
                                   <div style={{ gridColumn: 'span 2' }}>
-                                    <p style={{ fontSize: '13px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</p>
-                                    <p style={{ fontSize: '13px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{stay.discharge_notes}</p>
+                                    <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 3px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</p>
+                                    <p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{stay.discharge_notes}</p>
                                   </div>
                                 )}
                                 {stay.discharged_by && (
                                   <div style={{ gridColumn: 'span 2' }}>
-                                    <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Discharged by {stay.discharged_by}</p>
+                                    <p style={{ fontSize: '14px', color: '#999', margin: 0 }}>Discharged by {stay.discharged_by}</p>
                                   </div>
                                 )}
                                 {(stay.not_allowed_back || stay.needs_review_before_readmit) && (
                                   <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
                                     {stay.not_allowed_back && (
-                                      <span style={{ padding: '4px 10px', background: '#3a0f0f', border: '1px solid #7f1d1d', borderRadius: '6px', color: '#f87171', fontSize: '12px', fontWeight: '600', display: 'inline-block' }}>
+                                      <span style={{ padding: '4px 10px', background: '#3a0f0f', border: '1px solid #7f1d1d', borderRadius: '6px', color: '#f87171', fontSize: '13px', fontWeight: '600', display: 'inline-block' }}>
                                         🚫 Not allowed back
                                       </span>
                                     )}
                                     {stay.needs_review_before_readmit && (
-                                      <span style={{ padding: '4px 10px', background: '#3a2a0f', border: '1px solid #92400e', borderRadius: '6px', color: '#fb923c', fontSize: '12px', fontWeight: '600', display: 'inline-block' }}>
+                                      <span style={{ padding: '4px 10px', background: '#3a2a0f', border: '1px solid #92400e', borderRadius: '6px', color: '#fb923c', fontSize: '13px', fontWeight: '600', display: 'inline-block' }}>
                                         ⚠️ Needs upper management review before re-admitting
                                       </span>
                                     )}
@@ -2750,14 +2750,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                                 const fmtFull = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
                                 const tColors = { 'Crisis': '#dc2626', 'Infraction': '#dc2626', 'UA': '#f472b6', 'Meeting': '#60a5fa', 'Mood Check-In': '#BA7517', 'Check-In': '#c084fc', 'General Note': '#f59e0b', 'Chores': '#34d399', 'Weekly Reflection': '#a78bfa', 'House Check-In': '#7F77DD', 'Batch UA': '#1D9E75', 'Event Attendance': '#378ADD' };
-                                if (loading) return <div style={{ padding: '16px', borderTop: '1px solid #2a2a2a', color: '#999', fontSize: '13px' }}>Loading history...</div>;
+                                if (loading) return <div style={{ padding: '16px', borderTop: '1px solid #2a2a2a', color: '#999', fontSize: '14px' }}>Loading history...</div>;
                                 if (!h) return null;
 
                                 const HistSection = ({ title, count, children, color }) => count === 0 ? null : (
                                   <div style={{ marginBottom: '18px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                      <span style={{ color: color || '#60a5fa', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</span>
-                                      <span style={{ background: '#2a2a2a', color: '#999', fontSize: '11px', padding: '1px 6px', borderRadius: '10px' }}>{count}</span>
+                                      <span style={{ color: color || '#60a5fa', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</span>
+                                      <span style={{ background: '#26262e', color: '#999', fontSize: '12px', padding: '1px 6px', borderRadius: '10px' }}>{count}</span>
                                     </div>
                                     {children}
                                   </div>
@@ -2769,7 +2769,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 const noHistory = h.timeline.length === 0 && h.checkIns.length === 0 && h.overnights.length === 0 && !h.welcomePacket && h.charges.length === 0 && h.payments.length === 0;
 
                                 return (
-                                  <div style={{ borderTop: '1px solid #2a2a2a', padding: '16px', background: '#111' }}>
+                                  <div style={{ borderTop: '1px solid #2a2a2a', padding: '16px', background: '#1e1e24' }}>
                                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
                                       {[
                                         { label: 'Timeline Entries', val: h.timeline.length, color: '#a78bfa' },
@@ -2778,9 +2778,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                         { label: 'Charged', val: '$' + totalCharged.toFixed(2), color: '#f87171' },
                                         { label: 'Paid', val: '$' + totalPaid.toFixed(2), color: '#4ade80' },
                                       ].map(s => (
-                                        <div key={s.label} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 12px' }}>
+                                        <div key={s.label} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '8px 12px' }}>
                                           <div style={{ color: s.color, fontSize: '15px', fontWeight: '700' }}>{s.val}</div>
-                                          <div style={{ color: '#666', fontSize: '11px' }}>{s.label}</div>
+                                          <div style={{ color: '#666', fontSize: '12px' }}>{s.label}</div>
                                         </div>
                                       ))}
                                     </div>
@@ -2788,17 +2788,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     <HistSection title="Timeline" count={h.timeline.length} color="#a78bfa">
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {h.timeline.map(e => (
-                                          <div key={e.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px' }}>
+                                          <div key={e.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tColors[e.entry_type] || '#bbb', flexShrink: 0 }} />
-                                              <span style={{ color: '#fff', fontSize: '13px', fontWeight: '500' }}>{e.entry_type}</span>
-                                              {e.ua_result && <span style={{ color: '#f472b6', fontSize: '12px' }}>{e.ua_result}</span>}
-                                              {e.severity && <span style={{ color: '#fb923c', fontSize: '12px' }}>{e.severity}</span>}
-                                              {e.mood_value && <span style={{ color: '#fb923c', fontSize: '12px' }}>Mood: {e.mood_value}/10</span>}
-                                              <span style={{ color: '#666', fontSize: '12px', marginLeft: 'auto' }}>{fmtFull(e.created_at)}</span>
+                                              <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{e.entry_type}</span>
+                                              {e.ua_result && <span style={{ color: '#f472b6', fontSize: '13px' }}>{e.ua_result}</span>}
+                                              {e.severity && <span style={{ color: '#fb923c', fontSize: '13px' }}>{e.severity}</span>}
+                                              {e.mood_value && <span style={{ color: '#fb923c', fontSize: '13px' }}>Mood: {e.mood_value}/10</span>}
+                                              <span style={{ color: '#666', fontSize: '13px', marginLeft: 'auto' }}>{fmtFull(e.created_at)}</span>
                                             </div>
-                                            {e.notes && <p style={{ color: '#aaa', fontSize: '12px', margin: '4px 0 0 0', lineHeight: 1.5 }}>{e.notes}</p>}
-                                            {e.author && <p style={{ color: '#666', fontSize: '12px', margin: '4px 0 0 0' }}>By {e.author}</p>}
+                                            {e.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: 1.5 }}>{e.notes}</p>}
+                                            {e.author && <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>By {e.author}</p>}
                                           </div>
                                         ))}
                                       </div>
@@ -2807,9 +2807,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     <HistSection title="Weekly Check-Ins" count={h.checkIns.length} color="#60a5fa">
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {h.checkIns.map(e => (
-                                          <div key={e.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: '#ddd', fontSize: '13px' }}>Weekly Check-In</span>
-                                            <span style={{ color: '#666', fontSize: '12px' }}>{fmtFull(e.created_at)}</span>
+                                          <div key={e.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ color: '#ddd', fontSize: '14px' }}>Weekly Check-In</span>
+                                            <span style={{ color: '#666', fontSize: '13px' }}>{fmtFull(e.created_at)}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -2818,12 +2818,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     <HistSection title="Overnight Requests" count={h.overnights.length} color="#fb923c">
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {h.overnights.map(r => (
-                                          <div key={r.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <div key={r.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
-                                              <span style={{ color: '#ddd', fontSize: '13px' }}>{fmt(r.start_date)} - {fmt(r.end_date)}</span>
-                                              {r.destination && <span style={{ color: '#999', fontSize: '12px', marginLeft: '8px' }}>{r.destination}</span>}
+                                              <span style={{ color: '#ddd', fontSize: '14px' }}>{fmt(r.start_date)} - {fmt(r.end_date)}</span>
+                                              {r.destination && <span style={{ color: '#999', fontSize: '13px', marginLeft: '8px' }}>{r.destination}</span>}
                                             </div>
-                                            <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '10px', background: r.status === 'approved' ? '#1e3a2f' : r.status === 'denied' ? '#3a1e1e' : '#2a2a2a', color: r.status === 'approved' ? '#4ade80' : r.status === 'denied' ? '#f87171' : '#aaa' }}>{r.status || 'pending'}</span>
+                                            <span style={{ fontSize: '13px', padding: '2px 8px', borderRadius: '10px', background: r.status === 'approved' ? '#1e3a2f' : r.status === 'denied' ? '#3a1e1e' : '#2a2a2a', color: r.status === 'approved' ? '#4ade80' : r.status === 'denied' ? '#f87171' : '#aaa' }}>{r.status || 'pending'}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -2832,11 +2832,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     {h.welcomePacket && (
                                       <div style={{ marginBottom: '18px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                          <span style={{ color: '#34d399', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Welcome Packet</span>
+                                          <span style={{ color: '#34d399', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Welcome Packet</span>
                                         </div>
-                                        <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <span style={{ color: '#4ade80', fontSize: '13px' }}>Completed</span>
-                                          <span style={{ color: '#666', fontSize: '12px' }}>{fmtFull(h.welcomePacket.created_at)}</span>
+                                        <div style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <span style={{ color: '#4ade80', fontSize: '14px' }}>Completed</span>
+                                          <span style={{ color: '#666', fontSize: '13px' }}>{fmtFull(h.welcomePacket.created_at)}</span>
                                         </div>
                                       </div>
                                     )}
@@ -2844,12 +2844,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     <HistSection title="Charges" count={h.charges.length} color="#f87171">
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {h.charges.map(c => (
-                                          <div key={c.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <div key={c.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
-                                              <span style={{ color: '#ddd', fontSize: '13px' }}>{c.description || c.charge_type || 'Charge'}</span>
-                                              {c.due_date && <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>Due {fmt(c.due_date)}</span>}
+                                              <span style={{ color: '#ddd', fontSize: '14px' }}>{c.description || c.charge_type || 'Charge'}</span>
+                                              {c.due_date && <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>Due {fmt(c.due_date)}</span>}
                                             </div>
-                                            <span style={{ color: '#f87171', fontSize: '13px', fontWeight: '600' }}>${parseFloat(c.amount || 0).toFixed(2)}</span>
+                                            <span style={{ color: '#f87171', fontSize: '14px', fontWeight: '600' }}>${parseFloat(c.amount || 0).toFixed(2)}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -2858,19 +2858,19 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     <HistSection title="Payments" count={h.payments.length} color="#4ade80">
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                         {h.payments.map(p => (
-                                          <div key={p.id} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <div key={p.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
-                                              <span style={{ color: '#ddd', fontSize: '13px' }}>{p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}</span>
-                                              {p.payment_date && <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>{fmt(p.payment_date)}</span>}
-                                              {p.notes && <span style={{ color: '#999', fontSize: '12px', marginLeft: '8px' }}>{p.notes}</span>}
+                                              <span style={{ color: '#ddd', fontSize: '14px' }}>{p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}</span>
+                                              {p.payment_date && <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>{fmt(p.payment_date)}</span>}
+                                              {p.notes && <span style={{ color: '#999', fontSize: '13px', marginLeft: '8px' }}>{p.notes}</span>}
                                             </div>
-                                            <span style={{ color: '#4ade80', fontSize: '13px', fontWeight: '600' }}>${parseFloat(p.amount || 0).toFixed(2)}</span>
+                                            <span style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600' }}>${parseFloat(p.amount || 0).toFixed(2)}</span>
                                           </div>
                                         ))}
                                       </div>
                                     </HistSection>
 
-                                    {noHistory && <p style={{ color: '#666', fontSize: '13px', textAlign: 'center', padding: '16px 0' }}>No history found for this stay.</p>}
+                                    {noHistory && <p style={{ color: '#666', fontSize: '14px', textAlign: 'center', padding: '16px 0' }}>No history found for this stay.</p>}
                                   </div>
                                 );
                               })()}
@@ -2895,8 +2895,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               {activeTab === 'notes' && (
                 <Card title="Staff notes" full>
                   <textarea defaultValue={selected.client_notes || ''} onBlur={saveNotes} placeholder="Add staff notes here..."
-                    style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '12px 14px', color: '#fff', fontSize: '14px', lineHeight: '1.6', resize: 'vertical', boxSizing: 'border-box', minHeight: '220px', outline: 'none', fontFamily: 'sans-serif' }} />
-                  <p style={{ color: '#bbb', fontSize: '13px', marginTop: '8px' }}>Changes save automatically when you click away.</p>
+                    style={{ width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '12px 14px', color: '#fff', fontSize: '14px', lineHeight: '1.6', resize: 'vertical', boxSizing: 'border-box', minHeight: '220px', outline: 'none', fontFamily: "'Inter', 'system-ui', sans-serif" }} />
+                  <p style={{ color: '#bbb', fontSize: '14px', marginTop: '8px' }}>Changes save automatically when you click away.</p>
                 </Card>
               )}
 
@@ -2912,7 +2912,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               {isAdmin && (
                 <div style={{ padding: '20px 0 8px', display: 'flex', justifyContent: 'center' }}>
                   <button onClick={() => deleteClient(selected)}
-                    style={{ background: 'transparent', border: '1px solid #3a1a1a', color: '#666', fontSize: '11px', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', letterSpacing: '0.5px' }}>
+                    style={{ background: 'transparent', border: '1px solid #3a1a1a', color: '#666', fontSize: '12px', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', letterSpacing: '0.5px' }}>
                     🗑 Delete Client
                   </button>
                 </div>
@@ -2952,9 +2952,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       {statusModal && (
         <div style={{ ...st.overlay, zIndex: 2000 }} onClick={() => setStatusModal(null)}>
           <div style={{ ...st.modal, maxWidth: '420px', marginTop: '120px' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #333' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #32323e' }}>
               <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>Move to {statusModal.newStatus}</h3>
-              <p style={{ color: '#999', fontSize: '13px', margin: '4px 0 0 0' }}>{statusModal.client.full_name}</p>
+              <p style={{ color: '#999', fontSize: '14px', margin: '4px 0 0 0' }}>{statusModal.client.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
               {statusModal.newStatus === 'Waiting List' && (
@@ -2999,10 +2999,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   ) : (
                     <div style={{ marginBottom: '16px' }}>
                       <div style={{ padding: '10px 12px', background: '#1e2d3a', borderRadius: '8px', border: '1px solid #2a3d52', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#60a5fa' }}>🏠 Already assigned: <span style={{ color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span></span>
+                        <span style={{ fontSize: '14px', color: '#60a5fa' }}>🏠 Already assigned: <span style={{ color: '#ddd' }}>{statusModal.client.house_name || 'Assigned house'}</span></span>
                         <button
                           onClick={() => setStatusForm(p => ({ ...p, changingHouse: !p.changingHouse, house_id: p.changingHouse ? statusModal.client.house_id : '' }))}
-                          style={{ fontSize: '12px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}>
+                          style={{ fontSize: '13px', color: '#60a5fa', background: 'transparent', border: '1px solid #2a3d52', borderRadius: '6px', padding: '3px 10px', cursor: 'pointer' }}>
                           {statusForm.changingHouse ? 'Keep current' : 'Change house'}
                         </button>
                       </div>
@@ -3039,11 +3039,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       ⭐ Early Admission
                     </label>
                   </div>
-                  <div style={{ background: '#222', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                    <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 6px 0' }}>This will:</p>
-                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with the selected move-in date</p>
-                    <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
-                    <p style={{ color: '#ddd', fontSize: '13px', margin: 0 }}>✓ Weekly charges start next Sunday</p>
+                  <div style={{ background: '#26262e', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
+                    <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with the selected move-in date</p>
+                    <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
+                    <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>✓ Weekly charges start next Sunday</p>
                   </div>
                 </>
               )}
@@ -3070,7 +3070,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                       {['yes', 'no'].map(v => (
                         <button key={v} onClick={() => setStatusForm(p => ({ ...p, successful_discharge: v }))}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
                             borderColor: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#999',
                             background: statusForm.successful_discharge === v ? (v === 'yes' ? '#1a3a2a' : '#3a1a1a') : 'transparent',
                             color: statusForm.successful_discharge === v ? (v === 'yes' ? '#4ade80' : '#f87171') : '#aaa',
@@ -3089,7 +3089,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                       {['Complete', 'Incomplete'].map(v => (
                         <button key={v} onClick={() => setStatusForm(p => ({ ...p, discharge_type: v }))}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
                             borderColor: statusForm.discharge_type === v ? '#60a5fa' : '#999',
                             background: statusForm.discharge_type === v ? '#1e2d3a' : 'transparent',
                             color: statusForm.discharge_type === v ? '#60a5fa' : '#aaa',
@@ -3104,7 +3104,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                       {['Positive', 'Negative', 'N/A'].map(v => (
                         <button key={v} onClick={() => setStatusForm(p => ({ ...p, ua_at_discharge: v }))}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
                             borderColor: statusForm.ua_at_discharge === v ? '#60a5fa' : '#999',
                             background: statusForm.ua_at_discharge === v ? '#1e2d3a' : 'transparent',
                             color: statusForm.ua_at_discharge === v ? '#60a5fa' : '#aaa',
@@ -3119,7 +3119,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                       {['Yes', 'No'].map(v => (
                         <button key={v} onClick={() => setStatusForm(p => ({ ...p, two_week_notice: v }))}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
                             borderColor: statusForm.two_week_notice === v ? '#60a5fa' : '#999',
                             background: statusForm.two_week_notice === v ? '#1e2d3a' : 'transparent',
                             color: statusForm.two_week_notice === v ? '#60a5fa' : '#aaa',
@@ -3133,13 +3133,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <label style={sf.label}>Discharge notes</label>
                     <textarea value={statusForm.discharge_notes} onChange={e => setStatusForm(p => ({ ...p, discharge_notes: e.target.value }))} style={{ ...sf.input, resize: 'vertical' }} rows={4} placeholder="Add any details about why the client was discharged..." />
                   </div>
-                  <div style={{ marginBottom: '12px', padding: '12px 14px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #2a2a2a' }}>
-                    <p style={{ margin: '0 0 10px', fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Flags</p>
+                  <div style={{ marginBottom: '12px', padding: '12px 14px', background: '#1c1c24', borderRadius: '8px', border: '1px solid #2e2e3a' }}>
+                    <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Flags</p>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', marginBottom: '10px' }}>
                       <input type="checkbox" checked={statusForm.not_allowed_back || false}
                         onChange={e => setStatusForm(p => ({ ...p, not_allowed_back: e.target.checked }))}
                         style={{ width: '16px', height: '16px', accentColor: '#b22222', cursor: 'pointer' }} />
-                      <span style={{ fontSize: '13px', color: statusForm.not_allowed_back ? '#f87171' : '#aaa', fontWeight: statusForm.not_allowed_back ? '600' : '400' }}>
+                      <span style={{ fontSize: '14px', color: statusForm.not_allowed_back ? '#f87171' : '#aaa', fontWeight: statusForm.not_allowed_back ? '600' : '400' }}>
                         🚫 Not allowed back
                       </span>
                     </label>
@@ -3147,7 +3147,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <input type="checkbox" checked={statusForm.needs_review_before_readmit || false}
                         onChange={e => setStatusForm(p => ({ ...p, needs_review_before_readmit: e.target.checked }))}
                         style={{ width: '16px', height: '16px', accentColor: '#fb923c', cursor: 'pointer' }} />
-                      <span style={{ fontSize: '13px', color: statusForm.needs_review_before_readmit ? '#fb923c' : '#aaa', fontWeight: statusForm.needs_review_before_readmit ? '600' : '400' }}>
+                      <span style={{ fontSize: '14px', color: statusForm.needs_review_before_readmit ? '#fb923c' : '#aaa', fontWeight: statusForm.needs_review_before_readmit ? '600' : '400' }}>
                         ⚠️ Needs reviewed by upper management before re-admitting
                       </span>
                     </label>
@@ -3158,13 +3158,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       onChange={e => setStatusForm(p => ({ ...p, discharge_photos: Array.from(e.target.files) }))}
                       style={{ ...sf.input, padding: '8px', cursor: 'pointer' }} />
                     {statusForm.discharge_photos?.length > 0 && (
-                      <p style={{ fontSize: '12px', color: '#888', margin: '6px 0 0 0' }}>{statusForm.discharge_photos.length} photo{statusForm.discharge_photos.length !== 1 ? 's' : ''} selected</p>
+                      <p style={{ fontSize: '13px', color: '#888', margin: '6px 0 0 0' }}>{statusForm.discharge_photos.length} photo{statusForm.discharge_photos.length !== 1 ? 's' : ''} selected</p>
                     )}
                   </div>
                 </>
               )}
               {!['Waiting List', 'Pending', 'Active', 'Discharged'].includes(statusModal.newStatus) && (
-                <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 16px 0' }}>This will update the client's status to {statusModal.newStatus}.</p>
+                <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 16px 0' }}>This will update the client's status to {statusModal.newStatus}.</p>
               )}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button onClick={() => setStatusModal(null)} style={sf.cancelBtn}>Cancel</button>
@@ -3180,9 +3180,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
 function Card({ title, children, full, action }) {
   return (
-    <div style={{ background: '#333', border: '1px solid #333', borderRadius: '12px', padding: '14px 16px', gridColumn: full ? '1 / -1' : undefined }}>
+    <div style={{ background: '#26262e', border: '1px solid #32323e', borderRadius: '12px', padding: '14px 16px', gridColumn: full ? '1 / -1' : undefined }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <p style={{ fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{title}</p>
+        <p style={{ fontSize: '14px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{title}</p>
         {action && action}
       </div>
       {children}
@@ -3191,48 +3191,48 @@ function Card({ title, children, full, action }) {
 }
 
 const st = {
-  page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
+  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#fff' },
   header: { marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
   sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
   toolbar: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' },
-  search: { width: '100%', maxWidth: '360px', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '14px' },
+  search: { width: '100%', maxWidth: '360px', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '14px' },
   viewToggleWrap: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   filters: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
-  filterBtn: { padding: '6px 14px', borderRadius: '20px', border: '1px solid #444', background: 'transparent', color: '#bbb', fontSize: '13px', cursor: 'pointer' },
+  filterBtn: { padding: '6px 14px', borderRadius: '20px', border: '1px solid #3a3a48', background: 'transparent', color: '#bbb', fontSize: '14px', cursor: 'pointer' },
   filterActive: { background: '#b22222', borderColor: '#b22222', color: '#fff' },
-  table: { background: '#333', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' },
-  tableHeader: { display: 'flex', padding: '12px 16px', borderBottom: '2px solid #7a1515', fontSize: '13px', color: '#999', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  table: { background: '#26262e', borderRadius: '12px', overflow: 'hidden', border: '1px solid #32323e' },
+  tableHeader: { display: 'flex', padding: '12px 16px', borderBottom: '2px solid #7a1515', fontSize: '14px', color: '#999', fontWeight: '500', textTransform: 'uppercase', letterSpacing: '0.05em' },
   row: { display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #222', cursor: 'pointer' },
-  badge: { fontSize: '13px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500' },
+  badge: { fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
-  modal: { background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '860px', overflow: 'hidden' },
+  modal: { background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '860px', overflow: 'hidden' },
   modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '16px 20px', borderBottom: '2px solid #7a1515' },
   modalName: { fontSize: '18px', fontWeight: '500', margin: 0, color: '#fff' },
-  modalSub: { fontSize: '13px', color: '#999', margin: '2px 0 0 0' },
+  modalSub: { fontSize: '14px', color: '#999', margin: '2px 0 0 0' },
   badges: { display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px', alignItems: 'center' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  tabs: { display: 'flex', borderBottom: '1px solid #333', padding: '0 20px', overflowX: 'visible' },
-  tab: { padding: '10px 14px', fontSize: '13px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap', flexShrink: 0 },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #3a3a48', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  tabs: { display: 'flex', borderBottom: '1px solid #32323e', padding: '0 20px', overflowX: 'visible' },
+  tab: { padding: '10px 14px', fontSize: '14px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap', flexShrink: 0 },
   tabActive: { color: '#fff', borderBottomColor: '#b22222' },
   modalBody: { padding: '20px', maxHeight: '520px', overflowY: 'auto' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' },
-  sectionLabel: { fontSize: '13px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  timelineCard: { background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' },
-  miniForm: { background: '#222', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #333' },
-  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
+  sectionLabel: { fontSize: '14px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
+  timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
+  miniForm: { background: '#26262e', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #32323e' },
+  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
   pagination: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '20px', flexWrap: 'wrap' },
-  pageBtn: { padding: '6px 12px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#aaa', fontSize: '13px', cursor: 'pointer', transition: 'all 0.15s' },
+  pageBtn: { padding: '6px 12px', borderRadius: '8px', border: '1px solid #3a3a48', background: 'transparent', color: '#aaa', fontSize: '14px', cursor: 'pointer', transition: 'all 0.15s' },
   pageBtnActive: { background: '#b22222', borderColor: '#b22222', color: '#fff', fontWeight: '600' },
   pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
-  ellipsis: { color: '#bbb', fontSize: '13px', padding: '0 4px' },
+  ellipsis: { color: '#bbb', fontSize: '14px', padding: '0 4px' },
   pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
 
 const sf = {
-  label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '6px' },
-  input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
-  cancelBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
+  label: { display: 'block', color: '#aaa', fontSize: '14px', marginBottom: '6px' },
+  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  cancelBtn: { backgroundColor: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
   confirmBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
 };
 

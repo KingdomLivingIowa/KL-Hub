@@ -1,358 +1,245 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import { useUser } from './UserContext';
 
-function IntakeDischarge() {
-  const [view, setView] = useState('intake');
-  const [house, setHouse] = useState('men');
-  const [records, setRecords] = useState([]);
-  const [filter, setFilter] = useState('all');
-  const [reportMonth, setReportMonth] = useState('');
-  const [reportHouse, setReportHouse] = useState('combined');
-  const [activeClients, setActiveClients] = useState([]);
-  const [waitingListCounts, setWaitingListCounts] = useState([]);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [loading, setLoading] = useState(false);
+const LEVELS = [1, 2, 3, 4];
+const LEVEL_LABELS = { 1: 'Level 1', 2: 'Level 2', 3: 'Level 3', 4: 'Level 4 (Live Outs)' };
+const LEVEL_NEXT = { 1: 'Requirements to move to Level 2', 2: 'Requirements to move to Level 3', 3: 'Requirements to move to Level 4', 4: 'Requirements to graduate from program' };
 
-  const [intakeForm, setIntakeForm] = useState({ first_name: '', last_name: '', date: '', oud: '', referral_source: '', referral_other: '', notes: '' });
-  const [dischargeForm, setDischargeForm] = useState({ first_name: '', last_name: '', intake_date: '', discharge_date: '', exit_reason: '', exit_reason_other: '', notes: '' });
+const s = {
+  input: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  btn: (color) => ({ padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#fff' }),
+  ghost: { padding: '6px 12px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 12, background: 'transparent', color: '#aaa' },
+};
 
-  useEffect(() => { fetchRecords(); }, []);
+// ── Admin view: edit requirements ─────────────────────────────────────────────
+export function LevelRequirementsAdmin() {
+  const [requirements, setRequirements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeLevel, setActiveLevel] = useState(1);
+  const [newText, setNewText] = useState('');
+  const [newCategory, setNewCategory] = useState('requirement');
+  const [saving, setSaving] = useState(false);
 
-  const fetchRecords = async () => {
-    const { data } = await supabase.from('survey_entries').select('*').order('created_at', { ascending: false });
-    if (data) setRecords(data);
-    const { data: clients } = await supabase.from('clients').select('id, start_date, discharge_date, status, house_id, gender, oud').not('start_date', 'is', null);
-    if (clients) setActiveClients(clients);
-    const { data: waitList } = await supabase.from('waiting_list').select('list_type').eq('status', 'waiting');
-    if (waitList) setWaitingListCounts(waitList);
-  };
-
-  const showSuccess = (msg) => { setSuccessMsg(msg); setTimeout(() => setSuccessMsg(''), 3000); };
-
-  const saveIntake = async () => {
-    if (!intakeForm.first_name || !intakeForm.last_name || !intakeForm.date) { alert('Please enter first name, last name, and intake date.'); return; }
-    setLoading(true);
-    const { error } = await supabase.from('survey_entries').insert({
-      type: 'intake', house, entry_date: intakeForm.date,
-      first_name: intakeForm.first_name, last_name: intakeForm.last_name,
-      oud: intakeForm.oud, referral_source: intakeForm.referral_source,
-      referral_other: intakeForm.referral_other, notes: intakeForm.notes,
-      intake_date: intakeForm.date,
-    });
+  const fetchRequirements = useCallback(async () => {
+    const { data } = await supabase.from('level_requirements').select('*').order('level').order('category').order('display_order');
+    setRequirements(data || []);
     setLoading(false);
-    if (error) { alert('Error saving: ' + error.message); return; }
-    setIntakeForm({ first_name: '', last_name: '', date: '', oud: '', referral_source: '', referral_other: '', notes: '' });
-    fetchRecords();
-    showSuccess('Intake saved!');
+  }, []);
+
+  useEffect(() => { fetchRequirements(); }, [fetchRequirements]);
+
+  const addRequirement = async () => {
+    if (!newText.trim()) return;
+    setSaving(true);
+    const existing = requirements.filter(r => r.level === activeLevel && r.category === newCategory);
+    await supabase.from('level_requirements').insert([{
+      level: activeLevel, category: newCategory, text: newText.trim(), display_order: existing.length,
+    }]);
+    setNewText('');
+    setSaving(false);
+    fetchRequirements();
   };
 
-  const saveDischarge = async () => {
-    if (!dischargeForm.first_name || !dischargeForm.last_name || !dischargeForm.discharge_date) { alert('Please enter first name, last name, and discharge date.'); return; }
-    let los = 0;
-    if (dischargeForm.intake_date && dischargeForm.discharge_date) {
-      los = Math.round((new Date(dischargeForm.discharge_date) - new Date(dischargeForm.intake_date)) / (1000 * 60 * 60 * 24));
-    }
-    setLoading(true);
-    const { error } = await supabase.from('survey_entries').insert({
-      type: 'discharge', house, entry_date: dischargeForm.discharge_date,
-      first_name: dischargeForm.first_name, last_name: dischargeForm.last_name,
-      intake_date: dischargeForm.intake_date || null, discharge_date: dischargeForm.discharge_date,
-      exit_reason: dischargeForm.exit_reason, exit_reason_other: dischargeForm.exit_reason_other,
-      length_of_stay: los, notes: dischargeForm.notes,
-    });
-    setLoading(false);
-    if (error) { alert('Error saving: ' + error.message); return; }
-    setDischargeForm({ first_name: '', last_name: '', intake_date: '', discharge_date: '', exit_reason: '', exit_reason_other: '', notes: '' });
-    fetchRecords();
-    showSuccess('Discharge saved!');
+  const deleteRequirement = async (id) => {
+    await supabase.from('level_requirements').delete().eq('id', id);
+    fetchRequirements();
   };
 
-  const months = [...new Set(records.map(r => r.entry_date?.slice(0, 7)).filter(Boolean))].sort().reverse();
-  const curMonth = new Date().toISOString().slice(0, 7);
-  const allMonths = months.includes(curMonth) ? months : [curMonth, ...months];
-  const activeMonth = reportMonth || allMonths[0] || curMonth;
+  const updateText = async (id, text) => {
+    await supabase.from('level_requirements').update({ text }).eq('id', id);
+    fetchRequirements();
+  };
 
-  const monthStart = activeMonth + '-01';
-  const monthEnd = new Date(parseInt(activeMonth.slice(0, 4)), parseInt(activeMonth.slice(5, 7)), 0).toISOString().slice(0, 10);
+  const levelReqs = requirements.filter(r => r.level === activeLevel && r.category === 'requirement');
+  const levelAllowances = requirements.filter(r => r.level === activeLevel && r.category === 'allowance');
 
-  const uniqueHoused = activeClients.filter(c => {
-    const moveIn = c.start_date;
-    const moveOut = c.discharge_date;
-    return moveIn <= monthEnd && (!moveOut || moveOut >= monthStart);
-  });
-
-  const uniqueHousedCount = reportHouse === 'combined'
-    ? uniqueHoused.length
-    : reportHouse === 'men'
-      ? uniqueHoused.filter(c => c.gender === 'Male').length
-      : uniqueHoused.filter(c => c.gender === 'Female').length;
-
-  const oudCount = reportHouse === 'combined'
-    ? uniqueHoused.filter(c => c.oud === 'Yes').length
-    : reportHouse === 'men'
-      ? uniqueHoused.filter(c => c.gender === 'Male' && c.oud === 'Yes').length
-      : uniqueHoused.filter(c => c.gender === 'Female' && c.oud === 'Yes').length;
-
-  const monthRecords = records.filter(r => r.entry_date?.slice(0, 7) === activeMonth);
-  const filteredByHouse = reportHouse === 'combined' ? monthRecords : monthRecords.filter(r => r.house === reportHouse);
-  const intakes = filteredByHouse.filter(r => r.type === 'intake');
-  const exits = filteredByHouse.filter(r => r.type === 'discharge');
-  const losArr = exits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
-  const avgLos = losArr.length ? Math.round(losArr.reduce((a, b) => a + b, 0) / losArr.length) : 0;
-
-  const menIntakes = monthRecords.filter(r => r.type === 'intake' && r.house === 'men');
-  const womenIntakes = monthRecords.filter(r => r.type === 'intake' && r.house === 'women');
-  const menExits = monthRecords.filter(r => r.type === 'discharge' && r.house === 'men');
-  const womenExits = monthRecords.filter(r => r.type === 'discharge' && r.house === 'women');
-  const menLos = menExits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
-  const womenLos = womenExits.filter(r => r.length_of_stay > 0).map(r => r.length_of_stay);
-  const avgMenLos = menLos.length ? Math.round(menLos.reduce((a, b) => a + b, 0) / menLos.length) : 0;
-  const avgWomenLos = womenLos.length ? Math.round(womenLos.reduce((a, b) => a + b, 0) / womenLos.length) : 0;
-
-  const menUniqueHoused = uniqueHoused.filter(c => c.gender === 'Male').length;
-  const womenUniqueHoused = uniqueHoused.filter(c => c.gender === 'Female').length;
-
-  const menWaitList = waitingListCounts.filter(w => w.list_type?.includes('Men')).length;
-  const womenWaitList = waitingListCounts.filter(w => w.list_type?.includes('Women')).length;
-  const totalWaitList = waitingListCounts.length;
-
-  const refLabels = { correctional: 'Correctional facility', treatment: 'Treatment center', recovery: 'Recovery community center', self: 'Self-referral', homeless: 'Homeless', other: 'Other' };
-  const exitLabels = { personal_home: 'Move to personal home', other_recovery: 'Other recovery house', supportive: 'Supportive housing', treatment: 'Return to treatment', return_use: 'Return to use', asked_leave: 'Asked to leave', incarceration: 'Incarceration', unknown: 'Unknown', other: 'Other' };
-
-  const filteredRecords = records.filter(r => {
-    if (filter === 'intake') return r.type === 'intake';
-    if (filter === 'discharge') return r.type === 'discharge';
-    if (filter === 'men') return r.house === 'men';
-    if (filter === 'women') return r.house === 'women';
-    return true;
-  });
-
-  const waitListCount = reportHouse === 'combined' ? totalWaitList : reportHouse === 'men' ? menWaitList : womenWaitList;
+  if (loading) return <div style={{ color: '#555', fontSize: 14 }}>Loading...</div>;
 
   return (
-    <div style={s.page}>
-      <div style={s.header}><h1 style={s.title}>Intake & Discharge</h1></div>
-      <div style={s.tabs}>
-        {[['intake','New Intake'],['discharge','New Discharge'],['records','Records'],['report','Monthly Report']].map(([id, label]) => (
-          <button key={id} onClick={() => setView(id)} style={{ ...s.tab, ...(view === id ? s.tabActive : {}) }}>{label}</button>
+    <div>
+      {/* Level tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        {LEVELS.map(l => (
+          <button key={l} onClick={() => setActiveLevel(l)}
+            style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              background: activeLevel === l ? '#b22222' : '#2a2a2a', color: activeLevel === l ? '#fff' : '#aaa' }}>
+            {LEVEL_LABELS[l]}
+          </button>
         ))}
       </div>
 
-      {successMsg && <div style={s.success}>{successMsg}</div>}
+      <p style={{ fontSize: 13, color: '#b22222', fontWeight: 600, marginBottom: 16 }}>{LEVEL_NEXT[activeLevel]}</p>
 
-      {view === 'intake' && (
-        <div style={s.card}>
-          <p style={s.cardSub}>Fill out when a new resident moves in</p>
-          <div style={s.houseRow}>
-            <button onClick={() => setHouse('men')} style={{ ...s.houseBtn, ...(house === 'men' ? s.houseBtnActive : {}) }}>Men's House</button>
-            <button onClick={() => setHouse('women')} style={{ ...s.houseBtn, ...(house === 'women' ? s.houseBtnActive : {}) }}>Women's House</button>
-          </div>
-          <div style={s.grid2}>
-            <div><label style={s.label}>First Name</label><input style={s.input} value={intakeForm.first_name} onChange={e => setIntakeForm({ ...intakeForm, first_name: e.target.value })} /></div>
-            <div><label style={s.label}>Last Name</label><input style={s.input} value={intakeForm.last_name} onChange={e => setIntakeForm({ ...intakeForm, last_name: e.target.value })} /></div>
-          </div>
-          <div style={s.grid1}>
-            <label style={s.label}>Date of Intake</label>
-            <input type="date" style={s.input} value={intakeForm.date} onChange={e => setIntakeForm({ ...intakeForm, date: e.target.value })} />
-          </div>
-          <div style={s.grid1}>
-            <label style={s.label}>OUD Diagnosis or History of Overdose?</label>
-            <select style={s.input} value={intakeForm.oud} onChange={e => setIntakeForm({ ...intakeForm, oud: e.target.value })}>
-              <option value="">Select...</option><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Unknown</option>
-            </select>
-          </div>
-          <div style={s.grid1}>
-            <label style={s.label}>Referral Source</label>
-            <select style={s.input} value={intakeForm.referral_source} onChange={e => setIntakeForm({ ...intakeForm, referral_source: e.target.value })}>
-              <option value="">Select...</option>
-              <option value="correctional">Correctional Facility</option>
-              <option value="treatment">Treatment Center</option>
-              <option value="recovery">Recovery Community Center</option>
-              <option value="self">Self-Referral</option>
-              <option value="homeless">Homeless</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          {intakeForm.referral_source === 'other' && (
-            <div style={s.grid1}><label style={s.label}>Describe Referral Source</label><input style={s.input} value={intakeForm.referral_other} onChange={e => setIntakeForm({ ...intakeForm, referral_other: e.target.value })} /></div>
-          )}
-          <div style={s.grid1}><label style={s.label}>Notes (optional)</label><textarea style={{ ...s.input, minHeight: '80px', resize: 'vertical' }} value={intakeForm.notes} onChange={e => setIntakeForm({ ...intakeForm, notes: e.target.value })} /></div>
-          <button style={s.submitBtn} onClick={saveIntake} disabled={loading}>{loading ? 'Saving...' : 'Save Intake Record'}</button>
+      {/* Requirements */}
+      <div style={{ background: '#26262e', borderRadius: 12, border: '1px solid #32323e', padding: '16px 18px', marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Requirements</div>
+        {levelReqs.map(r => (
+          <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} />
+        ))}
+        {levelReqs.length === 0 && <p style={{ color: '#555', fontSize: 13 }}>No requirements added yet.</p>}
+      </div>
+
+      {/* Allowances */}
+      <div style={{ background: '#26262e', borderRadius: 12, border: '1px solid #32323e', padding: '16px 18px', marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Allowances While in This Level</div>
+        {levelAllowances.map(r => (
+          <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} />
+        ))}
+        {levelAllowances.length === 0 && <p style={{ color: '#555', fontSize: 13 }}>No allowances added yet.</p>}
+      </div>
+
+      {/* Add new */}
+      <div style={{ background: '#26262e', borderRadius: 12, border: '1px solid #32323e', padding: '16px 18px' }}>
+        <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Add Item</div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <button onClick={() => setNewCategory('requirement')}
+            style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              background: newCategory === 'requirement' ? '#b22222' : '#1a1a1a', color: newCategory === 'requirement' ? '#fff' : '#aaa' }}>
+            Requirement
+          </button>
+          <button onClick={() => setNewCategory('allowance')}
+            style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              background: newCategory === 'allowance' ? '#10b981' : '#1a1a1a', color: newCategory === 'allowance' ? '#fff' : '#aaa' }}>
+            Allowance
+          </button>
         </div>
-      )}
-
-      {view === 'discharge' && (
-        <div style={s.card}>
-          <p style={s.cardSub}>Fill out when a resident moves out</p>
-          <div style={s.houseRow}>
-            <button onClick={() => setHouse('men')} style={{ ...s.houseBtn, ...(house === 'men' ? s.houseBtnActive : {}) }}>Men's House</button>
-            <button onClick={() => setHouse('women')} style={{ ...s.houseBtn, ...(house === 'women' ? s.houseBtnActive : {}) }}>Women's House</button>
-          </div>
-          <div style={s.grid2}>
-            <div><label style={s.label}>First Name</label><input style={s.input} value={dischargeForm.first_name} onChange={e => setDischargeForm({ ...dischargeForm, first_name: e.target.value })} /></div>
-            <div><label style={s.label}>Last Name</label><input style={s.input} value={dischargeForm.last_name} onChange={e => setDischargeForm({ ...dischargeForm, last_name: e.target.value })} /></div>
-          </div>
-          <div style={s.grid2}>
-            <div><label style={s.label}>Date of Intake (Move-in)</label><input type="date" style={s.input} value={dischargeForm.intake_date} onChange={e => setDischargeForm({ ...dischargeForm, intake_date: e.target.value })} /></div>
-            <div><label style={s.label}>Date of Discharge (Move-out)</label><input type="date" style={s.input} value={dischargeForm.discharge_date} onChange={e => setDischargeForm({ ...dischargeForm, discharge_date: e.target.value })} /></div>
-          </div>
-          <div style={s.grid1}>
-            <label style={s.label}>Reason for Exit</label>
-            <select style={s.input} value={dischargeForm.exit_reason} onChange={e => setDischargeForm({ ...dischargeForm, exit_reason: e.target.value })}>
-              <option value="">Select...</option>
-              <option value="personal_home">Move to Rent/Own Personal Home</option>
-              <option value="other_recovery">Move to Other Recovery House</option>
-              <option value="supportive">Move to Other Supportive Housing</option>
-              <option value="treatment">Return to Treatment</option>
-              <option value="return_use">Return to Use</option>
-              <option value="asked_leave">Asked to Leave</option>
-              <option value="incarceration">Incarceration</option>
-              <option value="unknown">Unknown</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          {dischargeForm.exit_reason === 'other' && (
-            <div style={s.grid1}><label style={s.label}>Describe Reason</label><input style={s.input} value={dischargeForm.exit_reason_other} onChange={e => setDischargeForm({ ...dischargeForm, exit_reason_other: e.target.value })} /></div>
-          )}
-          <div style={s.grid1}><label style={s.label}>Notes (optional)</label><textarea style={{ ...s.input, minHeight: '80px', resize: 'vertical' }} value={dischargeForm.notes} onChange={e => setDischargeForm({ ...dischargeForm, notes: e.target.value })} /></div>
-          <button style={s.submitBtn} onClick={saveDischarge} disabled={loading}>{loading ? 'Saving...' : 'Save Discharge Record'}</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={newText} onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addRequirement(); }}
+            style={s.input} placeholder="Enter requirement or allowance text..." />
+          <button onClick={addRequirement} disabled={saving || !newText.trim()} style={s.btn()}>Add</button>
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
 
-      {view === 'records' && (
-        <div style={s.card}>
-          <div style={s.filterRow}>
-            {[['all','All'],['intake','Intakes'],['discharge','Discharges'],['men',"Men's"],['women',"Women's"]].map(([id, label]) => (
-              <button key={id} onClick={() => setFilter(id)} style={{ ...s.filterBtn, ...(filter === id ? s.filterBtnActive : {}) }}>{label}</button>
-            ))}
-          </div>
-          {filteredRecords.length === 0 && <p style={s.empty}>No records yet.</p>}
-          {filteredRecords.map(r => (
-            <div key={r.id} style={s.recordRow}>
-              <div style={{ ...s.avatar, ...(r.house === 'men' ? s.avatarMen : s.avatarWomen) }}>
-                {(r.first_name?.[0] || '') + (r.last_name?.[0] || '')}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={s.recordName}>
-                  {r.first_name} {r.last_name}
-                  <span style={{ ...s.badge, ...(r.type === 'intake' ? s.badgeIntake : s.badgeExit) }}>{r.type}</span>
-                  <span style={{ ...s.badge, ...(r.house === 'men' ? s.badgeMen : s.badgeWomen) }}>{r.house}</span>
-                </div>
-                <div style={s.recordMeta}>
-                  {r.type === 'intake' ? `Referral: ${refLabels[r.referral_source] || '—'}` : `Exit: ${exitLabels[r.exit_reason] || '—'}${r.length_of_stay ? ' · ' + r.length_of_stay + ' days' : ''}`}
-                </div>
-              </div>
-              <div style={s.recordDate}>{r.entry_date || '—'}</div>
-            </div>
-          ))}
-        </div>
-      )}
+function EditableRequirement({ req, onDelete, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(req.text);
 
-      {view === 'report' && (
-        <div style={s.card}>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-            <div>
-              <label style={s.label}>Report Month</label>
-              <select style={{ ...s.input, maxWidth: '180px' }} value={activeMonth} onChange={e => setReportMonth(e.target.value)}>
-                {allMonths.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={s.label}>View</label>
-              <select style={{ ...s.input, maxWidth: '180px' }} value={reportHouse} onChange={e => setReportHouse(e.target.value)}>
-                <option value="combined">Combined</option>
-                <option value="men">Men's House</option>
-                <option value="women">Women's House</option>
-              </select>
-            </div>
-          </div>
+  const save = async () => {
+    await onUpdate(req.id, text);
+    setEditing(false);
+  };
 
-          <div style={s.metricGrid}>
-            {[
-              ['Unique Individuals Housed', uniqueHousedCount],
-              ['OUD / Overdose History', oudCount],
-              ['New Intakes', intakes.length],
-              ['New Exits', exits.length],
-              ['Avg Length of Stay (days)', avgLos || '—'],
-              ['On Waiting List', waitListCount],
-            ].map(([label, val]) => (
-              <div key={label} style={s.metric}><div style={s.metricLabel}>{label}</div><div style={s.metricVal}>{val}</div></div>
-            ))}
-          </div>
-
-          {reportHouse === 'combined' && (
-            <>
-              <div style={s.sectionLabel}>Breakdown by House</div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Unique Individuals Housed</span><span style={s.reportVal}>{menUniqueHoused}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Intakes</span><span style={s.reportVal}>{menIntakes.length}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Exits</span><span style={s.reportVal}>{menExits.length}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Men's — Avg Length of Stay (days)</span><span style={s.reportVal}>{avgMenLos || '—'}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Men's — On Waiting List</span><span style={s.reportVal}>{menWaitList}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Unique Individuals Housed</span><span style={s.reportVal}>{womenUniqueHoused}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Intakes</span><span style={s.reportVal}>{womenIntakes.length}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Exits</span><span style={s.reportVal}>{womenExits.length}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Women's — Avg Length of Stay (days)</span><span style={s.reportVal}>{avgWomenLos || '—'}</span></div>
-              <div style={s.reportRow}><span style={s.reportLabel}>Women's — On Waiting List</span><span style={s.reportVal}>{womenWaitList}</span></div>
-            </>
-          )}
-
-          <div style={{ ...s.sectionLabel, marginTop: '20px' }}>Intakes by Referral Source</div>
-          {Object.entries(refLabels).map(([key, label]) => (
-            <div key={key} style={s.reportRow}><span style={s.reportLabel}>{label}</span><span style={s.reportVal}>{intakes.filter(r => r.referral_source === key).length}</span></div>
-          ))}
-
-          <div style={{ ...s.sectionLabel, marginTop: '20px' }}>Exits by Reason</div>
-          {Object.entries(exitLabels).map(([key, label]) => (
-            <div key={key} style={s.reportRow}><span style={s.reportLabel}>{label}</span><span style={s.reportVal}>{exits.filter(r => r.exit_reason === key).length}</span></div>
-          ))}
-        </div>
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 0', borderBottom: '1px solid #32323e' }}>
+      {editing ? (
+        <>
+          <input value={text} onChange={e => setText(e.target.value)} style={{ ...s.input, flex: 1 }}
+            onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); }} autoFocus />
+          <button onClick={save} style={s.btn()}>Save</button>
+          <button onClick={() => setEditing(false)} style={s.ghost}>Cancel</button>
+        </>
+      ) : (
+        <>
+          <span style={{ flex: 1, color: '#ccc', fontSize: 14, lineHeight: 1.5 }}>• {req.text}</span>
+          <button onClick={() => setEditing(true)} style={s.ghost}>Edit</button>
+          <button onClick={() => onDelete(req.id)} style={{ ...s.ghost, color: '#ef4444', borderColor: '#ef4444' }}>×</button>
+        </>
       )}
     </div>
   );
 }
 
-const s = {
-  page: { padding: '32px', backgroundColor: '#1a1a1a', minHeight: '100vh', color: '#fff', fontFamily: 'sans-serif' },
-  header: { marginBottom: '24px' },
-  title: { fontSize: '24px', fontWeight: '600', margin: 0 },
-  tabs: { display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' },
-  tab: { padding: '8px 18px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '13px' },
-  tabActive: { background: '#2a2a2a', color: '#fff', borderColor: '#666' },
-  success: { background: '#1a3a1a', color: '#4ade80', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px' },
-  card: { background: '#2a2a2a', borderRadius: '12px', padding: '24px', maxWidth: '700px' },
-  cardSub: { color: '#888', fontSize: '13px', margin: '0 0 20px 0' },
-  houseRow: { display: 'flex', gap: '8px', marginBottom: '20px' },
-  houseBtn: { flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '13px' },
-  houseBtnActive: { background: '#1e2a3a', color: '#60a5fa', borderColor: '#3b82f6' },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' },
-  grid1: { marginBottom: '12px' },
-  label: { display: 'block', fontSize: '13px', color: '#aaa', marginBottom: '4px' },
-  input: { width: '100%', background: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', fontFamily: 'sans-serif', boxSizing: 'border-box' },
-  submitBtn: { width: '100%', padding: '12px', background: '#b22222', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '8px' },
-  filterRow: { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' },
-  filterBtn: { padding: '5px 12px', borderRadius: '8px', border: '1px solid #444', background: 'transparent', color: '#888', cursor: 'pointer', fontSize: '12px' },
-  filterBtnActive: { background: '#333', color: '#fff', borderColor: '#666' },
-  recordRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: '1px solid #333' },
-  avatar: { width: '34px', height: '34px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '500', flexShrink: 0 },
-  avatarMen: { background: '#1e3a5f', color: '#60a5fa' },
-  avatarWomen: { background: '#3a1e2f', color: '#f472b6' },
-  recordName: { fontSize: '14px', fontWeight: '500', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' },
-  recordMeta: { fontSize: '12px', color: '#888', marginTop: '2px' },
-  recordDate: { fontSize: '12px', color: '#666', flexShrink: 0 },
-  badge: { fontSize: '11px', padding: '2px 8px', borderRadius: '20px' },
-  badgeIntake: { background: '#1a3a1a', color: '#4ade80' },
-  badgeExit: { background: '#3a1a1a', color: '#f87171' },
-  badgeMen: { background: '#1e3a5f', color: '#60a5fa' },
-  badgeWomen: { background: '#3a1e2f', color: '#f472b6' },
-  empty: { color: '#666', fontSize: '14px', padding: '20px 0' },
-  metricGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' },
-  metric: { background: '#1a1a1a', borderRadius: '8px', padding: '14px' },
-  metricLabel: { fontSize: '12px', color: '#888', marginBottom: '6px' },
-  metricVal: { fontSize: '24px', fontWeight: '600', color: '#fff' },
-  sectionLabel: { fontSize: '11px', fontWeight: '500', color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' },
-  reportRow: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #333', fontSize: '14px' },
-  reportLabel: { color: '#aaa' },
-  reportVal: { fontWeight: '500', color: '#fff' },
-};
+// ── Client view: progress checklist ──────────────────────────────────────────
+export function ClientLevelProgress({ client, currentUser }) {
+  const { isAdmin, isUpperManagement, hasFullAccess } = useUser();
+  const canCheck = isAdmin || isUpperManagement || hasFullAccess;
+  const clientLevel = client?.level || 1;
+  const [requirements, setRequirements] = useState([]);
+  const [progress, setProgress] = useState({});
+  const [loading, setLoading] = useState(true);
 
-export default IntakeDischarge;
+  const fetchData = useCallback(async () => {
+    const { data: reqs } = await supabase.from('level_requirements').select('*').eq('level', clientLevel).order('category').order('display_order');
+    const { data: prog } = await supabase.from('client_level_progress').select('*').eq('client_id', client.id);
+    const progressMap = {};
+    (prog || []).forEach(p => { progressMap[p.requirement_id] = p; });
+    setRequirements(reqs || []);
+    setProgress(progressMap);
+    setLoading(false);
+  }, [client.id, clientLevel]);
+
+  useEffect(() => { if (client?.id) fetchData(); }, [fetchData]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleProgress = async (reqId, currentlyCompleted) => {
+    if (!canCheck) return;
+    const newVal = !currentlyCompleted;
+    if (newVal) {
+      await supabase.from('client_level_progress').upsert([{
+        client_id: client.id, requirement_id: reqId, completed: true,
+        completed_at: new Date().toISOString(), completed_by: currentUser?.email || 'Staff',
+      }], { onConflict: 'client_id,requirement_id' });
+    } else {
+      await supabase.from('client_level_progress').update({ completed: false, completed_at: null, completed_by: null })
+        .eq('client_id', client.id).eq('requirement_id', reqId);
+    }
+    fetchData();
+  };
+
+  if (loading) return <p style={{ color: '#555', fontSize: 14 }}>Loading...</p>;
+
+  const reqs = requirements.filter(r => r.category === 'requirement');
+  const allowances = requirements.filter(r => r.category === 'allowance');
+  const completedCount = reqs.filter(r => progress[r.id]?.completed).length;
+  const pct = reqs.length > 0 ? Math.round((completedCount / reqs.length) * 100) : 0;
+
+  return (
+    <div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <span style={{ fontSize: 13, color: '#aaa' }}>Progress to {clientLevel < 4 ? `Level ${clientLevel + 1}` : 'Graduate'}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{completedCount}/{reqs.length}</span>
+        </div>
+        <div style={{ background: '#1c1c24', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10b981' : '#b22222', borderRadius: 6, transition: 'width 0.3s' }} />
+        </div>
+      </div>
+
+      {reqs.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: '#b22222', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+            {LEVEL_NEXT[clientLevel]}
+          </div>
+          {reqs.map(req => {
+            const done = progress[req.id]?.completed;
+            return (
+              <div key={req.id} onClick={() => toggleProgress(req.id, done)}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: '1px solid #32323e', cursor: canCheck ? 'pointer' : 'default' }}>
+                <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${done ? '#10b981' : '#444'}`, background: done ? '#10b981' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                  {done && <span style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>✓</span>}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 14, color: done ? '#666' : '#ddd', textDecoration: done ? 'line-through' : 'none', lineHeight: 1.5 }}>{req.text}</span>
+                  {done && progress[req.id]?.completed_by && (
+                    <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Marked by {progress[req.id].completed_by}</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {allowances.length > 0 && (
+        <div>
+          <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+            Allowances at This Level
+          </div>
+          {allowances.map(req => (
+            <div key={req.id} style={{ padding: '6px 0', borderBottom: '1px solid #32323e' }}>
+              <span style={{ fontSize: 14, color: '#aaa', lineHeight: 1.5 }}>• {req.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {reqs.length === 0 && allowances.length === 0 && (
+        <p style={{ color: '#555', fontSize: 14 }}>No level requirements set up yet. Admins can add them in the Resources section.</p>
+      )}
+    </div>
+  );
+}

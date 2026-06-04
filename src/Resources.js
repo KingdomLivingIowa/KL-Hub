@@ -10,16 +10,16 @@ const CATEGORIES = [
 ];
 
 const s = {
-  card: { background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', borderTop: '2px solid #b22222', marginBottom: 16, overflow: 'hidden' },
-  cardHeader: { padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #333' },
+  card: { background: '#26262e', borderRadius: 12, border: '1px solid #32323e', borderTop: '2px solid #b22222', marginBottom: 16, overflow: 'hidden' },
+  cardHeader: { padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #32323e' },
   cardBody: { padding: '16px 18px' },
   label: { fontSize: 12, color: '#999', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  input: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
-  textarea: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box', resize: 'vertical' },
-  select: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  input: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  textarea: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box', resize: 'vertical' },
+  select: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   btn: (color) => ({ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#fff' }),
-  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#aaa' },
-  tag: (color) => ({ display: 'inline-block', background: color || '#2a2a2a', border: '1px solid #444', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: '#aaa' }),
+  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#aaa' },
+  tag: (color) => ({ display: 'inline-block', background: color || '#2a2a2a', border: '1px solid #3a3a48', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: '#aaa' }),
 };
 
 export default function Resources() {
@@ -92,13 +92,13 @@ export default function Resources() {
   if (loading) return <div style={{ padding: 32, color: '#555' }}>Loading resources...</div>;
 
   return (
-    <div style={{ fontFamily: 'sans-serif' }}>
+    <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
       {/* Main tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14,
+        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 14,
           background: activeTab === 'resources' ? '#2a2a2a' : 'transparent', color: activeTab === 'resources' ? '#fff' : '#aaa', fontWeight: activeTab === 'resources' ? 600 : 400 }}
           onClick={() => setActiveTabMain('resources')}>Resources</button>
-        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14,
+        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 14,
           background: activeTab === 'levels' ? '#2a2a2a' : 'transparent', color: activeTab === 'levels' ? '#fff' : '#aaa', fontWeight: activeTab === 'levels' ? 600 : 400 }}
           onClick={() => setActiveTabMain('levels')}>Level Requirements</button>
       </div>
@@ -244,7 +244,7 @@ export default function Resources() {
         <div onClick={() => setPdfViewer(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '90vw', height: '90vh', background: '#fff', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#1a1a1a', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#1c1c24', flexShrink: 0 }}>
               <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>Document Viewer</span>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <a href={pdfViewer} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: 13, textDecoration: 'none' }}>Open in new tab ↗</a>

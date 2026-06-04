@@ -65,13 +65,13 @@ const CUSTOM_RECURRENCE_OPTIONS = [
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 const s = {
-  tabBtn: (active) => ({ padding: '9px 20px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 14, background: active ? '#333' : 'transparent', color: active ? '#fff' : '#aaa', fontWeight: active ? 600 : 400 }),
-  card: { background: '#333', borderRadius: 12, padding: '20px 22px', border: '1px solid #333', marginBottom: 20 },
+  tabBtn: (active) => ({ padding: '9px 20px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 14, background: active ? '#333' : 'transparent', color: active ? '#fff' : '#aaa', fontWeight: active ? 600 : 400 }),
+  card: { background: '#26262e', borderRadius: 12, padding: '20px 22px', border: '1px solid #32323e', marginBottom: 20 },
   label: { fontSize: 12, color: '#bbb', marginBottom: 5, display: 'block' },
-  input: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
-  select: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  input: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  select: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   btn: (color) => ({ padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#fff' }),
-  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#aaa' },
+  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#aaa' },
   badge: (color) => ({ display: 'inline-block', background: color || '#b22222', color: '#fff', borderRadius: 4, fontSize: 10, fontWeight: 700, padding: '2px 6px', marginLeft: 4 }),
 };
 
@@ -120,7 +120,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
 function Modal({ title, onClose, children }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: '#252525', borderRadius: 14, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #333' }}>
+      <div style={{ background: '#252525', borderRadius: 14, padding: 28, width: 480, maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #32323e' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{title}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#bbb', cursor: 'pointer', fontSize: 20 }}>×</button>
@@ -170,7 +170,7 @@ function MoveInCalendar() {
       {selectedDay && (
         <Modal title={`Move-ins on ${fmtDate(selectedDay)}`} onClose={() => setSelectedDay(null)}>
           {selectedEvents.map((ev, i) => (
-            <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #333' }}>
+            <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #32323e' }}>
               <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.label}</div>
               <div style={{ fontSize: 12, color: '#bbb', marginTop: 3 }}>{ev.house} · {ev.gender}</div>
               <span style={{ ...s.badge(ev.color), marginTop: 4 }}>{ev.status}</span>
@@ -203,15 +203,6 @@ function OrgEventsCalendar() {
   }, []);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
-
-  // Real-time: house calendar events
-  useEffect(() => {
-    const channel = supabase.channel('house_events_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' },
-        () => { fetchEvents(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const SCOPE_COLORS = { all: '#b22222', mens: '#3b82f6', womens: '#ec4899' };
   const SCOPE_LABELS = { all: 'All Houses', mens: "Men's Houses", womens: "Women's Houses" };
@@ -312,7 +303,7 @@ function OrgEventsCalendar() {
       </div>
 
       {!canAddOrgEvents && (
-        <div style={{ background: '#252525', border: '1px solid #333', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#999' }}>
+        <div style={{ background: '#252525', border: '1px solid #32323e', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#999' }}>
           Contact an admin to add org-wide events.
         </div>
       )}
@@ -331,7 +322,7 @@ function OrgEventsCalendar() {
       {selectedDay && (
         <Modal title={fmtDate(selectedDay)} onClose={() => setSelectedDay(null)}>
           {selectedEvents.map((ev, i) => (
-            <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #333' }}>
+            <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #32323e' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.title}</div>
@@ -435,19 +426,6 @@ export function HouseCalendarTab({ houseId, houseType }) {
   }, [houseType]);
 
   useEffect(() => { fetchEvents(); fetchOrgEvents(); }, [fetchEvents, fetchOrgEvents]);
-
-  // Real-time: org calendar events
-  useEffect(() => {
-    const ch1 = supabase.channel('org_events_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'org_events' },
-        () => { fetchOrgEvents(); })
-      .subscribe();
-    const ch2 = supabase.channel('vacation_requests_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vacation_requests' },
-        () => { fetchEvents(); })
-      .subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const daysInMonth = getDaysInMonth(year, month);
 
@@ -556,7 +534,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
       {selectedDay && (
         <Modal title={fmtDate(selectedDay)} onClose={() => setSelectedDay(null)}>
           {selectedEvents.map((ev, i) => (
-            <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #333' }}>
+            <div key={i} style={{ padding: '12px 0', borderBottom: '1px solid #32323e' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.title}</div>
@@ -719,7 +697,7 @@ function VacationCalendar() {
           <div style={{ fontSize: 13, color: '#999', marginBottom: 16 }}>{canApprove ? 'All submitted vacation requests' : 'You do not have permission to review requests.'}</div>
           {requests.length === 0 && <div style={{ color: '#bbb', fontSize: 14 }}>No requests yet.</div>}
           {requests.map(r => (
-            <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #333' }}>
+            <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #32323e' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 8 }}>
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{r.user_name}</div>
@@ -743,7 +721,7 @@ function VacationCalendar() {
         <div style={s.card}>
           {myRequests.length === 0 && <div style={{ color: '#bbb', fontSize: 14 }}>No requests submitted yet.</div>}
           {myRequests.map(r => (
-            <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #333' }}>
+            <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #32323e' }}>
               <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{fmtDate(r.start_date)} – {fmtDate(r.end_date)}</div>
               {r.notes && <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>{r.notes}</div>}
               <span style={{ ...s.badge(statusColor(r.status)), marginTop: 4 }}>{r.status}</span>
@@ -755,7 +733,7 @@ function VacationCalendar() {
       {selectedDay && (
         <Modal title={`Approved time off — ${fmtDate(selectedDay)}`} onClose={() => setSelectedDay(null)}>
           {selectedEvents.map((ev, i) => (
-            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #333' }}>
+            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #32323e' }}>
               <div style={{ fontWeight: 600, color: '#fff' }}>{ev.label}</div>
               <div style={{ fontSize: 12, color: '#bbb' }}>{fmtDate(ev.start_date)} – {fmtDate(ev.end_date)}</div>
             </div>
@@ -818,8 +796,8 @@ export function NotificationsBell({ userId }) {
         {unread > 0 && <span style={{ position: 'absolute', top: 0, right: 0, background: '#b22222', color: '#fff', borderRadius: '50%', fontSize: 10, fontWeight: 700, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
-        <div style={{ position: 'absolute', right: 0, top: 36, width: 320, background: '#252525', border: '1px solid #333', borderRadius: 12, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid #333', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ position: 'absolute', right: 0, top: 36, width: 320, background: '#252525', border: '1px solid #32323e', borderRadius: 12, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid #32323e', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Notifications</span>
             {unread > 0 && <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 12, cursor: 'pointer' }}>Mark all read</button>}
           </div>
@@ -844,7 +822,7 @@ export function NotificationsBell({ userId }) {
 export default function Calendars() {
   const [activeTab, setActiveTab] = useState('movein');
   return (
-    <div style={{ fontFamily: 'sans-serif' }}>
+    <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
         <button style={s.tabBtn(activeTab === 'movein')} onClick={() => setActiveTab('movein')}>Move-In Calendar</button>
         <button style={s.tabBtn(activeTab === 'org')} onClick={() => setActiveTab('org')}>Org Events</button>

@@ -180,7 +180,7 @@ export default function EmailSettings() {
 
               <div style={s.staffList}>
                 {staffList.length === 0 && (
-                  <p style={{ color: '#666', fontSize: '13px' }}>No staff found.</p>
+                  <p style={{ color: '#666', fontSize: '14px' }}>No staff found.</p>
                 )}
                 {staffList.map(staff => {
                   const isAssigned = assigned.includes(staff.id);
@@ -254,8 +254,8 @@ const s = {
     gap: '20px',
   },
   card: {
-    background: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    background: '#1c1c24',
+    border: '1px solid #2e2e3a',
     borderRadius: '12px',
     overflow: 'hidden',
   },
@@ -270,10 +270,10 @@ const s = {
     color: '#fff', fontWeight: '600', fontSize: '15px', marginBottom: '4px',
   },
   notifDesc: {
-    color: '#888', fontSize: '12px', lineHeight: '1.4',
+    color: '#888', fontSize: '13px', lineHeight: '1.4',
   },
   divider: {
-    height: '1px', background: '#2a2a2a', margin: '0',
+    height: '1px', background: '#26262e', margin: '0',
   },
   staffList: {
     padding: '10px 20px',
@@ -290,20 +290,20 @@ const s = {
   },
   staffAvatar: {
     width: '32px', height: '32px', borderRadius: '50%',
-    background: '#2a2a2a', border: '1px solid #333',
+    background: '#26262e', border: '1px solid #32323e',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#ccc', fontSize: '13px', fontWeight: '600', flexShrink: 0,
+    color: '#ccc', fontSize: '14px', fontWeight: '600', flexShrink: 0,
   },
   staffName: {
-    color: '#ddd', fontSize: '13px', fontWeight: '500',
+    color: '#ddd', fontSize: '14px', fontWeight: '500',
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   },
   staffRole: {
-    color: '#666', fontSize: '11px',
+    color: '#666', fontSize: '12px',
   },
   toggle: {
     padding: '4px 12px', borderRadius: '20px',
-    fontSize: '12px', fontWeight: '600', border: 'none',
+    fontSize: '13px', fontWeight: '600', border: 'none',
     minWidth: '52px', textAlign: 'center', transition: 'all 0.15s',
   },
   toggleOn: {
@@ -311,21 +311,21 @@ const s = {
     border: '1px solid #166534',
   },
   toggleOff: {
-    background: '#2a2a2a', color: '#666',
-    border: '1px solid #333',
+    background: '#26262e', color: '#666',
+    border: '1px solid #32323e',
   },
   cardFooter: {
     padding: '10px 20px 14px',
     borderTop: '1px solid #2a2a2a',
   },
   assignedCount: {
-    fontSize: '11px', color: '#555', fontStyle: 'italic',
+    fontSize: '12px', color: '#555', fontStyle: 'italic',
   },
   toast: {
     position: 'fixed', bottom: '24px', right: '24px',
     background: '#14532d', color: '#4ade80',
     padding: '10px 18px', borderRadius: '8px',
-    fontSize: '13px', fontWeight: '500',
+    fontSize: '14px', fontWeight: '500',
     border: '1px solid #166534',
     zIndex: 9999, animation: 'fadeIn 0.2s ease',
   },

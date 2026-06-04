@@ -83,19 +83,6 @@ function Payments() {
     fetchFeeSettings();
   }, [fetchClients, fetchFeeSettings]);
 
-  // Real-time: payments and charges
-  useEffect(() => {
-    const ch1 = supabase.channel('payments_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' },
-        () => { fetchClients(true); })
-      .subscribe();
-    const ch2 = supabase.channel('charges_payments_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'charges' },
-        () => { fetchClients(true); })
-      .subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const saveFeeSettings = async () => {
     setSavingFees(true);
     for (const [id, vals] of Object.entries(feeEdits)) {
@@ -139,7 +126,7 @@ function Payments() {
           {hasFullAccess && (
             <button onClick={() => setShowFeeSettings(!showFeeSettings)}
               title="Fee Settings"
-              style={{ background: showFeeSettings ? '#b22222' : 'transparent', border: '1px solid #444', color: showFeeSettings ? '#fff' : '#bbb', width: '36px', height: '36px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ background: showFeeSettings ? '#b22222' : 'transparent', border: '1px solid #3a3a48', color: showFeeSettings ? '#fff' : '#bbb', width: '36px', height: '36px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ⚙️
             </button>
           )}
@@ -148,17 +135,17 @@ function Payments() {
 
       {/* Fee Settings panel */}
       {showFeeSettings && hasFullAccess && (
-        <div style={{ background: '#333', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #444' }}>
+        <div style={{ background: '#26262e', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #3a3a48' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Fee Settings</p>
             <button onClick={saveFeeSettings} disabled={savingFees}
-              style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
+              style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
               {savingFees ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
             {feeSettings.map(f => (
-              <div key={f.id} style={{ background: '#1a1a1a', borderRadius: '10px', padding: '14px 16px', border: '1px solid #333' }}>
+              <div key={f.id} style={{ background: '#1c1c24', borderRadius: '10px', padding: '14px 16px', border: '1px solid #32323e' }}>
                 <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>{f.room_type}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
@@ -191,7 +178,7 @@ function Payments() {
               </div>
             ))}
           </div>
-          <p style={{ color: '#bbb', fontSize: '12px', margin: '12px 0 0 0' }}>Changes take effect immediately for new charges. Existing charges are not affected.</p>
+          <p style={{ color: '#bbb', fontSize: '13px', margin: '12px 0 0 0' }}>Changes take effect immediately for new charges. Existing charges are not affected.</p>
         </div>
       )}
 
@@ -213,11 +200,11 @@ function Payments() {
         />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button onClick={() => setViewFilter('current')}
-            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #444', background: viewFilter === 'current' ? '#b22222' : 'transparent', color: viewFilter === 'current' ? '#fff' : '#bbb', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3a3a48', background: viewFilter === 'current' ? '#b22222' : 'transparent', color: viewFilter === 'current' ? '#fff' : '#bbb', fontSize: '14px', cursor: 'pointer' }}>
             Current
           </button>
           <button onClick={() => setViewFilter('all')}
-            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #444', background: viewFilter === 'all' ? '#b22222' : 'transparent', color: viewFilter === 'all' ? '#fff' : '#bbb', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3a3a48', background: viewFilter === 'all' ? '#b22222' : 'transparent', color: viewFilter === 'all' ? '#fff' : '#bbb', fontSize: '14px', cursor: 'pointer' }}>
             All
           </button>
         </div>
@@ -252,11 +239,11 @@ function Payments() {
             return (
               <div key={houseName} style={{ marginBottom: '32px' }}>
                 {/* House header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #333' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #32323e' }}>
                   <span style={{ color: '#fff', fontSize: '15px', fontWeight: '600' }}>{houseName}</span>
-                  <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#333', color: '#bbb' }}>{houseClients.length} client{houseClients.length !== 1 ? 's' : ''}</span>
+                  <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#26262e', color: '#bbb' }}>{houseClients.length} client{houseClients.length !== 1 ? 's' : ''}</span>
                   {houseBalance > 0 && (
-                    <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171', marginLeft: 'auto' }}>
                       {formatCurrency(houseBalance)} outstanding
                     </span>
                   )}
@@ -279,29 +266,29 @@ function Payments() {
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.full_name}</p>
-                            <p style={{ color: '#999', fontSize: '12px', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email || '—'}</p>
+                            <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email || '—'}</p>
                           </div>
                         </div>
 
                         {/* Badges */}
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa' }}>Level {client.level || 1}</span>
+                          <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa' }}>Level {client.level || 1}</span>
                           {client.room_type && (
-                            <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: roomCol.bg, color: roomCol.color }}>{client.room_type}</span>
+                            <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: roomCol.bg, color: roomCol.color }}>{client.room_type}</span>
                           )}
                           {client.status !== 'Active' && (
-                            <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#333', color: '#bbb' }}>{client.status}</span>
+                            <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#26262e', color: '#bbb' }}>{client.status}</span>
                           )}
                         </div>
 
                         {/* Balance */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px', padding: '10px', background: '#111', borderRadius: '8px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px', padding: '10px', background: '#1e1e24', borderRadius: '8px' }}>
                           <div>
-                            <p style={{ color: '#999', fontSize: '11px', margin: '0 0 2px 0' }}>Total Charged</p>
+                            <p style={{ color: '#999', fontSize: '12px', margin: '0 0 2px 0' }}>Total Charged</p>
                             <p style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>{formatCurrency(b.charged)}</p>
                           </div>
                           <div>
-                            <p style={{ color: '#999', fontSize: '11px', margin: '0 0 2px 0' }}>Balance Owed</p>
+                            <p style={{ color: '#999', fontSize: '12px', margin: '0 0 2px 0' }}>Balance Owed</p>
                             <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '16px', fontWeight: '700', margin: 0 }}>
                               {balance > 0 ? formatCurrency(balance) : 'Paid up'}
                             </p>
@@ -327,21 +314,21 @@ function Payments() {
       {selectedClient && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' }}
           onClick={() => setSelectedClient(null)}>
-          <div style={{ background: '#1a1a1a', borderRadius: '16px', border: '1px solid #333', width: '100%', maxWidth: '700px', overflow: 'hidden' }}
+          <div style={{ background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '700px', overflow: 'hidden' }}
             onClick={e => e.stopPropagation()}>
             {/* Modal header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #333' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #32323e' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '600', flexShrink: 0 }}>
                 {initials(selectedClient.full_name)}
               </div>
               <div style={{ flex: 1 }}>
                 <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: '600', margin: 0 }}>{selectedClient.full_name}</h3>
-                <p style={{ color: '#999', fontSize: '12px', margin: '2px 0 0 0' }}>
+                <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>
                   {selectedClient.house_name || 'No house'}{selectedClient.room_type ? ` · ${selectedClient.room_type}` : ''}
                 </p>
               </div>
               <button onClick={() => setSelectedClient(null)}
-                style={{ width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #444', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #3a3a48', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 ×
               </button>
             </div>
@@ -360,20 +347,20 @@ function SummaryCard({ label, value, color, bg }) {
   return (
     <div style={{ background: bg, borderRadius: '10px', padding: '14px 16px' }}>
       <p style={{ color, fontSize: '20px', fontWeight: '700', margin: '0 0 2px 0' }}>{value}</p>
-      <p style={{ color, fontSize: '11px', opacity: 0.7, margin: 0 }}>{label}</p>
+      <p style={{ color, fontSize: '12px', opacity: 0.7, margin: 0 }}>{label}</p>
     </div>
   );
 }
 
 const ps = {
-  page: { padding: '32px', fontFamily: 'sans-serif', color: '#fff' },
+  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#fff' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
   sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
-  label: { display: 'block', color: '#aaa', fontSize: '12px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   cardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  card: { background: '#333', borderRadius: '12px', padding: '18px', border: '1px solid #333' },
+  card: { background: '#26262e', borderRadius: '12px', padding: '18px', border: '1px solid #32323e' },
 };
 
 export default Payments;

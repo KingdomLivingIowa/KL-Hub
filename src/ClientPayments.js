@@ -278,22 +278,6 @@ function ClientPayments({ client, onPaymentChange }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Real-time: charges and payments for this client
-  useEffect(() => {
-    if (!client?.id) return;
-    const ch1 = supabase.channel(`client_charges_${client.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'charges',
-        filter: `client_id=eq.${client.id}` },
-        () => { fetchData(); })
-      .subscribe();
-    const ch2 = supabase.channel(`client_payments_${client.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments',
-        filter: `client_id=eq.${client.id}` },
-        () => { fetchData(); })
-      .subscribe();
-    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
-  }, [client?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Balance calculations
   const totalCharged = charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   const totalPaid = payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
@@ -433,22 +417,22 @@ function ClientPayments({ client, onPaymentChange }) {
           <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '28px', fontWeight: '700', margin: 0 }}>
             {balance > 0 ? formatCurrency(balance) : isCredit ? `Credit $${Math.abs(balance).toFixed(2)}` : 'Paid up'}
           </p>
-          <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '12px', opacity: 0.7, margin: '2px 0 0 0' }}>
+          <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '13px', opacity: 0.7, margin: '2px 0 0 0' }}>
             {balance > 0 ? 'Balance owed' : isCredit ? 'Credit on account' : 'No balance owed'}
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#aaa', fontSize: '12px', margin: 0 }}>Total charged</p>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Total charged</p>
               <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(totalCharged)}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#aaa', fontSize: '12px', margin: 0 }}>Total paid</p>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Total paid</p>
               <p style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(totalPaid)}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#aaa', fontSize: '12px', margin: 0 }}>Weekly rate</p>
+              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Weekly rate</p>
               <p style={{ color: '#60a5fa', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(weeklyRate)}</p>
             </div>
           </div>
@@ -458,22 +442,22 @@ function ClientPayments({ client, onPaymentChange }) {
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <button onClick={() => { setShowPaymentForm(!showPaymentForm); setShowAddCharge(false); }}
-          style={{ background: showPaymentForm ? 'transparent' : '#16a34a', border: showPaymentForm ? '1px solid #444' : 'none', color: showPaymentForm ? '#aaa' : '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+          style={{ background: showPaymentForm ? 'transparent' : '#16a34a', border: showPaymentForm ? '1px solid #444' : 'none', color: showPaymentForm ? '#aaa' : '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
           {showPaymentForm ? 'Cancel' : '+ Record Payment'}
         </button>
         {hasFullAccess && (
           <button onClick={() => { setShowAddCharge(!showAddCharge); setShowPaymentForm(false); }}
-            style={{ background: showAddCharge ? 'transparent' : 'transparent', border: '1px solid #444', color: showAddCharge ? '#aaa' : '#bbb', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ background: showAddCharge ? 'transparent' : 'transparent', border: '1px solid #3a3a48', color: showAddCharge ? '#aaa' : '#bbb', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             {showAddCharge ? 'Cancel' : '+ Add Charge'}
           </button>
         )}
         {balance > 0 && (
           <button onClick={handlePayOnline} disabled={sendingLink}
-            style={{ background: 'transparent', border: '1px solid #60a5fa', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto' }}>
+            style={{ background: 'transparent', border: '1px solid #60a5fa', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginLeft: 'auto' }}>
             {sendingLink ? 'Getting link...' : '🔗 Send Pay Link'}
           </button>
         )}
-        <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
+        <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
         {hasFullAccess && (charges.length > 0 || payments.length > 0) && (
           <button onClick={() => {
             const img = new Image();
@@ -487,7 +471,7 @@ function ClientPayments({ client, onPaymentChange }) {
             img.onerror = () => generatePaymentHistoryPDF(client, charges, payments, null);
             img.src = klLogo;
           }}
-            style={{ background: 'transparent', border: '1px solid #7c3aed', color: '#a78bfa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #7c3aed', color: '#a78bfa', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             📄 Export History
           </button>
         )}
@@ -495,7 +479,7 @@ function ClientPayments({ client, onPaymentChange }) {
 
       {/* Record payment form */}
       {showPaymentForm && (
-        <div style={{ background: '#222', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #333' }}>
+        <div style={{ background: '#26262e', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #32323e' }}>
           <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Record Payment</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
@@ -538,7 +522,7 @@ function ClientPayments({ client, onPaymentChange }) {
 
       {/* Add charge form */}
       {showAddCharge && hasFullAccess && (
-        <div style={{ background: '#222', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #333' }}>
+        <div style={{ background: '#26262e', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #32323e' }}>
           <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Add Charge</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
@@ -606,11 +590,11 @@ function ClientPayments({ client, onPaymentChange }) {
           {/* View toggle */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
             <button onClick={() => setActiveView('charges')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #444', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#fff' : '#bbb', fontSize: '12px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #3a3a48', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#fff' : '#bbb', fontSize: '13px', cursor: 'pointer' }}>
               Charges ({charges.length})
             </button>
             <button onClick={() => setActiveView('payments')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #444', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#fff' : '#bbb', fontSize: '12px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #3a3a48', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#fff' : '#bbb', fontSize: '13px', cursor: 'pointer' }}>
               Payments ({payments.length})
             </button>
           </div>
@@ -622,22 +606,22 @@ function ClientPayments({ client, onPaymentChange }) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {charges.map(c => (
-                  <div key={c.id} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px', border: '1px solid #333', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div key={c.id} style={{ background: '#1c1c24', borderRadius: '8px', padding: '10px 14px', border: '1px solid #32323e', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                         <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(c.amount)}</span>
-                        <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: '#333', color: '#bbb' }}>
+                        <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: '#26262e', color: '#bbb' }}>
                           {CHARGE_TYPE_LABELS[c.charge_type] || c.charge_type}
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: '#bbb', fontSize: '12px' }}>{formatDate(c.due_date)}</span>
-                        <span style={{ color: '#999', fontSize: '12px' }}>· {c.description}</span>
+                        <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDate(c.due_date)}</span>
+                        <span style={{ color: '#999', fontSize: '13px' }}>· {c.description}</span>
                       </div>
                     </div>
                     {hasFullAccess && (
                       <button onClick={() => deleteCharge(c.id)}
-                        style={{ background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>
+                        style={{ background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
                         ×
                       </button>
                     )}
@@ -654,29 +638,29 @@ function ClientPayments({ client, onPaymentChange }) {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {payments.map(p => (
-                  <div key={p.id} style={{ background: '#1a1a1a', borderRadius: '8px', padding: '10px 14px', border: '1px solid #333', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div key={p.id} style={{ background: '#1c1c24', borderRadius: '8px', padding: '10px 14px', border: '1px solid #32323e', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                         <span style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(p.amount)}</span>
-                        <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>
+                        <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>
                           {p.payment_method === 'third_party' ? '3rd Party' : p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1)}
                         </span>
-                        {p.payer_name && <span style={{ fontSize: '11px', color: '#bbb' }}>{p.payer_name}</span>}
+                        {p.payer_name && <span style={{ fontSize: '12px', color: '#bbb' }}>{p.payer_name}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: '#bbb', fontSize: '12px' }}>{formatDate(p.payment_date)}</span>
-                        {p.notes && <span style={{ color: '#999', fontSize: '12px' }}>· {p.notes}</span>}
-                        {p.created_by && <span style={{ color: '#bbb', fontSize: '11px' }}>· by {p.created_by}</span>}
+                        <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDate(p.payment_date)}</span>
+                        {p.notes && <span style={{ color: '#999', fontSize: '13px' }}>· {p.notes}</span>}
+                        {p.created_by && <span style={{ color: '#bbb', fontSize: '12px' }}>· by {p.created_by}</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button onClick={() => setShowReceipt(p)}
-                        style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                         Receipt
                       </button>
                       {hasFullAccess && (
                         <button onClick={() => deletePayment(p.id)}
-                          style={{ background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>
+                          style={{ background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                           ×
                         </button>
                       )}
@@ -697,7 +681,7 @@ function ClientPayments({ client, onPaymentChange }) {
             onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <p style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 4px 0' }}>Kingdom Living</p>
-              <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Payment Receipt</p>
+              <p style={{ fontSize: '14px', color: '#999', margin: 0 }}>Payment Receipt</p>
             </div>
             <div style={{ borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '16px 0', marginBottom: '16px' }}>
               {[
@@ -708,8 +692,8 @@ function ClientPayments({ client, onPaymentChange }) {
                 showReceipt.notes ? ['Notes', showReceipt.notes] : null,
               ].filter(Boolean).map(([label, value]) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '13px', color: '#999' }}>{label}</span>
-                  <span style={{ fontSize: '13px', fontWeight: '500' }}>{value}</span>
+                  <span style={{ fontSize: '14px', color: '#999' }}>{label}</span>
+                  <span style={{ fontSize: '14px', fontWeight: '500' }}>{value}</span>
                 </div>
               ))}
             </div>
@@ -746,8 +730,8 @@ function ClientPayments({ client, onPaymentChange }) {
 }
 
 const fl = {
-  label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  label: { display: 'block', color: '#aaa', fontSize: '14px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
 };
 
 export default ClientPayments;

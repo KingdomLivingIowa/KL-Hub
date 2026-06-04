@@ -7,9 +7,9 @@ const LEVEL_LABELS = { 1: 'Level 1', 2: 'Level 2', 3: 'Level 3', 4: 'Level 4 (Li
 const LEVEL_NEXT = { 1: 'Requirements to move to Level 2', 2: 'Requirements to move to Level 3', 3: 'Requirements to move to Level 4', 4: 'Requirements to graduate from program' };
 
 const s = {
-  input: { background: '#1a1a1a', border: '1px solid #444', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  input: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '8px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   btn: (color) => ({ padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#fff' }),
-  ghost: { padding: '6px 12px', borderRadius: 8, border: '1px solid #444', cursor: 'pointer', fontSize: 12, background: 'transparent', color: '#aaa' },
+  ghost: { padding: '6px 12px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 12, background: 'transparent', color: '#aaa' },
 };
 
 // ── Admin view: edit requirements ─────────────────────────────────────────────
@@ -72,7 +72,7 @@ export function LevelRequirementsAdmin() {
       <p style={{ fontSize: 13, color: '#b22222', fontWeight: 600, marginBottom: 16 }}>{LEVEL_NEXT[activeLevel]}</p>
 
       {/* Requirements */}
-      <div style={{ background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', padding: '16px 18px', marginBottom: 16 }}>
+      <div style={{ background: '#26262e', borderRadius: 12, border: '1px solid #32323e', padding: '16px 18px', marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Requirements</div>
         {levelReqs.map(r => (
           <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} />
@@ -81,7 +81,7 @@ export function LevelRequirementsAdmin() {
       </div>
 
       {/* Allowances */}
-      <div style={{ background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', padding: '16px 18px', marginBottom: 16 }}>
+      <div style={{ background: '#26262e', borderRadius: 12, border: '1px solid #32323e', padding: '16px 18px', marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Allowances While in This Level</div>
         {levelAllowances.map(r => (
           <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} />
@@ -90,7 +90,7 @@ export function LevelRequirementsAdmin() {
       </div>
 
       {/* Add new */}
-      <div style={{ background: '#2a2a2a', borderRadius: 12, border: '1px solid #333', padding: '16px 18px' }}>
+      <div style={{ background: '#26262e', borderRadius: 12, border: '1px solid #32323e', padding: '16px 18px' }}>
         <div style={{ fontSize: 12, color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Add Item</div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <button onClick={() => setNewCategory('requirement')}
@@ -125,7 +125,7 @@ function EditableRequirement({ req, onDelete, onUpdate }) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 0', borderBottom: '1px solid #333' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 0', borderBottom: '1px solid #32323e' }}>
       {editing ? (
         <>
           <input value={text} onChange={e => setText(e.target.value)} style={{ ...s.input, flex: 1 }}
@@ -194,7 +194,7 @@ export function ClientLevelProgress({ client, currentUser }) {
           <span style={{ fontSize: 13, color: '#aaa' }}>Progress to {clientLevel < 4 ? `Level ${clientLevel + 1}` : 'Graduate'}</span>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{completedCount}/{reqs.length}</span>
         </div>
-        <div style={{ background: '#1a1a1a', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+        <div style={{ background: '#1c1c24', borderRadius: 6, height: 8, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${pct}%`, background: pct === 100 ? '#10b981' : '#b22222', borderRadius: 6, transition: 'width 0.3s' }} />
         </div>
       </div>
@@ -208,7 +208,7 @@ export function ClientLevelProgress({ client, currentUser }) {
             const done = progress[req.id]?.completed;
             return (
               <div key={req.id} onClick={() => toggleProgress(req.id, done)}
-                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: '1px solid #333', cursor: canCheck ? 'pointer' : 'default' }}>
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0', borderBottom: '1px solid #32323e', cursor: canCheck ? 'pointer' : 'default' }}>
                 <div style={{ width: 20, height: 20, borderRadius: 5, border: `2px solid ${done ? '#10b981' : '#444'}`, background: done ? '#10b981' : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
                   {done && <span style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>✓</span>}
                 </div>
@@ -230,7 +230,7 @@ export function ClientLevelProgress({ client, currentUser }) {
             Allowances at This Level
           </div>
           {allowances.map(req => (
-            <div key={req.id} style={{ padding: '6px 0', borderBottom: '1px solid #333' }}>
+            <div key={req.id} style={{ padding: '6px 0', borderBottom: '1px solid #32323e' }}>
               <span style={{ fontSize: 14, color: '#aaa', lineHeight: 1.5 }}>• {req.text}</span>
             </div>
           ))}

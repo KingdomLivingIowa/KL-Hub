@@ -39,15 +39,6 @@ export default function PODashboard() {
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
-  // Real-time: client updates for PO view
-  useEffect(() => {
-    const channel = supabase.channel('po_clients_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
-        () => { fetchClients(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const statusColor = (s) => {
     if (s === 'Active') return { bg: '#14532d', color: '#4ade80' };
     if (s === 'Accepted') return { bg: '#1e3a5f', color: '#60a5fa' };
@@ -72,13 +63,13 @@ export default function PODashboard() {
       <div style={s.header}>
         <h1 style={s.title}>My Clients</h1>
         <p style={s.subtitle}>{clients.length} client{clients.length !== 1 ? 's' : ''} assigned to you</p>
-        <p style={{ color: '#555', fontSize: '11px', margin: '4px 0 0 0' }}>Logged in as: {user?.email}</p>
+        <p style={{ color: '#555', fontSize: '12px', margin: '4px 0 0 0' }}>Logged in as: {user?.email}</p>
       </div>
 
       {clients.length === 0 ? (
         <div style={s.empty}>
           <p style={{ color: '#666', fontSize: '15px' }}>No clients are currently assigned to your email address.</p>
-          <p style={{ color: '#555', fontSize: '13px', marginTop: '8px' }}>Contact staff if you believe this is an error.</p>
+          <p style={{ color: '#555', fontSize: '14px', marginTop: '8px' }}>Contact staff if you believe this is an error.</p>
         </div>
       ) : (
         <div style={s.grid}>
@@ -101,10 +92,10 @@ export default function PODashboard() {
                 <div style={s.cardRight}>
                   <span style={{ ...s.badge, background: sc.bg, color: sc.color }}>{c.status}</span>
                   {c.status === 'Active' && c.level && (
-                    <span style={{ ...s.badge, background: '#2a2a2a', color: '#aaa', marginTop: '4px' }}>Level {c.level}</span>
+                    <span style={{ ...s.badge, background: '#26262e', color: '#aaa', marginTop: '4px' }}>Level {c.level}</span>
                   )}
                   {daysIn !== null && c.status === 'Active' && (
-                    <span style={{ fontSize: '11px', color: '#666', marginTop: '4px' }}>{daysIn}d in program</span>
+                    <span style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>{daysIn}d in program</span>
                   )}
                 </div>
               </div>
@@ -336,11 +327,11 @@ function POClientView({ client, onBack }) {
             <div style={{ ...s.timelineDot, background: entryTypeColor(entry.entry_type) }} />
             <div style={s.timelineContent}>
               <div style={s.timelineHeader}>
-                <span style={{ color: entryTypeColor(entry.entry_type), fontSize: '13px', fontWeight: '600' }}>
+                <span style={{ color: entryTypeColor(entry.entry_type), fontSize: '14px', fontWeight: '600' }}>
                   {entry.entry_type}
                 </span>
                 {entry.severity && (
-                  <span style={{ fontSize: '11px', padding: '1px 6px', borderRadius: '10px', background: entry.severity === 'Serious' ? '#3a0f0f' : '#3a2a0f', color: entry.severity === 'Serious' ? '#f87171' : '#fb923c', fontWeight: '600' }}>
+                  <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: entry.severity === 'Serious' ? '#3a0f0f' : '#3a2a0f', color: entry.severity === 'Serious' ? '#f87171' : '#fb923c', fontWeight: '600' }}>
                     {entry.severity}
                   </span>
                 )}
@@ -361,7 +352,7 @@ function POClientView({ client, onBack }) {
               {entry.notes && entry.notes !== 'Notes' && <p style={s.timelineNotes}>{entry.notes}</p>}
               {entry.photo_url && (
                 <img src={entry.photo_url} alt="" onClick={() => window.open(entry.photo_url, '_blank')}
-                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', cursor: 'pointer', border: '1px solid #2a2a2a' }} />
+                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', cursor: 'pointer', border: '1px solid #2e2e3a' }} />
               )}
             </div>
           </div>
@@ -374,8 +365,8 @@ function POClientView({ client, onBack }) {
 function CheckInField({ label, value, color }) {
   return (
     <div style={{ marginBottom: '6px' }}>
-      <span style={{ fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}: </span>
-      <span style={{ fontSize: '13px', color: color || '#ddd' }}>{value}</span>
+      <span style={{ fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}: </span>
+      <span style={{ fontSize: '14px', color: color || '#ddd' }}>{value}</span>
     </div>
   );
 }
@@ -388,48 +379,48 @@ const s = {
   title: { color: '#fff', fontSize: '24px', fontWeight: '700', margin: '0 0 6px 0' },
   subtitle: { color: '#888', fontSize: '14px', margin: 0 },
   grid: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.15s' },
+  card: { background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.15s' },
   cardLeft: { display: 'flex', alignItems: 'center', gap: '14px' },
   cardRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end' },
-  avatar: { width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #333' },
-  avatarFallback: { width: '44px', height: '44px', borderRadius: '50%', background: '#2a2a2a', border: '2px solid #333', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '14px', fontWeight: '700' },
+  avatar: { width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #32323e' },
+  avatarFallback: { width: '44px', height: '44px', borderRadius: '50%', background: '#26262e', border: '2px solid #32323e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', fontSize: '14px', fontWeight: '700' },
   avatarFallbackLg: { width: '64px', height: '64px', fontSize: '20px' },
   clientName: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 3px 0' },
-  clientSub: { color: '#888', fontSize: '13px', margin: 0 },
-  badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', display: 'inline-block' },
+  clientSub: { color: '#888', fontSize: '14px', margin: 0 },
+  badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'inline-block' },
   empty: { padding: '60px 0', textAlign: 'center' },
-  backBtn: { background: 'transparent', border: '1px solid #333', color: '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '24px' },
-  clientHeader: { display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '28px', padding: '20px', background: '#1a1a1a', borderRadius: '12px', border: '1px solid #2a2a2a' },
-  headerAvatar: { width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #333', flexShrink: 0 },
+  backBtn: { background: 'transparent', border: '1px solid #32323e', color: '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginBottom: '24px' },
+  clientHeader: { display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '28px', padding: '20px', background: '#1c1c24', borderRadius: '12px', border: '1px solid #2e2e3a' },
+  headerAvatar: { width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #32323e', flexShrink: 0 },
   headerInfo: { flex: 1 },
   headerName: { color: '#fff', fontSize: '22px', fontWeight: '700', margin: '0 0 6px 0' },
-  headerMeta: { color: '#888', fontSize: '13px', display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' },
-  headerSub: { color: '#666', fontSize: '12px', margin: 0 },
-  section: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '18px 20px', marginBottom: '14px' },
+  headerMeta: { color: '#888', fontSize: '14px', display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' },
+  headerSub: { color: '#666', fontSize: '13px', margin: 0 },
+  section: { background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '12px', padding: '18px 20px', marginBottom: '14px' },
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
   sectionTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 14px 0' },
-  toggleBtn: { background: '#2a2a2a', border: '1px solid #333', color: '#aaa', padding: '5px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' },
+  toggleBtn: { background: '#26262e', border: '1px solid #32323e', color: '#aaa', padding: '5px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
   balanceRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' },
-  balanceStat: { flex: 1, minWidth: '120px', background: '#111', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' },
-  balanceLabel: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  balanceStat: { flex: 1, minWidth: '120px', background: '#1e1e24', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' },
+  balanceLabel: { fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' },
   balanceValue: { fontSize: '18px', fontWeight: '700', color: '#fff' },
-  checkInCard: { background: '#111', borderRadius: '8px', padding: '12px 14px' },
-  checkInDate: { fontSize: '11px', color: '#666', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  checkInCard: { background: '#1e1e24', borderRadius: '8px', padding: '12px 14px' },
+  checkInDate: { fontSize: '12px', color: '#666', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' },
   checkInGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' },
-  checkInNotes: { color: '#888', fontSize: '13px', fontStyle: 'italic', margin: '10px 0 0 0', borderTop: '1px solid #222', paddingTop: '8px' },
-  empty2: { color: '#666', fontSize: '13px', fontStyle: 'italic', margin: 0 },
+  checkInNotes: { color: '#888', fontSize: '14px', fontStyle: 'italic', margin: '10px 0 0 0', borderTop: '1px solid #222', paddingTop: '8px' },
+  empty2: { color: '#666', fontSize: '14px', fontStyle: 'italic', margin: 0 },
   tableWrap: { overflowX: 'auto' },
-  table: { width: '100%', borderCollapse: 'collapse', fontSize: '13px' },
-  th: { textAlign: 'left', padding: '8px 10px', color: '#666', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #2a2a2a' },
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: '14px' },
+  th: { textAlign: 'left', padding: '8px 10px', color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #2a2a2a' },
   td: { padding: '8px 10px', color: '#ddd', borderBottom: '1px solid #1e1e1e' },
   meetingStats: { display: 'flex', gap: '12px' },
-  meetingStat: { flex: 1, background: '#111', borderRadius: '8px', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px' },
+  meetingStat: { flex: 1, background: '#1e1e24', borderRadius: '8px', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px' },
   meetingStatNum: { fontSize: '28px', fontWeight: '700', color: '#60a5fa' },
-  meetingStatLabel: { fontSize: '11px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  meetingStatLabel: { fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' },
   timelineEntry: { display: 'flex', gap: '12px', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid #222', marginBottom: '12px' },
   timelineDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, marginTop: '5px' },
   timelineContent: { flex: 1 },
   timelineHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' },
-  timelineDate: { color: '#555', fontSize: '11px', marginLeft: 'auto' },
-  timelineNotes: { color: '#888', fontSize: '13px', margin: 0, lineHeight: 1.5 },
+  timelineDate: { color: '#555', fontSize: '12px', marginLeft: 'auto' },
+  timelineNotes: { color: '#888', fontSize: '14px', margin: 0, lineHeight: 1.5 },
 };

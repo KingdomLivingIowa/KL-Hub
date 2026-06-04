@@ -27,15 +27,6 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
   useEffect(() => { fetchWaitingList(); }, [fetchWaitingList]);
 
-  // Real-time: waiting list updates
-  useEffect(() => {
-    const channel = supabase.channel('waitinglist_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'waiting_list' },
-        () => { fetchWaitingList(); })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const clients = waitingClients.filter(c => c.list_type === activeList);
 
   const addToList = async () => {
@@ -139,9 +130,9 @@ function WaitingList({ onOpenClient, setActivePage }) {
       ) : clients.length === 0 ? (
         <p style={styles.empty}>No one on the {activeList} list yet.</p>
       ) : (
-        <div style={{ background: '#2a2a2a', borderRadius: 10, border: '1px solid #333', overflow: 'hidden' }}>
+        <div style={{ background: '#26262e', borderRadius: 10, border: '1px solid #32323e', overflow: 'hidden' }}>
           {/* Header row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 150px 1fr auto', gap: 8, padding: '10px 14px', background: '#1a1a1a', borderBottom: '1px solid #444' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 150px 1fr auto', gap: 8, padding: '10px 14px', background: '#1c1c24', borderBottom: '1px solid #444' }}>
             {['#', 'Name', 'Ready Date', 'Notes', ''].map((h, i) => (
               <span key={i} style={{ fontSize: 11, color: '#b22222', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
             ))}
@@ -217,15 +208,15 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
 const styles = {
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' },
-  tab: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 16px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer' },
+  tab: { backgroundColor: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', cursor: 'pointer' },
   tabActive: { backgroundColor: '#b22222', border: '1px solid #b22222', color: '#fff' },
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   listCount: { color: '#aaa', fontSize: '14px', margin: 0 },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 },
-  addForm: { background: '#2a2a2a', borderRadius: 10, border: '1px solid #333', padding: '16px', marginBottom: 20 },
+  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: 600 },
+  addForm: { background: '#26262e', borderRadius: 10, border: '1px solid #32323e', padding: '16px', marginBottom: 20 },
   formLabel: { fontSize: 12, color: '#999', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  input: { backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
-  removeBtn: { backgroundColor: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' },
+  input: { backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
+  removeBtn: { backgroundColor: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
   empty: { color: '#555', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
 };
 
