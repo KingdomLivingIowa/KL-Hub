@@ -261,8 +261,9 @@ Deno.serve(async (req) => {
         recipients,
         'Kingdom Living Iowa — Application Accepted',
         wrap(`<p>I am pleased to inform you that <strong>${fullName}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
-        <p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
-        <p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>
+        ${app.current_situation === 'Currently Incarcerated'
+          ? `<p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>`
+          : `<p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>`}
         <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`)
       );
     }

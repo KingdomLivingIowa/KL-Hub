@@ -263,7 +263,7 @@ function Admissions() {
       fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null }),
+        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null, current_situation: app.current_situation || null }),
       }).catch(err => console.error('send-application-email error:', err));
     }
 
