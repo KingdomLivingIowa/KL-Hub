@@ -142,6 +142,19 @@ function Admissions() {
     fetchClients();
   }, [fetchClients]);
 
+  // Real-time subscriptions
+  useEffect(() => {
+    const channel = supabase
+      .channel('admissions_applications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'applications' },
+        () => { fetchApplications(true); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'applications' },
+        () => { fetchApplications(true); })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const createClientFromApp = async (app) => {
     const { data: existingClient, error: existingError } = await supabase
       .from('clients')
