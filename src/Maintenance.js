@@ -43,6 +43,16 @@ export default function Maintenance() {
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
+  // Real-time subscriptions
+  useEffect(() => {
+    const channel = supabase
+      .channel('maintenance_requests_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_requests' },
+        () => { fetchRequests(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     supabase.from('houses').select('id, name').order('name')
       .then(({ data }) => setHouses(data || []));

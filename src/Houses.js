@@ -1180,6 +1180,18 @@ function MoveOutRequestsTab({ houseId, houseName }) {
 
   useEffect(() => { fetchRequests(); }, [houseId, filter, fetchRequests]);
 
+  // Real-time subscriptions for overnight passes
+  useEffect(() => {
+    if (!houseId) return;
+    const channel = supabase
+      .channel(`overnight_passes_${houseId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'move_out_requests',
+        filter: `house_id=eq.${houseId}` },
+        () => { fetchRequests(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [houseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleReview = async (request, action) => {
     setSaving(true);
     const { error } = await supabase.from('move_out_requests').update({
