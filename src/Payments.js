@@ -83,6 +83,19 @@ function Payments() {
     fetchFeeSettings();
   }, [fetchClients, fetchFeeSettings]);
 
+  // Real-time: payments and charges
+  useEffect(() => {
+    const ch1 = supabase.channel('payments_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' },
+        () => { fetchClients(true); })
+      .subscribe();
+    const ch2 = supabase.channel('charges_payments_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'charges' },
+        () => { fetchClients(true); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const saveFeeSettings = async () => {
     setSavingFees(true);
     for (const [id, vals] of Object.entries(feeEdits)) {

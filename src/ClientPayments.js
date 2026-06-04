@@ -278,6 +278,22 @@ function ClientPayments({ client, onPaymentChange }) {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Real-time: charges and payments for this client
+  useEffect(() => {
+    if (!client?.id) return;
+    const ch1 = supabase.channel(`client_charges_${client.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'charges',
+        filter: `client_id=eq.${client.id}` },
+        () => { fetchData(); })
+      .subscribe();
+    const ch2 = supabase.channel(`client_payments_${client.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments',
+        filter: `client_id=eq.${client.id}` },
+        () => { fetchData(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+  }, [client?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Balance calculations
   const totalCharged = charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   const totalPaid = payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);

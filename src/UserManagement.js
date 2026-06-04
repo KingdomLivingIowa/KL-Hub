@@ -57,6 +57,15 @@ function UserManagement({ currentUser }) {
     fetchInitial();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Real-time: user profile changes
+  useEffect(() => {
+    const channel = supabase.channel('user_profiles_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_profiles' },
+        () => { fetchUsers(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchInitial = async () => {
     // Must fetch preset groups FIRST so fetchGroupMemberships has the IDs
     const { data: groups } = await supabase

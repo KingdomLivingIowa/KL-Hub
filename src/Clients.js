@@ -1149,6 +1149,15 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
+  // Real-time: client list updates
+  useEffect(() => {
+    const channel = supabase.channel('clients_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
+        () => { fetchClients(true); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchHouses = useCallback(async () => {
     const { data } = await supabase.from('houses').select('id, name, type').order('name');
     setHouses(data || []);

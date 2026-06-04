@@ -204,6 +204,15 @@ function OrgEventsCalendar() {
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
+  // Real-time: house calendar events
+  useEffect(() => {
+    const channel = supabase.channel('house_events_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_events' },
+        () => { fetchEvents(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const SCOPE_COLORS = { all: '#b22222', mens: '#3b82f6', womens: '#ec4899' };
   const SCOPE_LABELS = { all: 'All Houses', mens: "Men's Houses", womens: "Women's Houses" };
 
@@ -426,6 +435,19 @@ export function HouseCalendarTab({ houseId, houseType }) {
   }, [houseType]);
 
   useEffect(() => { fetchEvents(); fetchOrgEvents(); }, [fetchEvents, fetchOrgEvents]);
+
+  // Real-time: org calendar events
+  useEffect(() => {
+    const ch1 = supabase.channel('org_events_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'org_events' },
+        () => { fetchOrgEvents(); })
+      .subscribe();
+    const ch2 = supabase.channel('vacation_requests_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vacation_requests' },
+        () => { fetchEvents(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const daysInMonth = getDaysInMonth(year, month);
 

@@ -27,6 +27,15 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
   useEffect(() => { fetchWaitingList(); }, [fetchWaitingList]);
 
+  // Real-time: waiting list updates
+  useEffect(() => {
+    const channel = supabase.channel('waitinglist_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waiting_list' },
+        () => { fetchWaitingList(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const clients = waitingClients.filter(c => c.list_type === activeList);
 
   const addToList = async () => {

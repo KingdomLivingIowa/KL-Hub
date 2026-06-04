@@ -39,6 +39,15 @@ export default function PODashboard() {
 
   useEffect(() => { fetchClients(); }, [fetchClients]);
 
+  // Real-time: client updates for PO view
+  useEffect(() => {
+    const channel = supabase.channel('po_clients_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
+        () => { fetchClients(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const statusColor = (s) => {
     if (s === 'Active') return { bg: '#14532d', color: '#4ade80' };
     if (s === 'Accepted') return { bg: '#1e3a5f', color: '#60a5fa' };
