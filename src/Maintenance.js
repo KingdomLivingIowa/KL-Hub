@@ -61,6 +61,7 @@ export default function Maintenance() {
 
   const saveEdit = async (id) => {
     setSaving(true);
+    const req = requests.find(r => r.id === id);
     await supabase.from('maintenance_requests').update({
       status: editForm.status,
       called_date: editForm.called_date || null,
@@ -68,6 +69,26 @@ export default function Maintenance() {
       service_date: editForm.service_date || null,
       service_notes: editForm.service_notes || null,
     }).eq('id', id);
+
+    // Write a timeline update to the house so managers can track progress
+    if (req?.house_id) {
+      const statusChanged = req.status !== editForm.status;
+      const parts = [];
+      if (statusChanged) parts.push(`Status changed to ${editForm.status}`);
+      if (editForm.called_notes && editForm.called_notes !== req.called_notes) parts.push(`Call notes: ${editForm.called_notes}`);
+      if (editForm.service_notes && editForm.service_notes !== req.service_notes) parts.push(`Service notes: ${editForm.service_notes}`);
+      if (editForm.service_date && editForm.service_date !== req.service_date) parts.push(`Service date: ${editForm.service_date}`);
+      if (parts.length > 0) {
+        await supabase.from('client_timeline').insert({
+          house_id: req.house_id,
+          entry_type: 'Maintenance Request',
+          notes: `[${req.description || 'Maintenance'}${req.issue_location ? ` – ${req.issue_location}` : ''}] ${parts.join(' · ')}`,
+          author: 'System',
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+
     setEditingId(null);
     setSaving(false);
     fetchRequests();

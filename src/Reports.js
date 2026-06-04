@@ -267,15 +267,49 @@ export default function Reports() {
 
   if (loading) return <div style={{ padding: 32, color: '#bbb', fontSize: 14 }}>Loading reports...</div>;
 
+  const generateReportPDF = () => {
+    const title = { weekly: 'Weekly Overview', monthly: 'Monthly Report', yearly: 'Year-by-Year', levels: 'Levels Report', maintenance: 'Maintenance Report' }[activeTab] || 'Report';
+    const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const el = document.getElementById('report-content');
+    if (!el) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; color: #111; background: #fff; }
+      @media print { .no-print { display: none; } body { padding: 16px; } }
+      h1 { font-size: 22px; margin: 0 0 4px; } .sub { color: #666; font-size: 13px; margin: 0 0 24px; }
+      .print-btn { background: #8b1c1c; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; cursor: pointer; margin-bottom: 24px; }
+      table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+      th { background: #f5f5f5; text-align: left; padding: 8px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; border-bottom: 2px solid #ddd; }
+      td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+      .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+      .stat-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; }
+      .stat-val { font-size: 24px; font-weight: 700; color: #8b1c1c; }
+      .stat-label { font-size: 12px; color: #666; margin-top: 2px; }
+      h2 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+    </style></head><body>
+    <button class="print-btn no-print" onclick="window.print()">⬇ Print / Save PDF</button>
+    <h1>Kingdom Living Iowa — ${title}</h1>
+    <p class="sub">Generated ${date}</p>
+    ${el.innerHTML}
+    </body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  };
+
   return (
     <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
-        <button style={tabBtn('weekly')} onClick={() => setActiveTab('weekly')}>Weekly Overview</button>
-        <button style={tabBtn('monthly')} onClick={() => setActiveTab('monthly')}>Monthly Report</button>
-        <button style={tabBtn('yearly')} onClick={() => setActiveTab('yearly')}>Year-by-Year</button>
-        <button style={tabBtn('levels')} onClick={() => setActiveTab('levels')}>Levels</button>
-        <button style={tabBtn('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button style={tabBtn('weekly')} onClick={() => setActiveTab('weekly')}>Weekly Overview</button>
+          <button style={tabBtn('monthly')} onClick={() => setActiveTab('monthly')}>Monthly Report</button>
+          <button style={tabBtn('yearly')} onClick={() => setActiveTab('yearly')}>Year-by-Year</button>
+          <button style={tabBtn('levels')} onClick={() => setActiveTab('levels')}>Levels</button>
+          <button style={tabBtn('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
+        </div>
+        <button onClick={generateReportPDF} style={{ background: '#1e3a2f', color: '#4ade80', border: '1px solid #2d5a3d', borderRadius: '8px', padding: '8px 16px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>⬇ Export PDF</button>
       </div>
+      <div id="report-content">
 
       {/* ── WEEKLY ──────────────────────────────────────────────────────────── */}
       {activeTab === 'weekly' && (
@@ -412,6 +446,7 @@ export default function Reports() {
         <MaintenanceReport maintenanceRequests={maintenanceRequests} />
       )}
     </div>
+      </div>
   );
 }
 
