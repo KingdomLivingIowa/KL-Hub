@@ -215,56 +215,6 @@ function DashboardHome({ counts, currentUser }) {
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
-  // Real-time subscriptions
-  useEffect(() => {
-    if (!currentUser?.id) return;
-
-    // Notifications — new or updated
-    const notifChannel = supabase
-      .channel('dashboard_notifications')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
-        (payload) => { setNotifications(prev => [payload.new, ...prev]); })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
-        (payload) => { setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n)); })
-      .subscribe();
-
-    // Applications — new submission or status change
-    const appChannel = supabase
-      .channel('dashboard_applications')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' },
-        () => { fetchDashboardData(true); })
-      .subscribe();
-
-    // Clients — move-in, discharge, status change
-    const clientChannel = supabase
-      .channel('dashboard_clients')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
-        () => { fetchHouses(); fetchOpenCharges(); fetchAlerts(); })
-      .subscribe();
-
-    // Charges — payment or new charge
-    const chargeChannel = supabase
-      .channel('dashboard_charges')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'charges' },
-        () => { fetchOpenCharges(); })
-      .subscribe();
-
-    // Timeline — crisis entries
-    const timelineChannel = supabase
-      .channel('dashboard_timeline')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'client_timeline' },
-        () => { fetchAlerts(); })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(notifChannel);
-      supabase.removeChannel(appChannel);
-      supabase.removeChannel(clientChannel);
-      supabase.removeChannel(chargeChannel);
-      supabase.removeChannel(timelineChannel);
-    };
-  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Write to cache after data settles so next visit is instant
   useEffect(() => {
     if (!loadingDashboard && houses.length > 0) {
@@ -361,14 +311,14 @@ function DashboardHome({ counts, currentUser }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
                 {['DOC Men', 'Community Men', 'Treatment Men'].map(list => (
-                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
+                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1c1c24', borderRadius: '8px', border: '1px solid #2e2e3a' }}>
                     <span style={{ fontSize: '13px', color: '#aaa' }}>{list}</span>
                     <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#60a5fa' : '#999' }}>{waitingListCounts[list] || 0}</span>
                   </div>
                 ))}
                 <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 4px 0', fontWeight: '600' }}>Women's</p>
                 {['DOC Women', 'Community Women', 'Treatment Women'].map(list => (
-                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1a1a1a', borderRadius: '8px', border: '1px solid #333' }}>
+                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1c1c24', borderRadius: '8px', border: '1px solid #2e2e3a' }}>
                     <span style={{ fontSize: '13px', color: '#aaa' }}>{list}</span>
                     <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#f9a8d4' : '#999' }}>{waitingListCounts[list] || 0}</span>
                   </div>
@@ -463,7 +413,7 @@ function DashboardHome({ counts, currentUser }) {
                     const pct = occupancyPct(h);
                     const isAlmostFull = available <= 1;
                     return (
-                      <div key={h.id} style={{ background: '#333', borderRadius: '10px', padding: '12px 14px', border: '1px solid #333' }}>
+                      <div key={h.id} style={{ background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{h.name}</span>
@@ -545,33 +495,15 @@ function DashboardHome({ counts, currentUser }) {
 }
 
 function Section({ title, children, count, countColor }) {
-  const storageKey = 'dashboard_collapsed_' + title.replace(/\s+/g, '_');
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem(storageKey) === 'true'; } catch { return false; }
-  });
-  const toggle = () => {
-    setCollapsed(prev => {
-      const next = !prev;
-      try { localStorage.setItem(storageKey, String(next)); } catch {}
-      return next;
-    });
-  };
   return (
-    <div style={{ background: '#333', borderRadius: '12px', border: '1px solid #3a3a3a', overflow: 'hidden' }}>
-      <div onClick={toggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', cursor: 'pointer', userSelect: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
-          {count !== undefined && (
-            <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: countColor || '#f87171', fontWeight: '600' }}>{count}</span>
-          )}
-        </div>
-        <span style={{ color: '#666', fontSize: '13px', display: 'inline-block', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</span>
+    <div style={{ background: '#333', borderRadius: '12px', padding: '18px 20px', border: '1px solid #333' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+        <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
+        {count !== undefined && (
+          <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: countColor || '#f87171', fontWeight: '600' }}>{count}</span>
+        )}
       </div>
-      {!collapsed && (
-        <div style={{ padding: '0 20px 18px 20px' }}>
-          {children}
-        </div>
-      )}
+      {children}
     </div>
   );
 }
@@ -663,7 +595,7 @@ function DashboardInner({ user }) {
   // Parole Officer gets their own restricted view
   if (isParoleOfficer) {
     return (
-      <div style={{ minHeight: '100vh', background: '#111', padding: '32px 24px', maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ minHeight: '100vh', background: '#1e1e24', padding: '32px 24px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src={klLogo} alt="KL" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover' }} />
@@ -685,8 +617,7 @@ function DashboardInner({ user }) {
     <div style={styles.container}>
       <div style={styles.sidebar}>
         <div style={styles.sidebarLogo}>
-          <p style={styles.logoText}>KL Hub</p>
-          <p style={styles.logoSub}>Staff Portal</p>
+          <img src={klLogo} alt="Kingdom Living Iowa" style={{ width: '100%', maxWidth: '160px', borderRadius: '8px', objectFit: 'cover', display: 'block' }} />
         </div>
         <nav style={styles.nav}>
           {navItems.map(item => (
@@ -776,16 +707,16 @@ function Dashboard({ user }) {
 
 const ds = {
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' },
-  statCard: { backgroundColor: '#333', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222' },
+  statCard: { backgroundColor: '#26262e', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222', border: '1px solid #32323e' },
   statLabel: { color: '#a0a0a0', fontSize: '13px', margin: '0 0 8px 0' },
   statValue: { color: '#ffffff', fontSize: '32px', fontWeight: '700', margin: '0' },
   contentGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' },
 };
 
 const styles = {
-  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#1a1a1a', fontFamily: 'sans-serif' },
-  sidebar: { width: '230px', backgroundColor: '#111111', borderRight: '1px solid #333', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh' },
-  sidebarLogo: { padding: '24px 20px', borderBottom: '1px solid #333' },
+  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#1e1e24', fontFamily: "'Inter', 'system-ui', -apple-system, sans-serif", fontSize: '15px', color: '#e0e0e0' },
+  sidebar: { width: '230px', backgroundColor: '#13131a', borderRight: '1px solid #2a2a35', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh' },
+  sidebarLogo: { padding: '20px 20px', borderBottom: '1px solid #2a2a35' },
   logoText: { color: '#ffffff', fontSize: '22px', fontWeight: '700', margin: '0' },
   logoSub: { color: '#bbb', fontSize: '13px', margin: '3px 0 0 0' },
   nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
@@ -794,12 +725,12 @@ const styles = {
   badge: { backgroundColor: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
   settingsSection: { marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '8px' },
   settingsSectionLabel: { color: '#999', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
-  sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #333' },
+  sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #2a2a35' },
   userRole: { color: '#b22222', fontSize: '12px', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' },
   userEmail: { color: '#bbb', fontSize: '12px', margin: '0 0 10px 0', wordBreak: 'break-all' },
   signOutBtn: { backgroundColor: 'transparent', border: '1px solid #555', color: '#bbb', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
   main: { marginLeft: '230px', flex: 1, display: 'flex', flexDirection: 'column' },
-  header: { backgroundColor: '#111111', borderBottom: '2px solid #7a1515', padding: '22px 36px' },
+  header: { backgroundColor: '#13131a', borderBottom: '2px solid #8b1c1c', padding: '22px 36px' },
   pageTitle: { color: '#ffffff', fontSize: '26px', fontWeight: '700', margin: '0' },
   content: { padding: '36px' },
 };
