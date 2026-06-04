@@ -215,6 +215,56 @@ function DashboardHome({ counts, currentUser }) {
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
+  // Real-time subscriptions
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    // Notifications — new or updated
+    const notifChannel = supabase
+      .channel('dashboard_notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
+        (payload) => { setNotifications(prev => [payload.new, ...prev]); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
+        (payload) => { setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n)); })
+      .subscribe();
+
+    // Applications — new submission or status change
+    const appChannel = supabase
+      .channel('dashboard_applications')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' },
+        () => { fetchDashboardData(true); })
+      .subscribe();
+
+    // Clients — move-in, discharge, status change
+    const clientChannel = supabase
+      .channel('dashboard_clients')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' },
+        () => { fetchHouses(); fetchOpenCharges(); fetchAlerts(); })
+      .subscribe();
+
+    // Charges — payment or new charge
+    const chargeChannel = supabase
+      .channel('dashboard_charges')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'charges' },
+        () => { fetchOpenCharges(); })
+      .subscribe();
+
+    // Timeline — crisis entries
+    const timelineChannel = supabase
+      .channel('dashboard_timeline')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'client_timeline' },
+        () => { fetchAlerts(); })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(notifChannel);
+      supabase.removeChannel(appChannel);
+      supabase.removeChannel(clientChannel);
+      supabase.removeChannel(chargeChannel);
+      supabase.removeChannel(timelineChannel);
+    };
+  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Write to cache after data settles so next visit is instant
   useEffect(() => {
     if (!loadingDashboard && houses.length > 0) {
