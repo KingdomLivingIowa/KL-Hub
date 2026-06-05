@@ -406,6 +406,11 @@ function Admissions() {
           {[
             ['Gender', app.gender || app.assigned_sex], ['Program', app.program],
             ['Lived Here Before?', app.lived_here_before], ['On Disability?', app.on_disability],
+            ...(app.on_disability === 'Yes' ? [
+              ['Difficulty Concentrating/Memory?', app.disability_concentrating],
+              ['Difficulty Walking/Stairs?', app.disability_walking],
+              ['Difficulty Dressing/Bathing?', app.disability_dressing],
+            ] : []),
             ['Substance History?', app.substance_history], ['Registered Sex Offender?', app.sex_offender],
             ['Correspondence Contact', app.correspondence_contact], ['Current Situation', app.current_situation],
           ].map(([label, val]) => (
