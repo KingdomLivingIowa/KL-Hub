@@ -175,14 +175,20 @@ Deno.serve(async (req) => {
     }
 
     // Rule 3: Returning client — always check regardless of lived_here_before answer
+    // Matching rules: SSN match alone = duplicate, name+email = duplicate,
+    // name+DOB = duplicate. Email alone is NOT enough (prevents false positives).
     {
-      const orClauses = [`email.eq.${app.email}`, `full_name.eq.${fullName}`];
-      if (app.date_of_birth) orClauses.push(`date_of_birth.eq.${app.date_of_birth}`);
-      if (app.ssn) orClauses.push(`ssn.eq.${app.ssn}`);
-      const { data: existingClients } = await supabase
+      const { data: allClients } = await supabase
         .from('clients')
-        .select('id, full_name, email, not_allowed_back, needs_review_before_readmit')
-        .or(orClauses.join(','));
+        .select('id, full_name, email, date_of_birth, ssn, not_allowed_back, needs_review_before_readmit');
+
+      const existingClients = (allClients || []).filter(c => {
+        const nameMatch = c.full_name?.toLowerCase().trim() === fullName.toLowerCase().trim();
+        const emailMatch = app.email && c.email?.toLowerCase() === app.email.toLowerCase();
+        const dobMatch = app.date_of_birth && c.date_of_birth === app.date_of_birth;
+        const ssnMatch = app.ssn && c.ssn && app.ssn === c.ssn;
+        return ssnMatch || (nameMatch && emailMatch) || (nameMatch && dobMatch);
+      });
 
       if (existingClients?.length > 0) {
         const existingClient = existingClients[0];
