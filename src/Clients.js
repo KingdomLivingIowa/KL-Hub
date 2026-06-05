@@ -658,6 +658,11 @@ function ClientApplicationView({ client }) {
           ['Employment Status', app.employment_status],
           ['Employer', app.employer_name],
           ['On Disability?', app.on_disability],
+          ...(app.on_disability === 'Yes' ? [
+            ['Difficulty Concentrating/Memory?', app.disability_concentrating],
+            ['Difficulty Walking/Stairs?', app.disability_walking],
+            ['Difficulty Dressing/Bathing?', app.disability_dressing],
+          ] : []),
           ['Able to Work?', app.able_to_work],
           ['Agree to Volunteer?', app.agree_to_volunteer],
         ]} />

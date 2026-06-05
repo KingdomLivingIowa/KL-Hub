@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   try {
-    const { type, email, correspondence_contact, full_name, flag, balance, current_situation } = await req.json();
+    const { type, email, correspondence_contact, full_name, flag, balance } = await req.json();
     const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
     const recipients = [...new Set([email, correspondence_contact].filter(e => e && isValidEmail(e)))];
 
@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     if (type === 'accepted_manual') {
       if (flag?.includes('past_balance') && balance) {
         // Accepted with outstanding balance — send balance payment email
-        await sendEmail(recipients, 'Kingdom Living Iowa — Application Update', wrap(
+        await sendEmail(recipients, `Kingdom Living Iowa — Application Update: ${full_name}`, wrap(
           `<p>Thank you for submitting your application. Before I can add you to the waiting list, your outstanding balance of <strong>$${parseFloat(balance).toFixed(2)}</strong> will need to be paid in full.</p>
           <p>You have the following payment options:</p>
           <ol>
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
           <p>Please let me know once the payment has been made or if you have any questions. I appreciate your prompt attention to this matter.</p>`
         ));
       } else {
-        await sendEmail(recipients, 'Kingdom Living Iowa — Application Accepted', wrap(
+        await sendEmail(recipients, `Kingdom Living Iowa — Application Accepted: ${full_name}`, wrap(
           `<p>I am pleased to inform you that <strong>${full_name}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
           ${current_situation === 'Currently Incarcerated'
             ? `<p>Once you receive confirmation of <strong>${full_name}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>`

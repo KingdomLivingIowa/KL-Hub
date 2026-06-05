@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       if (recipients.length) {
         await sendEmail(
           recipients,
-          'Kingdom Living Iowa — Application Update',
+          `Kingdom Living Iowa — Application Update: ${fullName}`,
           wrap(`<p>Thank you for your interest in Kingdom Living Iowa and for taking the time to submit your application. After a thorough review, we regret to inform you that we are unable to accept your application at this time.</p>
           <p>As part of our admissions policy, we are not able to accept individuals who have been convicted of a sex crime or are listed on the sex offender registry. Unfortunately, this policy prevents us from moving forward with your application.</p>
           <p>We understand this may be disappointing, and we encourage you to seek out other programs that may better align with your needs. We wish you all the best in your journey ahead.</p>`)
@@ -174,12 +174,15 @@ Deno.serve(async (req) => {
       flagReasons.push('Needs review: applicant reported a disability.');
     }
 
-    // Rule 3: Returning client
-    if (app.lived_here_before === 'Yes') {
+    // Rule 3: Returning client — always check regardless of lived_here_before answer
+    {
+      const orClauses = [`email.eq.${app.email}`, `full_name.eq.${fullName}`];
+      if (app.date_of_birth) orClauses.push(`date_of_birth.eq.${app.date_of_birth}`);
+      if (app.ssn) orClauses.push(`ssn.eq.${app.ssn}`);
       const { data: existingClients } = await supabase
         .from('clients')
         .select('id, full_name, email, not_allowed_back, needs_review_before_readmit')
-        .or(`email.eq.${app.email},full_name.eq.${fullName}`);
+        .or(orClauses.join(','));
 
       if (existingClients?.length > 0) {
         const existingClient = existingClients[0];
@@ -192,7 +195,7 @@ Deno.serve(async (req) => {
             auto_processed: true,
           }).eq('id', application_id);
           if (recipients.length) {
-            await sendEmail(recipients, 'Kingdom Living Iowa — Application Update', wrap(
+            await sendEmail(recipients, `Kingdom Living Iowa — Application Update: ${fullName}`, wrap(
               `<p>Thank you for your interest in Kingdom Living Iowa. After reviewing your record with us, we are unable to accept your application at this time.</p><p>If you have questions, please contact us directly.</p>`
             ));
           }
@@ -303,10 +306,11 @@ Deno.serve(async (req) => {
     if (recipients.length) {
       await sendEmail(
         recipients,
-        'Kingdom Living Iowa — Application Accepted',
+        `Kingdom Living Iowa — Application Accepted: ${fullName}`,
         wrap(`<p>I am pleased to inform you that <strong>${fullName}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
-        <p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>
-        <p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>
+        ${app.current_situation === 'Currently Incarcerated'
+          ? `<p>Once you receive confirmation of <strong>${fullName}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>`
+          : `<p>Currently, we are at full capacity; however, we would like to know when <strong>${fullName}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>`}
         <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`)
       );
     }

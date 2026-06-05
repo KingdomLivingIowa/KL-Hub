@@ -379,9 +379,9 @@ function Admissions() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <span style={s.name}>{fmt(app.first_name)} {fmt(app.last_name)}</span>
               {duplicate && app.status === 'pending' && (
-                <button style={s.dupBadge} onClick={() => setDuplicateModal({ app, client: duplicate })}>
+                <span style={s.dupBadge}>
                   ⚠ Possible Duplicate
-                </button>
+                </span>
               )}
             </div>
             <p style={s.meta}>{fmt(app.email)} · {fmt(app.phone)}</p>
