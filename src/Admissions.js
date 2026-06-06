@@ -349,7 +349,7 @@ function Admissions() {
 
     if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
 
-    await supabase.from('applications').update({ merged: true }).eq('id', app.id);
+    await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
 
     setMergeReturningModal(null);
     fetchApplications();
@@ -808,13 +808,17 @@ function Admissions() {
           onClose={() => { setMergeReturningModal(null); setMergeWizardOpen(false); }}
           onMerge={async (mergedFields) => {
             setMerging(true);
+            // Convert empty strings to null to avoid Postgres type errors (e.g. date fields)
+            const sanitized = Object.fromEntries(
+              Object.entries(mergedFields).map(([k, v]) => [k, v === '' ? null : v])
+            );
             const { error } = await supabase.from('clients').update({
-              ...mergedFields,
+              ...sanitized,
               application_id: mergeReturningModal.app.id,
               status: 'Accepted',
             }).eq('id', mergeReturningModal.existingClient.id);
             if (error) { alert('Error merging: ' + error.message); setMerging(false); return; }
-            await supabase.from('applications').update({ merged: true }).eq('id', mergeReturningModal.app.id);
+            await supabase.from('applications').update({ status: 'accepted' }).eq('id', mergeReturningModal.app.id);
             setMergeReturningModal(null);
             setMergeWizardOpen(false);
             fetchApplications();
