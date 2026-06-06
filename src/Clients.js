@@ -662,8 +662,8 @@ function ClientApplicationView({ client }) {
             ['Difficulty Concentrating/Memory?', app.disability_concentrating],
             ['Difficulty Walking/Stairs?', app.disability_walking],
             ['Difficulty Dressing/Bathing?', app.disability_dressing],
+            ['Able to Work?', app.able_to_work],
           ] : []),
-          ['Able to Work?', app.able_to_work],
           ['Agree to Volunteer?', app.agree_to_volunteer],
         ]} />
 

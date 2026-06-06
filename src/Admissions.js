@@ -410,6 +410,7 @@ function Admissions() {
               ['Difficulty Concentrating/Memory?', app.disability_concentrating],
               ['Difficulty Walking/Stairs?', app.disability_walking],
               ['Difficulty Dressing/Bathing?', app.disability_dressing],
+              ['Able to Work?', app.able_to_work],
             ] : []),
             ['Substance History?', app.substance_history], ['Registered Sex Offender?', app.sex_offender],
             ['Correspondence Contact', app.correspondence_contact], ['Current Situation', app.current_situation],
