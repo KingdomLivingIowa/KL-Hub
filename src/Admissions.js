@@ -246,30 +246,44 @@ function Admissions() {
     if (!app) { alert('Application not found.'); return; }
     const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
 
-    if (status === 'accepted') {
-      setAcceptingId(id);
-      const clientError = await createClientFromApp(app);
-      if (clientError) console.error('createClientFromApp error:', clientError);
+    try {
+      if (status === 'accepted') {
+        setAcceptingId(id);
+        const clientError = await createClientFromApp(app);
+        if (clientError) console.error('createClientFromApp error:', clientError);
+      }
+
+      const { error } = await supabase.from('applications').update({ status }).eq('id', id);
+      if (error) { alert('Error updating application: ' + error.message); return; }
+
+      // Send email via edge function for manual decisions
+      if (app.email) {
+        const { data: { session } } = await supabase.auth.getSession();
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+        const authToken = session?.access_token || ANON_KEY;
+        fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({
+            type: status === 'denied' ? 'denied_manual' : 'accepted_manual',
+            email: app.email,
+            correspondence_contact: app.correspondence_contact || null,
+            full_name: fullName,
+            current_situation: app.current_situation || null,
+            flag: app.auto_flag,
+            balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null,
+          }),
+        }).catch(err => console.error('send-application-email error:', err));
+      }
+
+      fetchApplications();
+      fetchClients();
+    } catch (err) {
+      console.error('updateStatus error:', err);
+      alert('Something went wrong: ' + err.message);
+    } finally {
+      setAcceptingId(null);
     }
-
-    const { error } = await supabase.from('applications').update({ status }).eq('id', id);
-    if (error) { setAcceptingId(null); alert('Error updating application: ' + error.message); return; }
-
-    // Send email via edge function for manual decisions
-    if (app.email) {
-      const { data: { session } } = await supabase.auth.getSession();
-      const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
-      const authToken = session?.access_token || ANON_KEY;
-      fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ type: status === 'denied' ? 'denied_manual' : 'accepted_manual', email: app.email, correspondence_contact: app.correspondence_contact || null, full_name: fullName, flag: app.auto_flag, balance: app.auto_flag?.includes('past_balance') ? parseFloat((app.flag_reason || '').match(/\$([\d.]+)/)?.[1] || 0) : null }),
-      }).catch(err => console.error('send-application-email error:', err));
-    }
-
-    setAcceptingId(null);
-    fetchApplications();
-    fetchClients();
   };
 
   const findDuplicate = (app) => {
