@@ -369,23 +369,23 @@ function Admissions() {
   const rangeStart = totalCount === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalCount);
 
-  const flagInfo = (flag) => {
+  const flagInfo = (flag, flagReason) => {
     if (flag === 'sex_offender') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Registered sex offender' };
     if (flag === 'not_allowed_back') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Client is flagged as not allowed back' };
     if (flag === 'disability_review') return { icon: '♿', color: '#fb923c', label: 'Needs review: Disability indicated' };
-    if (flag === 'past_balance') return { icon: '💰', color: '#fb923c', label: 'Needs review: Returning client with outstanding balance' };
+    if (flag === 'past_balance') { const match = (flagReason || '').match(/\$([\d.]+)/); const amt = match ? ` of $${parseFloat(match[1]).toFixed(2)}` : ''; return { icon: '💰', color: '#fb923c', label: `Needs review: Returning client with outstanding balance${amt}` }; }
     if (flag === 'returning_merge') return { icon: '🔄', color: '#60a5fa', label: 'Returning client — merge with existing profile' };
     if (flag === 'needs_review_before_readmit') return { icon: '⚠️', color: '#fb923c', label: 'Needs review by upper management before re-admitting' };
     return { icon: '⚠', color: '#fb923c', label: flag };
   };
 
-  const getFlags = (auto_flag) => {
+  const getFlags = (auto_flag, flagReason) => {
     if (!auto_flag) return [];
-    return auto_flag.split(',').map(f => flagInfo(f.trim()));
+    return auto_flag.split(',').map(f => flagInfo(f.trim(), flagReason));
   };
 
   const renderCard = (app, duplicate, isReview) => {
-    const flags = getFlags(app.auto_flag);
+    const flags = getFlags(app.auto_flag, app.flag_reason);
     return (
       <div key={app.id} style={{ ...s.card, ...(isReview ? { borderColor: '#fb923c44', borderWidth: '1px', borderStyle: 'solid' } : {}) }}>
         <div style={s.cardHeader}>
@@ -440,7 +440,7 @@ function Admissions() {
           <button style={s.viewBtn} onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
             {expanded === app.id ? 'Hide Application' : 'View Full Application'}
           </button>
-            {app.auto_flag?.includes('returning_merge') && app.status === 'pending' && (
+            {(app.auto_flag?.includes('returning_merge') || app.auto_flag?.includes('past_balance')) && app.status === 'pending' && (
             <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
                 const { data: existing } = await supabase.from('clients')
