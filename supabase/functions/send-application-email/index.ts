@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   try {
-    const { type, email, correspondence_contact, full_name, flag, balance } = await req.json();
+    const { type, email, correspondence_contact, full_name, flag, balance, current_situation } = await req.json();
     const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((e || '').trim());
     const recipients = [...new Set([email, correspondence_contact].filter(e => e && isValidEmail(e)))];
 
