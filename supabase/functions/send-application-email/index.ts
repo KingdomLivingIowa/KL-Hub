@@ -117,11 +117,12 @@ Deno.serve(async (req) => {
           <p>Please let me know once the payment has been made or if you have any questions. I appreciate your prompt attention to this matter.</p>`
         ));
       } else {
+        const middleParagraph = current_situation === 'Currently Incarcerated'
+          ? `<p>Once you receive confirmation of <strong>${full_name}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>`
+          : `<p>Currently, we are at full capacity; however, we would like to know when <strong>${full_name}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>`;
         await sendEmail(recipients, `Kingdom Living Iowa — Application Accepted: ${full_name}`, wrap(
           `<p>I am pleased to inform you that <strong>${full_name}</strong>'s application has been accepted into our program at Kingdom Living Iowa.</p>
-          ${current_situation === 'Currently Incarcerated'
-            ? `<p>Once you receive confirmation of <strong>${full_name}</strong>'s parole, please let me know so that I can add them to the waiting list. This will allow us to prepare for their potential move-in once a spot becomes available.</p>`
-            : `<p>Currently, we are at full capacity; however, we would like to know when <strong>${full_name}</strong> would be ready to move in once a spot becomes available. Please provide an estimated move-in date, and we will keep you informed as soon as an opening arises.</p>`}
+          ${middleParagraph}
           <p>If you have any questions or need further assistance, please don't hesitate to reach out.</p>`
         ));
       }
