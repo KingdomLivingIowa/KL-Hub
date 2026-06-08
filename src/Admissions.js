@@ -238,6 +238,7 @@ function Admissions() {
     if (!window.confirm('Permanently delete this application? This cannot be undone.')) return;
     const { error } = await supabase.from('applications').delete().eq('id', id);
     if (error) { alert('Error deleting application: ' + error.message); return; }
+    setApplications(prev => prev.filter(a => a.id !== id));
     fetchApplications();
   };
 
