@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getCached, setCached } from './dataCache';
+import { getCached, setCached, bustCache } from './dataCache';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 
@@ -239,7 +239,8 @@ function Admissions() {
     const { error } = await supabase.from('applications').delete().eq('id', id);
     if (error) { alert('Error deleting application: ' + error.message); return; }
     setApplications(prev => prev.filter(a => a.id !== id));
-    fetchApplications();
+    bustCache();
+    fetchApplications(true);
   };
 
   const updateStatus = async (id, status) => {
