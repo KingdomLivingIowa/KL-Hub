@@ -278,7 +278,9 @@ function Admissions() {
         }).catch(err => console.error('send-application-email error:', err));
       }
 
-      fetchApplications();
+      setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+      bustCache();
+      fetchApplications(true);
       fetchClients();
     } catch (err) {
       console.error('updateStatus error:', err);
