@@ -19,8 +19,12 @@ function App() {
       setChecking(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      // When email is confirmed, sync user_profiles
+      if (event === 'USER_UPDATED' && session?.user?.email) {
+        supabase.from('user_profiles').update({ email: session.user.email }).eq('id', session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();

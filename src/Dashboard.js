@@ -775,6 +775,10 @@ function NotificationSettingsPage({ currentUser }) {
   const [emailSaving, setEmailSaving] = useState(false);
   const [emailMsg, setEmailMsg] = useState(null);
 
+  // Password reset state
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState(null);
+
   useEffect(() => {
     if (!currentUser?.id) return;
     supabase.from('user_profiles').select('notification_preferences').eq('id', currentUser.id).single()
@@ -828,12 +832,11 @@ function NotificationSettingsPage({ currentUser }) {
               if (!newEmail.trim()) return;
               setEmailSaving(true);
               setEmailMsg(null);
-              const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+              const { error } = await supabase.auth.updateUser({ email: newEmail.trim() }, { emailRedirectTo: window.location.origin });
               if (error) {
                 setEmailMsg({ ok: false, text: 'Error: ' + error.message });
               } else {
-                await supabase.from('user_profiles').update({ email: newEmail.trim() }).eq('id', currentUser.id);
-                setEmailMsg({ ok: true, text: 'Confirmation email sent to ' + newEmail.trim() + '. Check your inbox to confirm the change.' });
+                setEmailMsg({ ok: true, text: 'Confirmation link sent to ' + newEmail.trim() + '. Click the link in that email to confirm — your email will update after you confirm.' });
                 setNewEmail('');
               }
               setEmailSaving(false);
@@ -841,6 +844,34 @@ function NotificationSettingsPage({ currentUser }) {
             disabled={emailSaving || !newEmail.trim()}
             style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
             {emailSaving ? 'Saving...' : 'Update Email'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
+          <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Password</p>
+          <p style={{ color: '#888', fontSize: '13px', margin: '4px 0 0 0' }}>We'll send a password reset link to your current email.</p>
+        </div>
+        <div style={{ padding: '16px 20px' }}>
+          {pwMsg && <p style={{ fontSize: '13px', color: pwMsg.ok ? '#4ade80' : '#f87171', margin: '0 0 10px 0' }}>{pwMsg.text}</p>}
+          <button
+            onClick={async () => {
+              setPwSaving(true);
+              setPwMsg(null);
+              const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email, {
+                redirectTo: window.location.origin,
+              });
+              if (error) {
+                setPwMsg({ ok: false, text: 'Error: ' + error.message });
+              } else {
+                setPwMsg({ ok: true, text: 'Password reset link sent to ' + currentUser.email + '. Check your inbox.' });
+              }
+              setPwSaving(false);
+            }}
+            disabled={pwSaving}
+            style={{ padding: '9px 20px', background: pwSaving ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
+            {pwSaving ? 'Sending...' : 'Send Reset Link'}
           </button>
         </div>
       </div>
