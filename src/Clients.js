@@ -1737,6 +1737,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (!editingField) return;
     const { field, value } = editingField;
     await supabase.from('clients').update({ [field]: value || null }).eq('id', selected.id);
+    // If editing move-in date, also update the active client_stay
+    if (field === 'start_date' && value) {
+      await supabase.from('client_stays')
+        .update({ start_date: value })
+        .eq('client_id', selected.id)
+        .is('discharge_date', null);
+    }
     setSelected(prev => ({ ...prev, [field]: value }));
     setClients(prev => prev.map(c => c.id === selected.id ? { ...c, [field]: value } : c));
     setEditingField(null);
@@ -1804,7 +1811,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     );
   };
 
-  const EditableField = ({ label, field, value, alert: isAlert, options }) => {
+  const EditableField = ({ label, field, value, alert: isAlert, options, type }) => {
     const isEditing = editingField?.field === field;
     return (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #32323e', gap: '12px' }}>
@@ -1817,7 +1824,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               {options.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           ) : (
-            <input autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
+            <input autoFocus type={type || 'text'} value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
               onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
               style={{ background: '#1e1e24', border: '1px solid #555', borderRadius: '4px', color: '#fff', fontSize: '14px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
           )
@@ -2147,7 +2154,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <ReadField label="House" value={selected.house_name} />
                       <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
                       <ReadField label="House manager" value={selected.house_manager} />
-                      <ReadField label="Move-in date" value={selected.start_date} />
+                      <EditableField label="Move-in date" field="start_date" value={selected.start_date} type="date" />
                       {selected.status === 'Pending' && (
                         <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
                       )}
