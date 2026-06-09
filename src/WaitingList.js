@@ -61,7 +61,8 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
   const readyBadge = (date) => {
     if (!date) return null;
-    const days = Math.floor((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
+    const now = new Date(); now.setHours(12,0,0,0);
+    const days = Math.floor((new Date(date + 'T12:00:00') - now) / (1000 * 60 * 60 * 24));
     if (days < 0) return { label: 'Ready now', color: '#4ade80' };
     if (days <= 7) return { label: `${days}d`, color: '#f59e0b' };
     if (days <= 30) return { label: `${Math.ceil(days / 7)}w`, color: '#60a5fa' };
@@ -132,7 +133,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
       ) : (
         <div style={{ background: '#26262e', borderRadius: 10, border: '1px solid #32323e', overflow: 'hidden' }}>
           {/* Header row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '28px 1fr 150px 1fr auto', gap: 8, padding: '10px 14px', background: '#1c1c24', borderBottom: '1px solid #444' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', background: '#1c1c24', borderBottom: '1px solid #444' }}>
             {['#', 'Name', 'Ready Date', 'Notes', ''].map((h, i) => (
               <span key={i} style={{ fontSize: 11, color: '#b22222', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
             ))}
@@ -141,7 +142,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
           {clients.map((client, idx) => {
             const badge = readyBadge(client.ready_date);
             return (
-              <div key={client.id} style={{ display: 'grid', gridTemplateColumns: '28px 1fr 150px 1fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: idx % 2 === 0 ? 'transparent' : '#252525', borderBottom: '1px solid #2a2a2a' }}>
+              <div key={client.id} style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: idx % 2 === 0 ? 'transparent' : '#252525', borderBottom: '1px solid #2a2a2a' }}>
                 <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>{idx + 1}</span>
 
                 {/* Name */}
