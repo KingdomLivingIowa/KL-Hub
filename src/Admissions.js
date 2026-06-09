@@ -568,8 +568,6 @@ function Admissions() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.title}>Admissions</h1>
-
       <div style={s.toolbar}>
         <input
           placeholder="Search by name, email, or phone..."

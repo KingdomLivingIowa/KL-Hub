@@ -215,6 +215,18 @@ function DashboardHome({ counts, currentUser }) {
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
+  // Real-time: update pending badge instantly when applications change
+  useEffect(() => {
+    const channel = supabase.channel('dashboard_apps_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' },
+        async () => {
+          const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+          setCounts(prev => ({ ...prev, pending: count || 0 }));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Write to cache after data settles so next visit is instant
   useEffect(() => {
     if (!loadingDashboard && houses.length > 0) {
