@@ -544,7 +544,6 @@ function Houses({ onOpenClient }) {
     <div style={s.page}>
       <div style={s.header}>
         <div>
-          <h2 style={s.title}>Houses</h2>
           <p style={s.sub}>{houses.length} {isHouseManagerRole ? 'assigned' : 'total'}</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1170,7 +1169,7 @@ const s = {
   input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
-  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
+  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#666', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
   viewToggle: { display: 'flex', background: '#26262e', borderRadius: '8px', border: '1px solid #32323e', overflow: 'hidden' },
   toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#bbb', cursor: 'pointer', fontSize: '14px' },
   toggleBtnActive: { background: '#999', color: '#fff' },
