@@ -215,18 +215,6 @@ function DashboardHome({ counts, currentUser }) {
 
   useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
-  // Real-time: update pending badge instantly when applications change
-  useEffect(() => {
-    const channel = supabase.channel('dashboard_apps_badge')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' },
-        async () => {
-          const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-          setCounts(prev => ({ ...prev, pending: count || 0 }));
-        })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Write to cache after data settles so next visit is instant
   useEffect(() => {
     if (!loadingDashboard && houses.length > 0) {
@@ -550,6 +538,18 @@ function BedStat({ label, value, color }) {
 function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
   const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
+
+  // Real-time: update pending badge instantly when applications change
+  useEffect(() => {
+    const channel = supabase.channel('dashboard_apps_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'applications' },
+        async () => {
+          const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+          setCounts(prev => ({ ...prev, pending: count || 0 }));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [unreadMessages] = useState(0);
   const [pendingClientId, setPendingClientId] = useState(null);
   const [cameFromHouses, setCameFromHouses] = useState(false);
