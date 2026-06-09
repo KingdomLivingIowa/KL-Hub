@@ -450,8 +450,8 @@ function DashboardHome({ counts, currentUser }) {
                     <p style={{ color: '#fff', fontSize: '24px', fontWeight: '700', margin: 0 }}>${totalOutstanding.toFixed(2)}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ color: '#f87171', fontSize: '20px', fontWeight: '700', margin: 0 }}>{openCharges.length}</p>
-                    <p style={{ color: '#bbb', fontSize: '11px', margin: '2px 0 0 0' }}>open charge{openCharges.length !== 1 ? 's' : ''}</p>
+                    <p style={{ color: '#f87171', fontSize: '20px', fontWeight: '700', margin: 0 }}>{new Set(openCharges.map(c => c.client_id)).size}</p>
+                    <p style={{ color: '#bbb', fontSize: '11px', margin: '2px 0 0 0' }}>client{new Set(openCharges.map(c => c.client_id)).size !== 1 ? 's' : ''} with balance</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
