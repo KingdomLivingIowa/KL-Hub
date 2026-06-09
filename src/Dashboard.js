@@ -770,6 +770,11 @@ function NotificationSettingsPage({ currentUser }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Email change state
+  const [newEmail, setNewEmail] = useState('');
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailMsg, setEmailMsg] = useState(null);
+
   useEffect(() => {
     if (!currentUser?.id) return;
     supabase.from('user_profiles').select('notification_preferences').eq('id', currentUser.id).single()
@@ -803,6 +808,42 @@ function NotificationSettingsPage({ currentUser }) {
     <div style={{ maxWidth: '540px' }}>
       <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '0 0 6px 0' }}>My Profile</h2>
       <p style={{ color: '#999', fontSize: '14px', margin: '0 0 28px 0' }}>Manage your notification preferences. Changes apply to your account only.</p>
+
+      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
+          <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Email</p>
+          <p style={{ color: '#888', fontSize: '13px', margin: '4px 0 0 0' }}>Current: <span style={{ color: '#ddd' }}>{currentUser?.email}</span></p>
+        </div>
+        <div style={{ padding: '16px 20px' }}>
+          <input
+            type="email"
+            placeholder="New email address"
+            value={newEmail}
+            onChange={e => { setNewEmail(e.target.value); setEmailMsg(null); }}
+            style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
+          />
+          {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#4ade80' : '#f87171', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
+          <button
+            onClick={async () => {
+              if (!newEmail.trim()) return;
+              setEmailSaving(true);
+              setEmailMsg(null);
+              const { error } = await supabase.auth.updateUser({ email: newEmail.trim() });
+              if (error) {
+                setEmailMsg({ ok: false, text: 'Error: ' + error.message });
+              } else {
+                await supabase.from('user_profiles').update({ email: newEmail.trim() }).eq('id', currentUser.id);
+                setEmailMsg({ ok: true, text: 'Confirmation email sent to ' + newEmail.trim() + '. Check your inbox to confirm the change.' });
+                setNewEmail('');
+              }
+              setEmailSaving(false);
+            }}
+            disabled={emailSaving || !newEmail.trim()}
+            style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
+            {emailSaving ? 'Saving...' : 'Update Email'}
+          </button>
+        </div>
+      </div>
 
       <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
         <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
