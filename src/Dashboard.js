@@ -203,8 +203,8 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchOpenCharges = async () => {
-    const { data } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true });
-    let charges = data || [];
+    const { data } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, status, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true });
+    let charges = (data || []).filter(c => c.clients?.status === 'Active');
     if (isHouseManagerRole && assignedHouseIds.length > 0) {
       charges = charges.filter(c => assignedHouseIds.includes(c.clients?.house_id));
     }
