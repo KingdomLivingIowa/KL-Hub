@@ -239,17 +239,19 @@ function Houses({ onOpenClient }) {
 
     // Fire confirmed move-in email notification
     const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
-    fetch('https://pmvxnetpbxuzkrxitioc.supabase.co/functions/v1/confirmed-move-in-notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
-      body: JSON.stringify({
-        client_name: moveInModal.full_name,
-        house_name: selected?.name || 'Unknown House',
-        move_in_date: new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-        level: 1,
-        early_admission: false,
-      }),
-    }).catch(err => console.error('Move-in notify error:', err));
+    try {
+      await fetch('https://pmvxnetpbxuzkrxitioc.supabase.co/functions/v1/confirmed-move-in-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+        body: JSON.stringify({
+          client_name: moveInModal.full_name,
+          house_name: selected?.name || 'Unknown House',
+          move_in_date: new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          level: 1,
+          early_admission: false,
+        }),
+      });
+    } catch (err) { console.error('Move-in notify error:', err); }
 
     setMoveInModal(null);
     setMoveInRoomType('Double');
