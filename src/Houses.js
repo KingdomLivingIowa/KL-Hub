@@ -88,6 +88,8 @@ function Houses({ onOpenClient }) {
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [roomForm, setRoomForm] = useState({ name: '', type: 'Double', beds: '2' });
+  const [editingHouse, setEditingHouse] = useState(false);
+  const [houseEditForm, setHouseEditForm] = useState({});
   const [entryType, setEntryType] = useState('House Check-In');
   const [entryForm, setEntryForm] = useState({
     author: '', notes: '', severity: 'Low', event_name: '',
@@ -346,6 +348,20 @@ function Houses({ onOpenClient }) {
     setForm({ name: '', address: '', city: '', zip: '', type: 'Men', total_beds: '', house_manager: '', phone: '', notes: '' });
     setShowAdd(false);
     loadAllData(true);
+  };
+
+  const saveHouseEdit = async () => {
+    if (!selected) return;
+    const { error } = await supabase.from('houses').update({
+      type: houseEditForm.type,
+      total_beds: parseInt(houseEditForm.total_beds) || selected.total_beds,
+      house_manager: houseEditForm.house_manager || null,
+      phone: houseEditForm.phone || null,
+    }).eq('id', selected.id);
+    if (error) { alert('Error saving: ' + error.message); return; }
+    setSelected(prev => ({ ...prev, ...houseEditForm, total_beds: parseInt(houseEditForm.total_beds) || prev.total_beds }));
+    loadAllData(true);
+    setEditingHouse(false);
   };
 
   const addRoom = async () => {
@@ -680,8 +696,58 @@ function Houses({ onOpenClient }) {
                   {selected.house_manager && <span style={{ ...s.typeBadge, background: '#26262e', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
                 </div>
               </div>
-              <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button onClick={() => { setHouseEditForm({ type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '' }); setEditingHouse(true); }}
+                  style={{ background: '#26262e', border: '1px solid #32323e', color: '#ccc', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  ✏ Edit House
+                </button>
+                <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
+              </div>
             </div>
+
+            {editingHouse && (
+              <div style={{ background: '#1a1a24', border: '1px solid #32323e', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px' }}>
+                <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Edit House Details</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div>
+                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Type</label>
+                    <select value={houseEditForm.type} onChange={e => setHouseEditForm(p => ({ ...p, type: e.target.value }))}
+                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px' }}>
+                      <option value="Men">Men</option>
+                      <option value="Women">Women</option>
+                      <option value="Co-ed">Co-ed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Total Beds</label>
+                    <input type="number" value={houseEditForm.total_beds} onChange={e => setHouseEditForm(p => ({ ...p, total_beds: e.target.value }))}
+                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>House Manager</label>
+                    <input value={houseEditForm.house_manager} onChange={e => setHouseEditForm(p => ({ ...p, house_manager: e.target.value }))}
+                      placeholder="Manager name"
+                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Manager Phone</label>
+                    <input value={houseEditForm.phone} onChange={e => setHouseEditForm(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="Phone number"
+                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={saveHouseEdit}
+                    style={{ background: '#1D9E75', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                    Save Changes
+                  </button>
+                  <button onClick={() => setEditingHouse(false)}
+                    style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div style={s.tabs}>
               {['residents', 'timeline', 'rooms', 'calendar', 'forms'].map(t => (
