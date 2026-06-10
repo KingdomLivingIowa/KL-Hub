@@ -297,8 +297,6 @@ function Admissions() {
     const lastLower = app.last_name?.toLowerCase().trim();
     const appDob = app.date_of_birth;
     const appSsn = app.ssn?.replace(/\D/g, '');
-    const appEmail = app.email?.toLowerCase().trim();
-
     // Require name + at least one other matching field to flag as duplicate
     const clientMatch = clients.find((c) => {
       if (c.application_id === app.id) return false; // same app
