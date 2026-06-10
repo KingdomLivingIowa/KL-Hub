@@ -307,8 +307,8 @@ function Admissions() {
       if (!nameMatch) return false;
       const dobMatch = appDob && c.date_of_birth && c.date_of_birth === appDob;
       const ssnMatch = appSsn && appSsn.length >= 4 && c.ssn?.replace(/\D/g, '') === appSsn;
-      const emailMatch = appEmail && c.email?.toLowerCase().trim() === appEmail;
-      return dobMatch || ssnMatch || emailMatch;
+      // Email alone is not enough — require name + DOB or name + SSN to avoid false positives
+      return dobMatch || ssnMatch;
     });
     if (clientMatch) return clientMatch;
 
