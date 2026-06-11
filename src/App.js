@@ -25,7 +25,16 @@ function App() {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        // Verify this is a staff user, not a resident
+        const { data: profile } = await supabase.from('user_profiles').select('id').eq('id', session.user.id).maybeSingle();
+        if (!profile) {
+          await supabase.auth.signOut();
+          setChecking(false);
+          return;
+        }
+      }
       setUser(session?.user ?? null);
       setChecking(false);
     });
@@ -45,8 +54,19 @@ function App() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { setError(error.message); setLoading(false); return; }
+
+    // Verify this user has a staff account — residents should use kl-portal instead
+    if (data?.user) {
+      const { data: profile } = await supabase.from('user_profiles').select('id, role').eq('id', data.user.id).maybeSingle();
+      if (!profile) {
+        await supabase.auth.signOut();
+        setError('This account is not authorized to access the staff portal. Please use the resident portal instead.');
+        setLoading(false);
+        return;
+      }
+    }
     setLoading(false);
   };
 
