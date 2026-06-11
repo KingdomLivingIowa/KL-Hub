@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import logo from './kingdom-living-logo.jpg';
 
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
 
 const sections = ['General Info', 'Recovery', 'Emergency Contacts', 'Legal History', 'Information Accuracy'];
 
@@ -146,6 +147,14 @@ function ApplicationForm() {
     setStep(s => s + 1);
   };
 
+  // Convert file to base64 string
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
   const handleSubmit = async () => {
     const error = validate();
     if (error) { alert(error); return; }
@@ -157,61 +166,61 @@ function ApplicationForm() {
       form.last_name.slice(0, 2).toLowerCase() +
       (form.date_of_birth ? form.date_of_birth.replace(/-/g, '').slice(2) : '000000');
 
-    let photoUrl = null;
-    if (profilePhoto) {
-      const fileExt = profilePhoto.name.split('.').pop();
-      const fileName = `${uniqueId}_${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from('profile-photos')
-        .upload(fileName, profilePhoto);
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('profile-photos').getPublicUrl(fileName);
-        photoUrl = urlData.publicUrl;
-      }
-    }
-
     const medDetails = form.takes_medication === 'Yes' ? JSON.stringify(medications) : null;
     const treatmentDetails = form.attended_treatment === 'Yes' ? JSON.stringify(treatments) : null;
     const drugOfChoice = selectedDrugs.length > 0 ? selectedDrugs.join(', ') : '';
 
     const { auto_flag, flag_reason, auto_processed, ...formFields } = form;
 
-    const { data: insertedApp, error: appError } = await supabase
-      .from('applications')
-      .insert([{
-        ...formFields,
-        drug_of_choice: drugOfChoice,
-        full_name: fullName,
-        status: 'pending',
-        medication_details: medDetails,
-        treatment_details: treatmentDetails,
-        photo_url: photoUrl,
-      }])
-      .select('id')
-      .single();
+    // Build payload for edge function
+    const payload = {
+      ...formFields,
+      drug_of_choice: drugOfChoice,
+      full_name: fullName,
+      status: 'pending',
+      medication_details: medDetails,
+      treatment_details: treatmentDetails,
+      uniqueId,
+    };
 
-    setLoading(false);
-    if (appError) {
-      console.error('Application insert error:', appError);
-      alert('There was an error submitting. Please try again. Error: ' + appError.message);
+    // Convert photo to base64 if present
+    if (profilePhoto) {
+      const base64 = await fileToBase64(profilePhoto);
+      payload.profilePhotoBase64 = base64;
+      payload.profilePhotoExt = profilePhoto.name.split('.').pop();
+      payload.profilePhotoMime = profilePhoto.type;
+    }
+
+    // Submit via edge function (service role handles the insert — no direct table access needed)
+    const submitRes = await fetch(`${SUPABASE_URL}/functions/v1/submit-application`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ANON_KEY}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const submitData = await submitRes.json();
+
+    if (!submitRes.ok || submitData.error) {
+      setLoading(false);
+      console.error('Application submit error:', submitData.error);
+      alert('There was an error submitting. Please try again. Error: ' + (submitData.error || 'Unknown error'));
       return;
     }
 
     // Trigger auto-processing in the background
-    if (insertedApp?.id) {
-      const { data: { session } } = await supabase.auth.getSession();
-      const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
-      const authToken = session?.access_token || ANON_KEY;
+    const insertedId = submitData.id;
+    if (insertedId) {
       fetch(`${SUPABASE_URL}/functions/v1/process-application`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ application_id: insertedApp.id }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+        body: JSON.stringify({ application_id: insertedId }),
       }).catch(err => console.error('process-application error:', err));
     }
 
-    // Notify upper management and admins of new application
-    // (handled by process-application edge function)
-
+    setLoading(false);
     setSubmitted(true);
   };
 
@@ -268,7 +277,6 @@ function ApplicationForm() {
             <Row label="Assigned Sex *"><Select value={form.assigned_sex} onChange={v => set('assigned_sex', v)} options={['Male', 'Female', 'No Response']} /></Row>
             <Row label="Ethnicity *"><Select value={form.ethnicity} onChange={v => set('ethnicity', v)} options={['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'Native Hawaiian or Other Pacific Islander', 'White', 'Two or More Races', 'No Response']} /></Row>
 
-            {/* Fixed: "Check one that applies" with single select */}
             <Row label="Check one that applies *">
               <Select value={form.current_situation} onChange={v => set('current_situation', v)} options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} />
             </Row>
@@ -300,7 +308,6 @@ function ApplicationForm() {
               <Select value={form.substance_history} onChange={v => set('substance_history', v)} options={['Yes', 'No']} />
             </Row>
 
-            {/* Drug of Choice — multi-select checkboxes */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{ color: '#d0d0d0', fontSize: '14px', display: 'block', marginBottom: '4px' }}>Drug(s) of Choice</label>
               <p style={s.hint}>Select all that apply.</p>
