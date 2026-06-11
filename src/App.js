@@ -14,6 +14,17 @@ function App() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    // If this page loaded with a token_hash in the URL (from an email link),
+    // check if it's meant for the portal and redirect there instead
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type');
+    // Invite tokens should go to the portal
+    if (tokenHash && type === 'invite') {
+      window.location.href = `https://kl-portal.vercel.app${window.location.search}`;
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setChecking(false);
