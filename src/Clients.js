@@ -348,6 +348,7 @@ const groupByWeek = (entries) => {
 // ── Invite to Portal Button ───────────────────────────────────────────────────
 function InvitePortalButton({ client }) {
   const [status, setStatus] = useState('idle');
+  const [errorMsg, setErrorMsg] = useState('');
   const handleInvite = async (e) => {
     e.stopPropagation();
     if (status === 'sent') return;
@@ -361,7 +362,16 @@ function InvitePortalButton({ client }) {
         body: JSON.stringify({ email: client.email }),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Invite failed');
+      if (!res.ok) {
+        // If account already exists, just show as sent — the invite was already accepted
+        if (result.error?.includes('already been registered') || result.error?.includes('already exists')) {
+          setErrorMsg('Account already exists — portal access was already set up for this email.');
+          setStatus('error');
+          setTimeout(() => { setStatus('idle'); setErrorMsg(''); }, 6000);
+          return;
+        }
+        throw new Error(result.error || 'Invite failed');
+      }
       setStatus('sent');
       // Save auth_user_id to clients table and add to house chat
       if (result.user?.id) {
@@ -379,8 +389,9 @@ function InvitePortalButton({ client }) {
       }
     } catch (err) {
       console.error(err);
+      setErrorMsg(err.message);
       setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      setTimeout(() => { setStatus('idle'); setErrorMsg(''); }, 5000);
     }
   };
   const btnStyles = {
@@ -391,9 +402,12 @@ function InvitePortalButton({ client }) {
   };
   const btnLabel = { idle: '✉ Invite', sending: '...', sent: '✓ Sent', error: 'Error' };
   return (
-    <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '14px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
-      {btnLabel[status]}
-    </button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+      <button onClick={handleInvite} style={{ ...btnStyles[status], fontSize: '14px', padding: '5px 10px', borderRadius: '7px', cursor: status === 'sent' ? 'default' : 'pointer', fontWeight: '500', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+        {btnLabel[status]}
+      </button>
+      {errorMsg && <p style={{ color: '#f87171', fontSize: '11px', margin: 0, maxWidth: '200px', textAlign: 'right' }}>{errorMsg}</p>}
+    </div>
   );
 }
 
