@@ -363,11 +363,23 @@ function InvitePortalButton({ client }) {
       });
       const result = await res.json();
       if (!res.ok) {
-        // If account already exists, just show as sent — the invite was already accepted
+        // If account already exists, send a password reset instead
         if (result.error?.includes('already been registered') || result.error?.includes('already exists')) {
-          setErrorMsg('Account already exists — portal access was already set up for this email.');
-          setStatus('error');
-          setTimeout(() => { setStatus('idle'); setErrorMsg(''); }, 6000);
+          const { data: { session } } = await supabase.auth.getSession();
+          const resetRes = await fetch(`${SUPABASE_URL}/functions/v1/reset-portal-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+            body: JSON.stringify({ email: client.email }),
+          });
+          if (resetRes.ok) {
+            setStatus('sent');
+            setErrorMsg('Account exists — password reset email sent instead.');
+            setTimeout(() => setErrorMsg(''), 5000);
+          } else {
+            setErrorMsg('Account exists. Ask the client to use Forgot Password on the portal.');
+            setStatus('error');
+            setTimeout(() => { setStatus('idle'); setErrorMsg(''); }, 6000);
+          }
           return;
         }
         throw new Error(result.error || 'Invite failed');
