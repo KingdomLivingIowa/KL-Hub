@@ -13,7 +13,6 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    // Verify the caller is an authenticated staff user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
 
@@ -22,20 +21,13 @@ serve(async (req) => {
     const { email } = await req.json();
     if (!email) return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400, headers: corsHeaders });
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existing = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      return new Response(JSON.stringify({ error: 'A portal account already exists for this email address.' }), { status: 400, headers: corsHeaders });
-    }
-
-    // Send invite email — resident sets their own password via the link
+    // Send invite — resident sets their own password via the link
     const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       redirectTo: 'https://kl-portal.vercel.app',
     });
 
     if (error) {
-      console.error('Invite error:', error);
+      console.error('Invite error:', error.message);
       return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: corsHeaders });
     }
 
