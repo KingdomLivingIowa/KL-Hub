@@ -69,6 +69,12 @@ const NOTIFICATION_TYPES = [
     icon: '🌙',
     description: 'Sent immediately when a resident submits an overnight pass request.',
   },
+  {
+    id: 'did_not_move_in',
+    label: 'Did Not Move In',
+    icon: '🚫',
+    description: 'Sent immediately when a confirmed move-in is marked as Did Not Move In.',
+  },
 ];
 
 export default function EmailSettings() {
