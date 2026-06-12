@@ -201,7 +201,7 @@ function Houses({ onOpenClient }) {
     setActiveTab('residents');
     setShowAddEntry(false);
     setEntryType('House Check-In');
-    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
+    setEntryForm({ author: user?.user_metadata?.full_name || user?.email || '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     fetchResidents(house.id);
     fetchRooms(house.id);
     fetchTimeline(house.id);
@@ -466,7 +466,7 @@ function Houses({ onOpenClient }) {
     }
     setShowAddEntry(false);
     setEntryType('House Check-In');
-    setEntryForm({ author: '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
+    setEntryForm({ author: user?.user_metadata?.full_name || user?.email || '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     setResidentChecks(prev => {
       const reset = {};
       Object.keys(prev).forEach(id => { reset[id] = { name: prev[id].name, value: '' }; });
