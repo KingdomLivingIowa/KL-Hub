@@ -265,6 +265,9 @@ function Houses({ onOpenClient }) {
     if (!didNotMoveInReason.trim()) { alert('Please provide a reason.'); return; }
     setSavingMoveIn(true);
 
+    const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+
     // Revert client to Archived status
     await supabase.from('clients').update({
       status: 'Archived',
@@ -299,6 +302,17 @@ function Houses({ onOpenClient }) {
       notes: `Did not move in. Reason: ${didNotMoveInReason.trim()}`,
       source: 'staff',
     }]);
+
+    // Send email notification
+    fetch(`${SUPABASE_URL}/functions/v1/did-not-move-in-notify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${ANON_KEY}` },
+      body: JSON.stringify({
+        client_name: moveInModal.full_name || `${moveInModal.first_name || ''} ${moveInModal.last_name || ''}`.trim(),
+        house_name: selected?.name || 'Unknown House',
+        reason: didNotMoveInReason.trim(),
+      }),
+    }).catch(err => console.error('did-not-move-in-notify error:', err));
 
     setMoveInModal(null);
     setMoveInRoomType('Double');
