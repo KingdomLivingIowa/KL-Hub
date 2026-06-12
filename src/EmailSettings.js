@@ -75,6 +75,12 @@ const NOTIFICATION_TYPES = [
     icon: '🚫',
     description: 'Sent immediately when a confirmed move-in is marked as Did Not Move In.',
   },
+  {
+    id: 'supplies_inventory',
+    label: 'Supplies/Inventory',
+    icon: '📦',
+    description: 'Sent immediately when a Supplies/Inventory entry is added to a house timeline.',
+  },
 ];
 
 export default function EmailSettings() {

@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
-const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'Weekly Reflection', 'Maintenance/Repair', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory', 'Maintenance Request'];
+const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory', 'Maintenance Request'];
 
 const reverseGeocode = async (lat, lng) => {
   try {
@@ -403,12 +403,6 @@ function Houses({ onOpenClient }) {
     if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) { alert('Please fill in at least one resident.'); return; }
     if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) { alert('Please select at least one resident.'); return; }
     let reflectionData = null;
-    if (entryType === 'Weekly Reflection') {
-      reflectionData = JSON.stringify({
-        mood: entryForm.reflection_mood, challenge: entryForm.reflection_challenge,
-        win: entryForm.reflection_win, goals: entryForm.reflection_goals,
-      });
-    }
     const { error } = await supabase.from('house_timeline').insert([{
       house_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryForm.notes || null,
@@ -417,7 +411,7 @@ function Houses({ onOpenClient }) {
       resident_data: resData.length ? resData : null,
       reflection_data: reflectionData,
       inspection_result: entryType === 'House Inspection' ? entryForm.inspection_result : null,
-      maintenance_status: entryType === 'Maintenance/Repair' ? entryForm.maintenance_status : null,
+      maintenance_status: null,
     }]);
 
     // If Maintenance Request, also create in maintenance_requests table
@@ -448,7 +442,21 @@ function Houses({ onOpenClient }) {
         }),
       }).catch(err => console.error('Maintenance notify error:', err));
     }
-    if (error) { alert('Error: ' + error.message); return; }
+
+    // If Supplies/Inventory, fire email notification
+    if (entryType === 'Supplies/Inventory') {
+      const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+      fetch('https://pmvxnetpbxuzkrxitioc.supabase.co/functions/v1/supplies-inventory-notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+        body: JSON.stringify({
+          house_name: selected.name,
+          notes: entryForm.notes,
+          submitted_by: entryForm.author,
+        }),
+      }).catch(err => console.error('Supplies notify error:', err));
+    }
+    
     if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
       const relevantResidents = resData.filter(r => r.value);
       for (const res of relevantResidents) {
