@@ -403,7 +403,8 @@ function Houses({ onOpenClient }) {
     if ((entryType === 'House Check-In' || entryType === 'Batch UA') && resData.every(r => !r.value)) { alert('Please fill in at least one resident.'); return; }
     if (entryType === 'Event Attendance' && resData.every(r => r.value !== 'Attended')) { alert('Please select at least one resident.'); return; }
     let reflectionData = null;
-    const { error: insertError } = await supabase.from('house_timeline').insert([{
+    // eslint-disable-next-line no-unused-vars
+const { error: insertError } = await supabase.from('house_timeline').insert([{
       house_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryForm.notes || null,
       severity: entryType === 'Crisis' ? entryForm.severity : null,
@@ -456,6 +457,7 @@ function Houses({ onOpenClient }) {
         }),
       }).catch(err => console.error('Supplies notify error:', err));
     }
+    if (insertError) { alert('Error: ' + insertError.message); return; }
 
     if (['House Check-In', 'Batch UA', 'Event Attendance'].includes(entryType)) {
       const relevantResidents = resData.filter(r => r.value);
