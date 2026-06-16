@@ -522,10 +522,16 @@ export function HouseCalendarTab({ houseId, houseType }) {
         {canEdit && <button style={{ ...s.btn(), padding: '6px 14px', fontSize: 12 }} onClick={() => setShowAddModal(true)}>+ Add Event</button>}
       </div>
 
-      <CalendarGrid year={year} month={month} eventsByDate={eventsByDate}
-        onDayClick={(ymd, evs) => { if (evs.length) { setSelectedDay(ymd); setSelectedEvents(evs); } }}
-        onPrev={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
-        onNext={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
+      <div style={s.card}>
+        <CalendarGrid year={year} month={month} eventsByDate={eventsByDate}
+          onDayClick={(ymd, evs) => { if (evs.length) { setSelectedDay(ymd); setSelectedEvents(evs); } }}
+          onPrev={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
+          onNext={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
+          renderDot={(ev, j) => (
+            <div key={j} style={{ fontSize: 11, color: '#fff', background: ev.color, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
+          )}
+        />
+      </div>
         renderDot={(ev, j) => (
           <div key={j} style={{ fontSize: 11, color: '#fff', background: ev.color, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
         )}
