@@ -189,9 +189,10 @@ export default function Maintenance() {
                   <div style={s.cardBody}>
                     {isEditing ? (
                       <div>
+                        <div onClick={e => e.stopPropagation()}>
                         <div style={s.editRow}>
                           <label style={s.editLabel}>Status</label>
-                          <select value={editForm.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))} style={s.editInput}>
+                          <select value={editForm.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))} onClick={e => e.stopPropagation()} style={s.editInput}>
                             <option>Open</option>
                             <option>In Progress</option>
                             <option>Completed</option>
