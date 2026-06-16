@@ -434,7 +434,17 @@ export function HouseCalendarTab({ houseId, houseType }) {
     evList.forEach(ev => {
       const addToDate = (ymd) => {
         if (!result[ymd]) result[ymd] = [];
-        result[ymd].push({ ...ev, label: ev.title, color: isOrg ? '#f59e0b' : '#3b82f6', isOrg });
+        let color;
+        if (!isOrg) {
+          color = '#6b7280'; // gray for house-specific events
+        } else if (ev.scope === 'womens') {
+          color = '#ec4899'; // pink for women's
+        } else if (ev.scope === 'mens') {
+          color = '#3b82f6'; // blue for men's
+        } else {
+          color = '#b22222'; // red for all-houses org events
+        }
+        result[ymd].push({ ...ev, label: ev.title, color, isOrg });
       };
       if (!ev.is_recurring || !ev.recurrence || ev.recurrence === 'none') {
         if (ev.event_date) addToDate(ev.event_date);
