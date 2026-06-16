@@ -92,7 +92,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
         <button onClick={onNext} style={s.ghost}>›</button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-        {DAYS.map(d => <div key={d} style={{ fontSize: 13, color: '#bbb', textAlign: 'center', fontWeight: 600 }}>{d}</div>)}
+        {DAYS.map(d => <div key={d} style={{ fontSize: 13, color: '#bbb', textAlign: 'center', fontWeight: 600, padding: '4px 0', borderBottom: '1px solid #333' }}>{d}</div>)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((day, i) => {
