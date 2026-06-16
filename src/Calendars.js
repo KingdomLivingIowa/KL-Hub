@@ -96,7 +96,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((day, i) => {
-          if (!day) return <div key={`e${i}`} />;
+          if (!day) return <div key={`e${i}`} style={{ minHeight: 80, background: '#1a1a1a', borderRadius: 8, border: '1px solid #2a2a2a' }} />;
           const ymd = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const events = eventsByDate[ymd] || [];
           const isToday = ymd === today;
