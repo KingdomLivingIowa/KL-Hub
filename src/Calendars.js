@@ -526,8 +526,8 @@ export function HouseCalendarTab({ houseId, houseType }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#3b82f6' }} /><span style={{ fontSize: 12, color: '#bbb' }}>This House</span></div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b' }} /><span style={{ fontSize: 12, color: '#bbb' }}>Org-Wide</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#6b7280' }} /><span style={{ fontSize: 12, color: '#bbb' }}>This House</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#b22222' }} /><span style={{ fontSize: 12, color: '#bbb' }}>Org-Wide</span></div>
         </div>
         {canEdit && <button style={{ ...s.btn(), padding: '6px 14px', fontSize: 12 }} onClick={() => setShowAddModal(true)}>+ Add Event</button>}
       </div>
