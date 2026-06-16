@@ -102,10 +102,10 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
           const isToday = ymd === today;
           return (
             <div key={ymd} onClick={() => onDayClick && onDayClick(ymd, events)}
-              style={{ minHeight: 80, background: isToday ? '#2e1a1a' : '#222', borderRadius: 8, padding: '8px 10px', cursor: onDayClick ? 'pointer' : 'default', border: isToday ? '1px solid #b22222' : '1px solid #333' }}>
+              style={{ minHeight: 80, width: '100%', boxSizing: 'border-box', overflow: 'hidden', background: isToday ? '#2e1a1a' : '#222', borderRadius: 8, padding: '8px 6px', cursor: onDayClick ? 'pointer' : 'default', border: isToday ? '1px solid #b22222' : '1px solid #333' }}>
               <div style={{ fontSize: 14, color: isToday ? '#e05555' : '#bbb', fontWeight: isToday ? 700 : 500, marginBottom: 5 }}>{day}</div>
               {events.slice(0, 3).map((ev, j) => renderDot ? renderDot(ev, j) : (
-                <div key={j} style={{ fontSize: 11, color: '#fff', background: ev.color || '#b22222', borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
+                <div key={j} style={{ fontSize: 10, color: '#fff', background: ev.color || '#b22222', borderRadius: 4, padding: '2px 4px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500, width: '100%', boxSizing: 'border-box' }}>{ev.label}</div>
               ))}
               {events.length > 3 && <div style={{ fontSize: 11, color: '#bbb' }}>+{events.length - 3} more</div>}
             </div>
