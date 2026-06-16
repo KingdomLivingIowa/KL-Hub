@@ -81,7 +81,7 @@ export default function Maintenance() {
       if (parts.length > 0) {
         await supabase.from('house_timeline').insert([{
           house_id: req.house_id,
-          entry_type: 'Maintenance Request',
+          entry_type: 'Maintenance Update',
           notes: `[${req.description || 'Maintenance'}${req.issue_location ? ` – ${req.issue_location}` : ''}] ${parts.join(' · ')}`,
           author: 'Staff',
         }]);

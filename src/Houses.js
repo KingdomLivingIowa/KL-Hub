@@ -521,7 +521,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     if (type === 'House Inspection') return '#06b6d4';
     if (type === 'House Meeting Notes') return '#84cc16';
     if (type === 'Supplies/Inventory') return '#e879f9';
-    if (type === 'Maintenance Request') return '#f97316';
+    if (type === 'Maintenance Update') return '#60a5fa';
     return '#bbb';
   };
 
