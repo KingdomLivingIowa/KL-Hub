@@ -526,7 +526,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
   };
 
   const severityColor = (sv) => {
-    if (sv === 'High') return { bg: '#3a1e1e', color: '#f87171' };
+    if (sv === 'High') return { bg: '#3a1e1e99', color: '#f87171' };
     if (sv === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
     return { bg: '#1e3a2f', color: '#4ade80' };
   };
@@ -1271,6 +1271,14 @@ function MoveOutRequestsTab({ houseId, houseName }) {
 
   useEffect(() => { fetchRequests(); }, [houseId, filter, fetchRequests]);
 
+  useEffect(() => {
+    const channel = supabase.channel(`move_out_requests_${houseId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'move_out_requests', filter: `house_id=eq.${houseId}` },
+        () => { fetchRequests(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [houseId, fetchRequests]);
+
   const handleReview = async (request, action) => {
     setSaving(true);
     const { error } = await supabase.from('move_out_requests').update({
@@ -1468,6 +1476,14 @@ function OvernightRequestsTab({ houseId, houseName }) {
   };
 
   useEffect(() => { fetchRequests(); }, [houseId, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const channel = supabase.channel(`overnight_requests_${houseId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overnight_requests', filter: `house_id=eq.${houseId}` },
+        () => { fetchRequests(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [houseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleReview = async (decision) => {
     if (!reviewing) return;
