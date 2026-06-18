@@ -550,7 +550,7 @@ function DashboardInner({ user }) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const [unreadMessages] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [pendingClientId, setPendingClientId] = useState(null);
   const [cameFromHouses, setCameFromHouses] = useState(false);
 
