@@ -1656,8 +1656,7 @@ function HouseChatTab({ houseId, houseName, user }) {
     return () => { active = false; if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current); };
   }, [houseId, houseName, user.id]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
+  useEffect(() => { // eslint-disable-line react-hooks/exhaustive-deps
     if (!conv) return;
     if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current);
     const channel = supabase.channel(`house_chat_${conv.id}`)
