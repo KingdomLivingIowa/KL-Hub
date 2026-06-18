@@ -550,7 +550,31 @@ function DashboardInner({ user }) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0); // eslint-disable-line no-unused-vars
+  useEffect(() => {
+  const fetchUnreadMessages = async () => {
+    if (!user?.id) return;
+    const { data: memberships } = await supabase
+      .from('conversation_members')
+      .select('conversation_id, last_read_at')
+      .eq('user_id', user.id);
+    if (!memberships?.length) return;
+    let total = 0;
+    for (const m of memberships) {
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('conversation_id', m.conversation_id)
+        .neq('sender_id', user.id)
+        .gt('created_at', m.last_read_at || '1970-01-01');
+      total += count || 0;
+    }
+    setUnreadMessages(total);
+  };
+  fetchUnreadMessages();
+  const interval = setInterval(fetchUnreadMessages, 30000);
+  return () => clearInterval(interval);
+}, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [pendingClientId, setPendingClientId] = useState(null);
   const [cameFromHouses, setCameFromHouses] = useState(false);
 
