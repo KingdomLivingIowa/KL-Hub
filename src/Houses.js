@@ -1668,7 +1668,7 @@ function HouseChatTab({ houseId, houseName, user }) {
       .subscribe();
     subscriptionRef.current = channel;
     return () => { supabase.removeChannel(channel); };
-  }, [conv?.id, user.id]);
+  }, [conv?.id, user.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
