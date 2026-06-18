@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
@@ -566,6 +566,8 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     return `Updated ${lastRefreshed.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  const canSeeHouseChat = selected && (hasFullAccess || (isHouseManagerRole && assignedHouseIds.includes(selected.id)));
+
   return (
     <div style={s.page}>
       <div style={s.header}>
@@ -775,7 +777,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
             )}
 
             <div style={s.tabs}>
-              {['residents', 'timeline', 'rooms', 'calendar', 'forms'].map(t => (
+              {['residents', 'timeline', 'rooms', 'calendar', 'forms', 'messages'].map(t => (
                 <button key={t} onClick={() => setActiveTab(t)} style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                 </button>
@@ -1096,6 +1098,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} />
                   <OvernightRequestsTab houseId={selected.id} houseName={selected.name} />
                 </div>
+              )}
+
+              {activeTab === 'messages' && (
+                canSeeHouseChat ? (
+                  <HouseChatTab houseId={selected.id} houseName={selected.name} user={user} />
+                ) : (
+                  <p style={{ color: '#888', fontSize: '14px' }}>You don't have access to this house's chat.</p>
+                )
               )}
             </div>
           </div>
@@ -1599,6 +1609,129 @@ function OvernightRequestsTab({ houseId, houseName }) {
           </div>
         ))
       }
+    </div>
+  );
+}
+
+function HouseChatTab({ houseId, houseName, user }) {
+  const [conv, setConv] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [memberProfiles, setMemberProfiles] = useState({});
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const subscriptionRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    const init = async () => {
+      setLoading(true);
+      const { data: staffData } = await supabase.from('user_profiles').select('id, full_name, email, role');
+      const map = {};
+      (staffData || []).forEach(st => { map[st.id] = st; });
+      const { data: clientData } = await supabase.from('clients').select('full_name, email, auth_user_id').not('auth_user_id', 'is', null);
+      (clientData || []).forEach(c => { if (c.auth_user_id) map[c.auth_user_id] = { full_name: c.full_name, email: c.email, role: 'resident' }; });
+      if (active) setMemberProfiles(map);
+
+      let { data: houseConv } = await supabase.from('conversations').select('*').eq('house_id', houseId).maybeSingle();
+      if (!houseConv) {
+        const { data: created } = await supabase.from('conversations').insert([{ name: houseName, type: 'group', house_id: houseId }]).select().single();
+        houseConv = created;
+      }
+      if (!active || !houseConv) { setLoading(false); return; }
+      setConv(houseConv);
+
+      await supabase.from('conversation_members').upsert({
+        conversation_id: houseConv.id, user_id: user.id, last_read_at: new Date().toISOString(),
+      }, { onConflict: 'conversation_id,user_id' });
+
+      const { data: msgs } = await supabase.from('messages').select('*').eq('conversation_id', houseConv.id).order('created_at', { ascending: true });
+      if (active) setMessages(msgs || []);
+      setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    };
+    init();
+    return () => { active = false; if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current); };
+  }, [houseId, houseName, user.id]);
+
+  useEffect(() => {
+    if (!conv) return;
+    if (subscriptionRef.current) supabase.removeChannel(subscriptionRef.current);
+    const channel = supabase.channel(`house_chat_${conv.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conv.id}` },
+        (payload) => {
+          setMessages(prev => [...prev, payload.new]);
+          supabase.from('conversation_members').update({ last_read_at: new Date().toISOString() }).eq('conversation_id', conv.id).eq('user_id', user.id);
+        })
+      .subscribe();
+    subscriptionRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [conv?.id, user.id]);
+
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const getSenderName = (senderId) => {
+    if (senderId === user.id) return 'You';
+    const profile = memberProfiles[senderId];
+    if (profile?.full_name) return profile.full_name;
+    if (profile?.email) return profile.email;
+    return profile?.role === 'resident' ? 'Resident' : 'Staff';
+  };
+
+  const formatTime = (d) => {
+    const date = new Date(d);
+    const now = new Date();
+    if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !conv || sending) return;
+    setSending(true);
+    const body = newMessage.trim();
+    setNewMessage('');
+    const { error } = await supabase.from('messages').insert([{ conversation_id: conv.id, sender_id: user.id, body }]);
+    if (error) { alert('Error sending: ' + error.message); setNewMessage(body); }
+    setSending(false);
+  };
+
+  if (loading) return <p style={{ color: '#888', fontSize: '14px' }}>Loading chat...</p>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '500px', background: '#1c1c24', borderRadius: 10, overflow: 'hidden', border: '1px solid #32323e' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column' }}>
+        {messages.length === 0 ? (
+          <p style={{ color: '#888', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
+        ) : messages.map((msg, idx) => {
+          const isMe = msg.sender_id === user.id;
+          const prevMsg = messages[idx - 1];
+          const showSender = !isMe && (!prevMsg || prevMsg.sender_id !== msg.sender_id);
+          const isGrouped = prevMsg && prevMsg.sender_id === msg.sender_id && new Date(msg.created_at) - new Date(prevMsg.created_at) < 60000;
+          return (
+            <div key={msg.id} style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+              {showSender && <p style={{ color: '#888', fontSize: '13px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>}
+              <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
+              </div>
+              {!isGrouped && <p style={{ color: '#999', fontSize: '12px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>}
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', borderTop: '1px solid #32323e', background: '#1e1e24', flexShrink: 0 }}>
+        <input ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+          placeholder={`Message ${houseName}...`}
+          style={{ flex: 1, background: '#26262e', border: '1px solid #3a3a48', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+        <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
+          style={{ background: newMessage.trim() ? '#b22222' : '#333', border: 'none', color: newMessage.trim() ? '#fff' : '#bbb', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+          Send
+        </button>
+      </div>
     </div>
   );
 }
