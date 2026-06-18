@@ -108,7 +108,17 @@ function Houses({ onOpenClient }) {
   const [savingMoveIn, setSavingMoveIn] = useState(false);
   const [didNotMoveInMode, setDidNotMoveInMode] = useState(false);
   const [didNotMoveInReason, setDidNotMoveInReason] = useState('');
+  const [houseChatUnread, setHouseChatUnread] = useState({});
 
+  const fetchHouseChatUnread = useCallback(async (houseId) => {
+    if (!user?.id) return;
+    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
+    if (!conv) return;
+    const { data: membership } = await supabase.from('conversation_members').select('last_read_at').eq('conversation_id', conv.id).eq('user_id', user.id).maybeSingle();
+    const lastRead = membership?.last_read_at || '1970-01-01';
+    const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('conversation_id', conv.id).neq('sender_id', user.id).gt('created_at', lastRead);
+    setHouseChatUnread(prev => ({ ...prev, [houseId]: count || 0 }));
+  }, [user?.id]);
   const loadAllData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
@@ -205,6 +215,7 @@ function Houses({ onOpenClient }) {
     fetchResidents(house.id);
     fetchRooms(house.id);
     fetchTimeline(house.id);
+    fetchHouseChatUnread(house.id);
   };
 
   const openClientProfile = (client) => {
@@ -778,8 +789,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
 
             <div style={s.tabs}>
               {['residents', 'timeline', 'rooms', 'calendar', 'forms', 'messages'].map(t => (
-                <button key={t} onClick={() => setActiveTab(t)} style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}) }}>
+                <button key={t} onClick={() => { setActiveTab(t); if (t === 'messages') setHouseChatUnread(prev => ({ ...prev, [selected.id]: 0 })); }}
+                  style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}), position: 'relative' }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === 'messages' && houseChatUnread[selected?.id] > 0 && (
+                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
+                      {houseChatUnread[selected.id]}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>

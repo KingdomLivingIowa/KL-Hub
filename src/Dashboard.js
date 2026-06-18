@@ -554,10 +554,18 @@ function DashboardInner({ user }) {
   useEffect(() => {
   const fetchUnreadMessages = async () => {
     if (!user?.id) return;
-    const { data: memberships } = await supabase
-      .from('conversation_members')
-      .select('conversation_id, last_read_at')
-      .eq('user_id', user.id);
+    const { data: allMemberships } = await supabase
+  .from('conversation_members')
+  .select('conversation_id, last_read_at')
+  .eq('user_id', user.id);
+if (!allMemberships?.length) return;
+// Exclude house chats — those live in the Houses tab now
+const { data: houseConvs } = await supabase
+  .from('conversations')
+  .select('id')
+  .not('house_id', 'is', null);
+const houseConvIds = new Set((houseConvs || []).map(c => c.id));
+const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_id));
     if (!memberships?.length) return;
     let total = 0;
     for (const m of memberships) {
