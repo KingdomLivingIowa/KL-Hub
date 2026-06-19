@@ -62,11 +62,19 @@ function Messaging() {
       .in('name', presetStaffNames);
 
     for (const group of (presetStaffGroups || [])) {
-      await supabase.from('conversation_members').upsert({
-        conversation_id: group.id,
-        user_id: user.id,
-        last_read_at: new Date().toISOString(),
-      }, { onConflict: 'conversation_id,user_id' });
+      const { data: existingMember } = await supabase
+        .from('conversation_members')
+        .select('user_id')
+        .eq('conversation_id', group.id)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!existingMember) {
+        await supabase.from('conversation_members').insert({
+          conversation_id: group.id,
+          user_id: user.id,
+          last_read_at: '1970-01-01T00:00:00.000Z',
+        });
+      }
     }
 
     // Get all memberships
