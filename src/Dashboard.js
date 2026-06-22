@@ -581,7 +581,11 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
   };
   fetchUnreadMessages();
   const interval = setInterval(fetchUnreadMessages, 30000);
-  return () => clearInterval(interval);
+  const channel = supabase.channel('dashboard_unread_messages')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+      () => { fetchUnreadMessages(); })
+    .subscribe();
+  return () => { clearInterval(interval); supabase.removeChannel(channel); };
 }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [pendingClientId, setPendingClientId] = useState(null);
   const [cameFromHouses, setCameFromHouses] = useState(false);

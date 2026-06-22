@@ -180,6 +180,14 @@ function Messaging() {
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
 
   useEffect(() => {
+    const channel = supabase.channel('messaging_list_unread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => { fetchConversations(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchConversations]);
+
+  useEffect(() => {
     if (selectedConv) {
       fetchMessages(selectedConv.id);
       setTimeout(() => inputRef.current?.focus(), 100);

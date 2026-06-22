@@ -5,6 +5,7 @@ import { HouseCalendarTab } from './Calendars';
 
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory', 'Maintenance Request'];
 
+const toYMD = (date) => date.toISOString().split('T')[0];
 const reverseGeocode = async (lat, lng) => {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
@@ -172,6 +173,13 @@ function Houses({ onOpenClient }) {
     const interval = setInterval(() => loadAllData(true), 60000);
     return () => clearInterval(interval);
   }, [loadAllData]);
+  useEffect(() => {
+    const channel = supabase.channel('houses_chat_unread_global')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => { if (selected) fetchHouseChatUnread(selected.id); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchResidents = useCallback(async (houseId) => {
     const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date').eq('house_id', houseId).in('status', ['Active', 'Pending']);
@@ -1531,6 +1539,27 @@ function OvernightRequestsTab({ houseId, houseName }) {
         message: `Your overnight pass request (${new Date(reviewing.departure_datetime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}) has been ${decision}.${reviewForm.notes ? ` Note: ${reviewForm.notes}` : ''}`,
         read: false,
       }]);
+    }
+
+    // If approved, auto-add to the house calendar spanning the overnight dates
+    if (decision === 'approved') {
+      const startDate = new Date(reviewing.departure_datetime);
+      const endDate = new Date(reviewing.return_datetime);
+      const calendarEvents = [];
+      for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+        calendarEvents.push({
+          title: `🌙 ${reviewing.client_name} — Overnight`,
+          description: reviewing.reason || null,
+          event_date: toYMD(d),
+          house_id: houseId,
+          is_recurring: false,
+          recurrence: 'none',
+          created_by: user?.id || null,
+        });
+      }
+      if (calendarEvents.length > 0) {
+        await supabase.from('house_events').insert(calendarEvents);
+      }
     }
 
     setReviewing(null);
