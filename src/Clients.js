@@ -1033,6 +1033,63 @@ function ClientFormsTab({ client }) {
   );
 }
 
+function MedicationsTab({ client, setSelected, setClients }) {
+  const parseMeds = (raw) => { try { return raw ? JSON.parse(raw) : []; } catch { return []; } };
+  const [meds, setMeds] = useState(parseMeds(client.medication_details));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const addMed = () => { setMeds(prev => [...prev, { name: '', dosage: '', intake: '', notes: '' }]); setSaved(false); };
+  const updateMed = (i, field, value) => { setMeds(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: value } : m)); setSaved(false); };
+  const removeMed = (i) => { setMeds(prev => prev.filter((_, idx) => idx !== i)); setSaved(false); };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const filtered = meds.filter(m => m.name.trim());
+    const value = JSON.stringify(filtered);
+    const { error } = await supabase.from('clients').update({ medication_details: value }).eq('id', client.id);
+    if (error) { alert('Error saving: ' + error.message); setSaving(false); return; }
+    setSelected(prev => ({ ...prev, medication_details: value }));
+    setClients(prev => prev.map(c => c.id === client.id ? { ...c, medication_details: value } : c));
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <Card title="Medications" full action={
+      <button onClick={addMed} style={{ background: '#b22222', border: 'none', color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
+    }>
+      {meds.length === 0 && <p style={{ color: '#999', fontSize: '14px' }}>No medications added yet.</p>}
+      {meds.map((med, i) => (
+        <div key={i} style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', marginBottom: '12px', border: '1px solid #32323e' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <span style={{ fontSize: '13px', fontWeight: '600', color: '#999' }}>Medication {i + 1}</span>
+            <button onClick={() => removeMed(i)} style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>Remove</button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+            {[
+              { label: 'Medication Name', field: 'name' },
+              { label: 'Dosage (e.g. 10mg)', field: 'dosage' },
+              { label: 'Times per day', field: 'intake' },
+              { label: 'Notes', field: 'notes' },
+            ].map(({ label, field }) => (
+              <div key={field}>
+                <label style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>{label}</label>
+                <input value={med[field] || ''} onChange={e => updateMed(i, field, e.target.value)}
+                  style={{ width: '100%', background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '6px', padding: '7px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <button onClick={handleSave} disabled={saving}
+        style={{ width: '100%', padding: '11px', borderRadius: '8px', border: 'none', cursor: saving ? 'default' : 'pointer', fontSize: '14px', fontWeight: '700', background: saved ? '#10b981' : '#b22222', color: '#fff', marginTop: '4px', transition: 'background 0.3s' }}>
+        {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
+      </button>
+    </Card>
+  );
+}
 function StayPhotos({ clientId, stayId }) {
   const [photos, setPhotos] = useState([]);
   useEffect(() => {
@@ -2330,30 +2387,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'medications' && (
-                <Card title="Medications" full>
-                  {selected.medication_details ? (
-                    (() => {
-                      try {
-                        const meds = JSON.parse(selected.medication_details);
-                        return meds.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {meds.map((med, i) => (
-                              <div key={i} style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', border: '1px solid #32323e' }}>
-                                <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: '0 0 8px 0' }}>{med.name || 'Unnamed medication'}</p>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px' }}>
-                                  {med.dosage && <div><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Dosage</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.dosage}</p></div>}
-                                  {med.intake && <div><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Frequency</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.intake}x/day</p></div>}
-                                  {med.count && <div><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Count</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.count}</p></div>}
-                                  {med.notes && <div style={{ gridColumn: 'span 2' }}><span style={{ fontSize: '13px', color: '#999', textTransform: 'uppercase' }}>Notes</span><p style={{ color: '#ddd', fontSize: '14px', margin: '2px 0 0 0' }}>{med.notes}</p></div>}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : <p style={{ color: '#999', fontSize: '14px' }}>No medications listed on application.</p>;
-                      } catch { return <p style={{ color: '#999', fontSize: '14px' }}>No medications listed on application.</p>; }
-                    })()
-                  ) : <p style={{ color: '#999', fontSize: '14px' }}>No medications listed on application.</p>}
-                </Card>
+                <MedicationsTab client={selected} setSelected={setSelected} setClients={setClients} />
               )}
 
               {activeTab === 'timeline' && (
