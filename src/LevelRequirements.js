@@ -146,8 +146,8 @@ function EditableRequirement({ req, onDelete, onUpdate }) {
 
 // ── Client view: progress checklist ──────────────────────────────────────────
 export function ClientLevelProgress({ client, currentUser }) {
-  const { isAdmin, isUpperManagement, hasFullAccess } = useUser();
-  const canCheck = isAdmin || isUpperManagement || hasFullAccess;
+  const { isAdmin, isUpperManagement, hasFullAccess, isHouseManagerRole, assignedHouseIds } = useUser();
+  const canCheck = isAdmin || isUpperManagement || hasFullAccess || (isHouseManagerRole && assignedHouseIds.includes(client?.house_id));
   const clientLevel = client?.level || 1;
   const [requirements, setRequirements] = useState([]);
   const [progress, setProgress] = useState({});
