@@ -1148,9 +1148,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (statusFilter !== 'All') {
       query = query.eq('status', statusFilter);
     } else if (viewMode === 'operational') {
-      query = query.in('status', ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active']);
+      query = query.in('status', ['Accepted', 'Waiting List', 'Pending', 'Active']);
     } else {
-      query = query.in('status', ['Archived', 'Discharged', 'Denied']);
+      query = query.in('status', ['Archived', 'Discharged']);
     }
     if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('house_id', assignedHouseIds);
     return query;
@@ -1295,7 +1295,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const hasMoreTimeline = timeline.length < timelineTotal;
 
   const statusFilters = hasFullAccess
-    ? viewMode === 'operational' ? ['All', 'Applied', 'Accepted', 'Waiting List', 'Pending', 'Active'] : ['All', 'Archived', 'Discharged', 'Denied']
+    ? viewMode === 'operational' ? ['All', 'Accepted', 'Waiting List', 'Pending', 'Active'] : ['All', 'Archived', 'Discharged']
     : ['All', 'Active', 'Pending'];
 
   const statusColor = (s) => {
