@@ -1036,57 +1036,96 @@ function ClientFormsTab({ client }) {
 function MedicationsTab({ client, setSelected, setClients }) {
   const parseMeds = (raw) => { try { return raw ? JSON.parse(raw) : []; } catch { return []; } };
   const [meds, setMeds] = useState(parseMeds(client.medication_details));
+  const [modalState, setModalState] = useState(null); // { index: null | number, form: {...} }
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
-  const addMed = () => { setMeds(prev => [...prev, { name: '', dosage: '', intake: '', notes: '' }]); setSaved(false); };
-  const updateMed = (i, field, value) => { setMeds(prev => prev.map((m, idx) => idx === i ? { ...m, [field]: value } : m)); setSaved(false); };
-  const removeMed = (i) => { setMeds(prev => prev.filter((_, idx) => idx !== i)); setSaved(false); };
-
-  const handleSave = async () => {
+  const persist = async (newMeds) => {
     setSaving(true);
-    const filtered = meds.filter(m => m.name.trim());
+    const filtered = newMeds.filter(m => m.name.trim());
     const value = JSON.stringify(filtered);
     const { error } = await supabase.from('clients').update({ medication_details: value }).eq('id', client.id);
-    if (error) { alert('Error saving: ' + error.message); setSaving(false); return; }
+    setSaving(false);
+    if (error) { alert('Error saving: ' + error.message); return false; }
+    setMeds(filtered);
     setSelected(prev => ({ ...prev, medication_details: value }));
     setClients(prev => prev.map(c => c.id === client.id ? { ...c, medication_details: value } : c));
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    return true;
+  };
+
+  const openAddModal = () => setModalState({ index: null, form: { name: '', dosage: '', intake: '', notes: '' } });
+  const openEditModal = (i) => setModalState({ index: i, form: { ...meds[i] } });
+  const closeModal = () => setModalState(null);
+
+  const saveModal = async () => {
+    if (!modalState.form.name.trim()) { alert('Medication name is required.'); return; }
+    let newMeds;
+    if (modalState.index === null) {
+      newMeds = [...meds, modalState.form];
+    } else {
+      newMeds = meds.map((m, idx) => idx === modalState.index ? modalState.form : m);
+    }
+    const ok = await persist(newMeds);
+    if (ok) closeModal();
+  };
+
+  const removeMed = async (i) => {
+    if (!window.confirm('Remove this medication?')) return;
+    const newMeds = meds.filter((_, idx) => idx !== i);
+    await persist(newMeds);
   };
 
   return (
     <Card title="Medications" full action={
-      <button onClick={addMed} style={{ background: '#b22222', border: 'none', color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
+      <button onClick={openAddModal} style={{ background: '#b22222', border: 'none', color: '#fff', padding: '5px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
     }>
       {meds.length === 0 && <p style={{ color: '#999', fontSize: '14px' }}>No medications added yet.</p>}
-      {meds.map((med, i) => (
-        <div key={i} style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', marginBottom: '12px', border: '1px solid #32323e' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '13px', fontWeight: '600', color: '#999' }}>Medication {i + 1}</span>
-            <button onClick={() => removeMed(i)} style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>Remove</button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {meds.map((med, i) => (
+          <div key={i} style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', border: '1px solid #32323e', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 6px 0' }}>{med.name}</p>
+              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                {med.dosage && <span style={{ fontSize: '13px', color: '#aaa' }}>Dosage: {med.dosage}</span>}
+                {med.intake && <span style={{ fontSize: '13px', color: '#aaa' }}>Frequency: {med.intake}x/day</span>}
+              </div>
+              {med.notes && <p style={{ fontSize: '13px', color: '#999', margin: '6px 0 0 0' }}>{med.notes}</p>}
+            </div>
+            <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+              <button onClick={() => openEditModal(i)} style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Edit</button>
+              <button onClick={() => removeMed(i)} style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>Delete</button>
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
+        ))}
+      </div>
+
+      {modalState && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}
+          onClick={closeModal}>
+          <div style={{ background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '420px', padding: '24px' }}
+            onClick={e => e.stopPropagation()}>
+            <h3 style={{ color: '#fff', margin: '0 0 18px 0', fontSize: '16px' }}>{modalState.index === null ? 'Add Medication' : 'Edit Medication'}</h3>
             {[
-              { label: 'Medication Name', field: 'name' },
+              { label: 'Medication Name *', field: 'name' },
               { label: 'Dosage (e.g. 10mg)', field: 'dosage' },
               { label: 'Times per day', field: 'intake' },
               { label: 'Notes', field: 'notes' },
             ].map(({ label, field }) => (
-              <div key={field}>
-                <label style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '4px' }}>{label}</label>
-                <input value={med[field] || ''} onChange={e => updateMed(i, field, e.target.value)}
-                  style={{ width: '100%', background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '6px', padding: '7px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+              <div key={field} style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '12px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '5px' }}>{label}</label>
+                <input value={modalState.form[field] || ''}
+                  onChange={e => setModalState(prev => ({ ...prev, form: { ...prev.form, [field]: e.target.value } }))}
+                  style={{ width: '100%', background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
               </div>
             ))}
+            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+              <button onClick={closeModal} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid #3a3a48', borderRadius: '8px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={saveModal} disabled={saving} style={{ flex: 1, padding: '10px', background: '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
           </div>
         </div>
-      ))}
-      <button onClick={handleSave} disabled={saving}
-        style={{ width: '100%', padding: '11px', borderRadius: '8px', border: 'none', cursor: saving ? 'default' : 'pointer', fontSize: '14px', fontWeight: '700', background: saved ? '#10b981' : '#b22222', color: '#fff', marginTop: '4px', transition: 'background 0.3s' }}>
-        {saving ? 'Saving...' : saved ? '✓ Saved!' : 'Save Changes'}
-      </button>
+      )}
     </Card>
   );
 }
