@@ -1189,6 +1189,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [expandedStay, setExpandedStay] = useState(null);
   const [stayHistory, setStayHistory] = useState({});
   const [stayHistoryLoading, setStayHistoryLoading] = useState({});
+  const [stayDetailModal, setStayDetailModal] = useState(null); // { stayId, type: 'timeline'|'checkins'|'forms'|'balance' }
   const [latestCheckIn, setLatestCheckIn] = useState(null);
   const [clientBalance, setClientBalance] = useState(null);
 
@@ -2381,6 +2382,122 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 </Card>
               )}
 
+              {stayDetailModal && (() => {
+                const h = stayHistory[stayDetailModal.stayId];
+                if (!h) return null;
+                const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const fmtFull = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const tColors = { 'Crisis': '#dc2626', 'Infraction': '#dc2626', 'UA': '#f472b6', 'Meeting': '#60a5fa', 'Mood Check-In': '#BA7517', 'Check-In': '#c084fc', 'General Note': '#f59e0b', 'Chores': '#34d399', 'Weekly Reflection': '#a78bfa', 'House Check-In': '#7F77DD', 'Batch UA': '#1D9E75', 'Event Attendance': '#378ADD' };
+                const titles = { timeline: 'Timeline Entries', checkins: 'Weekly Check-Ins', forms: 'Forms Submitted', balance: 'Charges & Payments' };
+
+                return (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3500 }}
+                    onClick={() => setStayDetailModal(null)}>
+                    <div style={{ background: '#1c1c24', borderRadius: '16px', padding: '24px', width: '100%', maxWidth: '560px', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #32323e' }}
+                      onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                        <h3 style={{ color: '#fff', margin: 0, fontSize: '17px' }}>{titles[stayDetailModal.type]}</h3>
+                        <button onClick={() => setStayDetailModal(null)} style={{ background: 'none', border: 'none', color: '#999', fontSize: '20px', cursor: 'pointer' }}>×</button>
+                      </div>
+
+                      {stayDetailModal.type === 'timeline' && (
+                        h.timeline.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No timeline entries during this stay.</p> : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {h.timeline.map(e => (
+                              <div key={e.id} style={{ background: '#1e1e24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tColors[e.entry_type] || '#bbb', flexShrink: 0 }} />
+                                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{e.entry_type}</span>
+                                  {e.ua_result && <span style={{ color: '#f472b6', fontSize: '13px' }}>{e.ua_result}</span>}
+                                  {e.severity && <span style={{ color: '#fb923c', fontSize: '13px' }}>{e.severity}</span>}
+                                  {e.mood_value && <span style={{ color: '#fb923c', fontSize: '13px' }}>Mood: {e.mood_value}/10</span>}
+                                  <span style={{ color: '#666', fontSize: '13px', marginLeft: 'auto' }}>{fmtFull(e.created_at)}</span>
+                                </div>
+                                {e.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: 1.5 }}>{e.notes}</p>}
+                                {e.author && <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>By {e.author}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      )}
+
+                      {stayDetailModal.type === 'checkins' && (
+                        h.checkIns.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No weekly check-ins during this stay.</p> : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {h.checkIns.map(e => (
+                              <div key={e.id} style={{ background: '#1e1e24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '12px 14px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                  <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>Weekly Check-In</span>
+                                  <span style={{ color: '#666', fontSize: '13px' }}>{fmtFull(e.created_at)}</span>
+                                </div>
+                                <WeeklyCheckInCard entry={e} />
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      )}
+
+                      {stayDetailModal.type === 'forms' && (
+                        h.overnights.length === 0 && !h.welcomePacket ? <p style={{ color: '#666', fontSize: '14px' }}>No forms submitted during this stay.</p> : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {h.welcomePacket && (
+                              <div style={{ background: '#1e1e24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: '#34d399', fontSize: '14px', fontWeight: '500' }}>Welcome Packet</span>
+                                <span style={{ color: '#666', fontSize: '13px' }}>{fmtFull(h.welcomePacket.created_at)}</span>
+                              </div>
+                            )}
+                            {h.overnights.map(r => (
+                              <div key={r.id} style={{ background: '#1e1e24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                  <span style={{ color: '#fb923c', fontSize: '14px', fontWeight: '500' }}>Overnight Pass Request</span>
+                                  <span style={{ fontSize: '13px', padding: '2px 8px', borderRadius: '10px', background: r.status === 'approved' ? '#1e3a2f' : r.status === 'denied' ? '#3a1e1e' : '#2a2a2a', color: r.status === 'approved' ? '#4ade80' : r.status === 'denied' ? '#f87171' : '#aaa' }}>{r.status || 'pending'}</span>
+                                </div>
+                                <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 2px' }}>{fmt(r.departure_datetime || r.start_date)} → {fmt(r.return_datetime || r.end_date)}</p>
+                                {r.reason && <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>Reason: {r.reason}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      )}
+
+                      {stayDetailModal.type === 'balance' && (
+                        <>
+                          <p style={{ color: '#bbb', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Charges</p>
+                          {h.charges.length === 0 ? <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>No charges during this stay.</p> : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '18px' }}>
+                              {h.charges.map(c => (
+                                <div key={c.id} style={{ background: '#1e1e24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <span style={{ color: '#ddd', fontSize: '14px' }}>{c.description || c.charge_type || 'Charge'}</span>
+                                    {c.due_date && <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>Due {fmt(c.due_date)}</span>}
+                                  </div>
+                                  <span style={{ color: '#f87171', fontSize: '14px', fontWeight: '600' }}>${parseFloat(c.amount || 0).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p style={{ color: '#bbb', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px' }}>Payments</p>
+                          {h.payments.length === 0 ? <p style={{ color: '#666', fontSize: '14px' }}>No payments during this stay.</p> : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {h.payments.map(p => (
+                                <div key={p.id} style={{ background: '#1e1e24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <span style={{ color: '#ddd', fontSize: '14px' }}>{p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}</span>
+                                    {p.payment_date && <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>{fmt(p.payment_date)}</span>}
+                                    {p.notes && <span style={{ color: '#999', fontSize: '13px', marginLeft: '8px' }}>{p.notes}</span>}
+                                  </div>
+                                  <span style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600' }}>${parseFloat(p.amount || 0).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {activeTab === 'meetings' && (
                 <Card title="Meeting Records" full>
                   {meetingRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No meeting records yet.</p> : (
@@ -2869,16 +2986,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 if (loading) return <div style={{ padding: '16px', borderTop: '1px solid #2a2a2a', color: '#999', fontSize: '14px' }}>Loading history...</div>;
                                 if (!h) return null;
 
-                                const HistSection = ({ title, count, children, color }) => count === 0 ? null : (
-                                  <div style={{ marginBottom: '18px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                      <span style={{ color: color || '#60a5fa', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</span>
-                                      <span style={{ background: '#26262e', color: '#999', fontSize: '12px', padding: '1px 6px', borderRadius: '10px' }}>{count}</span>
-                                    </div>
-                                    {children}
-                                  </div>
-                                );
-
                                 const totalCharged = h.charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
                                 const totalPaid = h.payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
 
@@ -2888,103 +2995,21 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                   <div style={{ borderTop: '1px solid #2a2a2a', padding: '16px', background: '#1e1e24' }}>
                                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
                                       {[
-                                        { label: 'Timeline Entries', val: h.timeline.length, color: '#a78bfa' },
-                                        { label: 'Check-Ins', val: h.checkIns.length, color: '#60a5fa' },
-                                        { label: 'Overnight Requests', val: h.overnights.length, color: '#fb923c' },
-                                        { label: 'Charged', val: '$' + totalCharged.toFixed(2), color: '#f87171' },
-                                        { label: 'Paid', val: '$' + totalPaid.toFixed(2), color: '#4ade80' },
+                                        { label: 'Timeline Entries', val: h.timeline.length, color: '#a78bfa', modal: 'timeline' },
+                                        { label: 'Check-Ins', val: h.checkIns.length, color: '#60a5fa', modal: 'checkins' },
+                                        { label: 'Forms Submitted', val: h.overnights.length + (h.welcomePacket ? 1 : 0), color: '#fb923c', modal: 'forms' },
+                                        { label: 'Charged', val: '$' + totalCharged.toFixed(2), color: '#f87171', modal: 'balance' },
+                                        { label: 'Paid', val: '$' + totalPaid.toFixed(2), color: '#4ade80', modal: 'balance' },
                                       ].map(s => (
-                                        <div key={s.label} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '8px 12px' }}>
+                                        <div key={s.label} onClick={() => setStayDetailModal({ stayId: stay.id, type: s.modal })}
+                                          style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
+                                          onMouseEnter={e => e.currentTarget.style.borderColor = '#444'}
+                                          onMouseLeave={e => e.currentTarget.style.borderColor = '#2e2e3a'}>
                                           <div style={{ color: s.color, fontSize: '15px', fontWeight: '700' }}>{s.val}</div>
                                           <div style={{ color: '#666', fontSize: '12px' }}>{s.label}</div>
                                         </div>
                                       ))}
                                     </div>
-
-                                    <HistSection title="Timeline" count={h.timeline.length} color="#a78bfa">
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {h.timeline.map(e => (
-                                          <div key={e.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tColors[e.entry_type] || '#bbb', flexShrink: 0 }} />
-                                              <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{e.entry_type}</span>
-                                              {e.ua_result && <span style={{ color: '#f472b6', fontSize: '13px' }}>{e.ua_result}</span>}
-                                              {e.severity && <span style={{ color: '#fb923c', fontSize: '13px' }}>{e.severity}</span>}
-                                              {e.mood_value && <span style={{ color: '#fb923c', fontSize: '13px' }}>Mood: {e.mood_value}/10</span>}
-                                              <span style={{ color: '#666', fontSize: '13px', marginLeft: 'auto' }}>{fmtFull(e.created_at)}</span>
-                                            </div>
-                                            {e.notes && <p style={{ color: '#aaa', fontSize: '13px', margin: '4px 0 0 0', lineHeight: 1.5 }}>{e.notes}</p>}
-                                            {e.author && <p style={{ color: '#666', fontSize: '13px', margin: '4px 0 0 0' }}>By {e.author}</p>}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </HistSection>
-
-                                    <HistSection title="Weekly Check-Ins" count={h.checkIns.length} color="#60a5fa">
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {h.checkIns.map(e => (
-                                          <div key={e.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ color: '#ddd', fontSize: '14px' }}>Weekly Check-In</span>
-                                            <span style={{ color: '#666', fontSize: '13px' }}>{fmtFull(e.created_at)}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </HistSection>
-
-                                    <HistSection title="Overnight Requests" count={h.overnights.length} color="#fb923c">
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {h.overnights.map(r => (
-                                          <div key={r.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                              <span style={{ color: '#ddd', fontSize: '14px' }}>{fmt(r.start_date)} - {fmt(r.end_date)}</span>
-                                              {r.destination && <span style={{ color: '#999', fontSize: '13px', marginLeft: '8px' }}>{r.destination}</span>}
-                                            </div>
-                                            <span style={{ fontSize: '13px', padding: '2px 8px', borderRadius: '10px', background: r.status === 'approved' ? '#1e3a2f' : r.status === 'denied' ? '#3a1e1e' : '#2a2a2a', color: r.status === 'approved' ? '#4ade80' : r.status === 'denied' ? '#f87171' : '#aaa' }}>{r.status || 'pending'}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </HistSection>
-
-                                    {h.welcomePacket && (
-                                      <div style={{ marginBottom: '18px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                          <span style={{ color: '#34d399', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Welcome Packet</span>
-                                        </div>
-                                        <div style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <span style={{ color: '#4ade80', fontSize: '14px' }}>Completed</span>
-                                          <span style={{ color: '#666', fontSize: '13px' }}>{fmtFull(h.welcomePacket.created_at)}</span>
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    <HistSection title="Charges" count={h.charges.length} color="#f87171">
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {h.charges.map(c => (
-                                          <div key={c.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                              <span style={{ color: '#ddd', fontSize: '14px' }}>{c.description || c.charge_type || 'Charge'}</span>
-                                              {c.due_date && <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>Due {fmt(c.due_date)}</span>}
-                                            </div>
-                                            <span style={{ color: '#f87171', fontSize: '14px', fontWeight: '600' }}>${parseFloat(c.amount || 0).toFixed(2)}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </HistSection>
-
-                                    <HistSection title="Payments" count={h.payments.length} color="#4ade80">
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {h.payments.map(p => (
-                                          <div key={p.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                              <span style={{ color: '#ddd', fontSize: '14px' }}>{p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}</span>
-                                              {p.payment_date && <span style={{ color: '#666', fontSize: '13px', marginLeft: '8px' }}>{fmt(p.payment_date)}</span>}
-                                              {p.notes && <span style={{ color: '#999', fontSize: '13px', marginLeft: '8px' }}>{p.notes}</span>}
-                                            </div>
-                                            <span style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600' }}>${parseFloat(p.amount || 0).toFixed(2)}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </HistSection>
 
                                     {noHistory && <p style={{ color: '#666', fontSize: '14px', textAlign: 'center', padding: '16px 0' }}>No history found for this stay.</p>}
                                   </div>
@@ -2992,8 +3017,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               })()}
                             </div>
                           );
-                        })}"
-
+                        })}
                       </div>
                     </>
                   )}
