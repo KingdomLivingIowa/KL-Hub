@@ -2261,9 +2261,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Email" field="email" value={selected.email} />
                       <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} />
                       <EditableField label="Gender" field="gender" value={selected.gender} options={['Male', 'Female', 'Non-binary', 'No Response']} />
-                      <EditableField label="Ethnicity" field="ethnicity" value={selected.ethnicity} options={['American Indian or Alaska Native', 'Asian', 'Black or African American', 'Hispanic or Latino', 'Native Hawaiian or Other Pacific Islander', 'White', 'Two or More Races', 'No Response']} />
-                      <EditableField label="Marital status" field="marital_status" value={selected.marital_status} options={['Single', 'Married', 'Divorced', 'Widowed', 'Separated']} />
-                      <EditableField label="Emergency contact" field="emergency_contact_name" value={selected.emergency_contact_name} />
+                      <EditableField label="Emergency contact name" field="emergency_contact_name" value={selected.emergency_contact_name} />
+                      <EditableField label="Emergency contact phone" field="emergency_contact_phone" value={selected.emergency_contact_phone} />
+                      <EditableField label="Relationship" field="emergency_contact_relationship" value={selected.emergency_contact_relationship} />
                     </Card>
                     <Card title="House assignment" action={
                       selected.status === 'Active' && selected.house_id && hasFullAccess ? (

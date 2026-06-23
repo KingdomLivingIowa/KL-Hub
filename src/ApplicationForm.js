@@ -52,7 +52,7 @@ function ApplicationForm() {
     sober_date: '', oud_diagnosis: '',
     recovery_meetings: '', attended_treatment: '',
     takes_medication: '',
-    emergency_contact: '', collateral_contacts: '',
+    emergency_contact_name: '', emergency_contact_phone: '', emergency_contact_relationship: '', collateral_contacts: '',
     on_probation: '', on_parole: '', po_name: '', po_phone: '', po_email: '',
     criminal_history: '', sex_offender: '', sex_offense_details: '',
     form_completed_by: '', agree_to_rules: '', agree_to_levels: '',
@@ -123,7 +123,9 @@ function ApplicationForm() {
       if (!form.takes_medication) return 'Please answer the medication question.';
     }
     if (step === 2) {
-      if (!form.emergency_contact) return 'At least one Emergency Contact is required.';
+      if (!form.emergency_contact_name) return 'Emergency Contact name is required.';
+      if (!form.emergency_contact_phone) return 'Emergency Contact phone is required.';
+      if (!form.emergency_contact_relationship) return 'Emergency Contact relationship is required.';
     }
     if (step === 3) {
       if (!form.on_probation) return 'Please answer: Are you on Probation?';
@@ -395,7 +397,9 @@ function ApplicationForm() {
 
           {step === 2 && <>
             <h3 style={s.sectionTitle}>Emergency Contacts</h3>
-            <Row label="Emergency Contact (Name, Relationship, Phone) *"><Textarea value={form.emergency_contact} onChange={v => set('emergency_contact', v)} placeholder="Name, relationship, and phone number" /></Row>
+            <Row label="Emergency Contact Name *"><Input value={form.emergency_contact_name} onChange={v => set('emergency_contact_name', v)} placeholder="Full name" /></Row>
+            <Row label="Emergency Contact Phone *"><Input value={form.emergency_contact_phone} onChange={v => set('emergency_contact_phone', v)} placeholder="Phone number" /></Row>
+            <Row label="Relationship to You *"><Input value={form.emergency_contact_relationship} onChange={v => set('emergency_contact_relationship', v)} placeholder="e.g. Mother, Spouse, Friend" /></Row>
             <Row label="Collateral Contacts">
               <p style={s.hint}>A collateral contact is someone outside the scope of your counselor or parole officer. This is the only individual outside of professionals that we are permitted to share limited information with regarding your application, waiting list or participation in the program. (May provide more than one)</p>
               <Textarea value={form.collateral_contacts} onChange={v => set('collateral_contacts', v)} />
