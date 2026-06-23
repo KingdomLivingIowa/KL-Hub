@@ -1155,7 +1155,7 @@ function StayPhotos({ clientId, stayId }) {
 }
 
 function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
-  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, isAdmin } = useUser();
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, isAdmin, fullName } = useUser();
 
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1201,7 +1201,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [pdfRange, setPdfRange] = useState({ startDate: '', endDate: '', eventType: 'All' });
   const [entryType, setEntryType] = useState('General Note');
   const [entryForm, setEntryForm] = useState({
-    author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
+    author: fullName || user?.email || '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
     chore_status: 'Completed', mood_value: '5', ua_result: 'Negative',
     checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false,
     reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
@@ -1800,7 +1800,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     }
 
     setShowAddEntry(false);
-    setEntryForm({ author: '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null, wci_meetings: '', wci_sponsor_contacts: '', wci_chore: '', wci_chore_completed: '', wci_employed: '', wci_employer: '', wci_payment_plan: '', wci_reflection: '' });
+    setEntryForm({ author: fullName || user?.email || '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null, wci_meetings: '', wci_sponsor_contacts: '', wci_chore: '', wci_chore_completed: '', wci_employed: '', wci_employer: '', wci_payment_plan: '', wci_reflection: '' });
     setEntryType('General Note');
     fetchTimeline(selected.id);
     fetchFullHistory(selected.id);
@@ -2601,8 +2601,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         </>
                       )}
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={sf.label}>Author *</label>
-                        <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={sf.input} placeholder="Your name" />
+                        <label style={sf.label}>Author</label>
+                        <input value={entryForm.author} readOnly style={{ ...sf.input, opacity: 0.7, cursor: 'not-allowed' }} />
                       </div>
                       {entryType !== 'Weekly Check-In' && (
                       <div style={{ marginBottom: '12px' }}>

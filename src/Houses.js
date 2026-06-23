@@ -73,7 +73,7 @@ function HouseWeeklyReflectionCard({ entry }) {
 }
 
 function Houses({ onOpenClient }) {
-  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user } = useUser();
+  const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, fullName } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +93,7 @@ function Houses({ onOpenClient }) {
   const [houseEditForm, setHouseEditForm] = useState({});
   const [entryType, setEntryType] = useState('House Check-In');
   const [entryForm, setEntryForm] = useState({
-    author: '', notes: '', severity: 'Low', event_name: '',
+    author: fullName || user?.email || '', notes: '', severity: 'Low', event_name: '',
     reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
   });
   const [residentChecks, setResidentChecks] = useState({});
@@ -219,7 +219,7 @@ function Houses({ onOpenClient }) {
     setActiveTab('residents');
     setShowAddEntry(false);
     setEntryType('House Check-In');
-    setEntryForm({ author: user?.user_metadata?.full_name || user?.email || '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
+    setEntryForm({ author: fullName || user?.email || '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     fetchResidents(house.id);
     fetchRooms(house.id);
     fetchTimeline(house.id);
@@ -495,7 +495,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     }
     setShowAddEntry(false);
     setEntryType('House Check-In');
-    setEntryForm({ author: user?.user_metadata?.full_name || user?.email || '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
+    setEntryForm({ author: fullName || user?.email || '', notes: '', severity: 'Low', event_name: '', reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '' });
     setResidentChecks(prev => {
       const reset = {};
       Object.keys(prev).forEach(id => { reset[id] = { name: prev[id].name, value: '' }; });
@@ -1000,8 +1000,8 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <HouseWeeklyReflectionForm entryForm={entryForm} setEntryForm={setEntryForm} />
                       )}
                       <div style={{ marginBottom: '12px' }}>
-                        <label style={s.label}>Author *</label>
-                        <input value={entryForm.author} onChange={e => setEntryForm(p => ({ ...p, author: e.target.value }))} style={s.input} placeholder="Your name" />
+                        <label style={s.label}>Author</label>
+                        <input value={entryForm.author} readOnly style={{ ...s.input, opacity: 0.7, cursor: 'not-allowed' }} />
                       </div>
                       <div style={{ marginBottom: '12px' }}>
                         <label style={s.label}>{entryType === 'Weekly Reflection' ? 'Additional notes (optional)' : 'Notes'}</label>

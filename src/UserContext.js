@@ -5,6 +5,7 @@ const UserContext = createContext(null);
 
 export function UserProvider({ user, children }) {
   const [role, setRole] = useState(null);
+  const [fullName, setFullName] = useState(null);
   const [canManageOrgEvents, setCanManageOrgEvents] = useState(false);
   const [canSeeMaintenance, setCanSeeMaintenance] = useState(false);
   const [canSeeReports, setCanSeeReports] = useState(false);
@@ -22,12 +23,13 @@ export function UserProvider({ user, children }) {
 
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role, can_manage_org_events, can_see_maintenance, can_see_reports')
+      .select('role, full_name, can_manage_org_events, can_see_maintenance, can_see_reports')
       .eq('id', user.id)
       .single();
 
     if (profile) {
       setRole(profile.role);
+      setFullName(profile.full_name || null);
       setCanManageOrgEvents(profile.can_manage_org_events || false);
       setCanSeeMaintenance(profile.can_see_maintenance || false);
       setCanSeeReports(profile.can_see_reports || false);
@@ -75,6 +77,7 @@ export function UserProvider({ user, children }) {
       loadingRole,
       assignedHouseIds,
       user,
+      fullName,
       isAdmin,
       isUpperManagement,
       isHeadHouseManager,
