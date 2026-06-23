@@ -2980,9 +2980,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               {expandedStay === stay.id && (() => {
                                 const h = stayHistory[stay.id];
                                 const loading = stayHistoryLoading[stay.id];
-                                const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                                const fmtFull = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-                                const tColors = { 'Crisis': '#dc2626', 'Infraction': '#dc2626', 'UA': '#f472b6', 'Meeting': '#60a5fa', 'Mood Check-In': '#BA7517', 'Check-In': '#c084fc', 'General Note': '#f59e0b', 'Chores': '#34d399', 'Weekly Reflection': '#a78bfa', 'House Check-In': '#7F77DD', 'Batch UA': '#1D9E75', 'Event Attendance': '#378ADD' };
                                 if (loading) return <div style={{ padding: '16px', borderTop: '1px solid #2a2a2a', color: '#999', fontSize: '14px' }}>Loading history...</div>;
                                 if (!h) return null;
 
