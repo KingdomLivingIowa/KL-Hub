@@ -2261,8 +2261,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Email" field="email" value={selected.email} />
                       <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} />
                       <EditableField label="Gender" field="gender" value={selected.gender} options={['Male', 'Female', 'Non-binary', 'No Response']} />
-                      <EditableField label="Emergency contact name" field="emergency_contact_name" value={selected.emergency_contact_name} />
-                      <EditableField label="Emergency contact phone" field="emergency_contact_phone" value={selected.emergency_contact_phone} />
+                      <p style={{ fontSize: '13px', color: '#777', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '16px 0 6px 0' }}>Emergency Contact</p>
+                      <EditableField label="Name" field="emergency_contact_name" value={selected.emergency_contact_name} />
+                      <EditableField label="Phone" field="emergency_contact_phone" value={selected.emergency_contact_phone} />
                       <EditableField label="Relationship" field="emergency_contact_relationship" value={selected.emergency_contact_relationship} />
                     </Card>
                     <Card title="House assignment" action={
