@@ -1171,6 +1171,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [showMoreTabs, setShowMoreTabs] = useState(false);
   const moreTabRef = useRef(null);
   const [statusModal, setStatusModal] = useState(null);
+  const [confirmingStatus, setConfirmingStatus] = useState(false);
   const [moveHouseModal, setMoveHouseModal] = useState(null);
   const [statusForm, setStatusForm] = useState({
     list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '',
@@ -1563,6 +1564,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   };
 
   const confirmStatusChange = async () => {
+    if (confirmingStatus) return;
+    setConfirmingStatus(true);
     const { client, newStatus } = statusModal;
     const updates = { status: newStatus };
 
@@ -1728,6 +1731,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         }),
       }).catch(err => console.error('Move-in notify error:', err));
     }
+    setConfirmingStatus(false);
   };
 
   const dropPin = () => {
@@ -3280,7 +3284,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button onClick={() => setStatusModal(null)} style={sf.cancelBtn}>Cancel</button>
-                <button onClick={confirmStatusChange} style={sf.confirmBtn}>Confirm</button>
+                <button onClick={confirmStatusChange} disabled={confirmingStatus} style={{ ...sf.confirmBtn, opacity: confirmingStatus ? 0.6 : 1, cursor: confirmingStatus ? 'not-allowed' : 'pointer' }}>
+                  {confirmingStatus ? 'Saving...' : 'Confirm'}
+                </button>
               </div>
             </div>
           </div>
