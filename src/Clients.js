@@ -2995,8 +2995,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                         { label: 'Timeline Entries', val: h.timeline.length, color: '#a78bfa', modal: 'timeline' },
                                         { label: 'Check-Ins', val: h.checkIns.length, color: '#60a5fa', modal: 'checkins' },
                                         { label: 'Forms Submitted', val: h.overnights.length + (h.welcomePacket ? 1 : 0), color: '#fb923c', modal: 'forms' },
-                                        { label: 'Charged', val: '$' + totalCharged.toFixed(2), color: '#f87171', modal: 'balance' },
-                                        { label: 'Paid', val: '$' + totalPaid.toFixed(2), color: '#4ade80', modal: 'balance' },
+                                        { label: 'Balance at Discharge', val: '$' + (totalCharged - totalPaid).toFixed(2), color: (totalCharged - totalPaid) > 0 ? '#f87171' : '#4ade80', modal: 'balance' },
                                       ].map(s => (
                                         <div key={s.label} onClick={() => setStayDetailModal({ stayId: stay.id, type: s.modal })}
                                           style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer' }}
