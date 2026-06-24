@@ -95,7 +95,101 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   win.document.close();
 }
 
-function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, checkIn, logoSrc) {
+function generateStayHistoryPDF(stay, client, history, logoSrc) {
+  const name = client.full_name || '—';
+  const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+  const generatedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const fmtFull = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+
+  const totalCharged = history.charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
+  const totalPaid = history.payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+  const balance = totalCharged - totalPaid;
+
+  const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
+  const row = (label, value, color) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span style="font-size:14px;color:#555;">${label}</span><span style="font-size:14px;font-weight:600;color:${color || '#111'};">${value}</span></div>`;
+
+  const timelineRows = history.timeline.length === 0
+    ? '<p style="color:#888;font-size:13px;padding:6px 0;">No timeline entries during this stay.</p>'
+    : history.timeline.map(e => `
+      <div style="padding:8px 0;border-bottom:1px solid #eee;">
+        <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">${e.entry_type}${e.ua_result ? ' — ' + e.ua_result : ''}${e.severity ? ' — ' + e.severity : ''}</strong><span style="font-size:12px;color:#888;">${fmtFull(e.created_at)}</span></div>
+        ${e.notes ? `<div style="font-size:13px;color:#555;margin-top:3px;">${e.notes}</div>` : ''}
+        ${e.author ? `<div style="font-size:12px;color:#999;margin-top:2px;">By ${e.author}</div>` : ''}
+      </div>`).join('');
+
+  const checkinRows = history.checkIns.length === 0
+    ? '<p style="color:#888;font-size:13px;padding:6px 0;">No weekly check-ins during this stay.</p>'
+    : history.checkIns.map(e => `
+      <div style="padding:8px 0;border-bottom:1px solid #eee;">
+        <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">Weekly Check-In</strong><span style="font-size:12px;color:#888;">${fmtFull(e.created_at)}</span></div>
+        ${e.checkin_meetings != null ? `<div style="font-size:13px;color:#555;">Meetings: ${e.checkin_meetings}</div>` : ''}
+        ${e.checkin_sponsor_contacts != null ? `<div style="font-size:13px;color:#555;">Sponsor contacts: ${e.checkin_sponsor_contacts}</div>` : ''}
+        ${e.notes ? `<div style="font-size:13px;color:#555;margin-top:3px;">${e.notes}</div>` : ''}
+      </div>`).join('');
+
+  const formsRows = (history.overnights.length === 0 && !history.welcomePacket)
+    ? '<p style="color:#888;font-size:13px;padding:6px 0;">No forms submitted during this stay.</p>'
+    : `${history.welcomePacket ? `<div style="padding:8px 0;border-bottom:1px solid #eee;"><strong style="font-size:13px;">Welcome Packet</strong> <span style="font-size:12px;color:#888;">— Completed ${fmtFull(history.welcomePacket.created_at)}</span></div>` : ''}
+      ${history.overnights.map(r => `
+        <div style="padding:8px 0;border-bottom:1px solid #eee;">
+          <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">Overnight Pass Request</strong><span style="font-size:12px;color:#888;text-transform:capitalize;">${r.status || 'pending'}</span></div>
+          <div style="font-size:13px;color:#555;">${fmt(r.departure_datetime || r.start_date)} → ${fmt(r.return_datetime || r.end_date)}</div>
+          ${r.reason ? `<div style="font-size:13px;color:#555;">Reason: ${r.reason}</div>` : ''}
+        </div>`).join('')}`;
+
+  const chargeRows = history.charges.length === 0
+    ? '<p style="color:#888;font-size:13px;padding:6px 0;">No charges during this stay.</p>'
+    : history.charges.map(c => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;"><span style="font-size:13px;color:#555;">${c.description || c.charge_type || 'Charge'}${c.due_date ? ` — Due ${fmt(c.due_date)}` : ''}</span><span style="font-size:13px;font-weight:600;color:#b22222;">$${parseFloat(c.amount || 0).toFixed(2)}</span></div>`).join('');
+
+  const paymentRows = history.payments.length === 0
+    ? '<p style="color:#888;font-size:13px;padding:6px 0;">No payments during this stay.</p>'
+    : history.payments.map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #eee;"><span style="font-size:13px;color:#555;">${p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}${p.payment_date ? ` — ${fmt(p.payment_date)}` : ''}</span><span style="font-size:13px;font-weight:600;color:#16a34a;">$${parseFloat(p.amount || 0).toFixed(2)}</span></div>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+  <title>Stay History – ${name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #111; padding: 40px; max-width: 800px; margin: 0 auto; }
+    .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+    .org-name { font-size: 24px; font-weight: 700; }
+    .org-sub { font-size: 13px; color: #888; margin-top: 2px; }
+    .divider { height: 3px; background: #b22222; margin: 14px 0; }
+    .report-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 4px; }
+    .report-sub { font-size: 13px; color: #888; margin-bottom: 8px; }
+    .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    @media print { .print-btn { display: none; } body { padding: 20px; } }
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+  <div class="header">${logoHtml}<div><div class="org-name">KINGDOM LIVING IOWA</div><div class="org-sub">Non-Profit Recovery Community</div></div></div>
+  <div class="divider"></div>
+  <div class="report-title">Stay History Report</div>
+  <div class="report-sub">${name} &nbsp;·&nbsp; ${stay.house_name || '—'} &nbsp;·&nbsp; Generated ${generatedDate}</div>
+
+  ${section('Stay Summary')}
+  ${row('Move-In', fmt(stay.start_date))}
+  ${row('Discharge', fmt(stay.discharge_date))}
+  ${row('Reason for Discharge', stay.discharge_reason || '—')}
+  ${stay.discharge_notes ? row('Notes', stay.discharge_notes) : ''}
+  ${row('Discharged By', stay.discharged_by || '—')}
+  ${row('Balance at Discharge', balance > 0 ? `$${balance.toFixed(2)} owed` : balance < 0 ? `$${Math.abs(balance).toFixed(2)} credit` : '$0.00', balance > 0 ? '#b22222' : '#16a34a')}
+
+  ${section('Timeline Entries')}
+  ${timelineRows}
+
+  ${section('Weekly Check-Ins')}
+  ${checkinRows}
+
+  ${section('Forms Submitted')}
+  ${formsRows}
+
+  ${section('Charges')}
+  ${chargeRows}
+
+  ${section('Payments')}
+  ${paymentRows}
+
+  <div
   const name = client.full_name || '—';
   const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
   const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
@@ -1508,7 +1602,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const loadStayHistory = async (stay, client) => {
     const stayId = stay.id;
-    if (stayHistory[stayId]) return; // already loaded
+    if (stayHistory[stayId]) return stayHistory[stayId]; // already loaded
     setStayHistoryLoading(p => ({ ...p, [stayId]: true }));
     const start = stay.start_date;
     const end = stay.discharge_date || new Date().toISOString().slice(0, 10);
@@ -1535,15 +1629,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         .order('payment_date', { ascending: false }),
     ]);
 
-    setStayHistory(p => ({ ...p, [stayId]: {
+    const result = {
       timeline: (timelineRes.data || []).filter(e => e.entry_type !== 'Weekly Check-In'),
       overnights: overnightRes.data || [],
       welcomePacket: welcomeRes.data || null,
       checkIns: checkinRes.data || [],
       charges: chargesRes.data || [],
       payments: paymentsRes.data || [],
-    }}));
+    };
+    setStayHistory(p => ({ ...p, [stayId]: result }));
     setStayHistoryLoading(p => ({ ...p, [stayId]: false }));
+    return result;
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -2915,6 +3011,26 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                     style={{ padding: '5px 12px', background: '#1a2a1a', border: '1px solid #2a5a2a', borderRadius: '6px', color: '#4ade80', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
                                   >
                                     ⬇ Discharge Sheet
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      let h = stayHistory[stay.id];
+                                      if (!h) { await loadStayHistory(stay, selected); h = stayHistory[stay.id]; }
+                                      const img = new Image();
+                                      img.crossOrigin = 'anonymous';
+                                      img.onload = () => {
+                                        const canvas = document.createElement('canvas');
+                                        canvas.width = img.naturalWidth;
+                                        canvas.height = img.naturalHeight;
+                                        canvas.getContext('2d').drawImage(img, 0, 0);
+                                        generateStayHistoryPDF(stay, selected, h || { timeline: [], overnights: [], welcomePacket: null, checkIns: [], charges: [], payments: [] }, canvas.toDataURL('image/jpeg'));
+                                      };
+                                      img.onerror = () => generateStayHistoryPDF(stay, selected, h || { timeline: [], overnights: [], welcomePacket: null, checkIns: [], charges: [], payments: [] }, null);
+                                      img.src = klLogo;
+                                    }}
+                                    style={{ padding: '5px 12px', background: '#1e2d3a', border: '1px solid #2a3d52', borderRadius: '6px', color: '#60a5fa', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}
+                                  >
+                                    ⬇ Stay History
                                   </button>
                                   {isAdmin && (
                                     <button
