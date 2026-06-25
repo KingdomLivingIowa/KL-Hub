@@ -102,8 +102,6 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   const fmt = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const fmtFull = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
-  const totalCharged = history.charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
-  const totalPaid = history.payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
   const balance = parseFloat(stay.balance_at_discharge) || 0;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
