@@ -1342,6 +1342,21 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   useEffect(() => { setCurrentPage(1); }, [statusFilter, viewMode]);
 
+  useEffect(() => {
+    if (!selected?.id) return;
+    const channel = supabase.channel(`client_timeline_${selected.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'client_timeline', filter: `client_id=eq.${selected.id}` },
+        (payload) => {
+          setTimeline(prev => prev.some(e => e.id === payload.new.id) ? prev : [payload.new, ...prev]);
+          setTimelineTotal(prev => prev + 1);
+          if (['UA', 'Meeting', 'Chores'].includes(payload.new.entry_type)) {
+            fetchFullHistory(selected.id);
+          }
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Auto-open client when coming from Houses
   useEffect(() => {
     if (!pendingClientId) return;
