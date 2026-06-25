@@ -537,7 +537,7 @@ function BedStat({ label, value, color }) {
 
 function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
-  const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0 });
+  const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0, maintenanceOpen: 0 });
 
   // Real-time: update pending badge instantly when applications change
   useEffect(() => {
@@ -546,6 +546,18 @@ function DashboardInner({ user }) {
         async () => {
           const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
           setCounts(prev => ({ ...prev, pending: count || 0 }));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real-time: update maintenance badge instantly when requests change
+  useEffect(() => {
+    const channel = supabase.channel('dashboard_maintenance_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_requests' },
+        async () => {
+          const { count } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+          setCounts(prev => ({ ...prev, maintenanceOpen: count || 0 }));
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -615,7 +627,8 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     const { count: housesCount } = await supabase.from('houses').select('*', { count: 'exact', head: true });
     const { count: activeClientsCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'Active');
     const { count: waitingListCount } = await supabase.from('waiting_list').select('*', { count: 'exact', head: true }).eq('status', 'waiting');
-    setCounts({ pending: pendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0 });
+    const { count: maintenanceOpenCount } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+    setCounts({ pending: pendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0, maintenanceOpen: maintenanceOpenCount || 0 });
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
@@ -695,6 +708,9 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
               )}
               {item.id === 'messages' && unreadMessages > 0 && (
                 <span style={styles.badge}>{unreadMessages}</span>
+              )}
+              {item.id === 'maintenance' && counts.maintenanceOpen > 0 && (
+                <span style={styles.badge}>{counts.maintenanceOpen}</span>
               )}
             </button>
           ))}
