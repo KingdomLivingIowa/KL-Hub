@@ -104,7 +104,7 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
 
   const totalCharged = history.charges.reduce((s, c) => s + parseFloat(c.amount || 0), 0);
   const totalPaid = history.payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
-  const balance = totalCharged - totalPaid;
+  const balance = parseFloat(stay.balance_at_discharge) || 0;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
   const row = (label, value, color) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;"><span style="font-size:14px;color:#555;">${label}</span><span style="font-size:14px;font-weight:600;color:${color || '#111'};">${value}</span></div>`;
