@@ -110,6 +110,7 @@ function Houses({ onOpenClient }) {
   const [didNotMoveInMode, setDidNotMoveInMode] = useState(false);
   const [didNotMoveInReason, setDidNotMoveInReason] = useState('');
   const [houseChatUnread, setHouseChatUnread] = useState({});
+  const [houseFormsPending, setHouseFormsPending] = useState({});
 
   const fetchHouseChatUnread = useCallback(async (houseId) => {
     if (!user?.id) return;
@@ -120,6 +121,14 @@ function Houses({ onOpenClient }) {
     const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).eq('conversation_id', conv.id).neq('sender_id', user.id).gt('created_at', lastRead);
     setHouseChatUnread(prev => ({ ...prev, [houseId]: count || 0 }));
   }, [user?.id]);
+
+  const fetchFormsPendingCount = useCallback(async (houseId) => {
+    const [{ count: moveOutCount }, { count: overnightCount }] = await Promise.all([
+      supabase.from('move_out_requests').select('id', { count: 'exact', head: true }).eq('house_id', houseId).eq('status', 'pending'),
+      supabase.from('overnight_requests').select('id', { count: 'exact', head: true }).eq('house_id', houseId).eq('status', 'pending'),
+    ]);
+    setHouseFormsPending(prev => ({ ...prev, [houseId]: (moveOutCount || 0) + (overnightCount || 0) }));
+  }, []);
   const loadAllData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
@@ -181,6 +190,16 @@ function Houses({ onOpenClient }) {
     return () => { supabase.removeChannel(channel); };
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const channel = supabase.channel('houses_forms_pending_global')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'move_out_requests' },
+        () => { if (selected) fetchFormsPendingCount(selected.id); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'overnight_requests' },
+        () => { if (selected) fetchFormsPendingCount(selected.id); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchResidents = useCallback(async (houseId) => {
     const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date').eq('house_id', houseId).in('status', ['Active', 'Pending']);
     const clientIds = (data || []).map(c => c.id);
@@ -224,6 +243,7 @@ function Houses({ onOpenClient }) {
     fetchRooms(house.id);
     fetchTimeline(house.id);
     fetchHouseChatUnread(house.id);
+    fetchFormsPendingCount(house.id);
   };
 
   const openClientProfile = (client) => {
@@ -800,6 +820,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 <button key={t} onClick={() => { setActiveTab(t); if (t === 'messages') setHouseChatUnread(prev => ({ ...prev, [selected.id]: 0 })); }}
                   style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}), position: 'relative' }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
+                  {t === 'forms' && houseFormsPending[selected?.id] > 0 && (
+                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
+                      {houseFormsPending[selected.id]}
+                    </span>
+                  )}
                   {t === 'messages' && houseChatUnread[selected?.id] > 0 && (
                     <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
                       {houseChatUnread[selected.id]}
