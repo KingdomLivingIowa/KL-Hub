@@ -1145,8 +1145,8 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
 
               {activeTab === 'forms' && (
                 <div>
-                  <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} />
-                  <OvernightRequestsTab houseId={selected.id} houseName={selected.name} />
+                  <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
+                  <OvernightRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
                 </div>
               )}
 
@@ -1302,7 +1302,7 @@ const s = {
   timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
 };
 
-function MoveOutRequestsTab({ houseId, houseName }) {
+function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
   const { isAdmin, isUpperManagement } = useUser();
   const canReview = isAdmin || isUpperManagement;
 
@@ -1368,6 +1368,7 @@ function MoveOutRequestsTab({ houseId, houseName }) {
     setReviewing(null);
     setReviewNotes('');
     fetchRequests();
+    if (onReviewed) onReviewed();
     setSaving(false);
   };
 
@@ -1518,7 +1519,7 @@ function MoveOutRequestsTab({ houseId, houseName }) {
   );
 }
 
-function OvernightRequestsTab({ houseId, houseName }) {
+function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
@@ -1591,6 +1592,7 @@ function OvernightRequestsTab({ houseId, houseName }) {
     setReviewForm({ decision: '', notes: '' });
     setSaving(false);
     fetchRequests();
+    if (onReviewed) onReviewed();
   };
 
   const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
