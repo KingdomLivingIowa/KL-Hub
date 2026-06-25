@@ -189,7 +189,15 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   ${section('Payments')}
   ${paymentRows}
 
-  <div
+  <div style="margin-top:32px;text-align:center;color:#aaa;font-size:12px;">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${generatedDate}</div>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=1000');
+  win.document.write(html);
+  win.document.close();
+}
+
+function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, checkIn, logoSrc) {
   const name = client.full_name || '—';
   const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
   const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
