@@ -930,6 +930,7 @@ function ClientFormsTab({ client }) {
   const [packet, setPacket] = useState(null);
   const [overnights, setOvernights] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showPacketDetails, setShowPacketDetails] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -1045,14 +1046,25 @@ function ClientFormsTab({ client }) {
 
   return (
     <div style={s}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div>
-          <p style={{ color: '#fff', fontWeight: '600', margin: '0 0 3px' }}>Welcome Packet</p>
-          <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
-            Submitted {packet.submitted_at ? new Date(packet.submitted_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
-          </p>
+      <div onClick={() => setShowPacketDetails(prev => !prev)}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: '#1c1c24', borderRadius: '10px', border: '1px solid #32323e', cursor: 'pointer', marginBottom: showPacketDetails ? '16px' : '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '22px' }}>📋</span>
+          <div>
+            <p style={{ color: '#fff', fontWeight: '600', margin: '0 0 2px' }}>Welcome Packet</p>
+            <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Program agreements & acknowledgements</p>
+          </div>
         </div>
-        <button onClick={() => generateWelcomePDF(packet)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ background: '#1e3a2f', color: '#4ade80', fontSize: '13px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>✓ Submitted</span>
+          <span style={{ color: '#999', fontSize: '14px' }}>{showPacketDetails ? '▲' : '▼'}</span>
+        </div>
+      </div>
+
+      {showPacketDetails && (
+      <div style={{ marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '12px' }}>
+        <button onClick={(e) => { e.stopPropagation(); generateWelcomePDF(packet); }}
           style={{ background: '#1a2a1a', border: '1px solid #2a5a2a', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
           ⬇ Export PDF
         </button>
@@ -1103,6 +1115,8 @@ function ClientFormsTab({ client }) {
       <Section title="Signature" />
       <Row label="I Testify That" value={packet.signature_testify} />
       <Row label="I Understand That" value={packet.signature_understand} />
+      </div>
+      )}
 
       {/* Overnight Requests */}
       {overnights.length > 0 && (
