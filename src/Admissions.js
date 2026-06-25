@@ -346,12 +346,9 @@ function Admissions() {
       sponsor_name: app.sponsor_name || existingClient.sponsor_name,
       sponsor_phone: app.sponsor_phone || existingClient.sponsor_phone,
       application_id: app.id,
-      status: 'Accepted',
     }).eq('id', existingClient.id);
 
     if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
-
-    await supabase.from('applications').update({ status: 'accepted' }).eq('id', app.id);
 
     setMergeReturningModal(null);
     fetchApplications();
@@ -815,10 +812,8 @@ function Admissions() {
             const { error } = await supabase.from('clients').update({
               ...sanitized,
               application_id: mergeReturningModal.app.id,
-              status: 'Accepted',
             }).eq('id', mergeReturningModal.existingClient.id);
             if (error) { alert('Error merging: ' + error.message); setMerging(false); return; }
-            await supabase.from('applications').update({ status: 'accepted' }).eq('id', mergeReturningModal.app.id);
             setMergeReturningModal(null);
             setMergeWizardOpen(false);
             fetchApplications();
