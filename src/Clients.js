@@ -2341,6 +2341,20 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             <div style={st.modalBody}>
               {activeTab === 'overview' && (
                 <>
+                  {(selected.not_allowed_back || selected.needs_review_before_readmit) && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                      {selected.not_allowed_back && (
+                        <div style={{ padding: '10px 14px', background: '#3a0f0f', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#f87171', fontSize: '14px', fontWeight: '600' }}>
+                          🚫 Not allowed back
+                        </div>
+                      )}
+                      {selected.needs_review_before_readmit && (
+                        <div style={{ padding: '10px 14px', background: '#3a2a0f', border: '1px solid #92400e', borderRadius: '8px', color: '#fb923c', fontSize: '14px', fontWeight: '600' }}>
+                          ⚠️ Needs upper management review before re-admitting
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                       {clientBalance !== null && (
