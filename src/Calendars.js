@@ -143,7 +143,9 @@ function MoveInCalendar() {
   const [selectedEvents, setSelectedEvents] = useState([]);
 
   const fetchClients = useCallback(async () => {
-    let query = supabase.from('clients').select('id, full_name, start_date, house_id, houses(name), gender, status').not('start_date', 'is', null).order('start_date');
+    let query = supabase.from('clients').select('id, full_name, start_date, expected_move_in_date, house_id, houses(name), gender, status')
+      .in('status', ['Active', 'Pending'])
+      .order('start_date');
     if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('house_id', assignedHouseIds);
     const { data } = await query;
     setClients(data || []);
@@ -153,9 +155,17 @@ function MoveInCalendar() {
 
   const eventsByDate = {};
   clients.forEach(c => {
-    if (!c.start_date) return;
-    if (!eventsByDate[c.start_date]) eventsByDate[c.start_date] = [];
-    eventsByDate[c.start_date].push({ label: c.full_name, house: c.houses?.name || '', gender: c.gender, status: c.status, color: c.status === 'Active' ? '#10b981' : '#3b82f6' });
+    // Active clients use start_date, Pending clients use expected_move_in_date
+    const dateKey = c.status === 'Active' ? c.start_date : c.expected_move_in_date;
+    if (!dateKey) return;
+    if (!eventsByDate[dateKey]) eventsByDate[dateKey] = [];
+    eventsByDate[dateKey].push({
+      label: c.full_name,
+      house: c.houses?.name || '',
+      gender: c.gender,
+      status: c.status,
+      color: c.status === 'Active' ? '#10b981' : '#facc15',
+    });
   });
 
   return (
