@@ -728,9 +728,6 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
               {item.id === 'calendars' && counts.vacationPending > 0 && (
                 <span style={styles.badge}>{counts.vacationPending}</span>
               )}
-              {item.id === 'calendars' && counts.vacationPending > 0 && (
-                <span style={styles.badge}>{counts.vacationPending}</span>
-              )}
             </button>
           ))}
           {isAdmin && settingsItems.length > 0 && (
