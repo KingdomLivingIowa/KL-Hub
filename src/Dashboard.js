@@ -640,7 +640,8 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     const { count: activeClientsCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'Active');
     const { count: waitingListCount } = await supabase.from('waiting_list').select('*', { count: 'exact', head: true }).eq('status', 'waiting');
     const { count: maintenanceOpenCount } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
-    setCounts({ pending: pendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0, maintenanceOpen: maintenanceOpenCount || 0 });
+    const { count: vacationPendingCount } = await supabase.from('vacation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    setCounts({ pending: pendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0, maintenanceOpen: maintenanceOpenCount || 0, vacationPending: vacationPendingCount || 0 });
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
@@ -723,6 +724,9 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
               )}
               {item.id === 'maintenance' && counts.maintenanceOpen > 0 && (
                 <span style={styles.badge}>{counts.maintenanceOpen}</span>
+              )}
+              {item.id === 'calendars' && counts.vacationPending > 0 && (
+                <span style={styles.badge}>{counts.vacationPending}</span>
               )}
               {item.id === 'calendars' && counts.vacationPending > 0 && (
                 <span style={styles.badge}>{counts.vacationPending}</span>
