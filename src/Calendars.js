@@ -837,12 +837,34 @@ export function NotificationsBell({ userId }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function Calendars() {
   const [activeTab, setActiveTab] = useState('movein');
+  const [pendingVacationCount, setPendingVacationCount] = useState(0);
+
+  useEffect(() => {
+    const fetchPending = async () => {
+      const { count } = await supabase.from('vacation_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+      setPendingVacationCount(count || 0);
+    };
+    fetchPending();
+    const channel = supabase.channel('calendars_vacation_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vacation_requests' },
+        () => fetchPending())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   return (
     <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 28, flexWrap: 'wrap' }}>
         <button style={s.tabBtn(activeTab === 'movein')} onClick={() => setActiveTab('movein')}>Move-In Calendar</button>
         <button style={s.tabBtn(activeTab === 'org')} onClick={() => setActiveTab('org')}>Org Events</button>
-        <button style={s.tabBtn(activeTab === 'vacation')} onClick={() => setActiveTab('vacation')}>Staff Vacation</button>
+        <button style={s.tabBtn(activeTab === 'vacation')} onClick={() => setActiveTab('vacation')}>
+          Staff Vacation
+          {pendingVacationCount > 0 && (
+            <span style={{ marginLeft: 6, background: '#b22222', color: '#fff', borderRadius: 10, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
+              {pendingVacationCount}
+            </span>
+          )}
+        </button>
       </div>
       {activeTab === 'movein' && <MoveInCalendar />}
       {activeTab === 'org' && <OrgEventsCalendar />}

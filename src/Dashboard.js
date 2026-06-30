@@ -537,7 +537,7 @@ function BedStat({ label, value, color }) {
 
 function DashboardInner({ user }) {
   const [activePage, setActivePage] = useState('home');
-  const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0, maintenanceOpen: 0 });
+  const [counts, setCounts] = useState({ pending: 0, waitingList: 0, active: 0, houses: 0, maintenanceOpen: 0, vacationPending: 0 });
 
   // Real-time: update pending badge instantly when applications change
   useEffect(() => {
@@ -546,6 +546,18 @@ function DashboardInner({ user }) {
         async () => {
           const { count } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
           setCounts(prev => ({ ...prev, pending: count || 0 }));
+        })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Real-time: update vacation badge instantly when requests change
+  useEffect(() => {
+    const channel = supabase.channel('dashboard_vacation_badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vacation_requests' },
+        async () => {
+          const { count } = await supabase.from('vacation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+          setCounts(prev => ({ ...prev, vacationPending: count || 0 }));
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -711,6 +723,9 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
               )}
               {item.id === 'maintenance' && counts.maintenanceOpen > 0 && (
                 <span style={styles.badge}>{counts.maintenanceOpen}</span>
+              )}
+              {item.id === 'calendars' && counts.vacationPending > 0 && (
+                <span style={styles.badge}>{counts.vacationPending}</span>
               )}
             </button>
           ))}
