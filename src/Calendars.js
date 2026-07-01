@@ -13,6 +13,14 @@ function fmtDate(ymd) {
   const [y, m, d] = ymd.split('-');
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
+function fmtTime(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const h12 = hour % 12 || 12;
+  return `${h12}:${m} ${ampm}`;
+}
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -338,7 +346,7 @@ function OrgEventsCalendar() {
                 <div>
                   <div style={{ fontWeight: 600, color: '#fff', fontSize: 14 }}>{ev.title}</div>
                   <div style={{ fontSize: 12, color: '#bbb', marginTop: 2 }}>{SCOPE_LABELS[ev.scope] || ev.scope}</div>
-                  {ev.start_time && <div style={{ fontSize: 12, color: '#bbb' }}>{ev.start_time}{ev.end_time ? ` – ${ev.end_time}` : ''}</div>}
+                  {ev.start_time && <div style={{ fontSize: 12, color: '#bbb' }}>{fmtTime(ev.start_time)}{ev.end_time ? ` – ${fmtTime(ev.end_time)}` : ''}</div>}
                   {ev.description && <div style={{ fontSize: 13, color: '#aaa', marginTop: 4 }}>{ev.description}</div>}
                   {ev.is_recurring && <span style={s.badge('#8b5cf6')}>Recurring · {ev.recurrence}</span>}
                 </div>
