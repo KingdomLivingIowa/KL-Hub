@@ -272,30 +272,104 @@ export default function Reports() {
     const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const el = document.getElementById('report-content');
     if (!el) return;
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>KL — ${title}</title>
     <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; color: #111; background: #fff; }
-      @media print { .no-print { display: none; } body { padding: 16px; } }
-      h1 { font-size: 22px; margin: 0 0 4px; } .sub { color: #666; font-size: 13px; margin: 0 0 24px; }
-      .print-btn { background: #8b1c1c; color: #fff; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; cursor: pointer; margin-bottom: 24px; }
-      table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-      th { background: #f5f5f5; text-align: left; padding: 8px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; border-bottom: 2px solid #ddd; }
-      td { padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-      .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
-      .stat-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; }
-      .stat-val { font-size: 24px; font-weight: 700; color: #8b1c1c; }
-      .stat-label { font-size: 12px; color: #666; margin-top: 2px; }
-      h2 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
-    </style></head><body>
-    <button class="print-btn no-print" onclick="window.print()">⬇ Print / Save PDF</button>
-    <h1>Kingdom Living Iowa — ${title}</h1>
-    <p class="sub">Generated ${date}</p>
-    ${el.innerHTML}
-    </body></html>`;
-    const win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
-  };
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fff; color: #111; padding: 0; }
+      @media print { .no-print { display: none !important; } body { padding: 0; } }
+
+      /* ── Page wrapper ── */
+      .pdf-page { max-width: 900px; margin: 0 auto; padding: 40px 48px 60px; }
+
+      /* ── Header ── */
+      .pdf-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+      .pdf-org { font-size: 22px; font-weight: 800; color: #111; letter-spacing: -0.3px; }
+      .pdf-report-type { font-size: 13px; font-weight: 600; color: #8b1c1c; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 3px; }
+      .pdf-meta { font-size: 12px; color: #888; text-align: right; line-height: 1.6; }
+      .pdf-divider { height: 3px; background: linear-gradient(to right, #8b1c1c, #c0392b); border-radius: 2px; margin: 14px 0 28px; }
+
+      /* ── Print button ── */
+      .print-btn { display: inline-flex; align-items: center; gap: 6px; background: #8b1c1c; color: #fff; border: none; padding: 10px 22px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 28px; letter-spacing: 0.02em; }
+
+      /* ── Stat grid (weekly/maintenance) ── */
+      .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+      .stat-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 14px 16px; background: #fff; position: relative; overflow: hidden; }
+      .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent, #8b1c1c); border-radius: 10px 10px 0 0; }
+      .stat-val { font-size: 28px; font-weight: 800; color: #111; line-height: 1.1; margin-bottom: 4px; }
+      .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+      .stat-sub { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+
+      /* ── Metric cards (monthly) ── */
+      .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 24px; }
+      .metric-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; }
+      .metric-val { font-size: 26px; font-weight: 800; color: #111; line-height: 1.1; margin-bottom: 4px; }
+      .metric-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; line-height: 1.3; }
+
+      /* ── Section blocks ── */
+      .section { border: 1px solid #e5e7eb; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+      .section-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; padding: 12px 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+
+      /* ── Tables ── */
+      table { width: 100%; border-collapse: collapse; }
+      th { background: #f3f4f6; text-align: left; padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+      th[style*="right"], td[style*="right"] { text-align: right; }
+      td { padding: 9px 14px; border-bottom: 1px solid #f3f4f6; font-size: 13px; color: #374151; }
+      tr:last-child td { border-bottom: none; }
+      tr:nth-child(even) td { background: #fafafa; }
+      .row-label { color: #4b5563; }
+      .row-val { font-weight: 600; color: #111; text-align: right; }
+
+      /* ── Week range label ── */
+      .week-range { display: inline-block; background: #fef3f2; border: 1px solid #fecaca; border-radius: 6px; padding: 4px 12px; font-size: 12px; color: #8b1c1c; font-weight: 600; margin-bottom: 20px; letter-spacing: 0.03em; }
+
+      /* ── Year table ── */
+      .year-section-title { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; margin-top: 20px; }
+      .year-current td { background: #fef2f2 !important; font-weight: 700; color: #111 !important; }
+
+      /* ── LOS section ── */
+      .los-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 14px 16px; }
+      .los-gender { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid currentColor; }
+      .los-overall { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f9fafb; border-top: 1px solid #e5e7eb; }
+      .los-overall-label { font-size: 13px; color: #6b7280; }
+      .los-overall-val { font-size: 17px; font-weight: 800; color: #111; }
+
+      /* ── Pie charts (levels) ── */
+      .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px; }
+      .chart-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 18px; background: #fff; }
+      .chart-title { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 14px; }
+      .chart-inner { display: flex; align-items: center; gap: 16px; }
+      .chart-legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; color: #4b5563; }
+      .chart-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      .chart-total { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+
+      /* ── Maintenance stat boxes ── */
+      .maint-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 24px; }
+      .maint-stat { border-radius: 10px; padding: 16px 18px; border: 1px solid #e5e7eb; background: #fff; }
+      .maint-stat-val { font-size: 30px; font-weight: 800; line-height: 1.1; margin-bottom: 4px; }
+      .maint-stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+      .maint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+
+      /* ── Color overrides (force all dark colors to print-friendly) ── */
+      [style*="color: #fff"], [style*="color:#fff"] { color: #111 !important; }
+      [style*="color: #ddd"], [style*="color:#ddd"] { color: #374151 !important; }
+      [style*="color: #aaa"], [style*="color:#aaa"] { color: #6b7280 !important; }
+      [style*="color: #bbb"], [style*="color:#bbb"] { color: #6b7280 !important; }
+      [style*="color: #ccc"], [style*="color:#ccc"] { color: #4b5563 !important; }
+      [style*="color: #999"], [style*="color:#999"] { color: #6b7280 !important; }
+      [style*="color: #888"], [style*="color:#888"] { color: #6b7280 !important; }
+      [style*="color: #666"], [style*="color:#666"] { color: #6b7280 !important; }
+      [style*="background: #26262e"], [style*="background:#26262e"],
+      [style*="background: #1c1c24"], [style*="background:#1c1c24"],
+      [style*="background: #252525"], [style*="background:#252525"],
+      [style*="background: #1e1e26"], [style*="background:#1e1e26"],
+      [style*="background: #2a1a1a"], [style*="background:#2a1a1a"],
+      [style*="background: #1a1a1a"], [style*="background:#1a1a1a"] { background: #fff !important; }
+      [style*="border: 1px solid #32323e"], [style*="border:1px solid #32323e"],
+      [style*="border: 1px solid #2a2a2a"], [style*="border:1px solid #2a2a2a"],
+      [style*="border-bottom: 1px solid #32323e"], [style*="border-bottom:1px solid #32323e"],
+      [style*="border-bottom: 1px solid #2a2a2a"] { border-color: #e5e7eb !important; }
+      [style*="border-top: 3px solid #b22222"] { border-top-color: #8b1c1c !important; }
+      [style*="background: #252525"] { background: #f9fafb !important; }
 
   return (
     <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
