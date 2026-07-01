@@ -370,6 +370,27 @@ export default function Reports() {
       [style*="border-bottom: 1px solid #2a2a2a"] { border-color: #e5e7eb !important; }
       [style*="border-top: 3px solid #b22222"] { border-top-color: #8b1c1c !important; }
       [style*="background: #252525"] { background: #f9fafb !important; }
+    </style></head><body>
+    <div class="pdf-page">
+      <button class="print-btn no-print" onclick="window.print()">⬇ Print / Save PDF</button>
+      <div class="pdf-header">
+        <div>
+          <div class="pdf-org">Kingdom Living Iowa</div>
+          <div class="pdf-report-type">${title}</div>
+        </div>
+        <div class="pdf-meta">
+          Non-Profit Recovery Community<br/>
+          Generated ${date}
+        </div>
+      </div>
+      <div class="pdf-divider"></div>
+      ${el.innerHTML}
+    </div>
+    </body></html>`;
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  };
 
   return (
     <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
