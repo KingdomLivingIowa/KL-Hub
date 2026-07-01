@@ -27,6 +27,8 @@ function Messaging() {
   const inputRef = useRef(null);
   const subscriptionRef = useRef(null);
 
+  const [clientList, setClientList] = useState([]);
+
   const fetchStaff = useCallback(async () => {
     const { data } = await supabase
       .from('user_profiles')
@@ -36,15 +38,23 @@ function Messaging() {
     const map = {};
     (data || []).forEach(s => { map[s.id] = s; });
 
-    // Also load clients so sender names resolve correctly
+    // Load clients with portal accounts
     const { data: clientData } = await supabase
       .from('clients')
-      .select('id, full_name, email, auth_user_id')
-      .not('auth_user_id', 'is', null);
+      .select('id, full_name, email, auth_user_id, house_id, houses(name)')
+      .not('auth_user_id', 'is', null)
+      .eq('status', 'Active');
     (clientData || []).forEach(c => {
       if (c.auth_user_id) map[c.auth_user_id] = { full_name: c.full_name, email: c.email, role: 'resident' };
     });
 
+    setClientList((clientData || []).map(c => ({
+      id: c.auth_user_id,
+      full_name: c.full_name,
+      email: c.email,
+      role: 'resident',
+      house_name: c.houses?.name || null,
+    })));
     setMemberProfiles(map);
   }, []);
 
@@ -383,7 +393,9 @@ function Messaging() {
           <div style={ms.newChatPanel}>
             <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 8px 0' }}>Select people to message:</p>
 
-            <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: '10px' }}>
+            <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '10px' }}>
+              {/* Staff */}
+              <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '4px 8px 2px', margin: 0 }}>Staff</p>
               {staffList.filter(s => s.id !== user.id).map(s => {
                 const isSelected = selectedMembers.find(m => m.id === s.id);
                 return (
@@ -402,6 +414,33 @@ function Messaging() {
                   </div>
                 );
               })}
+              {/* Clients with portal accounts */}
+              {clientList.length > 0 && (
+                <>
+                  <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '8px 8px 2px', margin: 0 }}>Residents</p>
+                  {clientList.map(c => {
+                    const isSelected = selectedMembers.find(m => m.id === c.id);
+                    return (
+                      <div key={c.id} onClick={() => toggleMember(c)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#1e3a2f' : 'transparent', marginBottom: '2px' }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#333'; }}
+                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#1e3a2f' : 'transparent'; }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#4ade80' : '#999'}`, background: isSelected ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {isSelected && <span style={{ color: '#000', fontSize: '14px', fontWeight: '700' }}>✓</span>}
+                        </div>
+                        <div style={{ ...ms.avatar, background: '#2d1e3a', color: '#c084fc' }}>{initials(c.full_name || c.email)}</div>
+                        <div>
+                          <p style={{ color: '#fff', fontSize: '14px', margin: 0 }}>{c.full_name || c.email}</p>
+                          <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>{c.house_name ? `Resident · ${c.house_name}` : 'Resident'}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+              {clientList.length === 0 && (
+                <p style={{ color: '#555', fontSize: '13px', padding: '4px 8px', fontStyle: 'italic' }}>No residents with portal accounts yet.</p>
+              )}
             </div>
 
             {/* Group name input — only show when 2+ people selected */}
