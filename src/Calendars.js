@@ -282,12 +282,13 @@ function OrgEventsCalendar() {
       scope: form.scope,
       is_recurring: form.is_recurring,
       recurrence: form.is_recurring ? form.recurrence : 'none',
+      required_for_levels: form.required_for_levels?.length ? form.required_for_levels : null,
       created_by: user?.id,
     }]);
     setSaving(false);
     if (evErr) { alert('Error saving event: ' + evErr.message); return; }
     setShowAddModal(false);
-    setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'none' });
+    setForm({ title: '', description: '', event_date: '', start_time: '', end_time: '', scope: 'all', is_recurring: false, recurrence: 'none', required_for_levels: [] });
     fetchEvents();
   };
 
@@ -360,6 +361,23 @@ function OrgEventsCalendar() {
                 <option value="mens">Men's Houses Only</option>
                 <option value="womens">Women's Houses Only</option>
               </select>
+            </div>
+            <div>
+              <label style={s.label}>Required For Levels (portal only)</label>
+              <p style={{ fontSize: 12, color: '#888', margin: '0 0 8px 0' }}>Select which levels this event is required for. Clients on unselected levels won't see it. Leave all unselected to show to everyone.</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1,2,3,4].map(lvl => (
+                  <button key={lvl} type="button"
+                    onClick={() => {
+                      const current = form.required_for_levels || [];
+                      const updated = current.includes(lvl) ? current.filter(l => l !== lvl) : [...current, lvl];
+                      setForm(f => ({ ...f, required_for_levels: updated }));
+                    }}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${(form.required_for_levels || []).includes(lvl) ? '#b22222' : '#3a3a48'}`, background: (form.required_for_levels || []).includes(lvl) ? '#3a1e1e' : 'transparent', color: (form.required_for_levels || []).includes(lvl) ? '#f87171' : '#aaa', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                    Level {lvl}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label style={s.label}>Event Title *</label>
@@ -517,7 +535,9 @@ export function HouseCalendarTab({ houseId, houseType }) {
       title: form.title, description: form.description || null,
       event_date: form.event_date, start_time: form.start_time || null, end_time: form.end_time || null,
       house_id: houseId, is_recurring: form.is_recurring,
-      recurrence: form.is_recurring ? form.recurrence : 'none', created_by: user?.id,
+      recurrence: form.is_recurring ? form.recurrence : 'none',
+      required_for_levels: form.required_for_levels?.length ? form.required_for_levels : null,
+      created_by: user?.id,
     }]);
     setSaving(false);
     setShowAddModal(false);
@@ -588,6 +608,23 @@ export function HouseCalendarTab({ houseId, houseType }) {
               <div><label style={s.label}>End Time</label><input type="text" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} style={s.input} placeholder="e.g. 8:00 PM" /></div>
             </div>
             <div><label style={s.label}>Description</label><textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...s.input, height: 70, resize: 'vertical' }} /></div>
+            <div>
+              <label style={s.label}>Required For Levels (portal only)</label>
+              <p style={{ fontSize: 12, color: '#888', margin: '0 0 8px 0' }}>Leave all unselected to show to everyone.</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1,2,3,4].map(lvl => (
+                  <button key={lvl} type="button"
+                    onClick={() => {
+                      const current = form.required_for_levels || [];
+                      const updated = current.includes(lvl) ? current.filter(l => l !== lvl) : [...current, lvl];
+                      setForm(f => ({ ...f, required_for_levels: updated }));
+                    }}
+                    style={{ padding: '7px 14px', borderRadius: 8, border: `1px solid ${(form.required_for_levels || []).includes(lvl) ? '#b22222' : '#3a3a48'}`, background: (form.required_for_levels || []).includes(lvl) ? '#3a1e1e' : 'transparent', color: (form.required_for_levels || []).includes(lvl) ? '#f87171' : '#aaa', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                    Level {lvl}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <label style={s.label}>Repeat</label>
               <select value={form.recurrence} onChange={e => {
