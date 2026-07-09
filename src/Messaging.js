@@ -36,8 +36,7 @@ function Messaging() {
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const [convMembers, setConvMembers] = useState([]);
 
-  // Delete
-  const [hoveredMsgId, setHoveredMsgId] = useState(null);
+  // (message delete removed)
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -687,21 +686,12 @@ function Messaging() {
                     return (
                       <div key={msg.id}
                         style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}
-                        onMouseEnter={() => setHoveredMsgId(msg.id)}
-                        onMouseLeave={() => setHoveredMsgId(null)}>
+                        >
                         {showSender && (
                           <p style={{ color: '#bbb', fontSize: '14px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
                         )}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
-                          <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
-                            <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{renderBody(msg.body)}</p>
-                          </div>
-                          {isMe && hoveredMsgId === msg.id && (
-                            <button onClick={() => deleteMessage(msg.id)}
-                              style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#f87171', borderRadius: '6px', padding: '3px 7px', fontSize: '13px', cursor: 'pointer', flexShrink: 0 }}>
-                              ×
-                            </button>
-                          )}
+                        <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                          <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{renderBody(msg.body)}</p>
                         </div>
                         {!isGrouped && (
                           <p style={{ color: '#999', fontSize: '13px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>

@@ -617,7 +617,9 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
   const interval = setInterval(fetchUnreadMessages, 30000);
   const channel = supabase.channel('dashboard_unread_messages')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
-      () => { fetchUnreadMessages(); })
+      () => { setTimeout(fetchUnreadMessages, 800); })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversation_members' },
+      () => { setTimeout(fetchUnreadMessages, 400); })
     .subscribe();
   return () => { clearInterval(interval); supabase.removeChannel(channel); };
 }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
