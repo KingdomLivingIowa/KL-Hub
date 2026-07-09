@@ -4,6 +4,13 @@ import { useUser } from './UserContext';
 
 function Messaging() {
   const { user } = useUser();
+  const [myUserId, setMyUserId] = useState(user?.id || null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data?.session?.user?.id) setMyUserId(data.session.user.id);
+    });
+  }, []);
 
   const [conversations, setConversations] = useState([]);
   const [selectedConv, setSelectedConv] = useState(null);
@@ -283,7 +290,7 @@ function Messaging() {
     setShowMentionPicker(false);
     const { error } = await supabase.from('messages').insert([{
       conversation_id: selectedConv.id,
-      sender_id: user.id,
+      sender_id: myUserId,
       body,
     }]);
     if (error) { alert('Error sending: ' + error.message); setNewMessage(body); setSending(false); return; }
@@ -315,6 +322,31 @@ function Messaging() {
     if (!window.confirm('Delete this message?')) return;
     await supabase.from('messages').delete().eq('id', msgId);
     setMessages(prev => prev.filter(m => m.id !== msgId));
+  };
+
+  const deleteConversation = async (conv, e) => {
+    e.stopPropagation();
+    const isPreset = ["Management", "Men's Move In/Out", "Women's Move In/Out"].includes(conv.name);
+    const isDM = conv.type === 'direct';
+    const confirmMsg = isPreset
+      ? 'Leave this group chat? You will stop receiving messages from it.'
+      : isDM
+      ? 'Delete this conversation? This cannot be undone.'
+      : 'Delete this group chat and all its messages? This cannot be undone.';
+    if (!window.confirm(confirmMsg)) return;
+
+    if (isPreset) {
+      // Just remove self from membership (leave)
+      await supabase.from('conversation_members').delete().eq('conversation_id', conv.id).eq('user_id', myUserId);
+    } else {
+      // Delete messages then members then conversation
+      await supabase.from('messages').delete().eq('conversation_id', conv.id);
+      await supabase.from('conversation_members').delete().eq('conversation_id', conv.id);
+      await supabase.from('conversations').delete().eq('id', conv.id);
+    }
+
+    setConversations(prev => prev.filter(c => c.id !== conv.id));
+    if (selectedConv?.id === conv.id) setSelectedConv(null);
   };
 
   const toggleMember = (staffMember) => {
@@ -429,7 +461,7 @@ function Messaging() {
 
   const formatPreview = (conv) => {
     if (!conv.lastMessage) return 'No messages yet';
-    const isMe = conv.lastMessage.sender_id === user.id;
+    const isMe = conv.lastMessage.sender_id === myUserId;
     const preview = (conv.lastMessage.body || '').length > 40
       ? conv.lastMessage.body.slice(0, 40) + '...'
       : conv.lastMessage.body || '';
@@ -561,7 +593,8 @@ function Messaging() {
                     name={conv.name}
                     preview={formatPreview(conv)}
                     unread={unreadCounts[conv.id] || 0}
-                    isGroup />
+                    isGroup
+                    onDelete={(e) => deleteConversation(conv, e)} />
                 ))}
               </>
             )}
@@ -577,7 +610,8 @@ function Messaging() {
                     name={conv.name}
                     preview={formatPreview(conv)}
                     unread={unreadCounts[conv.id] || 0}
-                    isGroup />
+                    isGroup
+                    onDelete={(e) => deleteConversation(conv, e)} />
                 ))}
               </>
             )}
@@ -593,7 +627,8 @@ function Messaging() {
                     name={getConvName(conv)}
                     preview={formatPreview(conv)}
                     unread={unreadCounts[conv.id] || 0}
-                    isGroup={false} />
+                    isGroup={false}
+                    onDelete={(e) => deleteConversation(conv, e)} />
                 ))}
               </>
             )}
@@ -635,7 +670,7 @@ function Messaging() {
               ) : (
                 <>
                   {messages.map((msg, idx) => {
-                    const isMe = msg.sender_id === user.id;
+                    const isMe = msg.sender_id === myUserId;
                     const prevMsg = messages[idx - 1];
                     const showSender = !isMe && (!prevMsg || prevMsg.sender_id !== msg.sender_id);
                     const isGrouped = prevMsg && prevMsg.sender_id === msg.sender_id &&
@@ -727,14 +762,15 @@ function Messaging() {
   );
 }
 
-function ConvItem({ selected, onClick, name, preview, unread, isGroup }) {
+function ConvItem({ selected, onClick, name, preview, unread, isGroup, onDelete }) {
+  const [hovered, setHovered] = useState(false);
   const avatarBg = isGroup ? '#1e2d3a' : '#2d1e3a';
   const avatarColor = isGroup ? '#60a5fa' : '#c084fc';
   return (
     <div onClick={onClick}
-      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#252525' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer' }}
-      onMouseEnter={e => { if (!selected) e.currentTarget.style.background = '#1a1a1a'; }}
-      onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent'; }}>
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#252525' : hovered ? '#1a1a1a' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer', position: 'relative' }}>
       <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: avatarBg, color: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isGroup ? '14px' : '13px', fontWeight: '600', flexShrink: 0 }}>
         {isGroup ? '#' : initials(name)}
       </div>
@@ -745,6 +781,12 @@ function ConvItem({ selected, onClick, name, preview, unread, isGroup }) {
         </div>
         <p style={{ color: '#bbb', fontSize: '14px', margin: '1px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</p>
       </div>
+      {hovered && onDelete && (
+        <button onClick={onDelete}
+          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: '1px solid #3a3a48', color: '#f87171', borderRadius: '6px', padding: '2px 7px', fontSize: '13px', cursor: 'pointer', flexShrink: 0 }}>
+          ×
+        </button>
+      )}
     </div>
   );
 }

@@ -95,6 +95,16 @@ function DashboardHome({ counts, currentUser }) {
     }
   }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Realtime: update notifications instantly when a new one arrives
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const channel = supabase.channel(`dashboard_notifications_${currentUser.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` },
+        () => { fetchNotifications(); })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [currentUser?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const fetchReadAlerts = async () => {
     if (!currentUser?.id) return new Set();
     const { data } = await supabase.from('alert_reads').select('alert_key').eq('user_id', currentUser.id);
