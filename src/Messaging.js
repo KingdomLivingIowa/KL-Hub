@@ -317,12 +317,6 @@ function Messaging() {
     setSending(false);
   };
 
-  const deleteMessage = async (msgId) => {
-    if (!window.confirm('Delete this message?')) return;
-    await supabase.from('messages').delete().eq('id', msgId);
-    setMessages(prev => prev.filter(m => m.id !== msgId));
-  };
-
   const deleteConversation = async (conv, e) => {
     e.stopPropagation();
     const isPreset = ["Management", "Men's Move In/Out", "Women's Move In/Out"].includes(conv.name);
