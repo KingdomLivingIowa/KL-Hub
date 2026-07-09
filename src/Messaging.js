@@ -22,6 +22,7 @@ function Messaging() {
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [groupChatName, setGroupChatName] = useState('');
   const [creatingChat, setCreatingChat] = useState(false);
+  const [contactSearch, setContactSearch] = useState('');
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -382,7 +383,7 @@ function Messaging() {
             Messages
             {totalUnread > 0 && <span style={ms.unreadBadge}>{totalUnread}</span>}
           </p>
-          <button onClick={() => { setShowNewChat(!showNewChat); setSelectedMembers([]); setGroupChatName(''); }}
+          <button onClick={() => { setShowNewChat(!showNewChat); setSelectedMembers([]); setGroupChatName(''); setContactSearch(''); }}
             style={{ background: showNewChat ? '#999' : '#b22222', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
             {showNewChat ? 'Cancel' : '+ New Chat'}
           </button>
@@ -393,10 +394,17 @@ function Messaging() {
           <div style={ms.newChatPanel}>
             <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 8px 0' }}>Select people to message:</p>
 
+            <input
+              placeholder="Search by name..."
+              value={contactSearch}
+              onChange={e => setContactSearch(e.target.value)}
+              style={{ ...ms.input, marginBottom: '8px', padding: '7px 12px', fontSize: '13px' }}
+            />
+
             <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '10px' }}>
               {/* Staff */}
               <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '4px 8px 2px', margin: 0 }}>Staff</p>
-              {staffList.filter(s => s.id !== user.id).map(s => {
+              {staffList.filter(s => s.id !== user.id && (!contactSearch.trim() || (s.full_name || s.email || '').toLowerCase().includes(contactSearch.toLowerCase()))).map(s => {
                 const isSelected = selectedMembers.find(m => m.id === s.id);
                 return (
                   <div key={s.id} onClick={() => toggleMember(s)}
@@ -418,7 +426,7 @@ function Messaging() {
               {clientList.length > 0 && (
                 <>
                   <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '8px 8px 2px', margin: 0 }}>Residents</p>
-                  {clientList.map(c => {
+                  {clientList.filter(c => !contactSearch.trim() || (c.full_name || c.email || '').toLowerCase().includes(contactSearch.toLowerCase())).map(c => {
                     const isSelected = selectedMembers.find(m => m.id === c.id);
                     return (
                       <div key={c.id} onClick={() => toggleMember(c)}
