@@ -24,6 +24,14 @@ function Messaging() {
   const [creatingChat, setCreatingChat] = useState(false);
   const [contactSearch, setContactSearch] = useState('');
 
+  // Mentions
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [showMentionPicker, setShowMentionPicker] = useState(false);
+  const [convMembers, setConvMembers] = useState([]);
+
+  // Delete
+  const [hoveredMsgId, setHoveredMsgId] = useState(null);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const subscriptionRef = useRef(null);
@@ -185,7 +193,16 @@ function Messaging() {
       .eq('user_id', user.id);
 
     setUnreadCounts(prev => ({ ...prev, [convId]: 0 }));
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Load members for @mentions
+    const { data: memberRows } = await supabase
+      .from('conversation_members')
+      .select('user_id')
+      .eq('conversation_id', convId);
+    const memberIds = (memberRows || []).map(m => m.user_id).filter(id => id !== user.id);
+    const members = memberIds.map(id => memberProfiles[id]).filter(Boolean);
+    setConvMembers(members);
+  }, [user?.id, memberProfiles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
   useEffect(() => { fetchConversations(); }, [fetchConversations]);
@@ -235,18 +252,69 @@ function Messaging() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleMessageChange = (e) => {
+    const val = e.target.value;
+    setNewMessage(val);
+    // Detect @mention trigger
+    const atMatch = val.match(/@(\w*)$/);
+    if (atMatch) {
+      setMentionQuery(atMatch[1].toLowerCase());
+      setShowMentionPicker(true);
+    } else {
+      setShowMentionPicker(false);
+      setMentionQuery('');
+    }
+  };
+
+  const insertMention = (member) => {
+    // Replace the trailing @query with @FullName
+    const updated = newMessage.replace(/@(\w*)$/, `@${member.full_name} `);
+    setNewMessage(updated);
+    setShowMentionPicker(false);
+    setMentionQuery('');
+    inputRef.current?.focus();
+  };
+
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConv || sending) return;
     setSending(true);
     const body = newMessage.trim();
     setNewMessage('');
+    setShowMentionPicker(false);
     const { error } = await supabase.from('messages').insert([{
       conversation_id: selectedConv.id,
       sender_id: user.id,
       body,
     }]);
-    if (error) { alert('Error sending: ' + error.message); setNewMessage(body); }
+    if (error) { alert('Error sending: ' + error.message); setNewMessage(body); setSending(false); return; }
+
+    // Parse @mentions and send in-app notifications
+    const mentionMatches = [...body.matchAll(/@([\w ]+?)(?=\s|$|@)/g)];
+    for (const match of mentionMatches) {
+      const mentionedName = match[1].trim().toLowerCase();
+      const mentioned = convMembers.find(m => m.full_name?.toLowerCase() === mentionedName);
+      if (mentioned) {
+        // Find their user_id from memberProfiles
+        const mentionedUserId = Object.entries(memberProfiles).find(([, p]) => p.full_name?.toLowerCase() === mentionedName)?.[0];
+        if (mentionedUserId) {
+          const myProfile = memberProfiles[user.id];
+          const myName = myProfile?.full_name || myProfile?.email || 'Someone';
+          await supabase.from('notifications').insert([{
+            user_id: mentionedUserId,
+            type: 'mention',
+            message: `${myName} mentioned you in ${selectedConv.name || 'a chat'}: "${body.slice(0, 80)}${body.length > 80 ? '…' : ''}"`,
+            read: false,
+          }]);
+        }
+      }
+    }
     setSending(false);
+  };
+
+  const deleteMessage = async (msgId) => {
+    if (!window.confirm('Delete this message?')) return;
+    await supabase.from('messages').delete().eq('id', msgId);
+    setMessages(prev => prev.filter(m => m.id !== msgId));
   };
 
   const toggleMember = (staffMember) => {
@@ -573,13 +641,32 @@ function Messaging() {
                     const isGrouped = prevMsg && prevMsg.sender_id === msg.sender_id &&
                       new Date(msg.created_at) - new Date(prevMsg.created_at) < 60000;
 
+                    const renderBody = (body) => {
+                      const parts = body.split(/(@[\w ]+)/g);
+                      return parts.map((part, i) =>
+                        part.startsWith('@')
+                          ? <span key={i} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '4px', padding: '0 3px', fontWeight: '600' }}>{part}</span>
+                          : part
+                      );
+                    };
                     return (
-                      <div key={msg.id} style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                      <div key={msg.id}
+                        style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}
+                        onMouseEnter={() => setHoveredMsgId(msg.id)}
+                        onMouseLeave={() => setHoveredMsgId(null)}>
                         {showSender && (
                           <p style={{ color: '#bbb', fontSize: '14px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
                         )}
-                        <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
-                          <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexDirection: isMe ? 'row-reverse' : 'row' }}>
+                          <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                            <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{renderBody(msg.body)}</p>
+                          </div>
+                          {isMe && hoveredMsgId === msg.id && (
+                            <button onClick={() => deleteMessage(msg.id)}
+                              style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#f87171', borderRadius: '6px', padding: '3px 7px', fontSize: '13px', cursor: 'pointer', flexShrink: 0 }}>
+                              ×
+                            </button>
+                          )}
                         </div>
                         {!isGrouped && (
                           <p style={{ color: '#999', fontSize: '13px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>
@@ -592,19 +679,46 @@ function Messaging() {
               )}
             </div>
 
-            <div style={ms.inputArea}>
-              <input
-                ref={inputRef}
-                value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                placeholder={`Message ${getConvName(selectedConv)}...`}
-                style={ms.input}
-              />
-              <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-                style={{ background: newMessage.trim() ? '#b22222' : '#333', border: 'none', color: newMessage.trim() ? '#fff' : '#bbb', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
-                Send
-              </button>
+            <div style={{ position: 'relative' }}>
+              {/* Mention picker */}
+              {showMentionPicker && (
+                <div style={{ position: 'absolute', bottom: '100%', left: 20, right: 20, background: '#26262e', border: '1px solid #3a3a48', borderRadius: '10px', marginBottom: '6px', maxHeight: '180px', overflowY: 'auto', zIndex: 50, boxShadow: '0 -4px 16px rgba(0,0,0,0.4)' }}>
+                  <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 12px 4px', margin: 0 }}>Mention someone</p>
+                  {convMembers
+                    .filter(m => !mentionQuery || m.full_name?.toLowerCase().includes(mentionQuery))
+                    .map((m, i) => (
+                      <div key={i} onClick={() => insertMention(m)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#333'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <div style={ms.avatar}>{initials(m.full_name || m.email)}</div>
+                        <span style={{ color: '#fff', fontSize: '14px' }}>{m.full_name || m.email}</span>
+                        <span style={{ color: '#666', fontSize: '13px' }}>{(m.role || '').replace(/_/g, ' ')}</span>
+                      </div>
+                    ))
+                  }
+                  {convMembers.filter(m => !mentionQuery || m.full_name?.toLowerCase().includes(mentionQuery)).length === 0 && (
+                    <p style={{ color: '#666', fontSize: '13px', padding: '8px 12px' }}>No matches</p>
+                  )}
+                </div>
+              )}
+              <div style={ms.inputArea}>
+                <input
+                  ref={inputRef}
+                  value={newMessage}
+                  onChange={handleMessageChange}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') { setShowMentionPicker(false); return; }
+                    if (e.key === 'Enter' && !e.shiftKey && !showMentionPicker) { e.preventDefault(); sendMessage(); }
+                  }}
+                  placeholder={`Message ${getConvName(selectedConv)}... (type @ to mention)`}
+                  style={ms.input}
+                />
+                <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
+                  style={{ background: newMessage.trim() ? '#b22222' : '#333', border: 'none', color: newMessage.trim() ? '#fff' : '#bbb', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+                  Send
+                </button>
+              </div>
             </div>
           </>
         )}
