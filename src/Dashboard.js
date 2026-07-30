@@ -674,7 +674,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
 
   const settingsItems = [
     { id: 'users', label: 'User Management', show: canSeeUserManagement },
-    { id: 'email_settings', label: 'Email Settings', show: isAdmin || isUpperManagement },
+    { id: 'email_settings', label: 'Email Settings', show: true },
     { id: 'profile', label: 'My Profile', show: true },
   ].filter(item => item.show);
 
@@ -799,7 +799,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
           {activePage === 'calendars' && <Calendars />}
           {activePage === 'resources' && <Resources />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
-          {activePage === 'email_settings' && (isAdmin || isUpperManagement) && <EmailSettings />}
+          {activePage === 'email_settings' && <EmailSettings />}
           {activePage === 'profile' && <NotificationSettingsPage currentUser={user} />}
         </div>
       </div>
