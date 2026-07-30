@@ -741,7 +741,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
               )}
             </button>
           ))}
-          {isAdmin && settingsItems.length > 0 && (
+          {settingsItems.length > 0 && (
             <div style={styles.settingsSection}>
               <p style={styles.settingsSectionLabel}>Settings</p>
               {settingsItems.map(item => (
