@@ -688,8 +688,8 @@ function Messaging() {
                         const isMine = myFullName && part.toLowerCase() === `@${myFullName.toLowerCase()}`;
                         return (
                           <span key={i} style={{
-                            background: isMine ? 'rgba(251,191,36,0.35)' : 'rgba(255,255,255,0.2)',
-                            color: isMine ? '#fbbf24' : 'inherit',
+                            background: isMine ? 'rgba(251,191,36,0.35)' : 'transparent',
+                            color: isMine ? '#fbbf24' : '#fff',
                             borderRadius: '4px',
                             padding: '0 3px',
                             fontWeight: '700',
