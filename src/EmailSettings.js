@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 
+const ADMIN_ONLY_TYPES = ['maintenance_request', 'move_out_request', 'early_admissions', 'new_application', 'supplies_inventory'];
+
 const NOTIFICATION_TYPES = [
   {
     id: 'ua_overdue',
@@ -176,7 +178,7 @@ export default function EmailSettings() {
       </div>
 
       <div style={s.grid}>
-        {NOTIFICATION_TYPES.map(notif => {
+        {NOTIFICATION_TYPES.filter(notif => canEdit || !ADMIN_ONLY_TYPES.includes(notif.id)).map(notif => {
           const assigned = settings[notif.id] || [];
           return (
             <div key={notif.id} style={s.card}>
