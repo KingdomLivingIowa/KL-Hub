@@ -86,30 +86,7 @@ function Messaging() {
     if (!user?.id) return;
     setLoadingConvs(true);
 
-    // Auto-join only preset staff group chats (house chats now live inside Houses tab)
-    const presetStaffNames = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
-    const { data: presetStaffGroups } = await supabase
-      .from('conversations')
-      .select('id, name, type')
-      .eq('type', 'group')
-      .is('house_id', null)
-      .in('name', presetStaffNames);
-
-    for (const group of (presetStaffGroups || [])) {
-      const { data: existingMember } = await supabase
-        .from('conversation_members')
-        .select('user_id')
-        .eq('conversation_id', group.id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      if (!existingMember) {
-        await supabase.from('conversation_members').insert({
-          conversation_id: group.id,
-          user_id: user.id,
-          last_read_at: '1970-01-01T00:00:00.000Z',
-        });
-      }
-    }
+    // Preset group chat membership is managed exclusively via User Management
 
     // Get all memberships
     const { data: memberships } = await supabase
