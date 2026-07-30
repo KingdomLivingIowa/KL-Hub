@@ -5,10 +5,19 @@ import { useUser } from './UserContext';
 function Messaging() {
   const { user } = useUser();
   const [myUserId, setMyUserId] = useState(user?.id || null);
+  const [myFullName, setMyFullName] = useState('');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data?.session?.user?.id) setMyUserId(data.session.user.id);
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data?.session?.user?.id) {
+        setMyUserId(data.session.user.id);
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name')
+          .eq('id', data.session.user.id)
+          .maybeSingle();
+        if (profile?.full_name) setMyFullName(profile.full_name);
+      }
     });
   }, []);
 
@@ -669,14 +678,26 @@ function Messaging() {
                     const isGrouped = prevMsg && prevMsg.sender_id === msg.sender_id &&
                       new Date(msg.created_at) - new Date(prevMsg.created_at) < 60000;
 
+                    const isMentionedInMsg = myFullName &&
+                      msg.body?.toLowerCase().includes(`@${myFullName.toLowerCase()}`);
+
                     const renderBody = (body) => {
                       const parts = body.split(/(@[\w ]+)/g);
-                      return parts.map((part, i) =>
-                        part.startsWith('@')
-                          ? <span key={i} style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '4px', padding: '0 3px', fontWeight: '600' }}>{part}</span>
-                          : part
-                      );
+                      return parts.map((part, i) => {
+                        if (!part.startsWith('@')) return part;
+                        const isMine = myFullName && part.toLowerCase() === `@${myFullName.toLowerCase()}`;
+                        return (
+                          <span key={i} style={{
+                            background: isMine ? 'rgba(251,191,36,0.35)' : 'rgba(255,255,255,0.2)',
+                            color: isMine ? '#fbbf24' : 'inherit',
+                            borderRadius: '4px',
+                            padding: '0 3px',
+                            fontWeight: '700',
+                          }}>{part}</span>
+                        );
+                      });
                     };
+
                     return (
                       <div key={msg.id}
                         style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}
@@ -684,7 +705,18 @@ function Messaging() {
                         {showSender && (
                           <p style={{ color: '#bbb', fontSize: '14px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
                         )}
-                        <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                        <div style={{
+                          maxWidth: '70%',
+                          background: isMentionedInMsg && !isMe ? '#2d2a1e' : isMe ? '#b22222' : '#333',
+                          borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                          padding: '9px 14px',
+                          border: isMentionedInMsg && !isMe ? '1px solid #fbbf24' : 'none',
+                        }}>
+                          {isMentionedInMsg && !isMe && (
+                            <p style={{ color: '#fbbf24', fontSize: '11px', fontWeight: '700', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              You were mentioned
+                            </p>
+                          )}
                           <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{renderBody(msg.body)}</p>
                         </div>
                         {!isGrouped && (
