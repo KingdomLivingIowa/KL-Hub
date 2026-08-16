@@ -313,11 +313,11 @@ function Admissions() {
       }
     }
 
-    setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: newStatus || a.status } : a));
+    setApplications(prev => prev.filter(a => !(a.id === app.id && newStatus)));
     setShowEmailButtons(null);
     bustCache();
-    fetchApplications(true);
-    fetchClients();
+    await fetchApplications(true);
+    await fetchClients();
     setSendingEmail(null);
     setAcceptingId(null);
   };
