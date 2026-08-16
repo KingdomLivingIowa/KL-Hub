@@ -24,8 +24,16 @@ function Admissions() {
   const [mergeWizardOpen, setMergeWizardOpen] = useState(false);
   const [merging, setMerging] = useState(false);
   const [acceptingId, setAcceptingId] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(null);
+  const [showEmailButtons, setShowEmailButtons] = useState(null);
 
   const debounceTimer = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = () => setShowEmailButtons(null);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -232,6 +240,75 @@ function Admissions() {
 
     const { error } = await supabase.from('clients').insert([payload]);
     return error;
+  };
+
+  const sendTemplatedEmail = async (app, emailType) => {
+    setSendingEmail(emailType + app.id);
+    const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
+
+    // Determine status change
+    const acceptTypes = ['accept_doc', 'accept_tx', 'accept_comm', 'accept_liveouts', 'accept_owes'];
+    const denyTypes = ['deny_sex_offender', 'deny_disability', 'deny_general'];
+    const newStatus = acceptTypes.includes(emailType) ? 'accepted' : denyTypes.includes(emailType) ? 'denied' : null;
+
+    // If accepting, create client record first
+    if (newStatus === 'accepted') {
+      setAcceptingId(app.id);
+      const clientError = await createClientFromApp(app);
+      if (clientError) console.error('createClientFromApp error:', clientError);
+    }
+
+    // Update application status
+    if (newStatus) {
+      const { error } = await supabase.from('applications').update({ status: newStatus }).eq('id', app.id);
+      if (error) { alert('Error updating status: ' + error.message); setSendingEmail(null); setAcceptingId(null); return; }
+    }
+
+    // Send email
+    const emailTo = app.correspondence_contact || app.email;
+    if (emailTo) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
+
+        // Determine which disability questions were answered yes
+        const disabilityWalking = app.disability_walking === 'Yes';
+        const disabilityDressing = app.disability_dressing === 'Yes';
+
+        // Fetch balance if needed
+        let balance = 0;
+        if (emailType === 'accept_owes') {
+          const { data: clientData } = await supabase.from('clients')
+            .select('balance')
+            .or(`email.eq.${app.email},full_name.eq.${fullName}`)
+            .maybeSingle();
+          balance = parseFloat(clientData?.balance || 0);
+        }
+
+        await fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+          body: JSON.stringify({
+            type: emailType,
+            email: emailTo,
+            full_name: fullName,
+            disability_walking: disabilityWalking,
+            disability_dressing: disabilityDressing,
+            balance,
+          }),
+        });
+      } catch (err) {
+        console.error('send-application-email error:', err);
+      }
+    }
+
+    setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status: newStatus || a.status } : a));
+    setShowEmailButtons(null);
+    bustCache();
+    fetchApplications(true);
+    fetchClients();
+    setSendingEmail(null);
+    setAcceptingId(null);
   };
 
   const deleteApplication = async (id) => {
@@ -452,20 +529,61 @@ function Admissions() {
               🔄 Merge with Existing
             </button>
             )}          {app.status === 'pending' && (
-            <>
-              <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
-                {acceptingId === app.id ? 'Accepting...' : 'Accept'}
+            <div style={{ position: 'relative' }}>
+              <button
+                style={{ ...s.acceptBtn, background: '#1e3a2f', border: '1px solid #16a34a', color: '#4ade80' }}
+                onClick={() => setShowEmailButtons(showEmailButtons === app.id + '_accept' ? null : app.id + '_accept')}>
+                ✓ Accept ▾
               </button>
-              <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>Deny</button>
-            </>
+              {showEmailButtons === app.id + '_accept' && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                  {[
+                    { type: 'accept_doc', label: '📋 DOC Acceptance', desc: 'Waiting for parole confirmation' },
+                    { type: 'accept_tx', label: '🏥 Treatment (TX) Acceptance', desc: 'Uses client name, asks for move-in date' },
+                    { type: 'accept_comm', label: '🏘 Community Acceptance', desc: 'Uses "you", asks for move-in date' },
+                    { type: 'accept_liveouts', label: '🏠 Live-Outs Acceptance', desc: 'Asks about starting this weekend' },
+                    { type: 'accept_owes', label: '💰 Accepted — Owes Balance', desc: 'Payment instructions with balance' },
+                  ].map(btn => (
+                    <button key={btn.type}
+                      disabled={sendingEmail === btn.type + app.id}
+                      onClick={() => sendTemplatedEmail(app, btn.type)}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #2a2a2a', cursor: 'pointer', color: '#fff' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#26262e'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <div style={{ fontSize: '13px', fontWeight: '600' }}>{sendingEmail === btn.type + app.id ? 'Sending...' : btn.label}</div>
+                      <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{btn.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
-          {app.status === 'accepted' && (
-            <button style={s.denyBtn} onClick={() => updateStatus(app.id, 'denied')}>Deny</button>
-          )}
-          {app.status === 'denied' && (
-            <button style={s.acceptBtn} onClick={() => updateStatus(app.id, 'accepted')} disabled={acceptingId === app.id}>
-              {acceptingId === app.id ? 'Accepting...' : 'Accept'}
-            </button>
+          {app.status === 'pending' && (
+            <div style={{ position: 'relative' }}>
+              <button
+                style={s.denyBtn}
+                onClick={() => setShowEmailButtons(showEmailButtons === app.id + '_deny' ? null : app.id + '_deny')}>
+                ✕ Deny ▾
+              </button>
+              {showEmailButtons === app.id + '_deny' && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                  {[
+                    { type: 'deny_sex_offender', label: '🚫 Sex Offender Denial' },
+                    { type: 'deny_disability', label: '♿ Disability Denial' },
+                    { type: 'deny_general', label: '📄 General Denial' },
+                  ].map(btn => (
+                    <button key={btn.type}
+                      disabled={sendingEmail === btn.type + app.id}
+                      onClick={() => sendTemplatedEmail(app, btn.type)}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #2a2a2a', cursor: 'pointer', color: '#fff' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#26262e'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                      <div style={{ fontSize: '13px', fontWeight: '600' }}>{sendingEmail === btn.type + app.id ? 'Sending...' : btn.label}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           {isAdmin && (
             <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#f87171', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
