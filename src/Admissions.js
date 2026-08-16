@@ -23,7 +23,7 @@ function Admissions() {
   const [mergeReturningModal, setMergeReturningModal] = useState(null);
   const [mergeWizardOpen, setMergeWizardOpen] = useState(false);
   const [merging, setMerging] = useState(false);
-  const [acceptingId, setAcceptingId] = useState(null);
+  const [acceptingId, setAcceptingId] = useState(null); // eslint-disable-line no-unused-vars
   const [sendingEmail, setSendingEmail] = useState(null);
   const [showEmailButtons, setShowEmailButtons] = useState(null);
 
@@ -320,7 +320,7 @@ function Admissions() {
     fetchApplications(true);
   };
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id, status) => { // eslint-disable-line no-unused-vars
     const app = applications.find((a) => a.id === id);
     if (!app) { alert('Application not found.'); return; }
     const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
