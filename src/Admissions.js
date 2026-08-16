@@ -255,13 +255,24 @@ function Admissions() {
     if (newStatus === 'accepted') {
       setAcceptingId(app.id);
       const clientError = await createClientFromApp(app);
-      if (clientError) console.error('createClientFromApp error:', clientError);
+      if (clientError) {
+        console.error('createClientFromApp error:', clientError);
+        alert('Error creating client profile: ' + clientError.message);
+        setSendingEmail(null);
+        setAcceptingId(null);
+        return;
+      }
     }
 
     // Update application status
     if (newStatus) {
       const { error } = await supabase.from('applications').update({ status: newStatus }).eq('id', app.id);
-      if (error) { alert('Error updating status: ' + error.message); setSendingEmail(null); setAcceptingId(null); return; }
+      if (error) {
+        alert('Error updating status: ' + error.message);
+        setSendingEmail(null);
+        setAcceptingId(null);
+        return;
+      }
     }
 
     // Send email
