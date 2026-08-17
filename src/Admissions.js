@@ -30,7 +30,11 @@ function Admissions() {
   const debounceTimer = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = () => setShowEmailButtons(null);
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-email-dropdown]')) {
+        setShowEmailButtons(null);
+      }
+    };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -541,14 +545,14 @@ function Admissions() {
               🔄 Merge with Existing
             </button>
             )}          {app.status === 'pending' && (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} data-email-dropdown>
               <button
                 style={{ ...s.acceptBtn, background: '#1e3a2f', border: '1px solid #16a34a', color: '#4ade80' }}
                 onClick={() => setShowEmailButtons(showEmailButtons === app.id + '_accept' ? null : app.id + '_accept')}>
                 ✓ Accept ▾
               </button>
               {showEmailButtons === app.id + '_accept' && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                <div data-email-dropdown style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                   {[
                     { type: 'accept_doc', label: '📋 DOC Acceptance', desc: 'Waiting for parole confirmation' },
                     { type: 'accept_tx', label: '🏥 Treatment (TX) Acceptance', desc: 'Uses client name, asks for move-in date' },
@@ -571,14 +575,14 @@ function Admissions() {
             </div>
           )}
           {app.status === 'pending' && (
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative' }} data-email-dropdown>
               <button
                 style={s.denyBtn}
                 onClick={() => setShowEmailButtons(showEmailButtons === app.id + '_deny' ? null : app.id + '_deny')}>
                 ✕ Deny ▾
               </button>
               {showEmailButtons === app.id + '_deny' && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                <div data-email-dropdown style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                   {[
                     { type: 'deny_sex_offender', label: '🚫 Sex Offender Denial' },
                     { type: 'deny_disability', label: '♿ Disability Denial' },
