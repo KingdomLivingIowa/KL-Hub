@@ -277,6 +277,7 @@ function Admissions() {
 
     // Send email
     const emailTo = app.correspondence_contact || app.email;
+    alert(`Debug: status=${newStatus}, emailTo=${emailTo}, appId=${app.id}`);
     if (emailTo) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
