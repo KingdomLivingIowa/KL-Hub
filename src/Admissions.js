@@ -292,13 +292,20 @@ function Admissions() {
         const disabilityDressing = app.disability_dressing === 'Yes';
 
         // Fetch balance if needed
-        let balance = 0;
+                let balance = 0;
         if (emailType === 'accept_owes') {
-          const { data: clientData } = await supabase.from('clients')
-            .select('balance')
+          // Try charges/payments calculation for most accurate balance
+          const { data: existingClient } = await supabase.from('clients')
+            .select('id')
             .or(`email.eq.${app.email},full_name.eq.${fullName}`)
             .maybeSingle();
-          balance = parseFloat(clientData?.balance || 0);
+          if (existingClient?.id) {
+            const { data: charges } = await supabase.from('charges').select('amount').eq('client_id', existingClient.id);
+            const { data: payments } = await supabase.from('payments').select('amount').eq('client_id', existingClient.id);
+            const totalCharged = (charges || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+            const totalPaid = (payments || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+            balance = Math.max(0, totalCharged - totalPaid);
+          }
         }
 
         await fetch(`${SUPABASE_URL}/functions/v1/send-application-email`, {
