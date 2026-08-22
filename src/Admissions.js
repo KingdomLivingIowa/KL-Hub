@@ -255,7 +255,7 @@ function Admissions() {
     const denyTypes = ['deny_sex_offender', 'deny_disability', 'deny_general'];
     const newStatus = acceptTypes.includes(emailType) ? 'accepted' : denyTypes.includes(emailType) ? 'denied' : null;
 
-    // If accepting, create client record first
+        // If accepting, create or update client record
     if (newStatus === 'accepted') {
       setAcceptingId(app.id);
       const clientError = await createClientFromApp(app);
@@ -265,6 +265,19 @@ function Admissions() {
         setSendingEmail(null);
         setAcceptingId(null);
         return;
+      }
+
+      // Also update any existing matching client to Accepted status
+      const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
+      const { data: existingClient } = await supabase
+        .from('clients')
+        .select('id, status')
+        .or(`email.eq.${app.email},full_name.eq.${fullName}`)
+        .maybeSingle();
+      if (existingClient && existingClient.status !== 'Active') {
+        await supabase.from('clients')
+          .update({ status: 'Accepted', application_id: app.id })
+          .eq('id', existingClient.id);
       }
     }
 
