@@ -2297,7 +2297,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             {/* ── Modal Header ── */}
             <div style={st.modalHeader}>
                                           <div style={{ position: 'relative', flexShrink: 0 }}>
-                                <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={110} fontSize={28} square />
+                                                <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={160} fontSize={32} square />
                 {hasFullAccess && (
                   <>
                     <label htmlFor="profile-photo-upload" style={{ position: 'absolute', bottom: 0, right: 0, width: '22px', height: '22px', borderRadius: '50%', background: '#1e3a5f', border: '2px solid #1c1c24', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px' }}>📷</label>
