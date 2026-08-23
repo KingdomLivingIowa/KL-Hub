@@ -2296,7 +2296,26 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
             {/* ── Modal Header ── */}
             <div style={st.modalHeader}>
-              <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={52} fontSize={16} />
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
+                <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={80} fontSize={22} />
+                {hasFullAccess && (
+                  <>
+                    <label htmlFor="profile-photo-upload" style={{ position: 'absolute', bottom: 0, right: 0, width: '22px', height: '22px', borderRadius: '50%', background: '#1e3a5f', border: '2px solid #1c1c24', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '11px' }}>📷</label>
+                    <input id="profile-photo-upload" type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      const ext = file.name.split('.').pop();
+                      const path = `${selected.id}/profile.${ext}`;
+                      const { error } = await supabase.storage.from('profile-photos').upload(path, file, { upsert: true });
+                      if (error) { alert('Upload failed: ' + error.message); return; }
+                      const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+                      await supabase.from('clients').update({ photo_url: data.publicUrl + '?t=' + Date.now() }).eq('id', selected.id);
+                      setSelected(prev => ({ ...prev, photo_url: data.publicUrl + '?t=' + Date.now() }));
+                      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, photo_url: data.publicUrl + '?t=' + Date.now() } : c));
+                    }} />
+                  </>
+                )}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h2 style={st.modalName}>{selected.full_name}</h2>
                 <p style={st.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
