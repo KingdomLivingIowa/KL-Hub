@@ -3,6 +3,106 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
+const WALKTHROUGH_SECTIONS = [
+  {
+    section: 'Entrances, Exits & Egress',
+    items: [
+      { id: 'ee1', std: '14c', text: 'Windows serving as fire exits (2nd/3rd floor bedrooms, basement) are functional and open/close properly.' },
+      { id: 'ee2', std: '14c', text: 'All doors and windows used as exits are free of obstructions (no debris, storage, or broken locks).' },
+      { id: 'ee3', std: '14c', text: 'Fire exits are clearly marked.' },
+      { id: 'ee4', std: '17j', text: 'Windows are in working condition, free of broken glass/missing panes, lock properly, and are not nailed shut (unless not the only fire exit).' },
+    ],
+  },
+  {
+    section: 'Bedrooms',
+    items: [
+      { id: 'br1', std: '14a', text: 'Rooms are in good repair, clean, well maintained. Livable-area temperature is between 65–79°F.' },
+      { id: 'br2', std: '14f', text: 'Each resident has personal item storage: a dresser, hanging area, and reasonable storage space per bed.' },
+      { id: 'br3', std: '14b', text: 'Furnishings are typical of a single-family home/apartment, not institutional.' },
+    ],
+  },
+  {
+    section: 'Bathrooms',
+    items: [
+      { id: 'ba1', std: '14e', text: 'Bathrooms are clean, have hot and cold running water, and fully functional plumbing.' },
+    ],
+  },
+  {
+    section: 'Kitchen & Food Storage',
+    items: [
+      { id: 'kf1', std: '14g', text: 'Each resident has food storage space.' },
+      { id: 'kf2', std: '14g', text: 'Hand-washing facilities have hot/cold water, soap, and hand-drying means, accessible to residents and staff.' },
+      { id: 'kf3', std: '14g', text: 'Refrigerator, stove, and microwave are clean and in safe, good operating condition.' },
+      { id: 'kf4', std: '14g', text: 'Fresh water available to individuals at all times.' },
+      { id: 'kf5', std: '14g', text: 'Food prep areas and utensils are cleaned/sanitized after use and kept in good repair.' },
+      { id: 'kf6', std: '14i', text: 'All appliances are in safe, working condition.' },
+    ],
+  },
+  {
+    section: 'Common & Living Areas',
+    items: [
+      { id: 'cl1', std: '15b', text: 'A comfortable group area for small-group activities and socializing is maintained and usable.' },
+      { id: 'cl2', std: '15d', text: 'Entertainment or recreational areas/furnishings promoting social engagement are provided and in usable condition.' },
+      { id: 'cl3', std: '14h', text: 'Laundry services are accessible and in working order for all residents.' },
+    ],
+  },
+  {
+    section: 'Structural Conditions',
+    items: [
+      { id: 'sc1', std: '17f', text: 'Ceilings free of severe bulging/buckling, large holes, missing parts, or drafts from large cracks/holes.' },
+      { id: 'sc2', std: '17g', text: 'Walls free of serious defects (severe buckling, bulging, leaning, large holes, air infiltration); minor defects noted if present.' },
+      { id: 'sc3', std: '17h', text: 'Floors free of serious defects (buckling, major movement, large cracks/holes); minor wear noted if present.' },
+      { id: 'sc4', std: '17i', text: 'Interior stairs free of loose, broken, or missing steps. Handrail present on multi-step staircases. Halls/stairs free of tripping hazards.' },
+      { id: 'sc5', std: '17e', text: 'Plumbing free of major leaks (main drains/feed pipes), standing water, or raw sewage conditions.' },
+      { id: 'sc6', std: '17k', text: 'No other interior hazards: broken glass, protruding nails, broken bathroom fixtures with sharp edges, standing water, raw sewage, etc.' },
+    ],
+  },
+  {
+    section: 'Electrical & Fire Safety Equipment',
+    items: [
+      { id: 'ef1', std: '17d', text: 'Working electrical outlets and lighting in every room. No extension cords used room-to-room. No exposed wires, missing cover plates, cracked outlets, or unsupported light fixtures.' },
+      { id: 'ef2', std: '17c', text: 'Functional smoke detectors in all bedroom spaces and elsewhere as code demands.' },
+      { id: 'ef3', std: '17c', text: 'Functional carbon monoxide detectors present if the residence has gas HVAC, hot water, or gas appliances.' },
+      { id: 'ef4', std: '17c', text: 'Functional fire extinguisher(s) in plain sight and/or clearly marked locations.' },
+      { id: 'ef5', std: '17c', text: 'Regular, documented inspections of smoke detectors, CO detectors, and fire extinguishers.' },
+      { id: 'ef6', std: '17c', text: 'Fire/emergency evacuation drills held at least quarterly and documented.' },
+      { id: 'ef7', std: '17c', text: 'First aid kit is readily accessible and adequately stocked.' },
+    ],
+  },
+  {
+    section: 'Exterior',
+    items: [
+      { id: 'ex1', std: '17l', text: 'Proper exterior lighting is present.' },
+      { id: 'ex2', std: '17l', text: 'Yard is maintained and grass does not exceed city ordinances.' },
+      { id: 'ex3', std: '17l', text: 'Walkways are clear of obstruction and tripping hazards.' },
+      { id: 'ex4', std: '17l', text: 'Trash/garbage contained in covered cans or dumpsters, with no excessive accumulation.' },
+    ],
+  },
+  {
+    section: 'Policies & Documentation On File ("D" Items)',
+    items: [
+      { id: 'pd1', std: '16a', text: 'Policy prohibits use/seeking of alcohol and/or illicit drugs by staff or residents.' },
+      { id: 'pd2', std: '16b', text: 'Policy lists prohibited items and states procedures for associated searches by staff.' },
+      { id: 'pd3', std: '16c', text: 'Policy and procedures for drug screening and/or toxicology protocols.' },
+      { id: 'pd4', std: '16d', text: 'Policy and procedures addressing residents\' prescription/non-prescription medication usage and storage, consistent with residence level and state law.' },
+      { id: 'pd5', std: '16e', text: 'Policy and procedures encouraging residents to take responsibility for their own and other residents\' safety and health.' },
+      { id: 'pd6', std: '18a', text: 'Policy regarding smoke-free living environment and/or designated outdoor smoking area.' },
+      { id: 'pd7', std: '18b', text: 'Policy regarding exposure to bodily fluids and contagious disease.' },
+      { id: 'pd8', std: '19b', text: 'Documentation that emergency contact information is collected from residents.' },
+      { id: 'pd9', std: '19c', text: 'Documentation that residents are oriented to emergency procedures.' },
+      { id: 'pd10', std: '19d', text: 'Naloxone accessible at each location; staff/residents knowledgeable and trained in its use.' },
+    ],
+  },
+  {
+    section: 'Emergency Preparedness — Posted in the House',
+    items: [
+      { id: 'ep1', std: '19a', text: 'Emergency numbers, procedures (including overdose and other emergency responses), and evacuation maps are posted in conspicuous locations.' },
+    ],
+  },
+];
+
+const TOTAL_WALKTHROUGH_ITEMS = WALKTHROUGH_SECTIONS.reduce((sum, s) => sum + s.items.length, 0);
+
 const ENTRY_TYPES = ['House Check-In', 'Batch UA', 'Crisis', 'Event Attendance', 'General Note', 'House Inspection', 'House Meeting Notes', 'Supplies/Inventory', 'Maintenance Request'];
 
 const toYMD = (date) => date.toISOString().split('T')[0];
