@@ -117,6 +117,105 @@ function YearTable({ title, columns, rows }) {
   );
 }
 
+function WalkthroughsReport() {
+  const [walkthroughs, setWalkthroughs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterHouse, setFilterHouse] = useState('all');
+  const [houses, setHouses] = useState([]);
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('house_walkthroughs').select('*').order('walkthrough_date', { ascending: false }),
+      supabase.from('houses').select('id, name').order('name'),
+    ]).then(([wRes, hRes]) => {
+      setWalkthroughs(wRes.data || []);
+      setHouses(hRes.data || []);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = filterHouse === 'all' ? walkthroughs : walkthroughs.filter(w => w.house_id === filterHouse);
+
+  const resultBadge = (result) => {
+    const map = {
+      meets_standard: { label: 'Meets Standard', color: '#4ade80' },
+      needs_improvement: { label: 'Needs Improvement', color: '#fb923c' },
+      not_acceptable: { label: 'Not Acceptable', color: '#f87171' },
+    };
+    const r = map[result] || { label: result, color: '#aaa' };
+    return <span style={{ color: r.color, fontSize: '12px', fontWeight: '600' }}>{r.label}</span>;
+  };
+
+  const avgScore = filtered.length ? Math.round(filtered.reduce((sum, w) => sum + (w.score / w.total_items * 100), 0) / filtered.length) : 0;
+  const meetCount = filtered.filter(w => w.overall_result === 'meets_standard').length;
+  const needsCount = filtered.filter(w => w.overall_result === 'needs_improvement').length;
+  const notAcceptCount = filtered.filter(w => w.overall_result === 'not_acceptable').length;
+
+  if (loading) return <div style={{ color: '#888', padding: '20px' }}>Loading walkthroughs...</div>;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+        <h2 style={{ color: '#fff', margin: 0, fontSize: '18px', fontWeight: '700' }}>House Walkthroughs</h2>
+        <select value={filterHouse} onChange={e => setFilterHouse(e.target.value)}
+          style={{ background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '7px 12px', color: '#ddd', fontSize: '13px' }}>
+          <option value="all">All Houses</option>
+          {houses.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
+        </select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <p style={{ color: '#888', fontSize: '14px' }}>No walkthroughs found.</p>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+            {[
+              { label: 'Total Submitted', value: filtered.length, color: '#60a5fa' },
+              { label: 'Avg Pass Rate', value: `${avgScore}%`, color: avgScore >= 90 ? '#4ade80' : avgScore >= 70 ? '#fb923c' : '#f87171' },
+              { label: 'Meets Standard', value: meetCount, color: '#4ade80' },
+              { label: 'Needs Improvement', value: needsCount, color: '#fb923c' },
+              { label: 'Not Acceptable', value: notAcceptCount, color: '#f87171' },
+            ].map(stat => (
+              <div key={stat.label} style={{ background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', padding: '14px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: stat.color }} />
+                <p style={{ color: stat.color, fontSize: '24px', fontWeight: '800', margin: '4px 0 4px' }}>{stat.value}</p>
+                <p style={{ color: '#888', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {filtered.map(w => {
+              const pct = Math.round((w.score / w.total_items) * 100);
+              const fmtD = new Date(w.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              return (
+                <div key={w.id} style={{ background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <p style={{ color: '#fff', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{w.house_name}</p>
+                      <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>{fmtD} · By {w.submitted_by}</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      {resultBadge(w.overall_result)}
+                      <span style={{ color: '#aaa', fontSize: '13px' }}>{w.score}/{w.total_items} ({pct}%)</span>
+                      <div style={{ width: '80px', height: '6px', background: '#2a2a2a', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626', borderRadius: '3px' }} />
+                      </div>
+                    </div>
+                  </div>
+                  {w.corrective_actions && (
+                    <p style={{ color: '#f87171', fontSize: '12px', margin: '8px 0 0', fontStyle: 'italic' }}>⚠ {w.corrective_actions.slice(0, 120)}{w.corrective_actions.length > 120 ? '...' : ''}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('weekly');
   const [loading, setLoading] = useState(true);
@@ -268,7 +367,7 @@ export default function Reports() {
   if (loading) return <div style={{ padding: 32, color: '#bbb', fontSize: 14 }}>Loading reports...</div>;
 
   const generateReportPDF = () => {
-    const title = { weekly: 'Weekly Overview', monthly: 'Monthly Report', yearly: 'Year-by-Year', levels: 'Levels Report', maintenance: 'Maintenance Report' }[activeTab] || 'Report';
+        const title = { weekly: 'Weekly Overview', monthly: 'Monthly Report', yearly: 'Year-by-Year', levels: 'Levels Report', maintenance: 'Maintenance Report', walkthroughs: 'Walkthroughs Report' }[activeTab] || 'Report';
     const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const el = document.getElementById('report-content');
     if (!el) return;
@@ -400,7 +499,8 @@ export default function Reports() {
           <button style={tabBtn('monthly')} onClick={() => setActiveTab('monthly')}>Monthly Report</button>
           <button style={tabBtn('yearly')} onClick={() => setActiveTab('yearly')}>Year-by-Year</button>
           <button style={tabBtn('levels')} onClick={() => setActiveTab('levels')}>Levels</button>
-          <button style={tabBtn('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
+                    <button style={tabBtn('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
+          <button style={tabBtn('walkthroughs')} onClick={() => setActiveTab('walkthroughs')}>Walkthroughs</button>
         </div>
         <button onClick={generateReportPDF} style={{ background: '#1e3a2f', color: '#4ade80', border: '1px solid #2d5a3d', borderRadius: '8px', padding: '8px 16px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>⬇ Export PDF</button>
       </div>
@@ -537,8 +637,11 @@ export default function Reports() {
       {activeTab === 'levels' && (
         <LevelsReport clients={clients} houses={houses} />
       )}
-      {activeTab === 'maintenance' && (
+            {activeTab === 'maintenance' && (
         <MaintenanceReport maintenanceRequests={maintenanceRequests} />
+      )}
+      {activeTab === 'walkthroughs' && (
+        <WalkthroughsReport />
       )}
     </div>
       </div>
