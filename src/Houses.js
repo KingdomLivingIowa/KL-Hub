@@ -1243,10 +1243,15 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 <HouseCalendarTab houseId={selected.id} houseType={selected.type} />
               )}
 
-              {activeTab === 'forms' && (
+                            {activeTab === 'forms' && (
                 <div>
-                  <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
-                  <OvernightRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
+                  <div style={{ marginBottom: '28px' }}>
+                    <HouseWalkthroughTab houseId={selected.id} houseName={selected.name} currentUser={user} />
+                  </div>
+                  <div style={{ borderTop: '1px solid #222', paddingTop: '20px' }}>
+                    <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
+                    <OvernightRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
+                  </div>
                 </div>
               )}
 
@@ -1401,6 +1406,308 @@ const s = {
   roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#26262e', borderRadius: '10px' },
   timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
 };
+
+function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
+  const [walkthroughs, setWalkthroughs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [viewingId, setViewingId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [walkthroughDate, setWalkthroughDate] = useState(new Date().toISOString().split('T')[0]);
+  const [overallResult, setOverallResult] = useState('');
+  const [items, setItems] = useState({});
+  const [correctiveActions, setCorrectiveActions] = useState('');
+
+  useEffect(() => { fetchWalkthroughs(); }, [houseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchWalkthroughs = async () => {
+    setLoading(true);
+    const { data } = await supabase.from('house_walkthroughs').select('*')
+      .eq('house_id', houseId).order('walkthrough_date', { ascending: false });
+    setWalkthroughs(data || []);
+    setLoading(false);
+  };
+
+  const toggleItem = (itemId) => {
+    setItems(prev => ({ ...prev, [itemId]: { ...prev[itemId], ok: !prev[itemId]?.ok } }));
+  };
+
+  const setItemNote = (itemId, note) => {
+    setItems(prev => ({ ...prev, [itemId]: { ...prev[itemId], notes: note } }));
+  };
+
+  const score = Object.values(items).filter(i => i?.ok).length;
+
+  const handleSubmit = async () => {
+    if (!overallResult) { alert('Please select an overall result before submitting.'); return; }
+    setSaving(true);
+    const { error } = await supabase.from('house_walkthroughs').insert([{
+      house_id: houseId,
+      house_name: houseName,
+      submitted_by: currentUser?.email || '',
+      walkthrough_date: walkthroughDate,
+      overall_result: overallResult,
+      items,
+      corrective_actions: correctiveActions,
+      score,
+      total_items: TOTAL_WALKTHROUGH_ITEMS,
+    }]);
+    if (error) { alert('Error saving walkthrough: ' + error.message); setSaving(false); return; }
+    setShowForm(false);
+    setItems({});
+    setOverallResult('');
+    setCorrectiveActions('');
+    setWalkthroughDate(new Date().toISOString().split('T')[0]);
+    fetchWalkthroughs();
+    setSaving(false);
+  };
+
+  const generateWalkthroughPDF = (w) => {
+    const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+    const resultLabel = w.overall_result === 'meets_standard' ? 'Meets Standard' : w.overall_result === 'needs_improvement' ? 'Needs Improvement' : 'Not Acceptable — Corrective Action Required';
+    const resultColor = w.overall_result === 'meets_standard' ? '#16a34a' : w.overall_result === 'needs_improvement' ? '#d97706' : '#dc2626';
+    const itemsData = w.items || {};
+    const sectionsHtml = WALKTHROUGH_SECTIONS.map(sec => `
+      <div style="margin-bottom:20px;">
+        <div style="background:#1e3a5f;color:#fff;padding:8px 12px;font-size:13px;font-weight:700;border-radius:4px;margin-bottom:8px;">${sec.section}</div>
+        <table width="100%" style="border-collapse:collapse;font-size:13px;">
+          <thead><tr>
+            <th style="width:50px;padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;text-align:center;">OK</th>
+            <th style="width:60px;padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;text-align:center;">Std.</th>
+            <th style="padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;">Item</th>
+            <th style="width:200px;padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;">Notes</th>
+          </tr></thead>
+          <tbody>
+            ${sec.items.map(item => `<tr>
+              <td style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:16px;">${itemsData[item.id]?.ok ? '✓' : ''}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;text-align:center;color:#666;">${item.std}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;">${item.text}</td>
+              <td style="padding:7px 8px;border:1px solid #ddd;color:#555;">${itemsData[item.id]?.notes || ''}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`).join('');
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>House Walkthrough — ${w.house_name}</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 40px; color: #111; font-size: 14px; }
+      .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #1e3a5f; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+      @media print { .print-btn { display: none; } }
+    </style></head><body>
+    <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+    <div style="text-align:right;font-size:11px;color:#888;margin-bottom:4px;">INTERNAL USE ONLY — Staff / House Manager Walkthrough</div>
+    <h2 style="text-align:center;margin:0 0 4px;">House Walkthrough Checklist</h2>
+    <p style="text-align:center;font-style:italic;color:#666;margin:0 0 20px;font-size:13px;">Physical Environment — NARR Standard 3.0, Domain 2 (Standards 14–19)</p>
+    <p><strong>Address:</strong> ${w.house_name}</p>
+    <p><strong>House Manager:</strong> ${w.submitted_by}</p>
+    <p><strong>Date of Walkthrough:</strong> ${fmtDate(w.walkthrough_date)}</p>
+    <p style="margin:12px 0;"><strong>Result:</strong> <span style="color:${resultColor};font-weight:700;">${resultLabel}</span></p>
+    <p style="margin:0 0 20px;"><strong>Score:</strong> ${w.score} / ${w.total_items} items checked OK (${Math.round((w.score / w.total_items) * 100)}%)</p>
+    ${sectionsHtml}
+    ${w.corrective_actions ? `<div style="margin-top:20px;"><strong>Corrective Actions Needed:</strong><p style="margin-top:8px;line-height:1.6;">${w.corrective_actions}</p></div>` : ''}
+    <div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;display:flex;gap:60px;">
+      <div><strong>House Manager Signature:</strong> _____________________________</div>
+      <div><strong>Date:</strong> _________________</div>
+    </div>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  };
+
+  const viewingWalkthrough = walkthroughs.find(w => w.id === viewingId);
+
+  const resultBadge = (result) => {
+    const map = {
+      meets_standard: { label: 'Meets Standard', bg: '#14532d', color: '#4ade80' },
+      needs_improvement: { label: 'Needs Improvement', bg: '#3a2d1e', color: '#fb923c' },
+      not_acceptable: { label: 'Not Acceptable', bg: '#3a0f0f', color: '#f87171' },
+    };
+    const r = map[result] || { label: result, bg: '#333', color: '#aaa' };
+    return <span style={{ background: r.bg, color: r.color, fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px', whiteSpace: 'nowrap' }}>{r.label}</span>;
+  };
+
+  if (showForm) return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <h3 style={{ color: '#fff', margin: 0, fontSize: '16px', fontWeight: '600' }}>New House Walkthrough</h3>
+        <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Date of Walkthrough</label>
+          <input type="date" value={walkthroughDate} onChange={e => setWalkthroughDate(e.target.value)}
+            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Overall Result</label>
+          <select value={overallResult} onChange={e => setOverallResult(e.target.value)}
+            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: overallResult ? '#fff' : '#666', fontSize: '14px', boxSizing: 'border-box' }}>
+            <option value="">Select result...</option>
+            <option value="meets_standard">Meets Standard</option>
+            <option value="needs_improvement">Needs Improvement</option>
+            <option value="not_acceptable">Not Acceptable — Corrective Action Required</option>
+          </select>
+        </div>
+      </div>
+      <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#1e1e24', borderRadius: '8px', border: '1px solid #32323e' }}>
+        <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>
+          Progress: <span style={{ color: '#fff', fontWeight: '600' }}>{score} / {TOTAL_WALKTHROUGH_ITEMS}</span> items checked OK
+          &nbsp;·&nbsp; <span style={{ color: score === TOTAL_WALKTHROUGH_ITEMS ? '#4ade80' : '#fb923c' }}>{Math.round((score / TOTAL_WALKTHROUGH_ITEMS) * 100)}%</span>
+        </p>
+      </div>
+      {WALKTHROUGH_SECTIONS.map(sec => (
+        <div key={sec.section} style={{ marginBottom: '20px' }}>
+          <div style={{ background: '#1e3a5f', padding: '8px 14px', borderRadius: '6px', marginBottom: '8px' }}>
+            <p style={{ color: '#fff', fontWeight: '700', fontSize: '13px', margin: 0 }}>{sec.section}</p>
+          </div>
+          {sec.items.map(item => (
+            <div key={item.id} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <button onClick={() => toggleItem(item.id)}
+                  style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${items[item.id]?.ok ? '#16a34a' : '#3a3a48'}`, background: items[item.id]?.ok ? '#16a34a' : 'transparent', color: '#fff', cursor: 'pointer', flexShrink: 0, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+                  {items[item.id]?.ok ? '✓' : ''}
+                </button>
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 6px', lineHeight: '1.5' }}>
+                    <span style={{ color: '#888', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
+                    {item.text}
+                  </p>
+                  <input placeholder="Notes (optional)" value={items[item.id]?.notes || ''}
+                    onChange={e => setItemNote(item.id, e.target.value)}
+                    style={{ width: '100%', background: '#1e1e24', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '6px 10px', color: '#ddd', fontSize: '12px', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '6px' }}>Corrective Actions Needed</label>
+        <textarea value={correctiveActions} onChange={e => setCorrectiveActions(e.target.value)} rows={4}
+          placeholder="Describe any corrective actions needed..."
+          style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: "'Inter','system-ui',sans-serif", boxSizing: 'border-box' }} />
+      </div>
+      <button onClick={handleSubmit} disabled={saving}
+        style={{ width: '100%', padding: '12px', background: saving ? '#333' : '#1e3a5f', border: `1px solid ${saving ? '#444' : '#3b82f6'}`, borderRadius: '9px', color: saving ? '#666' : '#60a5fa', fontSize: '15px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
+        {saving ? 'Saving...' : 'Submit Walkthrough'}
+      </button>
+    </div>
+  );
+
+  if (viewingWalkthrough) return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <div>
+          <p style={{ color: '#fff', fontWeight: '600', margin: '0 0 4px' }}>
+            {new Date(viewingWalkthrough.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+          <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>By {viewingWalkthrough.submitted_by}</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => generateWalkthroughPDF(viewingWalkthrough)}
+            style={{ background: '#1a2a1a', border: '1px solid #2a5a2a', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+            ⬇ Export PDF
+          </button>
+          <button onClick={() => setViewingId(null)}
+            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '7px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}>
+            ← Back
+          </button>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        {resultBadge(viewingWalkthrough.overall_result)}
+        <span style={{ color: '#aaa', fontSize: '13px', alignSelf: 'center' }}>
+          Score: <strong style={{ color: '#fff' }}>{viewingWalkthrough.score} / {viewingWalkthrough.total_items}</strong>
+          ({Math.round((viewingWalkthrough.score / viewingWalkthrough.total_items) * 100)}%)
+        </span>
+      </div>
+      {WALKTHROUGH_SECTIONS.map(sec => (
+        <div key={sec.section} style={{ marginBottom: '16px' }}>
+          <div style={{ background: '#1e3a5f', padding: '7px 12px', borderRadius: '6px', marginBottom: '6px' }}>
+            <p style={{ color: '#fff', fontWeight: '700', fontSize: '12px', margin: 0 }}>{sec.section}</p>
+          </div>
+          {sec.items.map(item => {
+            const itemData = viewingWalkthrough.items?.[item.id] || {};
+            return (
+              <div key={item.id} style={{ display: 'flex', gap: '10px', padding: '7px 0', borderBottom: '1px solid #1a1a1a', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '14px', flexShrink: 0, width: '20px', color: itemData.ok ? '#4ade80' : '#f87171' }}>{itemData.ok ? '✓' : '✗'}</span>
+                <div style={{ flex: 1 }}>
+                  <p style={{ color: itemData.ok ? '#ddd' : '#f87171', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
+                    <span style={{ color: '#666', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
+                    {item.text}
+                  </p>
+                  {itemData.notes && <p style={{ color: '#888', fontSize: '12px', margin: '3px 0 0', fontStyle: 'italic' }}>Note: {itemData.notes}</p>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      {viewingWalkthrough.corrective_actions && (
+        <div style={{ marginTop: '16px', padding: '12px 14px', background: '#3a0f0f', border: '1px solid #7f1d1d', borderRadius: '8px' }}>
+          <p style={{ color: '#f87171', fontSize: '12px', fontWeight: '700', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Corrective Actions Needed</p>
+          <p style={{ color: '#fca5a5', fontSize: '14px', margin: 0, lineHeight: '1.6' }}>{viewingWalkthrough.corrective_actions}</p>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <p style={{ color: '#fff', fontWeight: '600', margin: 0, fontSize: '15px' }}>House Walkthroughs</p>
+        <button onClick={() => setShowForm(true)}
+          style={{ background: '#1e3a5f', border: '1px solid #3b82f6', color: '#60a5fa', padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+          + New Walkthrough
+        </button>
+      </div>
+      {loading ? <p style={{ color: '#888', fontSize: '14px' }}>Loading...</p> :
+        walkthroughs.length === 0 ? (
+          <div style={{ padding: '24px 0', textAlign: 'center' }}>
+            <p style={{ color: '#888', fontSize: '15px', margin: '0 0 4px' }}>No walkthroughs submitted yet.</p>
+            <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Click "+ New Walkthrough" to complete the first one.</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {walkthroughs.map(w => {
+              const pct = Math.round((w.score / w.total_items) * 100);
+              const fmtD = new Date(w.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+              return (
+                <div key={w.id} style={{ background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div>
+                      <p style={{ color: '#fff', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{fmtD}</p>
+                      <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>By {w.submitted_by}</p>
+                    </div>
+                    {resultBadge(w.overall_result)}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ flex: 1, height: '6px', background: '#2a2a2a', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626', borderRadius: '3px', transition: 'width 0.3s' }} />
+                    </div>
+                    <span style={{ color: '#aaa', fontSize: '12px', whiteSpace: 'nowrap' }}>{w.score}/{w.total_items} ({pct}%)</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => setViewingId(w.id)}
+                      style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
+                      View Full Report
+                    </button>
+                    <button onClick={() => generateWalkthroughPDF(w)}
+                      style={{ background: 'transparent', border: '1px solid #2a5a2a', color: '#4ade80', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
+                      ⬇ Export PDF
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )
+      }
+    </div>
+  );
+}
 
 function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
   const { isAdmin, isUpperManagement } = useUser();
