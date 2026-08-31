@@ -124,8 +124,7 @@ export default function EmailSettings() {
     setLoading(false);
   };
 
-  const toggleStaff = async (notifType, userId) => {
-    if (!canEdit) return;
+    const toggleStaff = async (notifType, userId) => {
     setSaving(notifType + userId);
 
     const current = settings[notifType] || [];
@@ -173,7 +172,6 @@ export default function EmailSettings() {
       <div style={s.header}>
         <p style={s.subtitle}>
           Configure which staff members receive each automated email notification.
-          {!canEdit && <span style={{ color: '#f87171', marginLeft: '8px' }}>View only — admin or upper management required to edit.</span>}
         </p>
       </div>
 
@@ -196,7 +194,9 @@ export default function EmailSettings() {
                 {staffList.length === 0 && (
                   <p style={{ color: '#666', fontSize: '14px' }}>No staff found.</p>
                 )}
-                {staffList.map(staff => {
+                                {staffList
+                  .filter(staff => canEdit || staff.id === currentUserId)
+                  .map(staff => {
                   const isAssigned = assigned.includes(staff.id);
                   const isSaving = saving === notif.id + staff.id;
                   return (
@@ -212,12 +212,12 @@ export default function EmailSettings() {
                       </div>
                       <button
                         onClick={() => toggleStaff(notif.id, staff.id)}
-                        disabled={!canEdit || isSaving}
+                                                disabled={isSaving}
                         style={{
                           ...s.toggle,
                           ...(isAssigned ? s.toggleOn : s.toggleOff),
-                          opacity: (!canEdit || isSaving) ? 0.5 : 1,
-                          cursor: canEdit ? 'pointer' : 'default',
+                                                    opacity: isSaving ? 0.5 : 1,
+                          cursor: 'pointer',
                         }}
                       >
                         {isSaving ? '...' : isAssigned ? '✓ On' : 'Off'}
