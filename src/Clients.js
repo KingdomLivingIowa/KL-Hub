@@ -1340,7 +1340,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     return () => clearTimeout(debounceTimer.current);
   }, [search]);
 
-  useEffect(() => { setCurrentPage(1); }, [statusFilter, viewMode]);
+    useEffect(() => { setCurrentPage(1); }, [statusFilter, viewMode]);
+
+  useEffect(() => {
+    if (isHouseManagerRole) setStatusFilter('Active');
+  }, [isHouseManagerRole]);
 
   useEffect(() => {
     if (!selected?.id) return;
@@ -1379,7 +1383,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     } else {
       query = query.in('status', ['Archived', 'Discharged']);
     }
-    if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('house_id', assignedHouseIds);
+        if (isHouseManagerRole && assignedHouseIds.length > 0) {
+      query = query.in('house_id', assignedHouseIds);
+      query = query.in('status', ['Active', 'Pending']);
+    }
     return query;
   }, [debouncedSearch, statusFilter, viewMode, isHouseManagerRole, assignedHouseIds]);
 
@@ -1521,9 +1528,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const hasMoreTimeline = timeline.length < timelineTotal;
 
-  const statusFilters = hasFullAccess
+    const statusFilters = hasFullAccess
     ? viewMode === 'operational' ? ['All', 'Accepted', 'Waiting List', 'Pending', 'Active'] : ['All', 'Archived', 'Discharged']
-    : ['All', 'Active', 'Pending'];
+    : ['Active'];
 
   const statusColor = (s) => {
     if (s === 'Applied') return { bg: '#1e3a2f', color: '#4ade80' };
@@ -2237,10 +2244,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
             <button onClick={() => { setViewMode('archive'); setStatusFilter('All'); setCurrentPage(1); }} style={{ ...st.filterBtn, ...(viewMode === 'archive' ? st.filterActive : {}) }}>Archive</button>
           </div>
         )}
-        <div style={st.filters}>
-          {statusFilters.map(f => (
-            <button key={f} onClick={() => setStatusFilter(f)} style={{ ...st.filterBtn, ...(statusFilter === f ? st.filterActive : {}) }}>{f}</button>
-          ))}
+                <div style={st.filters}>
+          {hasFullAccess ? (
+            statusFilters.map(f => (
+              <button key={f} onClick={() => setStatusFilter(f)} style={{ ...st.filterBtn, ...(statusFilter === f ? st.filterActive : {}) }}>{f}</button>
+            ))
+          ) : (
+            <button style={{ ...st.filterBtn, ...st.filterActive }}>Active</button>
+          )}
         </div>
       </div>
 
