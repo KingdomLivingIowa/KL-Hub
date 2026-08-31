@@ -86,7 +86,8 @@ const NOTIFICATION_TYPES = [
 ];
 
 export default function EmailSettings() {
-  const { isAdmin, isUpperManagement } = useUser();
+  const { isAdmin, isUpperManagement, user } = useUser();
+  const currentUserId = user?.id;
   const [staffList, setStaffList] = useState([]);
   const [settings, setSettings] = useState({}); // { notif_type: [user_id, ...] }
   const [loading, setLoading] = useState(true);
