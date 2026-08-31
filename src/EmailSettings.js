@@ -93,7 +93,8 @@ export default function EmailSettings() {
   const [saving, setSaving] = useState(null);
   const [toast, setToast] = useState(null);
 
-  const canEdit = isAdmin || isUpperManagement;
+    const canEdit = isAdmin || isUpperManagement;
+  const canEditOwn = true;
 
   useEffect(() => {
     fetchData();
