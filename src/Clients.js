@@ -2317,9 +2317,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       if (!file) return;
                       const ext = file.name.split('.').pop();
                       const path = `${selected.id}/profile.${ext}`;
-                      const { error } = await supabase.storage.from('profile-photos').upload(path, file, { upsert: true });
+                      const { error } = await supabase.storage.from('client-photos').upload(path, file, { upsert: true });
                       if (error) { alert('Upload failed: ' + error.message); return; }
-                      const { data } = supabase.storage.from('profile-photos').getPublicUrl(path);
+                      const { data } = supabase.storage.from('client-photos').getPublicUrl(path);
                       await supabase.from('clients').update({ photo_url: data.publicUrl + '?t=' + Date.now() }).eq('id', selected.id);
                       setSelected(prev => ({ ...prev, photo_url: data.publicUrl + '?t=' + Date.now() }));
                       setClients(prev => prev.map(c => c.id === selected.id ? { ...c, photo_url: data.publicUrl + '?t=' + Date.now() } : c));
