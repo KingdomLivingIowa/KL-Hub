@@ -916,7 +916,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
             )}
 
             <div style={s.tabs}>
-              {['residents', 'timeline', 'rooms', 'calendar', 'forms', 'messages'].map(t => (
+              {['residents', 'timeline', 'rooms', 'calendar', 'forms', 'chores', 'messages'].map(t => (
                 <button key={t} onClick={() => { setActiveTab(t); if (t === 'messages') setHouseChatUnread(prev => ({ ...prev, [selected.id]: 0 })); }}
                   style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}), position: 'relative' }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -1248,6 +1248,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   onReviewed={() => fetchFormsPendingCount(selected.id)} />
               )}
 
+              {activeTab === 'chores' && (
+                <ChoreRotationTab houseId={selected.id} houseName={selected.name} residents={residents} currentUser={user} />
+              )}
+
               {activeTab === 'messages' && (
                 canSeeHouseChat ? (
                   <HouseChatTab houseId={selected.id} houseName={selected.name} user={user} />
@@ -1399,6 +1403,415 @@ const s = {
   roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#26262e', borderRadius: '10px' },
   timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
 };
+
+// ── Chore Rotation Tab ────────────────────────────────────────────────────────
+const addDaysISO = (isoDate, days) => {
+  const d = new Date(isoDate + 'T12:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().split('T')[0];
+};
+const todayISO = () => new Date().toISOString().split('T')[0];
+
+function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
+  const [settings, setSettings] = useState(null);
+  const [chores, setChores] = useState([]);
+  const [exclusions, setExclusions] = useState([]); // [{ chore_id, client_id }]
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [rotating, setRotating] = useState(false);
+  const [newChoreName, setNewChoreName] = useState('');
+  const [newChoreDesc, setNewChoreDesc] = useState('');
+  const [addingChore, setAddingChore] = useState(false);
+  const [managingExclusionsFor, setManagingExclusionsFor] = useState(null);
+  const [reassigningId, setReassigningId] = useState(null);
+  const [periodDaysInput, setPeriodDaysInput] = useState(7);
+
+  const activeResidents = residents.filter(r => r.status === 'Active');
+  const residentName = (id) => activeResidents.find(r => r.id === id)?.full_name
+    || residents.find(r => r.id === id)?.full_name || 'Unknown';
+
+  const exclusionsMap = {};
+  exclusions.forEach(e => {
+    if (!exclusionsMap[e.chore_id]) exclusionsMap[e.chore_id] = new Set();
+    exclusionsMap[e.chore_id].add(e.client_id);
+  });
+
+  useEffect(() => { init(); }, [houseId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const init = async () => {
+    setLoading(true);
+    let { data: settingsRow } = await supabase.from('chore_rotation_settings').select('*').eq('house_id', houseId).maybeSingle();
+    if (!settingsRow) {
+      const { data: created } = await supabase.from('chore_rotation_settings')
+        .insert([{ house_id: houseId, period_days: 7, rotation_order: [], queue_pointer: 0 }])
+        .select().single();
+      settingsRow = created;
+    }
+    setPeriodDaysInput(settingsRow.period_days);
+
+    const { data: choresData } = await supabase.from('chores').select('*').eq('house_id', houseId).eq('active', true).order('created_at', { ascending: true });
+    const { data: exclusionsData } = await supabase.from('chore_exclusions').select('chore_id, client_id')
+      .in('chore_id', (choresData || []).map(c => c.id).length ? (choresData || []).map(c => c.id) : ['00000000-0000-0000-0000-000000000000']);
+
+    setChores(choresData || []);
+    setExclusions(exclusionsData || []);
+    setSettings(settingsRow);
+
+    await ensureCurrentPeriod(settingsRow, choresData || [], exclusionsData || []);
+    setLoading(false);
+  };
+
+  const buildExclusionsMap = (exclusionsData) => {
+    const m = {};
+    (exclusionsData || []).forEach(e => {
+      if (!m[e.chore_id]) m[e.chore_id] = new Set();
+      m[e.chore_id].add(e.client_id);
+    });
+    return m;
+  };
+
+  const generateRotationOrder = (existingOrder, activeRes) => {
+    const activeIds = activeRes.map(r => r.id);
+    const kept = (existingOrder || []).filter(id => activeIds.includes(id));
+    const newcomers = activeIds.filter(id => !kept.includes(id))
+      .sort((a, b) => (activeRes.find(r => r.id === a)?.full_name || '').localeCompare(activeRes.find(r => r.id === b)?.full_name || ''));
+    return [...kept, ...newcomers];
+  };
+
+  const ensureCurrentPeriod = async (settingsRow, choresData, exclusionsData) => {
+    const needsNewPeriod = !settingsRow.current_period_end || todayISO() >= settingsRow.current_period_end;
+    if (needsNewPeriod) {
+      await runRotation(settingsRow, choresData, exclusionsData);
+      return;
+    }
+    // Period is active — just load its assignments, and backfill any active chore that has no assignment yet
+    // (covers a chore added mid-period whose ad-hoc assignment didn't get created for some reason)
+    const { data: existingAssignments } = await supabase.from('chore_assignments').select('*')
+      .eq('house_id', houseId).eq('period_start', settingsRow.current_period_start);
+    const missing = choresData.filter(c => !(existingAssignments || []).some(a => a.chore_id === c.id));
+    let pointer = settingsRow.queue_pointer;
+    const order = settingsRow.rotation_order || [];
+    const usedThisPeriod = new Set((existingAssignments || []).filter(a => a.client_id).map(a => a.client_id));
+    const exMap = buildExclusionsMap(exclusionsData);
+    const newRows = [];
+    for (const chore of missing) {
+      const { assignee, nextPointer } = pickAssignee(order, pointer, usedThisPeriod, exMap[chore.id] || new Set());
+      pointer = nextPointer;
+      if (assignee) usedThisPeriod.add(assignee);
+      newRows.push({
+        house_id: houseId, chore_id: chore.id, client_id: assignee,
+        period_start: settingsRow.current_period_start, period_end: settingsRow.current_period_end,
+        status: 'pending', is_manual: false,
+      });
+    }
+    if (newRows.length) {
+      await supabase.from('chore_assignments').insert(newRows);
+      await supabase.from('chore_rotation_settings').update({ queue_pointer: pointer, updated_at: new Date().toISOString() }).eq('house_id', houseId);
+      setSettings(prev => ({ ...prev, queue_pointer: pointer }));
+    }
+    await loadAssignments(settingsRow.current_period_start);
+  };
+
+  // Walk the rotation queue (starting at `pointer`) for one eligible resident: not excluded from this
+  // chore, and not already used this period. Falls back to the least-used eligible resident if everyone
+  // eligible already has a chore this period (more chores than residents).
+  const pickAssignee = (order, pointer, usedThisPeriod, excludedSet, usageCounts = {}) => {
+    if (!order || order.length === 0) return { assignee: null, nextPointer: pointer };
+    const len = order.length;
+    const start = ((pointer % len) + len) % len;
+    const queue = [...order.slice(start), ...order.slice(0, start)];
+    let assignee = queue.find(id => !usedThisPeriod.has(id) && !excludedSet.has(id));
+    if (!assignee) {
+      const eligible = queue.filter(id => !excludedSet.has(id));
+      if (eligible.length > 0) {
+        assignee = eligible.reduce((best, id) => (usageCounts[id] || 0) < (usageCounts[best] || 0) ? id : best, eligible[0]);
+      }
+    }
+    const usedIndex = assignee ? order.indexOf(assignee) : -1;
+    const nextPointer = usedIndex >= 0 ? (usedIndex + 1) % len : pointer;
+    return { assignee: assignee || null, nextPointer };
+  };
+
+  const runRotation = async (settingsRow, choresData, exclusionsData) => {
+    setRotating(true);
+    const order = generateRotationOrder(settingsRow.rotation_order, activeResidents);
+    const exMap = buildExclusionsMap(exclusionsData);
+    const usedThisPeriod = new Set();
+    const usageCounts = {};
+    let pointer = settingsRow.queue_pointer || 0;
+    const assignedList = [];
+
+    for (const chore of choresData) {
+      const { assignee, nextPointer } = pickAssignee(order, pointer, usedThisPeriod, exMap[chore.id] || new Set(), usageCounts);
+      pointer = nextPointer;
+      if (assignee) {
+        usedThisPeriod.add(assignee);
+        usageCounts[assignee] = (usageCounts[assignee] || 0) + 1;
+      }
+      assignedList.push({ chore_id: chore.id, client_id: assignee });
+    }
+
+    const periodStart = settingsRow.current_period_end || todayISO();
+    const periodEnd = addDaysISO(periodStart, settingsRow.period_days);
+
+    await supabase.from('chore_rotation_settings').update({
+      rotation_order: order, queue_pointer: pointer,
+      current_period_start: periodStart, current_period_end: periodEnd,
+      updated_at: new Date().toISOString(),
+    }).eq('house_id', houseId);
+
+    if (assignedList.length) {
+      await supabase.from('chore_assignments').insert(assignedList.map(a => ({
+        house_id: houseId, chore_id: a.chore_id, client_id: a.client_id,
+        period_start: periodStart, period_end: periodEnd, status: 'pending', is_manual: false,
+      })));
+    }
+
+    const newSettings = { ...settingsRow, rotation_order: order, queue_pointer: pointer, current_period_start: periodStart, current_period_end: periodEnd };
+    setSettings(newSettings);
+    await loadAssignments(periodStart);
+    setRotating(false);
+  };
+
+  const loadAssignments = async (periodStart) => {
+    const { data } = await supabase.from('chore_assignments').select('*').eq('house_id', houseId).eq('period_start', periodStart);
+    setAssignments(data || []);
+  };
+
+  const handleAddChore = async () => {
+    if (!newChoreName.trim()) return;
+    setAddingChore(true);
+    const { data: newChore, error } = await supabase.from('chores')
+      .insert([{ house_id: houseId, name: newChoreName.trim(), description: newChoreDesc.trim() || null, active: true }])
+      .select().single();
+    if (error) { alert('Error adding chore: ' + error.message); setAddingChore(false); return; }
+
+    const updatedChores = [...chores, newChore];
+    setChores(updatedChores);
+    setNewChoreName(''); setNewChoreDesc('');
+
+    // If a period is already running, hand this chore to whoever's turn it is right now —
+    // everyone else keeps what they already have, and the schedule doesn't restart.
+    if (settings?.current_period_end && todayISO() < settings.current_period_end) {
+      const usedThisPeriod = new Set(assignments.filter(a => a.client_id).map(a => a.client_id));
+      const { assignee, nextPointer } = pickAssignee(settings.rotation_order, settings.queue_pointer, usedThisPeriod, exclusionsMap[newChore.id] || new Set());
+      await supabase.from('chore_assignments').insert([{
+        house_id: houseId, chore_id: newChore.id, client_id: assignee,
+        period_start: settings.current_period_start, period_end: settings.current_period_end,
+        status: 'pending', is_manual: false,
+      }]);
+      await supabase.from('chore_rotation_settings').update({ queue_pointer: nextPointer, updated_at: new Date().toISOString() }).eq('house_id', houseId);
+      setSettings(prev => ({ ...prev, queue_pointer: nextPointer }));
+      await loadAssignments(settings.current_period_start);
+    }
+    setAddingChore(false);
+  };
+
+  const handleRemoveChore = async (choreId) => {
+    if (!window.confirm('Remove this chore? It will stop being assigned in future rotations.')) return;
+    await supabase.from('chores').update({ active: false }).eq('id', choreId);
+    setChores(prev => prev.filter(c => c.id !== choreId));
+  };
+
+  const toggleExclusion = async (choreId, clientId) => {
+    const isExcluded = exclusionsMap[choreId]?.has(clientId);
+    if (isExcluded) {
+      await supabase.from('chore_exclusions').delete().eq('chore_id', choreId).eq('client_id', clientId);
+      setExclusions(prev => prev.filter(e => !(e.chore_id === choreId && e.client_id === clientId)));
+    } else {
+      await supabase.from('chore_exclusions').insert([{ chore_id: choreId, client_id: clientId }]);
+      setExclusions(prev => [...prev, { chore_id: choreId, client_id: clientId }]);
+    }
+  };
+
+  const handleReassign = async (assignmentId, newClientId) => {
+    await supabase.from('chore_assignments').update({ client_id: newClientId || null, is_manual: true }).eq('id', assignmentId);
+    setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, client_id: newClientId || null, is_manual: true } : a));
+    setReassigningId(null);
+  };
+
+  const toggleComplete = async (assignment) => {
+    const newStatus = assignment.status === 'completed' ? 'pending' : 'completed';
+    const completed_at = newStatus === 'completed' ? new Date().toISOString() : null;
+    await supabase.from('chore_assignments').update({ status: newStatus, completed_at }).eq('id', assignment.id);
+    setAssignments(prev => prev.map(a => a.id === assignment.id ? { ...a, status: newStatus, completed_at } : a));
+  };
+
+  const savePeriodDays = async () => {
+    const days = parseInt(periodDaysInput) || 7;
+    await supabase.from('chore_rotation_settings').update({ period_days: days, updated_at: new Date().toISOString() }).eq('house_id', houseId);
+    setSettings(prev => ({ ...prev, period_days: days }));
+  };
+
+  if (loading) return <p style={{ color: '#888', fontSize: '14px' }}>Loading chore rotation...</p>;
+
+  const fmtD = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+  return (
+    <div>
+      {/* Rotation settings */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '18px', padding: '12px 14px', background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px' }}>
+        <div>
+          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 2px' }}>
+            Current period: {fmtD(settings?.current_period_start)} → {fmtD(settings?.current_period_end)}
+          </p>
+          <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Rotates automatically when the period ends.</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ color: '#aaa', fontSize: '13px' }}>Rotate every</label>
+          <input type="number" min="1" value={periodDaysInput} onChange={e => setPeriodDaysInput(e.target.value)}
+            onBlur={savePeriodDays}
+            style={{ width: '56px', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '13px', textAlign: 'center' }} />
+          <span style={{ color: '#aaa', fontSize: '13px' }}>days</span>
+        </div>
+      </div>
+
+      {/* Chore list */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <p style={s.sectionLabel}>Chores ({chores.length})</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+          <input value={newChoreName} onChange={e => setNewChoreName(e.target.value)} placeholder="New chore name (e.g. Kitchen)"
+            style={{ flex: '1 1 200px', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+          <input value={newChoreDesc} onChange={e => setNewChoreDesc(e.target.value)} placeholder="Notes (optional)"
+            style={{ flex: '1 1 200px', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+          <button onClick={handleAddChore} disabled={addingChore || !newChoreName.trim()}
+            style={{ background: '#1e3a5f', border: '1px solid #3b82f6', color: '#60a5fa', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+            {addingChore ? 'Adding...' : '+ Add Chore'}
+          </button>
+        </div>
+        {chores.length === 0 ? (
+          <p style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>No chores set up yet — add one above.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {chores.map(chore => {
+              const excludedIds = exclusionsMap[chore.id] || new Set();
+              return (
+                <div key={chore.id} style={{ background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                    <div>
+                      <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{chore.name}</p>
+                      {chore.description && <p style={{ color: '#888', fontSize: '12px', margin: '2px 0 0' }}>{chore.description}</p>}
+                      {excludedIds.size > 0 && (
+                        <p style={{ color: '#fb923c', fontSize: '12px', margin: '4px 0 0' }}>
+                          Excluded: {[...excludedIds].map(residentName).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                      <button onClick={() => setManagingExclusionsFor(managingExclusionsFor === chore.id ? null : chore.id)}
+                        style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        Exclusions
+                      </button>
+                      <button onClick={() => handleRemoveChore(chore.id)}
+                        style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  {managingExclusionsFor === chore.id && (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #2a2a2a', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {activeResidents.length === 0 && <p style={{ color: '#666', fontSize: '12px' }}>No active residents.</p>}
+                      {activeResidents.map(r => {
+                        const isExcluded = excludedIds.has(r.id);
+                        return (
+                          <button key={r.id} onClick={() => toggleExclusion(chore.id, r.id)}
+                            style={{
+                              padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                              border: `1px solid ${isExcluded ? '#7f1d1d' : '#3a3a48'}`,
+                              background: isExcluded ? '#3a0f0f' : '#26262e',
+                              color: isExcluded ? '#f87171' : '#aaa',
+                            }}>
+                            {isExcluded ? '✗ ' : ''}{r.full_name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* This period's assignments */}
+      <div style={{ borderTop: '1px solid #222', paddingTop: '20px' }}>
+        <p style={s.sectionLabel}>This Period's Assignments</p>
+        {rotating ? (
+          <p style={{ color: '#888', fontSize: '14px' }}>Generating this period's assignments...</p>
+        ) : chores.length === 0 ? (
+          <p style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>Add a chore above to start the rotation.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {chores.map(chore => {
+              const assignment = assignments.find(a => a.chore_id === chore.id);
+              if (!assignment) return null;
+              const unfilled = !assignment.client_id;
+              const completed = assignment.status === 'completed';
+              return (
+                <div key={chore.id} style={{
+                  background: '#1c1c24', borderRadius: '10px', padding: '12px 14px',
+                  border: `1px solid ${unfilled ? '#7f1d1d' : '#32323e'}`,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                    <div>
+                      <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' }}>{chore.name}</p>
+                      {unfilled ? (
+                        <p style={{ color: '#f87171', fontSize: '13px', fontWeight: '600', margin: 0 }}>⚠ Unfilled — no eligible resident</p>
+                      ) : (
+                        <p style={{ color: '#ccc', fontSize: '13px', margin: 0 }}>{residentName(assignment.client_id)}</p>
+                      )}
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        {completed && <span style={{ background: '#14532d', color: '#4ade80', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>✓ Completed</span>}
+                        {assignment.is_manual && <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>Manually changed</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <button onClick={() => setReassigningId(reassigningId === assignment.id ? null : assignment.id)}
+                        style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        Reassign
+                      </button>
+                      <button onClick={() => toggleComplete(assignment)}
+                        style={{
+                          background: completed ? 'transparent' : '#1a3a1a',
+                          border: `1px solid ${completed ? '#3a3a48' : '#2a5a2a'}`,
+                          color: completed ? '#aaa' : '#4ade80',
+                          borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer',
+                        }}>
+                        {completed ? 'Mark Incomplete' : 'Mark Complete'}
+                      </button>
+                    </div>
+                  </div>
+                  {reassigningId === assignment.id && (
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #2a2a2a', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      <button onClick={() => handleReassign(assignment.id, null)}
+                        style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: '1px solid #7f1d1d', background: '#3a0f0f', color: '#f87171' }}>
+                        Unassign
+                      </button>
+                      {activeResidents.map(r => (
+                        <button key={r.id} onClick={() => handleReassign(assignment.id, r.id)}
+                          style={{
+                            padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
+                            border: `1px solid ${assignment.client_id === r.id ? '#3b82f6' : '#3a3a48'}`,
+                            background: assignment.client_id === r.id ? '#1e3a5f' : '#26262e',
+                            color: assignment.client_id === r.id ? '#60a5fa' : '#aaa',
+                          }}>
+                          {r.full_name}{exclusionsMap[chore.id]?.has(r.id) ? ' (excluded)' : ''}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ── Forms Tab (Walkthroughs / Move-Out / Overnight, split into clear sub-sections) ──
 function FormsTab({ houseId, houseName, currentUser, onReviewed }) {
