@@ -1244,15 +1244,8 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
               )}
 
                             {activeTab === 'forms' && (
-                <div>
-                  <div style={{ marginBottom: '28px' }}>
-                    <HouseWalkthroughTab houseId={selected.id} houseName={selected.name} currentUser={user} />
-                  </div>
-                  <div style={{ borderTop: '1px solid #222', paddingTop: '20px' }}>
-                    <MoveOutRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
-                    <OvernightRequestsTab houseId={selected.id} houseName={selected.name} onReviewed={() => fetchFormsPendingCount(selected.id)} />
-                  </div>
-                </div>
+                <FormsTab houseId={selected.id} houseName={selected.name} currentUser={user}
+                  onReviewed={() => fetchFormsPendingCount(selected.id)} />
               )}
 
               {activeTab === 'messages' && (
@@ -1406,6 +1399,66 @@ const s = {
   roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#26262e', borderRadius: '10px' },
   timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
 };
+
+// ── Forms Tab (Walkthroughs / Move-Out / Overnight, split into clear sub-sections) ──
+function FormsTab({ houseId, houseName, currentUser, onReviewed }) {
+  const [subTab, setSubTab] = useState('walkthroughs');
+  const [counts, setCounts] = useState({ moveOut: 0, overnight: 0 });
+
+  const fetchCounts = useCallback(async () => {
+    const [{ count: moveOutCount }, { count: overnightCount }] = await Promise.all([
+      supabase.from('move_out_requests').select('id', { count: 'exact', head: true }).eq('house_id', houseId).eq('status', 'pending'),
+      supabase.from('overnight_requests').select('id', { count: 'exact', head: true }).eq('house_id', houseId).eq('status', 'pending'),
+    ]);
+    setCounts({ moveOut: moveOutCount || 0, overnight: overnightCount || 0 });
+  }, [houseId]);
+
+  useEffect(() => { fetchCounts(); }, [houseId, fetchCounts]);
+
+  const handleReviewed = () => {
+    fetchCounts();
+    if (onReviewed) onReviewed();
+  };
+
+  const SUB_TABS = [
+    { id: 'walkthroughs', label: '📋 Walkthroughs' },
+    { id: 'moveout', label: '🚪 Move-Out Requests', count: counts.moveOut },
+    { id: 'overnight', label: '🌙 Overnight Passes', count: counts.overnight },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '22px', paddingBottom: '16px', borderBottom: '1px solid #2a2a2a', flexWrap: 'wrap' }}>
+        {SUB_TABS.map(t => (
+          <button key={t.id} onClick={() => setSubTab(t.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '7px',
+              padding: '9px 16px', borderRadius: '9px', border: 'none', cursor: 'pointer',
+              fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap',
+              background: subTab === t.id ? '#b22222' : '#1c1c24',
+              color: subTab === t.id ? '#fff' : '#999',
+              transition: 'background 0.15s, color 0.15s',
+            }}>
+            {t.label}
+            {!!t.count && (
+              <span style={{
+                background: subTab === t.id ? 'rgba(255,255,255,0.25)' : '#7f1d1d',
+                color: '#fff', fontSize: '11px', fontWeight: '700',
+                borderRadius: '10px', padding: '1px 7px', minWidth: '18px', textAlign: 'center',
+              }}>
+                {t.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'walkthroughs' && <HouseWalkthroughTab houseId={houseId} houseName={houseName} currentUser={currentUser} />}
+      {subTab === 'moveout' && <MoveOutRequestsTab houseId={houseId} houseName={houseName} onReviewed={handleReviewed} />}
+      {subTab === 'overnight' && <OvernightRequestsTab houseId={houseId} houseName={houseName} onReviewed={handleReviewed} />}
+    </div>
+  );
+}
 
 function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
   const [walkthroughs, setWalkthroughs] = useState([]);
