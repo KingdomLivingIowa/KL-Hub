@@ -219,10 +219,27 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   const posUAs = uaRecords.filter(u => u.event_name === 'Positive').length;
   const lastUA = uaRecords[0];
 
-  // Chore stats (last 4 weeks)
-  const recentChores = choreRecords.filter(c => new Date(c.created_at) >= fourWeeksAgo);
-  const choreCompleted = recentChores.filter(c => c.event_name === 'Completed').length;
-  const choreMissed = recentChores.filter(c => c.event_name === 'Not Completed').length;
+  // Chore stats (last 4 weeks) — daily rotation system: expected days vs. days actually checked off,
+  // across every chore_assignments period that overlaps the last 4 weeks.
+  const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0];
+  const todayStr = today.toISOString().split('T')[0];
+  let choreExpectedDays = 0;
+  let choreCompletedDays = 0;
+  (choreRecords || []).forEach(r => {
+    const windowStart = r.period_start > fourWeeksAgoStr ? r.period_start : fourWeeksAgoStr;
+    const windowEnd = r.period_end < todayStr ? r.period_end : todayStr;
+    if (windowEnd < windowStart) return;
+    const completedSet = new Set(r.completed_dates || []);
+    let d = new Date(windowStart + 'T12:00:00');
+    const last = new Date(windowEnd + 'T12:00:00');
+    while (d <= last) {
+      const iso = d.toISOString().split('T')[0];
+      choreExpectedDays++;
+      if (completedSet.has(iso)) choreCompletedDays++;
+      d.setDate(d.getDate() + 1);
+    }
+  });
+  const choreMissedDays = Math.max(choreExpectedDays - choreCompletedDays, 0);
 
   // Latest weekly check-in
   const fmtCheckInDate = checkIn?.created_at ? new Date(checkIn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
@@ -286,9 +303,9 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
 
   ${section('Chore Compliance (Last 4 Weeks)')}
   <div class="stat-grid">
-    <div class="stat-box"><div class="stat-num">${recentChores.length}</div><div class="stat-label">Total Chores</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${choreCompleted}</div><div class="stat-label">Completed</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:${choreMissed > 0 ? '#dc2626' : '#16a34a'};">${choreMissed}</div><div class="stat-label">Missed</div></div>
+    <div class="stat-box"><div class="stat-num">${choreExpectedDays}</div><div class="stat-label">Expected Days</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${choreCompletedDays}</div><div class="stat-label">Completed</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${choreMissedDays > 0 ? '#dc2626' : '#16a34a'};">${choreMissedDays}</div><div class="stat-label">Missed</div></div>
   </div>
 
   ${section('Latest Weekly Check-In')}
@@ -396,7 +413,7 @@ const STATUS_FLOW = {
   'Archived': ['Applied', 'Accepted', 'Waiting List', 'Pending', 'Active', 'Discharged', 'Denied'],
 };
 
-const ENTRY_TYPES = ['UA', 'Crisis', 'Infraction', 'Meeting', 'Chores', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
+const ENTRY_TYPES = ['UA', 'Crisis', 'Infraction', 'Meeting', 'Mood Check-In', 'Check-In', 'General Note', 'Jobs Applied For', 'Weekly Check-In'];
 
 const PRIMARY_TABS = ['overview', 'payments', 'UAs', 'meetings', 'chores', 'medications', 'timeline'];
 const MORE_TABS = ['stays', 'forms', 'application', 'documents', 'notes'];
@@ -1353,7 +1370,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         (payload) => {
           setTimeline(prev => prev.some(e => e.id === payload.new.id) ? prev : [payload.new, ...prev]);
           setTimelineTotal(prev => prev + 1);
-          if (['UA', 'Meeting', 'Chores'].includes(payload.new.entry_type)) {
+          if (['UA', 'Meeting'].includes(payload.new.entry_type)) {
             fetchFullHistory(selected.id);
           }
         })
@@ -1499,11 +1516,33 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   };
 
   const fetchFullHistory = async (clientId) => {
-    const { data } = await supabase.from('client_timeline').select('*').eq('client_id', clientId).in('entry_type', ['UA', 'Meeting', 'Chores']).order('created_at', { ascending: false });
+    const { data } = await supabase.from('client_timeline').select('*').eq('client_id', clientId).in('entry_type', ['UA', 'Meeting']).order('created_at', { ascending: false });
     const all = data || [];
     setUaRecords(all.filter(e => e.entry_type === 'UA'));
     setMeetingRecords(all.filter(e => e.entry_type === 'Meeting'));
-    setChoreRecords(all.filter(e => e.entry_type === 'Chores'));
+    fetchChoreHistory(clientId);
+  };
+
+  // Chore rotation history — reads the rotation system's own tables instead of the timeline.
+  const fetchChoreHistory = async (clientId) => {
+    const { data: assignData } = await supabase.from('chore_assignments')
+      .select('*, chores(name)')
+      .eq('client_id', clientId)
+      .order('period_start', { ascending: false })
+      .limit(30);
+    const assignments = assignData || [];
+    let completions = [];
+    if (assignments.length > 0) {
+      const { data: compData } = await supabase.from('chore_completions')
+        .select('assignment_id, completed_date')
+        .in('assignment_id', assignments.map(a => a.id));
+      completions = compData || [];
+    }
+    setChoreRecords(assignments.map(a => ({
+      ...a,
+      chore_name: a.chores?.name || 'Chore',
+      completed_dates: completions.filter(c => c.assignment_id === a.id).map(c => c.completed_date),
+    })));
   };
 
   const fetchStays = async (clientId) => {
@@ -1904,8 +1943,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       client_id: selected.id, entry_type: entryType, author: entryForm.author,
       notes: entryType === 'Weekly Check-In' ? (entryForm.wci_reflection || null) : (entryForm.notes || null),
       severity: entryType === 'Crisis' ? entryForm.severity : entryType === 'Infraction' ? entryForm.severity : null,
-      event_name: entryType === 'UA' ? entryForm.ua_result : entryType === 'Chores' ? entryForm.chore_status : null,
-      meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : entryType === 'Chores' ? entryForm.chore_name : null,
+      event_name: entryType === 'UA' ? entryForm.ua_result : null,
+      meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
       reflection_data: reflectionData,
       latitude: entryForm.latitude ? parseFloat(entryForm.latitude) : null,
@@ -2172,48 +2211,43 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     );
   };
 
-  const ChoreWeek = ({ weekStart, entries }) => {
-    const key = weekStart.toISOString();
-    const isExpanded = expandedWeeks[key];
-    const isThisWeek = getWeekStart(new Date()).toISOString() === key;
-    const completed = entries.filter(c => c.event_name === 'Completed').length;
-    const notCompleted = entries.filter(c => c.event_name === 'Not Completed').length;
-    const partial = entries.filter(c => c.event_name === 'Partial').length;
-    const total = entries.length;
-    const allDone = total > 0 && notCompleted === 0 && partial === 0;
+  // Chore rotation history for a client — one card per assignment period, sourced from
+  // chore_assignments / chore_completions (the rotation system), not the timeline.
+  const choreDayList = (start, end) => {
+    const days = [];
+    let d = new Date(start + 'T12:00:00');
+    const last = new Date(end + 'T12:00:00');
+    while (d <= last) { days.push(d.toISOString().split('T')[0]); d.setDate(d.getDate() + 1); }
+    return days;
+  };
+
+  const ChorePeriodCard = ({ record }) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const elapsedEnd = record.period_end < todayStr ? record.period_end : todayStr;
+    const days = elapsedEnd >= record.period_start ? choreDayList(record.period_start, elapsedEnd) : [];
+    const completedSet = new Set(record.completed_dates);
+    const completedCount = days.filter(d => completedSet.has(d)).length;
+    const isCurrent = record.period_end >= todayStr;
     return (
-      <div style={{ background: '#1c1c24', borderRadius: '10px', border: `1px solid ${isThisWeek ? '#1a3a2a' : '#333'}`, marginBottom: '10px', overflow: 'hidden' }}>
-        <div onClick={() => toggleWeek(key)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '14px', color: '#ddd', fontWeight: '500' }}>{formatWeekLabel(weekStart)}</span>
-            {isThisWeek && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>This week</span>}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {completed > 0 && <span style={{ fontSize: '14px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>{completed} done</span>}
-              {partial > 0 && <span style={{ fontSize: '14px', padding: '2px 7px', borderRadius: '10px', background: '#3a2d1e', color: '#fb923c' }}>{partial} partial</span>}
-              {notCompleted > 0 && <span style={{ fontSize: '14px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171' }}>{notCompleted} missed</span>}
-            </div>
-            <span style={{ color: allDone ? '#4ade80' : notCompleted > 0 ? '#f87171' : '#fb923c', fontSize: '14px' }}>{allDone ? '✓' : '✗'}</span>
-            <span style={{ color: '#bbb', fontSize: '14px' }}>{isExpanded ? '▲' : '▼'}</span>
-          </div>
+      <div style={{ background: '#1c1c24', borderRadius: '10px', border: `1px solid ${isCurrent ? '#1a3a2a' : '#333'}`, marginBottom: '10px', padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '6px' }}>
+          <span style={{ fontSize: '14px', color: '#fff', fontWeight: '600' }}>{record.chore_name}</span>
+          {isCurrent && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>Current</span>}
         </div>
-        {isExpanded && (
-          <div style={{ borderTop: '1px solid #32323e', padding: '10px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {entries.map(c => {
-              const col = choreStatusColor(c.event_name);
-              return (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, flexWrap: 'wrap' }}>
-                    <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '14px' }}>{c.event_name}</span>
-                    {c.meeting_name && <span style={{ fontSize: '14px', color: '#ddd', fontWeight: '500' }}>{c.meeting_name}</span>}
-                    <span style={{ fontSize: '14px', color: '#bbb' }}>by {c.author}</span>
-                    {c.notes && <span style={{ fontSize: '14px', color: '#999' }}>— {c.notes}</span>}
-                  </div>
-                  <span style={{ fontSize: '14px', color: '#bbb', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(c.created_at)}</span>
-                </div>
-              );
-            })}
+        <p style={{ fontSize: '14px', color: '#999', margin: '0 0 8px' }}>
+          {formatDateShort(record.period_start)} – {formatDateShort(record.period_end)} · {completedCount}/{days.length} days done so far
+        </p>
+        {days.length > 0 && (
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+            {days.map(d => (
+              <span key={d} title={d} style={{
+                width: '22px', height: '22px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '12px', fontWeight: '700',
+                background: completedSet.has(d) ? '#1e3a2f' : '#3a1e1e', color: completedSet.has(d) ? '#4ade80' : '#f87171',
+              }}>
+                {completedSet.has(d) ? '✓' : '✗'}
+              </span>
+            ))}
           </div>
         )}
       </div>
@@ -2693,30 +2727,27 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               )}
 
               {activeTab === 'chores' && (
-                <Card title="Chore Records" full>
-                  {choreRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No chore records yet.</p> : (
+                <Card title="Chore Rotation" full>
+                  {choreRecords.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No chore assignments yet — set up the rotation from the house's Chores tab.</p> : (
                     <>
                       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                        {['Completed', 'Not Completed', 'Partial'].map(status => {
-                          const count = choreRecords.filter(c => c.event_name === status).length;
-                          if (count === 0) return null;
-                          const col = choreStatusColor(status);
-                          return (
-                            <div key={status} style={{ background: col.bg, borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                              <span style={{ color: col.color, fontSize: '18px', fontWeight: '700' }}>{count}</span>
-                              <span style={{ color: col.color, fontSize: '14px', opacity: 0.8 }}>{status}</span>
-                            </div>
-                          );
-                        })}
-                        <div style={{ background: '#26262e', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <span style={{ color: '#fff', fontSize: '18px', fontWeight: '700' }}>{choreRecords.length}</span>
-                          <span style={{ color: '#bbb', fontSize: '14px' }}>Total</span>
+                        <div style={{ background: '#1e2d3a', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#60a5fa', fontSize: '18px', fontWeight: '700' }}>
+                            {choreRecords.filter(r => r.period_end >= new Date().toISOString().split('T')[0]).length}
+                          </span>
+                          <span style={{ color: '#60a5fa', fontSize: '14px', opacity: 0.8 }}>Current Chore(s)</span>
+                        </div>
+                        <div style={{ background: '#1e3a2f', borderRadius: '8px', padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ color: '#4ade80', fontSize: '18px', fontWeight: '700' }}>
+                            {choreRecords.reduce((sum, r) => sum + r.completed_dates.length, 0)}
+                          </span>
+                          <span style={{ color: '#4ade80', fontSize: '14px', opacity: 0.8 }}>Total Days Completed</span>
                         </div>
                       </div>
-                      <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 12px 0' }}>Current week expands automatically. ✓ = all chores completed that week.</p>
-                      {groupByWeek(choreRecords).map(({ weekStart, entries }) => (
-                        <ChoreWeek key={weekStart.toISOString()} weekStart={weekStart} entries={entries} />
-                      ))}
+                      <p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 12px 0' }}>
+                        Chores are assigned and rotated from the house's Chores tab. Residents check theirs off daily from the portal.
+                      </p>
+                      {choreRecords.map(r => <ChorePeriodCard key={r.id} record={r} />)}
                     </>
                   )}
                 </Card>
@@ -2787,24 +2818,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <label style={sf.label}>Meeting Name</label>
                           <input value={entryForm.meeting_name} onChange={e => setEntryForm(p => ({ ...p, meeting_name: e.target.value }))} style={sf.input} placeholder="e.g. New Beginnings, Ground Zero" />
                         </div>
-                      )}
-                      {entryType === 'Chores' && (
-                        <>
-                          <div style={{ marginBottom: '12px' }}>
-                            <label style={sf.label}>Chore Name</label>
-                            <input value={entryForm.chore_name} onChange={e => setEntryForm(p => ({ ...p, chore_name: e.target.value }))} style={sf.input} placeholder="e.g. Kitchen, Bathroom, Yard" />
-                          </div>
-                          <div style={{ marginBottom: '12px' }}>
-                            <label style={sf.label}>Status</label>
-                            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                              {['Completed', 'Not Completed', 'Partial'].map(opt => (
-                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
-                                  <input type="radio" name="chore_status" value={opt} checked={entryForm.chore_status === opt} onChange={() => setEntryForm(p => ({ ...p, chore_status: opt }))} />{opt}
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        </>
                       )}
                       {entryType === 'Mood Check-In' && (
                         <div style={{ marginBottom: '12px' }}>

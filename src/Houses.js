@@ -1417,6 +1417,7 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
   const [chores, setChores] = useState([]);
   const [exclusions, setExclusions] = useState([]); // [{ chore_id, client_id }]
   const [assignments, setAssignments] = useState([]);
+  const [completionCounts, setCompletionCounts] = useState({}); // assignment_id -> days checked off (read-only)
   const [loading, setLoading] = useState(true);
   const [rotating, setRotating] = useState(false);
   const [newChoreName, setNewChoreName] = useState('');
@@ -1575,7 +1576,9 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
 
   const loadAssignments = async (periodStart) => {
     const { data } = await supabase.from('chore_assignments').select('*').eq('house_id', houseId).eq('period_start', periodStart);
-    setAssignments(data || []);
+    const rows = data || [];
+    setAssignments(rows);
+    await loadCompletionCounts(rows.map(a => a.id));
   };
 
   const handleAddChore = async () => {
@@ -1630,11 +1633,14 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
     setReassigningId(null);
   };
 
-  const toggleComplete = async (assignment) => {
-    const newStatus = assignment.status === 'completed' ? 'pending' : 'completed';
-    const completed_at = newStatus === 'completed' ? new Date().toISOString() : null;
-    await supabase.from('chore_assignments').update({ status: newStatus, completed_at }).eq('id', assignment.id);
-    setAssignments(prev => prev.map(a => a.id === assignment.id ? { ...a, status: newStatus, completed_at } : a));
+  // Read-only: how many days each assignment has been checked off by the resident so far this
+  // period. Staff can see progress but never mark chores done — only the resident does that.
+  const loadCompletionCounts = async (assignmentIds) => {
+    if (!assignmentIds.length) { setCompletionCounts({}); return; }
+    const { data } = await supabase.from('chore_completions').select('assignment_id').in('assignment_id', assignmentIds);
+    const counts = {};
+    (data || []).forEach(c => { counts[c.assignment_id] = (counts[c.assignment_id] || 0) + 1; });
+    setCompletionCounts(counts);
   };
 
   const savePeriodDays = async () => {
@@ -1749,7 +1755,11 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
               const assignment = assignments.find(a => a.chore_id === chore.id);
               if (!assignment) return null;
               const unfilled = !assignment.client_id;
-              const completed = assignment.status === 'completed';
+              const doneCount = completionCounts[assignment.id] || 0;
+              const elapsedEnd = settings?.current_period_end && settings.current_period_end < todayISO() ? settings.current_period_end : todayISO();
+              const totalDaysSoFar = settings?.current_period_start
+                ? Math.max(Math.round((new Date(elapsedEnd + 'T12:00:00') - new Date(settings.current_period_start + 'T12:00:00')) / 86400000) + 1, 0)
+                : 0;
               return (
                 <div key={chore.id} style={{
                   background: '#1c1c24', borderRadius: '10px', padding: '12px 14px',
@@ -1764,7 +1774,11 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                         <p style={{ color: '#ccc', fontSize: '13px', margin: 0 }}>{residentName(assignment.client_id)}</p>
                       )}
                       <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        {completed && <span style={{ background: '#14532d', color: '#4ade80', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>✓ Completed</span>}
+                        {!unfilled && (
+                          <span style={{ background: '#1e2d3a', color: '#60a5fa', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>
+                            {doneCount}/{totalDaysSoFar} days done
+                          </span>
+                        )}
                         {assignment.is_manual && <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>Manually changed</span>}
                       </div>
                     </div>
@@ -1772,15 +1786,6 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                       <button onClick={() => setReassigningId(reassigningId === assignment.id ? null : assignment.id)}
                         style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Reassign
-                      </button>
-                      <button onClick={() => toggleComplete(assignment)}
-                        style={{
-                          background: completed ? 'transparent' : '#1a3a1a',
-                          border: `1px solid ${completed ? '#3a3a48' : '#2a5a2a'}`,
-                          color: completed ? '#aaa' : '#4ade80',
-                          borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer',
-                        }}>
-                        {completed ? 'Mark Incomplete' : 'Mark Complete'}
                       </button>
                     </div>
                   </div>
