@@ -512,6 +512,7 @@ function Houses({ onOpenClient }) {
       total_beds: parseInt(houseEditForm.total_beds) || selected.total_beds,
       house_manager: houseEditForm.house_manager || null,
       phone: houseEditForm.phone || null,
+      door_code: houseEditForm.door_code || null,
     }).eq('id', selected.id);
     if (error) { alert('Error saving: ' + error.message); return; }
     setSelected(prev => ({ ...prev, ...houseEditForm, total_beds: parseInt(houseEditForm.total_beds) || prev.total_beds }));
@@ -860,10 +861,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   <span style={{ ...s.typeBadge, background: '#2d2d1e', color: '#facc15' }}>{selected.pending_count || 0} pending</span>
                   <span style={{ ...s.typeBadge, background: '#1e3a2f', color: '#4ade80' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
                   {selected.house_manager && <span style={{ ...s.typeBadge, background: '#26262e', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
+                  {selected.door_code && <span style={{ ...s.typeBadge, background: '#3a2d1e', color: '#fb923c' }}>🔑 Door: {selected.door_code}</span>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => { setHouseEditForm({ type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '' }); setEditingHouse(true); }}
+                <button onClick={() => { setHouseEditForm({ type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '', door_code: selected.door_code || '' }); setEditingHouse(true); }}
                   style={{ background: '#26262e', border: '1px solid #32323e', color: '#ccc', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                   ✏ Edit House
                 </button>
@@ -899,6 +901,12 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                     <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Manager Phone</label>
                     <input value={houseEditForm.phone} onChange={e => setHouseEditForm(p => ({ ...p, phone: e.target.value }))}
                       placeholder="Phone number"
+                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Door Code</label>
+                    <input value={houseEditForm.door_code} onChange={e => setHouseEditForm(p => ({ ...p, door_code: e.target.value }))}
+                      placeholder="e.g. 1234#"
                       style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
