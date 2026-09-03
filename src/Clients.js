@@ -1590,13 +1590,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     return { bg: '#333', color: '#aaa' };
   };
 
-  const choreStatusColor = (status) => {
-    if (status === 'Completed') return { bg: '#1e3a2f', color: '#4ade80' };
-    if (status === 'Not Completed') return { bg: '#3a1e1e', color: '#f87171' };
-    if (status === 'Partial') return { bg: '#3a2d1e', color: '#fb923c' };
-    return { bg: '#333', color: '#aaa' };
-  };
-
   const entryColor = (type) => {
     if (type === 'House Check-In') return '#7F77DD';
     if (type === 'Batch UA') return '#1D9E75';
