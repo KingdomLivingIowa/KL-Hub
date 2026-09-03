@@ -173,7 +173,7 @@ const styles = {
     borderRadius: '4px',
   },
   subtitle: {
-    color: '#a0a0a0',
+    color: '#52525b',
     fontSize: '14px',
     textAlign: 'center',
     margin: '0 0 36px 0',

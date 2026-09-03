@@ -817,7 +817,7 @@ function Dashboard({ user }) {
 const ds = {
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' },
   statCard: { backgroundColor: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222', border: '1px solid #c9c9cf' },
-  statLabel: { color: '#a0a0a0', fontSize: '13px', margin: '0 0 8px 0' },
+  statLabel: { color: '#18181b', fontSize: '13px', margin: '0 0 8px 0' },
   statValue: { color: '#18181b', fontSize: '32px', fontWeight: '700', margin: '0' },
   contentGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' },
 };
