@@ -130,7 +130,7 @@ function HouseWeeklyReflectionForm({ entryForm, setEntryForm }) {
         <label style={s.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
         <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
           onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#71717a', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#52525b', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
       </div>
@@ -160,14 +160,14 @@ function HouseWeeklyReflectionCard({ entry }) {
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '14px', color: '#71717a' }}>Mood:</span>
+          <span style={{ fontSize: '14px', color: '#52525b' }}>Mood:</span>
           <span style={{ fontSize: '14px', padding: '2px 8px', borderRadius: '20px', background: '#ffedd5', color: '#c2410c', fontWeight: '500' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
-      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
-      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
-      {entry.notes && <div><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#52525b', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '14px', color: '#52525b', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#52525b', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '14px', color: '#52525b', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#52525b', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '14px', color: '#52525b', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '14px', color: '#52525b', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '14px', color: '#52525b', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -662,7 +662,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     if (type === 'House Meeting Notes') return '#65a30d';
     if (type === 'Supplies/Inventory') return '#c026d3';
     if (type === 'Maintenance Update') return '#2563eb';
-    return '#71717a';
+    return '#52525b';
   };
 
   const severityColor = (sv) => {
@@ -674,7 +674,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
   const statusColor = (st) => {
     if (st === 'Active') return { bg: '#f3e8ff', color: '#9333ea' };
     if (st === 'Pending') return { bg: '#ffedd5', color: '#ca8a04' };
-    return { bg: '#e4e4e7', color: '#71717a' };
+    return { bg: '#c9c9cf', color: '#52525b' };
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -688,7 +688,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
       <div style={{ background: '#ffffff', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '14px', color: '#71717a', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          <span style={{ fontSize: '14px', color: '#52525b', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #dbeafe', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
@@ -716,10 +716,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {lastRefreshed && (
-            <span style={{ fontSize: '14px', color: '#71717a' }}>{formatRefreshed()}</span>
+            <span style={{ fontSize: '14px', color: '#52525b' }}>{formatRefreshed()}</span>
           )}
           <button onClick={() => loadAllData(true)} disabled={refreshing}
-            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: refreshing ? '#71717a' : '#71717a', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #b8b8bf', color: refreshing ? '#52525b' : '#52525b', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
             {refreshing ? '↻ Refreshing...' : '↻ Refresh'}
           </button>
           <div style={s.viewToggle}>
@@ -748,10 +748,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
         </div>
       )}
 
-      {loading ? <p style={{ color: '#71717a' }}>Loading...</p> : (
+      {loading ? <p style={{ color: '#52525b' }}>Loading...</p> : (
         <>
           {mainView === 'houses' && (
-            houses.length === 0 ? <p style={{ color: '#71717a' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
+            houses.length === 0 ? <p style={{ color: '#52525b' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
               <div style={s.houseGrid}>
                 {houses.map(house => (
                   <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
@@ -806,15 +806,15 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div>
                               <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
-                              <p style={{ color: '#6b7280', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
+                              <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
                           </div>
                           <span style={{ flex: 1 }}>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </span>
-                          <span style={{ flex: 1, color: '#71717a', fontSize: '14px' }}>{r.start_date || '—'}</span>
+                          <span style={{ flex: 1, color: '#52525b', fontSize: '14px' }}>{r.start_date || '—'}</span>
                           <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#dc2626' : '#16a34a', fontSize: '14px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
-                          <span style={{ flex: 1, color: '#71717a', fontSize: '14px' }}>{r.phone || '—'}</span>
+                          <span style={{ flex: 1, color: '#52525b', fontSize: '14px' }}>{r.phone || '—'}</span>
                           <div style={{ flex: 2 }} onClick={e => e.stopPropagation()}>
                             {editingNotes.hasOwnProperty(r.id) ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -823,13 +823,13 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                   onBlur={() => saveNotes(r.id)}
                                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes(r.id); } }}
                                   rows={2} placeholder="Add a note..."
-                                  style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bd', borderRadius: '6px', padding: '6px 8px', color: '#18181b', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
-                                <span style={{ color: '#71717a', fontSize: '13px' }}>Enter to save · Shift+Enter for new line</span>
+                                  style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #8a8a92', borderRadius: '6px', padding: '6px 8px', color: '#18181b', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
+                                <span style={{ color: '#52525b', fontSize: '13px' }}>Enter to save · Shift+Enter for new line</span>
                               </div>
                             ) : (
                               <div onClick={e => { e.stopPropagation(); startEditingNotes(r.id, r.staff_notes); }}
-                                style={{ color: r.staff_notes ? '#71717a' : '#6b7280', fontSize: '14px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = '#6b7280'}
+                                style={{ color: r.staff_notes ? '#52525b' : '#4b5563', fontSize: '14px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#4b5563'}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
                                 {r.staff_notes || <span style={{ fontStyle: 'italic' }}>Click to add notes...</span>}
                               </div>
@@ -841,7 +841,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   </div>
                 );
               })}
-              {allResidents.length === 0 && <p style={{ color: '#71717a' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
+              {allResidents.length === 0 && <p style={{ color: '#52525b' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
             </div>
           )}
         </>
@@ -860,13 +860,13 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   <span style={{ ...s.typeBadge, background: '#f3e8ff', color: '#9333ea' }}>{selected.occupied_beds || 0} active</span>
                   <span style={{ ...s.typeBadge, background: '#ffedd5', color: '#ca8a04' }}>{selected.pending_count || 0} pending</span>
                   <span style={{ ...s.typeBadge, background: '#dcfce7', color: '#16a34a' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
-                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#f7f7f9', color: '#71717a' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
+                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#f7f7f9', color: '#52525b' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
                   {selected.door_code && <span style={{ ...s.typeBadge, background: '#ffedd5', color: '#c2410c' }}>🔑 Door: {selected.door_code}</span>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button onClick={() => { setHouseEditForm({ type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '', door_code: selected.door_code || '' }); setEditingHouse(true); }}
-                  style={{ background: '#f7f7f9', border: '1px solid #e4e4e8', color: '#52525b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  style={{ background: '#f7f7f9', border: '1px solid #c9c9cf', color: '#52525b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                   ✏ Edit House
                 </button>
                 <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
@@ -874,40 +874,40 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
             </div>
 
             {editingHouse && (
-              <div style={{ background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px' }}>
                 <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Edit House Details</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Type</label>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Type</label>
                     <select value={houseEditForm.type} onChange={e => setHouseEditForm(p => ({ ...p, type: e.target.value }))}
-                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px' }}>
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px' }}>
                       <option value="Men">Men</option>
                       <option value="Women">Women</option>
                       <option value="Co-ed">Co-ed</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Total Beds</label>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Total Beds</label>
                     <input type="number" value={houseEditForm.total_beds} onChange={e => setHouseEditForm(p => ({ ...p, total_beds: e.target.value }))}
-                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>House Manager</label>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>House Manager</label>
                     <input value={houseEditForm.house_manager} onChange={e => setHouseEditForm(p => ({ ...p, house_manager: e.target.value }))}
                       placeholder="Manager name"
-                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Manager Phone</label>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Manager Phone</label>
                     <input value={houseEditForm.phone} onChange={e => setHouseEditForm(p => ({ ...p, phone: e.target.value }))}
                       placeholder="Phone number"
-                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Door Code</label>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Door Code</label>
                     <input value={houseEditForm.door_code} onChange={e => setHouseEditForm(p => ({ ...p, door_code: e.target.value }))}
                       placeholder="e.g. 1234#"
-                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -916,7 +916,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                     Save Changes
                   </button>
                   <button onClick={() => setEditingHouse(false)}
-                    style={{ background: 'transparent', border: '1px solid #d4d4d8', color: '#71717a', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                    style={{ background: 'transparent', border: '1px solid #b0b0b7', color: '#52525b', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </div>
@@ -946,7 +946,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
               {activeTab === 'residents' && (
                 <>
                   <p style={s.sectionLabel}>Current residents ({residents.length})</p>
-                  {residents.length === 0 ? <p style={{ color: '#6b7280', fontSize: '14px' }}>No current residents.</p> : (
+                  {residents.length === 0 ? <p style={{ color: '#4b5563', fontSize: '14px' }}>No current residents.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
                         <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }} onClick={() => { setSelected(null); openClientProfile(r); }}>
@@ -959,10 +959,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
                           {r.status === 'Pending' && (
-                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e4e8' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #c9c9cf' }} onClick={e => e.stopPropagation()}>
                               {r.expected_move_in_date && (
                                 <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#ffedd5', borderRadius: '6px', border: '1px solid #f3f3e7' }}>
-                                  <span style={{ fontSize: '14px', color: '#71717a' }}>Expected move-in: </span>
+                                  <span style={{ fontSize: '14px', color: '#52525b' }}>Expected move-in: </span>
                                   <span style={{ fontSize: '14px', color: '#ca8a04', fontWeight: '600' }}>
                                     {new Date(r.expected_move_in_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                   </span>
@@ -994,7 +994,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   {selected.notes && (
                     <>
                       <p style={{ ...s.sectionLabel, marginTop: '20px' }}>House notes</p>
-                      <p style={{ color: '#71717a', fontSize: '14px', lineHeight: '1.6' }}>{selected.notes}</p>
+                      <p style={{ color: '#52525b', fontSize: '14px', lineHeight: '1.6' }}>{selected.notes}</p>
                     </>
                   )}
                 </>
@@ -1019,7 +1019,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Severity *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
-                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
@@ -1031,7 +1031,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Result *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Pass', 'Fail'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="inspection_result" value={opt} checked={entryForm.inspection_result === opt} onChange={() => setEntryForm(p => ({ ...p, inspection_result: opt }))} />{opt}
                               </label>
                             ))}
@@ -1043,7 +1043,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Status</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Reported', 'In Progress', 'Completed'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="maintenance_status" value={opt} checked={entryForm.maintenance_status === opt} onChange={() => setEntryForm(p => ({ ...p, maintenance_status: opt }))} />{opt}
                               </label>
                             ))}
@@ -1069,7 +1069,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             <label style={s.label}>Previously submitted?</label>
                             <div style={{ display: 'flex', gap: '16px' }}>
                               {['Yes', 'No'].map(opt => (
-                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                   <input type="radio" name="prev_submitted" value={opt} checked={entryForm.previously_submitted === opt} onChange={() => setEntryForm(p => ({ ...p, previously_submitted: opt }))} />{opt}
                                 </label>
                               ))}
@@ -1087,11 +1087,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Residents</label>
                           {residents.map(r => (
-                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e4e4e8' }}>
+                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #c9c9cf' }}>
                               <span style={{ color: '#3f3f46', fontSize: '14px' }}>{r.full_name}</span>
                               <div style={{ display: 'flex', gap: '12px' }}>
                                 {['Here', 'Not Here'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                     <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -1104,11 +1104,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Results</label>
                           {residents.map(r => (
-                            <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #e4e4e8' }}>
+                            <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #c9c9cf' }}>
                               <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>{r.full_name}</p>
                               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                     <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -1122,7 +1122,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Attendance</label>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                             {residents.map(r => (
-                              <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'} onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />{r.full_name}
                               </label>
                             ))}
@@ -1143,7 +1143,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <button onClick={saveEntry} style={s.saveBtn}>Save Entry</button>
                     </div>
                   )}
-                  {timeline.length === 0 ? <p style={{ color: '#6b7280', fontSize: '14px' }}>No timeline entries yet.</p> : (
+                  {timeline.length === 0 ? <p style={{ color: '#4b5563', fontSize: '14px' }}>No timeline entries yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {timeline.map(entry => (
                         <div key={entry.id} style={s.timelineCard}>
@@ -1155,7 +1155,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                               {entry.event_name && <span style={{ color: '#2563eb', fontSize: '14px' }}>{entry.event_name}</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ color: '#71717a', fontSize: '14px' }}>{formatDate(entry.created_at)}</span>
+                              <span style={{ color: '#52525b', fontSize: '14px' }}>{formatDate(entry.created_at)}</span>
                               <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '14px' }}>×</button>
                             </div>
                           </div>
@@ -1166,7 +1166,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
                                     <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#f7f7f9', borderRadius: '4px' }}>
-                                      <span style={{ color: '#71717a', fontSize: '14px' }}>{r.name}</span>
+                                      <span style={{ color: '#52525b', fontSize: '14px' }}>{r.name}</span>
                                       <span style={{ fontSize: '14px', color: r.value === 'Here' ? '#16a34a' : '#dc2626', fontWeight: '600' }}>{r.value}</span>
                                     </div>
                                   ))}
@@ -1176,7 +1176,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
                                     <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#f7f7f9', borderRadius: '4px' }}>
-                                      <span style={{ color: '#71717a', fontSize: '14px' }}>{r.name}</span>
+                                      <span style={{ color: '#52525b', fontSize: '14px' }}>{r.name}</span>
                                       <span style={{ fontSize: '14px', fontWeight: '600', color: r.value === 'Negative' ? '#16a34a' : r.value === 'Positive' ? '#dc2626' : '#c2410c' }}>{r.value}</span>
                                     </div>
                                   ))}
@@ -1203,10 +1203,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           )}
                           {entry.entry_type === 'Weekly Reflection'
                             ? <HouseWeeklyReflectionCard entry={entry} />
-                            : entry.notes && <p style={{ color: '#71717a', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
+                            : entry.notes && <p style={{ color: '#52525b', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                           }
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                            <span style={{ color: '#71717a', fontSize: '14px' }}>By {entry.author}</span>
+                            <span style={{ color: '#52525b', fontSize: '14px' }}>By {entry.author}</span>
                           </div>
                         </div>
                       ))}
@@ -1231,13 +1231,13 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <button onClick={addRoom} style={s.saveBtn}>Save Room</button>
                     </div>
                   )}
-                  {rooms.length === 0 ? <p style={{ color: '#6b7280', fontSize: '14px' }}>No rooms added yet.</p> : (
+                  {rooms.length === 0 ? <p style={{ color: '#4b5563', fontSize: '14px' }}>No rooms added yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {rooms.map(r => (
                         <div key={r.id} style={s.roomRow}>
                           <div style={{ flex: 1 }}>
                             <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
-                            <p style={{ color: '#6b7280', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
+                            <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
                           </div>
                           <button onClick={() => deleteRoom(r.id)} style={s.deleteBtn}>Remove</button>
                         </div>
@@ -1264,7 +1264,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 canSeeHouseChat ? (
                   <HouseChatTab houseId={selected.id} houseName={selected.name} user={user} />
                 ) : (
-                  <p style={{ color: '#9ca3af', fontSize: '14px' }}>You don't have access to this house's chat.</p>
+                  <p style={{ color: '#6b7280', fontSize: '14px' }}>You don't have access to this house's chat.</p>
                 )
               )}
             </div>
@@ -1275,10 +1275,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
       {/* Confirm Move-In modal */}
       {moveInModal && (
         <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => { setMoveInModal(null); setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}>
-          <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e4e4e8', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e4e4e8' }}>
+          <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #c9c9cf', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #c9c9cf' }}>
               <h3 style={{ color: '#18181b', margin: 0, fontSize: '16px' }}>{didNotMoveInMode ? 'Did Not Move In' : 'Confirm Move-In'}</h3>
-              <p style={{ color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
+              <p style={{ color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
               {!didNotMoveInMode ? (
@@ -1292,7 +1292,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                     </select>
                   </div>
                   <div style={{ background: '#f7f7f9', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                    <p style={{ color: '#71717a', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
+                    <p style={{ color: '#52525b', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
                     <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
                     <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
                     <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
@@ -1308,13 +1308,13 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                     </button>
                   </div>
                   <button onClick={() => setMoveInModal(null)}
-                    style={{ width: '100%', background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                    style={{ width: '100%', background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </>
               ) : (
                 <>
-                  <p style={{ color: '#71717a', fontSize: '14px', margin: '0 0 12px 0' }}>
+                  <p style={{ color: '#52525b', fontSize: '14px', margin: '0 0 12px 0' }}>
                     This will revert <strong style={{ color: '#18181b' }}>{moveInModal.full_name}</strong> back to Accepted status and log the reason in their stays history.
                   </p>
                   <div style={{ marginBottom: '16px' }}>
@@ -1333,7 +1333,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       {savingMoveIn ? 'Saving...' : 'Confirm Did Not Move In'}
                     </button>
                     <button onClick={() => { setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}
-                      style={{ flex: 1, background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                       Back
                     </button>
                   </div>
@@ -1354,62 +1354,62 @@ const s = {
   page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#18181b' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' },
+  sub: { color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0' },
   addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
-  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
-  addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #e4e4e8' },
-  miniForm: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #e4e4e8' },
+  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
+  addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #c9c9cf' },
+  miniForm: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #c9c9cf' },
   addTitle: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
-  label: { display: 'block', color: '#71717a', fontSize: '14px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
+  label: { display: 'block', color: '#52525b', fontSize: '14px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
-  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #d4d4d8', color: '#a1a1aa', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
-  viewToggle: { display: 'flex', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #e4e4e8', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#71717a', cursor: 'pointer', fontSize: '14px' },
-  toggleBtnActive: { background: '#6b7280', color: '#18181b' },
+  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #b0b0b7', color: '#71717a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
+  viewToggle: { display: 'flex', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #c9c9cf', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#52525b', cursor: 'pointer', fontSize: '14px' },
+  toggleBtnActive: { background: '#4b5563', color: '#18181b' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  houseCard: { background: '#f7f7f9', borderRadius: '12px', padding: '18px 20px', border: '1px solid #e4e4e8', cursor: 'pointer' },
+  houseCard: { background: '#f7f7f9', borderRadius: '12px', padding: '18px 20px', border: '1px solid #c9c9cf', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
   houseName: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' },
-  houseAddress: { color: '#6b7280', fontSize: '14px', margin: 0 },
+  houseAddress: { color: '#4b5563', fontSize: '14px', margin: 0 },
   typeBadge: { fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
   bedBar: { height: '4px', background: '#f7f7f9', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
   bedBarFill: (house) => ({ height: '100%', width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`, background: '#9333ea', borderRadius: '2px' }),
   houseStats: { display: 'flex', gap: '16px', marginBottom: '10px' },
   statItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   statNum: { fontSize: '18px', fontWeight: '700', color: '#18181b' },
-  statLbl: { fontSize: '14px', color: '#6b7280' },
-  manager: { color: '#71717a', fontSize: '14px', margin: 0 },
+  statLbl: { fontSize: '14px', color: '#4b5563' },
+  manager: { color: '#52525b', fontSize: '14px', margin: 0 },
   houseGroup: { marginBottom: '32px' },
-  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #e4e4e8' },
+  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #c9c9cf' },
   houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#18181b' },
-  houseGroupCount: { fontSize: '14px', color: '#6b7280', marginLeft: 'auto' },
-  residentTable: { background: '#f7f7f9', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e4e4e8' },
-  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#f7f7f9', fontSize: '14px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
-  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #e4e4e8', gap: '12px' },
+  houseGroupCount: { fontSize: '14px', color: '#4b5563', marginLeft: 'auto' },
+  residentTable: { background: '#f7f7f9', borderRadius: '10px', overflow: 'hidden', border: '1px solid #c9c9cf' },
+  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#f7f7f9', fontSize: '14px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
+  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #c9c9cf', gap: '12px' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
-  modal: { background: '#ffffff', borderRadius: '16px', border: '1px solid #e4e4e8', width: '100%', maxWidth: '680px', overflow: 'hidden' },
-  modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #e4e4e8' },
+  modal: { background: '#ffffff', borderRadius: '16px', border: '1px solid #c9c9cf', width: '100%', maxWidth: '680px', overflow: 'hidden' },
+  modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #c9c9cf' },
   modalName: { fontSize: '20px', fontWeight: '600', margin: 0, color: '#18181b' },
-  modalSub: { fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #d8d8dd', background: 'transparent', cursor: 'pointer', color: '#71717a', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  tabs: { display: 'flex', borderBottom: '1px solid #e4e4e8', padding: '0 20px' },
-  tab: { padding: '10px 16px', fontSize: '14px', cursor: 'pointer', color: '#6b7280', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
+  modalSub: { fontSize: '14px', color: '#4b5563', margin: '4px 0 0 0' },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #b8b8bf', background: 'transparent', cursor: 'pointer', color: '#52525b', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  tabs: { display: 'flex', borderBottom: '1px solid #c9c9cf', padding: '0 20px' },
+  tab: { padding: '10px 16px', fontSize: '14px', cursor: 'pointer', color: '#4b5563', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
   tabActive: { color: '#18181b', borderBottomColor: '#18181b' },
   modalBody: { padding: '20px 24px', maxHeight: '520px', overflowY: 'auto' },
-  sectionLabel: { fontSize: '14px', fontWeight: '500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  residentCard: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e4e4e8' },
+  sectionLabel: { fontSize: '14px', fontWeight: '500', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
+  residentCard: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', border: '1px solid #c9c9cf' },
   resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#f3e8ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '500', flexShrink: 0 },
   resName: { color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 },
-  resMeta: { color: '#6b7280', fontSize: '14px', margin: '2px 0 0 0' },
+  resMeta: { color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' },
   resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '10px' },
   resDetailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  resDetailLabel: { fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  resDetailLabel: { fontSize: '13px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' },
   resDetailVal: { fontSize: '14px', color: '#3f3f46' },
   roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#f7f7f9', borderRadius: '10px' },
-  timelineCard: { background: '#f7f7f9', borderRadius: '10px', padding: '12px 14px', border: '1px solid #e4e4e8' },
+  timelineCard: { background: '#f7f7f9', borderRadius: '10px', padding: '12px 14px', border: '1px solid #c9c9cf' },
 };
 
 // ── Chore Rotation Tab ────────────────────────────────────────────────────────
@@ -1657,26 +1657,26 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
     setSettings(prev => ({ ...prev, period_days: days }));
   };
 
-  if (loading) return <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading chore rotation...</p>;
+  if (loading) return <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading chore rotation...</p>;
 
   const fmtD = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   return (
     <div>
       {/* Rotation settings */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '18px', padding: '12px 14px', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '18px', padding: '12px 14px', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px' }}>
         <div>
           <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 2px' }}>
             Current period: {fmtD(settings?.current_period_start)} → {fmtD(settings?.current_period_end)}
           </p>
-          <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>Rotates automatically when the period ends.</p>
+          <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>Rotates automatically when the period ends.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ color: '#71717a', fontSize: '13px' }}>Rotate every</label>
+          <label style={{ color: '#52525b', fontSize: '13px' }}>Rotate every</label>
           <input type="number" min="1" value={periodDaysInput} onChange={e => setPeriodDaysInput(e.target.value)}
             onBlur={savePeriodDays}
-            style={{ width: '56px', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '6px', padding: '5px 8px', color: '#18181b', fontSize: '13px', textAlign: 'center' }} />
-          <span style={{ color: '#71717a', fontSize: '13px' }}>days</span>
+            style={{ width: '56px', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '6px', padding: '5px 8px', color: '#18181b', fontSize: '13px', textAlign: 'center' }} />
+          <span style={{ color: '#52525b', fontSize: '13px' }}>days</span>
         </div>
       </div>
 
@@ -1687,26 +1687,26 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
         </div>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
           <input value={newChoreName} onChange={e => setNewChoreName(e.target.value)} placeholder="New chore name (e.g. Kitchen)"
-            style={{ flex: '1 1 200px', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ flex: '1 1 200px', background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
           <input value={newChoreDesc} onChange={e => setNewChoreDesc(e.target.value)} placeholder="Notes (optional)"
-            style={{ flex: '1 1 200px', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ flex: '1 1 200px', background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
           <button onClick={handleAddChore} disabled={addingChore || !newChoreName.trim()}
             style={{ background: '#dbeafe', border: '1px solid #2563eb', color: '#2563eb', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
             {addingChore ? 'Adding...' : '+ Add Chore'}
           </button>
         </div>
         {chores.length === 0 ? (
-          <p style={{ color: '#a1a1aa', fontSize: '13px', fontStyle: 'italic' }}>No chores set up yet — add one above.</p>
+          <p style={{ color: '#71717a', fontSize: '13px', fontStyle: 'italic' }}>No chores set up yet — add one above.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {chores.map(chore => {
               const excludedIds = exclusionsMap[chore.id] || new Set();
               return (
-                <div key={chore.id} style={{ background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '10px 14px' }}>
+                <div key={chore.id} style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px', padding: '10px 14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                     <div>
                       <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0 }}>{chore.name}</p>
-                      {chore.description && <p style={{ color: '#9ca3af', fontSize: '12px', margin: '2px 0 0' }}>{chore.description}</p>}
+                      {chore.description && <p style={{ color: '#6b7280', fontSize: '12px', margin: '2px 0 0' }}>{chore.description}</p>}
                       {excludedIds.size > 0 && (
                         <p style={{ color: '#c2410c', fontSize: '12px', margin: '4px 0 0' }}>
                           Excluded: {[...excludedIds].map(residentName).join(', ')}
@@ -1715,7 +1715,7 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button onClick={() => setManagingExclusionsFor(managingExclusionsFor === chore.id ? null : chore.id)}
-                        style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Exclusions
                       </button>
                       <button onClick={() => handleRemoveChore(chore.id)}
@@ -1725,17 +1725,17 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                     </div>
                   </div>
                   {managingExclusionsFor === chore.id && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e4e8', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {activeResidents.length === 0 && <p style={{ color: '#a1a1aa', fontSize: '12px' }}>No active residents.</p>}
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #c9c9cf', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {activeResidents.length === 0 && <p style={{ color: '#71717a', fontSize: '12px' }}>No active residents.</p>}
                       {activeResidents.map(r => {
                         const isExcluded = excludedIds.has(r.id);
                         return (
                           <button key={r.id} onClick={() => toggleExclusion(chore.id, r.id)}
                             style={{
                               padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-                              border: `1px solid ${isExcluded ? '#fee2e2' : '#d8d8dd'}`,
+                              border: `1px solid ${isExcluded ? '#fee2e2' : '#b8b8bf'}`,
                               background: isExcluded ? '#fee2e2' : '#f7f7f9',
-                              color: isExcluded ? '#dc2626' : '#71717a',
+                              color: isExcluded ? '#dc2626' : '#52525b',
                             }}>
                             {isExcluded ? '✗ ' : ''}{r.full_name}
                           </button>
@@ -1751,12 +1751,12 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
       </div>
 
       {/* This period's assignments */}
-      <div style={{ borderTop: '1px solid #ececef', paddingTop: '20px' }}>
+      <div style={{ borderTop: '1px solid #cfcfd4', paddingTop: '20px' }}>
         <p style={s.sectionLabel}>This Period's Assignments</p>
         {rotating ? (
-          <p style={{ color: '#9ca3af', fontSize: '14px' }}>Generating this period's assignments...</p>
+          <p style={{ color: '#6b7280', fontSize: '14px' }}>Generating this period's assignments...</p>
         ) : chores.length === 0 ? (
-          <p style={{ color: '#a1a1aa', fontSize: '13px', fontStyle: 'italic' }}>Add a chore above to start the rotation.</p>
+          <p style={{ color: '#71717a', fontSize: '13px', fontStyle: 'italic' }}>Add a chore above to start the rotation.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {chores.map(chore => {
@@ -1774,7 +1774,7 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
               return (
                 <div key={chore.id} style={{
                   background: '#ffffff', borderRadius: '10px', padding: '12px 14px',
-                  border: `1px solid ${unfilled ? '#fee2e2' : '#e4e4e8'}`,
+                  border: `1px solid ${unfilled ? '#fee2e2' : '#c9c9cf'}`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
                     <div>
@@ -1795,13 +1795,13 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <button onClick={() => setReassigningId(reassigningId === assignment.id ? null : assignment.id)}
-                        style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Reassign
                       </button>
                     </div>
                   </div>
                   {reassigningId === assignment.id && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e4e8', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #c9c9cf', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       <button onClick={() => handleReassign(assignment.id, null)}
                         style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: '1px solid #fee2e2', background: '#fee2e2', color: '#dc2626' }}>
                         Unassign
@@ -1810,9 +1810,9 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                         <button key={r.id} onClick={() => handleReassign(assignment.id, r.id)}
                           style={{
                             padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-                            border: `1px solid ${assignment.client_id === r.id ? '#2563eb' : '#d8d8dd'}`,
+                            border: `1px solid ${assignment.client_id === r.id ? '#2563eb' : '#b8b8bf'}`,
                             background: assignment.client_id === r.id ? '#dbeafe' : '#f7f7f9',
-                            color: assignment.client_id === r.id ? '#2563eb' : '#71717a',
+                            color: assignment.client_id === r.id ? '#2563eb' : '#52525b',
                           }}>
                           {r.full_name}{exclusionsMap[chore.id]?.has(r.id) ? ' (excluded)' : ''}
                         </button>
@@ -1857,7 +1857,7 @@ function FormsTab({ houseId, houseName, currentUser, onReviewed }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '22px', paddingBottom: '16px', borderBottom: '1px solid #e4e4e8', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '22px', paddingBottom: '16px', borderBottom: '1px solid #c9c9cf', flexWrap: 'wrap' }}>
         {SUB_TABS.map(t => (
           <button key={t.id} onClick={() => setSubTab(t.id)}
             style={{
@@ -1865,7 +1865,7 @@ function FormsTab({ houseId, houseName, currentUser, onReviewed }) {
               padding: '9px 16px', borderRadius: '9px', border: 'none', cursor: 'pointer',
               fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap',
               background: subTab === t.id ? '#b22222' : '#ffffff',
-              color: subTab === t.id ? '#18181b' : '#6b7280',
+              color: subTab === t.id ? '#18181b' : '#4b5563',
               transition: 'background 0.15s, color 0.15s',
             }}>
             {t.label}
@@ -1962,9 +1962,9 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
           <tbody>
             ${sec.items.map(item => `<tr>
               <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;font-size:16px;">${itemsData[item.id]?.ok ? '✓' : ''}</td>
-              <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;color:#a1a1aa;">${item.std}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;color:#71717a;">${item.std}</td>
               <td style="padding:7px 8px;border:1px solid #3f3f46;">${item.text}</td>
-              <td style="padding:7px 8px;border:1px solid #3f3f46;color:#b8b8bd;">${itemsData[item.id]?.notes || ''}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;color:#8a8a92;">${itemsData[item.id]?.notes || ''}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -1977,9 +1977,9 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
       @media print { .print-btn { display: none; } }
     </style></head><body>
     <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
-    <div style="text-align:right;font-size:11px;color:#9ca3af;margin-bottom:4px;">INTERNAL USE ONLY — Staff / House Manager Walkthrough</div>
+    <div style="text-align:right;font-size:11px;color:#6b7280;margin-bottom:4px;">INTERNAL USE ONLY — Staff / House Manager Walkthrough</div>
     <h2 style="text-align:center;margin:0 0 4px;">House Walkthrough Checklist</h2>
-    <p style="text-align:center;font-style:italic;color:#a1a1aa;margin:0 0 20px;font-size:13px;">Physical Environment — NARR Standard 3.0, Domain 2 (Standards 14–19)</p>
+    <p style="text-align:center;font-style:italic;color:#71717a;margin:0 0 20px;font-size:13px;">Physical Environment — NARR Standard 3.0, Domain 2 (Standards 14–19)</p>
     <p><strong>Address:</strong> ${w.house_name}</p>
     <p><strong>House Manager:</strong> ${w.submitted_by}</p>
     <p><strong>Date of Walkthrough:</strong> ${fmtDate(w.walkthrough_date)}</p>
@@ -2006,7 +2006,7 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
       needs_improvement: { label: 'Needs Improvement', bg: '#ffedd5', color: '#c2410c' },
       not_acceptable: { label: 'Not Acceptable', bg: '#fee2e2', color: '#dc2626' },
     };
-    const r = map[result] || { label: result, bg: '#e4e4e7', color: '#71717a' };
+    const r = map[result] || { label: result, bg: '#c9c9cf', color: '#52525b' };
     return <span style={{ background: r.bg, color: r.color, fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px', whiteSpace: 'nowrap' }}>{r.label}</span>;
   };
 
@@ -2014,18 +2014,18 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h3 style={{ color: '#18181b', margin: 0, fontSize: '16px', fontWeight: '600' }}>New House Walkthrough</h3>
-        <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+        <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '4px' }}>Date of Walkthrough</label>
+          <label style={{ display: 'block', fontSize: '12px', color: '#52525b', marginBottom: '4px' }}>Date of Walkthrough</label>
           <input type="date" value={walkthroughDate} onChange={e => setWalkthroughDate(e.target.value)}
-            style={{ width: '100%', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ width: '100%', background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '4px' }}>Overall Result</label>
+          <label style={{ display: 'block', fontSize: '12px', color: '#52525b', marginBottom: '4px' }}>Overall Result</label>
           <select value={overallResult} onChange={e => setOverallResult(e.target.value)}
-            style={{ width: '100%', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: overallResult ? '#18181b' : '#a1a1aa', fontSize: '14px', boxSizing: 'border-box' }}>
+            style={{ width: '100%', background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '9px 12px', color: overallResult ? '#18181b' : '#71717a', fontSize: '14px', boxSizing: 'border-box' }}>
             <option value="">Select result...</option>
             <option value="meets_standard">Meets Standard</option>
             <option value="needs_improvement">Needs Improvement</option>
@@ -2033,8 +2033,8 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
           </select>
         </div>
       </div>
-      <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e4e4e8' }}>
-        <p style={{ color: '#71717a', fontSize: '13px', margin: 0 }}>
+      <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #c9c9cf' }}>
+        <p style={{ color: '#52525b', fontSize: '13px', margin: 0 }}>
           Progress: <span style={{ color: '#18181b', fontWeight: '600' }}>{score} / {TOTAL_WALKTHROUGH_ITEMS}</span> items checked OK
           &nbsp;·&nbsp; <span style={{ color: score === TOTAL_WALKTHROUGH_ITEMS ? '#16a34a' : '#c2410c' }}>{Math.round((score / TOTAL_WALKTHROUGH_ITEMS) * 100)}%</span>
         </p>
@@ -2048,17 +2048,17 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
             <div key={item.id} style={{ padding: '10px 0', borderBottom: '1px solid #ffffff' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <button onClick={() => toggleItem(item.id)}
-                  style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${items[item.id]?.ok ? '#16a34a' : '#d8d8dd'}`, background: items[item.id]?.ok ? '#16a34a' : 'transparent', color: '#18181b', cursor: 'pointer', flexShrink: 0, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+                  style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${items[item.id]?.ok ? '#16a34a' : '#b8b8bf'}`, background: items[item.id]?.ok ? '#16a34a' : 'transparent', color: '#18181b', cursor: 'pointer', flexShrink: 0, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
                   {items[item.id]?.ok ? '✓' : ''}
                 </button>
                 <div style={{ flex: 1 }}>
                   <p style={{ color: '#3f3f46', fontSize: '13px', margin: '0 0 6px', lineHeight: '1.5' }}>
-                    <span style={{ color: '#9ca3af', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
+                    <span style={{ color: '#6b7280', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
                     {item.text}
                   </p>
                   <input placeholder="Notes (optional)" value={items[item.id]?.notes || ''}
                     onChange={e => setItemNote(item.id, e.target.value)}
-                    style={{ width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '6px', padding: '6px 10px', color: '#3f3f46', fontSize: '12px', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '6px', padding: '6px 10px', color: '#3f3f46', fontSize: '12px', boxSizing: 'border-box' }} />
                 </div>
               </div>
             </div>
@@ -2066,13 +2066,13 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
         </div>
       ))}
       <div style={{ marginBottom: '20px' }}>
-        <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '6px' }}>Corrective Actions Needed</label>
+        <label style={{ display: 'block', fontSize: '12px', color: '#52525b', marginBottom: '6px' }}>Corrective Actions Needed</label>
         <textarea value={correctiveActions} onChange={e => setCorrectiveActions(e.target.value)} rows={4}
           placeholder="Describe any corrective actions needed..."
-          style={{ width: '100%', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', resize: 'vertical', fontFamily: "'Inter','system-ui',sans-serif", boxSizing: 'border-box' }} />
+          style={{ width: '100%', background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', resize: 'vertical', fontFamily: "'Inter','system-ui',sans-serif", boxSizing: 'border-box' }} />
       </div>
       <button onClick={handleSubmit} disabled={saving}
-        style={{ width: '100%', padding: '12px', background: saving ? '#e4e4e7' : '#dbeafe', border: `1px solid ${saving ? '#d4d4d8' : '#2563eb'}`, borderRadius: '9px', color: saving ? '#a1a1aa' : '#2563eb', fontSize: '15px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
+        style={{ width: '100%', padding: '12px', background: saving ? '#c9c9cf' : '#dbeafe', border: `1px solid ${saving ? '#b0b0b7' : '#2563eb'}`, borderRadius: '9px', color: saving ? '#71717a' : '#2563eb', fontSize: '15px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
         {saving ? 'Saving...' : 'Submit Walkthrough'}
       </button>
     </div>
@@ -2085,7 +2085,7 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
           <p style={{ color: '#18181b', fontWeight: '600', margin: '0 0 4px' }}>
             {new Date(viewingWalkthrough.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
-          <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>By {viewingWalkthrough.submitted_by}</p>
+          <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>By {viewingWalkthrough.submitted_by}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => generateWalkthroughPDF(viewingWalkthrough)}
@@ -2093,14 +2093,14 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
             ⬇ Export PDF
           </button>
           <button onClick={() => setViewingId(null)}
-            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '7px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}>
+            style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', borderRadius: '7px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}>
             ← Back
           </button>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         {resultBadge(viewingWalkthrough.overall_result)}
-        <span style={{ color: '#71717a', fontSize: '13px', alignSelf: 'center' }}>
+        <span style={{ color: '#52525b', fontSize: '13px', alignSelf: 'center' }}>
           Score: <strong style={{ color: '#18181b' }}>{viewingWalkthrough.score} / {viewingWalkthrough.total_items}</strong>
           ({Math.round((viewingWalkthrough.score / viewingWalkthrough.total_items) * 100)}%)
         </span>
@@ -2117,10 +2117,10 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
                 <span style={{ fontSize: '14px', flexShrink: 0, width: '20px', color: itemData.ok ? '#16a34a' : '#dc2626' }}>{itemData.ok ? '✓' : '✗'}</span>
                 <div style={{ flex: 1 }}>
                   <p style={{ color: itemData.ok ? '#3f3f46' : '#dc2626', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
-                    <span style={{ color: '#a1a1aa', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
+                    <span style={{ color: '#71717a', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
                     {item.text}
                   </p>
-                  {itemData.notes && <p style={{ color: '#9ca3af', fontSize: '12px', margin: '3px 0 0', fontStyle: 'italic' }}>Note: {itemData.notes}</p>}
+                  {itemData.notes && <p style={{ color: '#6b7280', fontSize: '12px', margin: '3px 0 0', fontStyle: 'italic' }}>Note: {itemData.notes}</p>}
                 </div>
               </div>
             );
@@ -2145,11 +2145,11 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
           + New Walkthrough
         </button>
       </div>
-      {loading ? <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p> :
+      {loading ? <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</p> :
         walkthroughs.length === 0 ? (
           <div style={{ padding: '24px 0', textAlign: 'center' }}>
-            <p style={{ color: '#9ca3af', fontSize: '15px', margin: '0 0 4px' }}>No walkthroughs submitted yet.</p>
-            <p style={{ color: '#a1a1aa', fontSize: '13px', margin: 0 }}>Click "+ New Walkthrough" to complete the first one.</p>
+            <p style={{ color: '#6b7280', fontSize: '15px', margin: '0 0 4px' }}>No walkthroughs submitted yet.</p>
+            <p style={{ color: '#71717a', fontSize: '13px', margin: 0 }}>Click "+ New Walkthrough" to complete the first one.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2157,23 +2157,23 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
               const pct = Math.round((w.score / w.total_items) * 100);
               const fmtD = new Date(w.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               return (
-                <div key={w.id} style={{ background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '12px 14px' }}>
+                <div key={w.id} style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px', padding: '12px 14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <div>
                       <p style={{ color: '#18181b', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{fmtD}</p>
-                      <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>By {w.submitted_by}</p>
+                      <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>By {w.submitted_by}</p>
                     </div>
                     {resultBadge(w.overall_result)}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <div style={{ flex: 1, height: '6px', background: '#e4e4e8', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: '6px', background: '#c9c9cf', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626', borderRadius: '3px', transition: 'width 0.3s' }} />
                     </div>
-                    <span style={{ color: '#71717a', fontSize: '12px', whiteSpace: 'nowrap' }}>{w.score}/{w.total_items} ({pct}%)</span>
+                    <span style={{ color: '#52525b', fontSize: '12px', whiteSpace: 'nowrap' }}>{w.score}/{w.total_items} ({pct}%)</span>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => setViewingId(w.id)}
-                      style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
+                      style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
                       View Full Report
                     </button>
                     <button onClick={() => generateWalkthroughPDF(w)}
@@ -2280,7 +2280,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#e4e4e8', color: filter === f ? '#18181b' : '#9ca3af' }}>
+              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#c9c9cf', color: filter === f ? '#18181b' : '#6b7280' }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
@@ -2288,19 +2288,19 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
       </div>
 
       {loading ? (
-        <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</p>
       ) : requests.length === 0 ? (
-        <p style={{ color: '#9ca3af', fontSize: '14px' }}>No {filter === 'all' ? '' : filter} move-out requests.</p>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>No {filter === 'all' ? '' : filter} move-out requests.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {requests.map(r => (
-            <div key={r.id} style={{ background: '#ffffff', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#e4e4e8'}`, borderRadius: '10px', overflow: 'hidden' }}>
+            <div key={r.id} style={{ background: '#ffffff', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#c9c9cf'}`, borderRadius: '10px', overflow: 'hidden' }}>
               {/* Header */}
               <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                 onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
                 <div>
                   <p style={{ margin: 0, color: '#18181b', fontWeight: '600', fontSize: '15px' }}>{r.clients?.full_name}</p>
-                  <p style={{ margin: '3px 0 0', color: '#9ca3af', fontSize: '13px' }}>
+                  <p style={{ margin: '3px 0 0', color: '#6b7280', fontSize: '13px' }}>
                     Requested: {r.requested_move_out_date ? new Date(r.requested_move_out_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     &nbsp;·&nbsp; Submitted: {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
@@ -2309,13 +2309,13 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                   <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', background: statusBg(r.status), color: statusColor(r.status) }}>
                     {statusLabel(r.status)}
                   </span>
-                  <span style={{ color: '#a1a1aa', fontSize: '14px' }}>{expanded === r.id ? '▲' : '▼'}</span>
+                  <span style={{ color: '#71717a', fontSize: '14px' }}>{expanded === r.id ? '▲' : '▼'}</span>
                 </div>
               </div>
 
               {/* Expanded details */}
               {expanded === r.id && (
-                <div style={{ borderTop: '1px solid #e4e4e8', padding: '16px' }}>
+                <div style={{ borderTop: '1px solid #c9c9cf', padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
                     {[
                       ['Moving To', r.moving_to],
@@ -2327,21 +2327,21 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                       ['Marketing Permission', r.marketing_permission ? 'Yes' : 'No'],
                     ].map(([label, val]) => (
                       <div key={label} style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
-                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
                         <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46' }}>{val || '—'}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* Requirements checklist */}
-                  <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
+                  <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
                     {LEVEL_REQS.map(req => {
                       const done = (r.requirements_completed || []).includes(req);
                       return (
                         <div key={req} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: done ? '#dcfce7' : '#f4f4f6', borderRadius: '6px' }}>
-                          <span style={{ color: done ? '#16a34a' : '#d4d4d8', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
-                          <span style={{ fontSize: '14px', color: done ? '#16a34a' : '#b8b8bd' }}>{req}</span>
+                          <span style={{ color: done ? '#16a34a' : '#b0b0b7', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
+                          <span style={{ fontSize: '14px', color: done ? '#16a34a' : '#8a8a92' }}>{req}</span>
                         </div>
                       );
                     })}
@@ -2350,17 +2350,17 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                   {/* Feedback */}
                   {(r.liked || r.disliked || r.other_notes) && (
                     <>
-                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.liked}</p></div>}
-                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.disliked}</p></div>}
-                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
+                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#71717a', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '14px', color: '#52525b', fontStyle: 'italic' }}>{r.liked}</p></div>}
+                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#71717a', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '14px', color: '#52525b', fontStyle: 'italic' }}>{r.disliked}</p></div>}
+                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#71717a', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '14px', color: '#52525b', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
                     </>
                   )}
 
                   {/* Review notes if already reviewed */}
                   {r.status !== 'pending' && r.review_notes && (
                     <div style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>Review Notes</p>
-                      <p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.review_notes}</p>
+                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#71717a', textTransform: 'uppercase' }}>Review Notes</p>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#52525b', fontStyle: 'italic' }}>{r.review_notes}</p>
                     </div>
                   )}
 
@@ -2368,19 +2368,19 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                   {canReview && r.status === 'pending' && (
                     reviewing?.id === r.id ? (
                       <div>
-                        <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#71717a' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#52525b' }}>
                           {reviewing.action === 'approved' ? '✓ Approving' : '✗ Denying'} — add a note (optional):
                         </p>
                         <textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)}
                           rows={3} placeholder="Add a note to the resident..."
-                          style={{ width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '8px', color: '#18181b', fontSize: '14px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
+                          style={{ width: '100%', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '8px', color: '#18181b', fontSize: '14px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button onClick={() => handleReview(r, reviewing.action)} disabled={saving}
                             style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#fee2e2', color: reviewing.action === 'approved' ? '#16a34a' : '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                             {saving ? 'Saving...' : `Confirm ${reviewing.action === 'approved' ? 'Approval' : 'Denial'}`}
                           </button>
                           <button onClick={() => { setReviewing(null); setReviewNotes(''); }}
-                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #e4e4e8', background: 'transparent', color: '#9ca3af', fontSize: '14px', cursor: 'pointer' }}>
+                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #c9c9cf', background: 'transparent', color: '#6b7280', fontSize: '14px', cursor: 'pointer' }}>
                             Cancel
                           </button>
                         </div>
@@ -2495,21 +2495,21 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #e4e4e7', color: filter === f ? '#18181b' : '#9ca3af', textTransform: 'capitalize' }}>
+              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #c9c9cf', color: filter === f ? '#18181b' : '#6b7280', textTransform: 'capitalize' }}>
               {f}
             </button>
           ))}
         </div>
       </div>
 
-      {loading ? <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p>
-        : requests.length === 0 ? <p style={{ color: '#a1a1aa', fontSize: '14px', fontStyle: 'italic' }}>No overnight requests found.</p>
+      {loading ? <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</p>
+        : requests.length === 0 ? <p style={{ color: '#71717a', fontSize: '14px', fontStyle: 'italic' }}>No overnight requests found.</p>
         : requests.map(req => (
-          <div key={req.id} style={{ background: '#ffffff', border: '1px solid #f0f0f3', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
+          <div key={req.id} style={{ background: '#ffffff', border: '1px solid #d4d4da', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
               <div>
                 <p style={{ color: '#18181b', fontWeight: '600', fontSize: '14px', margin: '0 0 3px' }}>{req.client_name}</p>
-                <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
+                <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>
                   {fmt(req.departure_datetime)} → {fmt(req.return_datetime)}
                 </p>
               </div>
@@ -2519,24 +2519,24 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
               <div>
-                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
+                <p style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
                 <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>{req.reason || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
+                <p style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
                 <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>{req.location || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
+                <p style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
                 <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>{req.who_seeing || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
+                <p style={{ color: '#71717a', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
                 <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0, fontStyle: 'italic' }}>{req.signature || '—'}</p>
               </div>
             </div>
             {req.review_notes && (
-              <p style={{ color: '#71717a', fontSize: '13px', margin: '0 0 10px', padding: '6px 10px', background: '#ffffff', borderRadius: '6px' }}>
+              <p style={{ color: '#52525b', fontSize: '13px', margin: '0 0 10px', padding: '6px 10px', background: '#ffffff', borderRadius: '6px' }}>
                 Review note: {req.review_notes}
               </p>
             )}
@@ -2545,7 +2545,7 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
                 <div>
                   <textarea value={reviewForm.notes} onChange={e => setReviewForm(p => ({ ...p, notes: e.target.value }))}
                     placeholder="Optional note to client..." rows={2}
-                    style={{ width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '6px', color: '#18181b', padding: '8px', fontSize: '14px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                    style={{ width: '100%', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '6px', color: '#18181b', padding: '8px', fontSize: '14px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => handleReview('approved')} disabled={saving}
                       style={{ flex: 1, background: '#16a34a', border: 'none', color: '#18181b', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
@@ -2556,7 +2556,7 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
                       ✗ Deny
                     </button>
                     <button onClick={() => setReviewing(null)}
-                      style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '8px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
                       Cancel
                     </button>
                   </div>
@@ -2659,13 +2659,13 @@ function HouseChatTab({ houseId, houseName, user }) {
     setSending(false);
   };
 
-  if (loading) return <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading chat...</p>;
+  if (loading) return <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading chat...</p>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '500px', background: '#ffffff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e4e4e8' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '500px', background: '#ffffff', borderRadius: 10, overflow: 'hidden', border: '1px solid #c9c9cf' }}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column' }}>
         {messages.length === 0 ? (
-          <p style={{ color: '#9ca3af', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
+          <p style={{ color: '#6b7280', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
         ) : messages.map((msg, idx) => {
           const isMe = msg.sender_id === user.id;
           const prevMsg = messages[idx - 1];
@@ -2673,24 +2673,24 @@ function HouseChatTab({ houseId, houseName, user }) {
           const isGrouped = prevMsg && prevMsg.sender_id === msg.sender_id && new Date(msg.created_at) - new Date(prevMsg.created_at) < 60000;
           return (
             <div key={msg.id} style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-              {showSender && <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>}
-              <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#e4e4e7', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+              {showSender && <p style={{ color: '#6b7280', fontSize: '13px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>}
+              <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#c9c9cf', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
                 <p style={{ color: '#18181b', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
               </div>
-              {!isGrouped && <p style={{ color: '#6b7280', fontSize: '12px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>}
+              {!isGrouped && <p style={{ color: '#4b5563', fontSize: '12px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>}
             </div>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', borderTop: '1px solid #e4e4e8', background: '#ffffff', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', borderTop: '1px solid #c9c9cf', background: '#ffffff', flexShrink: 0 }}>
         <input ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           placeholder={`Message ${houseName}...`}
-          style={{ flex: 1, background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '10px', padding: '10px 14px', color: '#18181b', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          style={{ flex: 1, background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '10px', padding: '10px 14px', color: '#18181b', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
         <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-          style={{ background: newMessage.trim() ? '#b22222' : '#e4e4e7', border: 'none', color: newMessage.trim() ? '#18181b' : '#71717a', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+          style={{ background: newMessage.trim() ? '#b22222' : '#c9c9cf', border: 'none', color: newMessage.trim() ? '#18181b' : '#52525b', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
           Send
         </button>
       </div>

@@ -313,7 +313,7 @@ function UserManagement({ currentUser }) {
   };
 
   const roleLabel = (role) => ROLES.find(r => r.value === role)?.label || role;
-  const roleColor = (role) => ROLE_COLORS[role] || { bg: '#e4e4e7', color: '#71717a' };
+  const roleColor = (role) => ROLE_COLORS[role] || { bg: '#c9c9cf', color: '#52525b' };
   const needsHouseAssignment = (role) => role === 'house_manager' || role === 'head_house_manager';
 
   return (
@@ -366,7 +366,7 @@ function UserManagement({ currentUser }) {
 
       {/* Users Table */}
       {loading ? (
-        <p style={{ color: '#71717a' }}>Loading...</p>
+        <p style={{ color: '#52525b' }}>Loading...</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {users.map(u => {
@@ -382,7 +382,7 @@ function UserManagement({ currentUser }) {
                   {/* Name + email */}
                   <div style={{ flex: 2, minWidth: '160px' }}>
                     <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0 }}>{u.full_name}</p>
-                    <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0 0' }}>{u.email}</p>
+                    <p style={{ color: '#4b5563', fontSize: '13px', margin: '2px 0 0 0' }}>{u.email}</p>
                     {isCurrentUser && <span style={{ fontSize: '10px', color: '#b22222' }}>You</span>}
                   </div>
 
@@ -417,7 +417,7 @@ function UserManagement({ currentUser }) {
                         )}
                       </div>
                     ) : (
-                      <span style={{ color: '#71717a', fontSize: '13px' }}>All houses</span>
+                      <span style={{ color: '#52525b', fontSize: '13px' }}>All houses</span>
                     )}
                   </div>
 
@@ -434,22 +434,22 @@ function UserManagement({ currentUser }) {
 
                 {/* Permissions */}
                 {!isCurrentUser && (
-                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e4e4e8' }}>
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #c9c9cf' }}>
                     <p style={s.fieldLabel}>Permissions</p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => toggleOrgEventPermission(u.id, u.can_manage_org_events)}
-                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_manage_org_events ? 'none' : '1px dashed #d4d4d8', background: u.can_manage_org_events ? '#dcfce7' : 'transparent', color: u.can_manage_org_events ? '#16a34a' : '#71717a', transition: 'all 0.15s' }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_manage_org_events ? 'none' : '1px dashed #b0b0b7', background: u.can_manage_org_events ? '#dcfce7' : 'transparent', color: u.can_manage_org_events ? '#16a34a' : '#52525b', transition: 'all 0.15s' }}>
                         {u.can_manage_org_events ? '✓ ' : '+ '}Can Add Org Events
                       </button>
                       <button
                         onClick={() => toggleMaintenancePermission(u.id, u.can_see_maintenance)}
-                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_maintenance ? 'none' : '1px dashed #d4d4d8', background: u.can_see_maintenance ? '#dcfce7' : 'transparent', color: u.can_see_maintenance ? '#16a34a' : '#71717a', transition: 'all 0.15s' }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_maintenance ? 'none' : '1px dashed #b0b0b7', background: u.can_see_maintenance ? '#dcfce7' : 'transparent', color: u.can_see_maintenance ? '#16a34a' : '#52525b', transition: 'all 0.15s' }}>
                         {u.can_see_maintenance ? '✓ ' : '+ '}Can See Maintenance
                       </button>
                       <button
                         onClick={() => toggleReportsPermission(u.id, u.can_see_reports)}
-                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_reports ? 'none' : '1px dashed #d4d4d8', background: u.can_see_reports ? '#dcfce7' : 'transparent', color: u.can_see_reports ? '#16a34a' : '#71717a', transition: 'all 0.15s' }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_reports ? 'none' : '1px dashed #b0b0b7', background: u.can_see_reports ? '#dcfce7' : 'transparent', color: u.can_see_reports ? '#16a34a' : '#52525b', transition: 'all 0.15s' }}>
                         {u.can_see_reports ? '✓ ' : '+ '}Can See Reports
                       </button>
                     </div>
@@ -458,7 +458,7 @@ function UserManagement({ currentUser }) {
 
                 {/* Group chat memberships */}
                 {!isCurrentUser && presetGroups.length > 0 && (
-                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e4e4e8' }}>
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #c9c9cf' }}>
                     <p style={s.fieldLabel}>Group Chat Memberships</p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {presetGroups.map(group => {
@@ -476,9 +476,9 @@ function UserManagement({ currentUser }) {
                               fontSize: '13px',
                               cursor: 'pointer',
                               fontWeight: '500',
-                              border: isMember ? 'none' : '1px dashed #d4d4d8',
+                              border: isMember ? 'none' : '1px dashed #b0b0b7',
                               background: isMember ? '#dbeafe' : 'transparent',
-                              color: isMember ? '#2563eb' : '#71717a',
+                              color: isMember ? '#2563eb' : '#52525b',
                               opacity: isToggling ? 0.5 : 1,
                               transition: 'all 0.15s',
                             }}>
@@ -500,15 +500,15 @@ function UserManagement({ currentUser }) {
         <div style={s.overlay} onClick={() => setShowHouseModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <h3 style={{ color: '#18181b', margin: '0 0 6px 0', fontSize: '16px' }}>Assign House to {showHouseModal.full_name}</h3>
-            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px 0' }}>Select a house to assign. You can assign multiple houses.</p>
+            <p style={{ color: '#4b5563', fontSize: '14px', margin: '0 0 16px 0' }}>Select a house to assign. You can assign multiple houses.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {houses.map(h => {
                 const alreadyAssigned = (houseAssignments[showHouseModal.id] || []).some(a => a.id === h.id);
                 return (
-                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #e4e4e8' }}>
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #c9c9cf' }}>
                     <div>
                       <p style={{ color: '#18181b', fontSize: '14px', margin: 0 }}>{h.name}</p>
-                      <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0 0' }}>{h.type}</p>
+                      <p style={{ color: '#4b5563', fontSize: '13px', margin: '2px 0 0 0' }}>{h.type}</p>
                     </div>
                     {alreadyAssigned ? (
                       <span style={{ fontSize: '13px', color: '#16a34a' }}>✓ Assigned</span>
@@ -524,7 +524,7 @@ function UserManagement({ currentUser }) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button onClick={() => setShowHouseModal(null)}
-                style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Done
               </button>
             </div>
@@ -537,7 +537,7 @@ function UserManagement({ currentUser }) {
         <div style={s.overlay} onClick={() => setResetModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
             <h3 style={{ color: '#18181b', margin: '0 0 6px 0', fontSize: '16px' }}>Reset Password</h3>
-            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px 0' }}>
+            <p style={{ color: '#4b5563', fontSize: '14px', margin: '0 0 16px 0' }}>
               Set a new temporary password for <strong style={{ color: '#3f3f46' }}>{resetModal.full_name}</strong>.
             </p>
             <label style={s.label}>New Password</label>
@@ -548,7 +548,7 @@ function UserManagement({ currentUser }) {
             {resetSuccess && <p style={{ color: '#16a34a', fontSize: '14px', margin: '0 0 12px 0' }}>{resetSuccess}</p>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setResetModal(null)}
-                style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Cancel
               </button>
               <button onClick={resetPassword} disabled={resetting}
@@ -567,28 +567,28 @@ const s = {
   page: { fontFamily: "'Inter', 'system-ui', sans-serif", color: '#18181b' },
   topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' },
+  sub: { color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0' },
   addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
-  addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #e4e4e8' },
+  addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #c9c9cf' },
   formTitle: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' },
-  label: { display: 'block', color: '#71717a', fontSize: '14px', marginBottom: '4px' },
-  fieldLabel: { color: '#71717a', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' },
-  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
+  label: { display: 'block', color: '#52525b', fontSize: '14px', marginBottom: '4px' },
+  fieldLabel: { color: '#52525b', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' },
+  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
-  hint: { color: '#71717a', fontSize: '13px', margin: 0, lineHeight: '1.5' },
+  hint: { color: '#52525b', fontSize: '13px', margin: 0, lineHeight: '1.5' },
   errorText: { color: '#dc2626', fontSize: '14px', margin: '0 0 12px 0' },
   successBanner: { background: '#dcfce7', border: '1px solid #0d9488', color: '#16a34a', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' },
-  userCard: { background: '#f7f7f9', borderRadius: '12px', padding: '16px 20px', border: '1px solid #e4e4e8' },
+  userCard: { background: '#f7f7f9', borderRadius: '12px', padding: '16px 20px', border: '1px solid #c9c9cf' },
   roleBadge: { fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: '500' },
   roleSelect: { fontSize: '12px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', border: '1px solid', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' },
   houseTag: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: '#dbeafe', color: '#2563eb' },
   removeHouseBtn: { background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '14px', padding: '0', lineHeight: 1 },
-  assignHouseBtn: { fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: 'transparent', border: '1px dashed #d4d4d8', color: '#6b7280', cursor: 'pointer' },
+  assignHouseBtn: { fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: 'transparent', border: '1px dashed #b0b0b7', color: '#4b5563', cursor: 'pointer' },
   resetBtn: { backgroundColor: 'transparent', border: '1px solid #ca8a04', color: '#ca8a04', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' },
-  modal: { background: '#ffffff', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #e4e4e8' },
+  modal: { background: '#ffffff', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #c9c9cf' },
 };
 
 export default UserManagement;

@@ -10,16 +10,16 @@ const CATEGORIES = [
 ];
 
 const s = {
-  card: { background: '#f7f7f9', borderRadius: 12, border: '1px solid #e4e4e8', borderTop: '2px solid #b22222', marginBottom: 16, overflow: 'hidden' },
-  cardHeader: { padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e4e4e8' },
+  card: { background: '#f7f7f9', borderRadius: 12, border: '1px solid #c9c9cf', borderTop: '2px solid #b22222', marginBottom: 16, overflow: 'hidden' },
+  cardHeader: { padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #c9c9cf' },
   cardBody: { padding: '16px 18px' },
-  label: { fontSize: 12, color: '#6b7280', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  input: { background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
-  textarea: { background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box', resize: 'vertical' },
-  select: { background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  label: { fontSize: 12, color: '#4b5563', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  input: { background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  textarea: { background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box', resize: 'vertical' },
+  select: { background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   btn: (color) => ({ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#18181b' }),
-  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #d8d8dd', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#71717a' },
-  tag: (color) => ({ display: 'inline-block', background: color || '#e4e4e8', border: '1px solid #d8d8dd', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: '#71717a' }),
+  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #b8b8bf', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#52525b' },
+  tag: (color) => ({ display: 'inline-block', background: color || '#c9c9cf', border: '1px solid #b8b8bf', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: '#52525b' }),
 };
 
 export default function Resources() {
@@ -89,17 +89,17 @@ export default function Resources() {
   };
 
   const filtered = activeCategory === 'all' ? resources : resources.filter(r => r.category === activeCategory);
-  if (loading) return <div style={{ padding: 32, color: '#b8b8bd' }}>Loading resources...</div>;
+  if (loading) return <div style={{ padding: 32, color: '#8a8a92' }}>Loading resources...</div>;
 
   return (
     <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
       {/* Main tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #d8d8dd', cursor: 'pointer', fontSize: 14,
-          background: activeTab === 'resources' ? '#e4e4e8' : 'transparent', color: activeTab === 'resources' ? '#18181b' : '#71717a', fontWeight: activeTab === 'resources' ? 600 : 400 }}
+        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #b8b8bf', cursor: 'pointer', fontSize: 14,
+          background: activeTab === 'resources' ? '#c9c9cf' : 'transparent', color: activeTab === 'resources' ? '#18181b' : '#52525b', fontWeight: activeTab === 'resources' ? 600 : 400 }}
           onClick={() => setActiveTabMain('resources')}>Resources</button>
-        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #d8d8dd', cursor: 'pointer', fontSize: 14,
-          background: activeTab === 'levels' ? '#e4e4e8' : 'transparent', color: activeTab === 'levels' ? '#18181b' : '#71717a', fontWeight: activeTab === 'levels' ? 600 : 400 }}
+        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #b8b8bf', cursor: 'pointer', fontSize: 14,
+          background: activeTab === 'levels' ? '#c9c9cf' : 'transparent', color: activeTab === 'levels' ? '#18181b' : '#52525b', fontWeight: activeTab === 'levels' ? 600 : 400 }}
           onClick={() => setActiveTabMain('levels')}>Level Requirements</button>
       </div>
 
@@ -110,12 +110,12 @@ export default function Resources() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setActiveCategory('all')}
-            style={{ ...s.tag(), background: activeCategory === 'all' ? '#b22222' : '#e4e4e8', color: activeCategory === 'all' ? '#18181b' : '#71717a', cursor: 'pointer', border: 'none' }}>
+            style={{ ...s.tag(), background: activeCategory === 'all' ? '#b22222' : '#c9c9cf', color: activeCategory === 'all' ? '#18181b' : '#52525b', cursor: 'pointer', border: 'none' }}>
             All
           </button>
           {CATEGORIES.map(c => (
             <button key={c.id} onClick={() => setActiveCategory(c.id)}
-              style={{ ...s.tag(), background: activeCategory === c.id ? '#b22222' : '#e4e4e8', color: activeCategory === c.id ? '#18181b' : '#71717a', cursor: 'pointer', border: 'none' }}>
+              style={{ ...s.tag(), background: activeCategory === c.id ? '#b22222' : '#c9c9cf', color: activeCategory === c.id ? '#18181b' : '#52525b', cursor: 'pointer', border: 'none' }}>
               {c.label}
             </button>
           ))}
@@ -132,7 +132,7 @@ export default function Resources() {
         <div style={{ ...s.card, marginBottom: 24 }}>
           <div style={s.cardHeader}>
             <span style={{ fontSize: 15, fontWeight: 600, color: '#18181b' }}>{editingId ? 'Edit Resource' : 'Add Resource'}</span>
-            <button onClick={() => { setShowAdd(false); setEditingId(null); resetForm(); }} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 18 }}>×</button>
+            <button onClick={() => { setShowAdd(false); setEditingId(null); resetForm(); }} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 18 }}>×</button>
           </div>
           <div style={s.cardBody}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -196,7 +196,7 @@ export default function Resources() {
 
       {/* Resource List */}
       {filtered.length === 0 && (
-        <div style={{ color: '#b8b8bd', fontSize: 14, padding: '32px 0', textAlign: 'center' }}>
+        <div style={{ color: '#8a8a92', fontSize: 14, padding: '32px 0', textAlign: 'center' }}>
           No resources yet. {canEdit ? 'Click "+ Add Resource" to get started.' : ''}
         </div>
       )}

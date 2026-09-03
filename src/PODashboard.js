@@ -43,14 +43,14 @@ export default function PODashboard() {
     if (s === 'Active') return { bg: '#14532d', color: '#16a34a' };
     if (s === 'Accepted') return { bg: '#dbeafe', color: '#2563eb' };
     if (s === 'Pending') return { bg: '#ffedd5', color: '#c2410c' };
-    if (s === 'Discharged') return { bg: '#e4e4e8', color: '#6b7280' };
-    return { bg: '#e4e4e8', color: '#71717a' };
+    if (s === 'Discharged') return { bg: '#c9c9cf', color: '#4b5563' };
+    return { bg: '#c9c9cf', color: '#52525b' };
   };
 
   if (loading) return (
     <div style={s.loading}>
       <div style={s.spinner} />
-      <p style={{ color: '#9ca3af', marginTop: '12px' }}>Loading your clients...</p>
+      <p style={{ color: '#6b7280', marginTop: '12px' }}>Loading your clients...</p>
     </div>
   );
 
@@ -63,13 +63,13 @@ export default function PODashboard() {
       <div style={s.header}>
         <h1 style={s.title}>My Clients</h1>
         <p style={s.subtitle}>{clients.length} client{clients.length !== 1 ? 's' : ''} assigned to you</p>
-        <p style={{ color: '#b8b8bd', fontSize: '12px', margin: '4px 0 0 0' }}>Logged in as: {user?.email}</p>
+        <p style={{ color: '#8a8a92', fontSize: '12px', margin: '4px 0 0 0' }}>Logged in as: {user?.email}</p>
       </div>
 
       {clients.length === 0 ? (
         <div style={s.empty}>
-          <p style={{ color: '#a1a1aa', fontSize: '15px' }}>No clients are currently assigned to your email address.</p>
-          <p style={{ color: '#b8b8bd', fontSize: '14px', marginTop: '8px' }}>Contact staff if you believe this is an error.</p>
+          <p style={{ color: '#71717a', fontSize: '15px' }}>No clients are currently assigned to your email address.</p>
+          <p style={{ color: '#8a8a92', fontSize: '14px', marginTop: '8px' }}>Contact staff if you believe this is an error.</p>
         </div>
       ) : (
         <div style={s.grid}>
@@ -92,10 +92,10 @@ export default function PODashboard() {
                 <div style={s.cardRight}>
                   <span style={{ ...s.badge, background: sc.bg, color: sc.color }}>{c.status}</span>
                   {c.status === 'Active' && c.level && (
-                    <span style={{ ...s.badge, background: '#f7f7f9', color: '#71717a', marginTop: '4px' }}>Level {c.level}</span>
+                    <span style={{ ...s.badge, background: '#f7f7f9', color: '#52525b', marginTop: '4px' }}>Level {c.level}</span>
                   )}
                   {daysIn !== null && c.status === 'Active' && (
-                    <span style={{ fontSize: '12px', color: '#a1a1aa', marginTop: '4px' }}>{daysIn}d in program</span>
+                    <span style={{ fontSize: '12px', color: '#71717a', marginTop: '4px' }}>{daysIn}d in program</span>
                   )}
                 </div>
               </div>
@@ -173,7 +173,7 @@ function POClientView({ client, onBack }) {
     if (type === 'Crisis') return '#e24b4a';
     if (type === 'General Note') return '#b45309';
     if (type === 'Weekly Check-In') return '#7f77dd';
-    return '#71717a';
+    return '#52525b';
   };
 
   if (loading) return (
@@ -201,7 +201,7 @@ function POClientView({ client, onBack }) {
           <div style={s.headerMeta}>
             <span>{client.houses?.name || 'No house'}</span>
             {client.level && <span>· Level {client.level}</span>}
-            {client.status && <span style={{ color: client.status === 'Active' ? '#16a34a' : '#71717a' }}>· {client.status}</span>}
+            {client.status && <span style={{ color: client.status === 'Active' ? '#16a34a' : '#52525b' }}>· {client.status}</span>}
             {daysIn !== null && <span>· {daysIn} days in program</span>}
           </div>
           {client.start_date && <p style={s.headerSub}>Started {fmt(client.start_date)}</p>}
@@ -252,7 +252,7 @@ function POClientView({ client, onBack }) {
               {ci.checkin_employed !== null && <CheckInField label="Employed" value={ci.checkin_employed ? 'Yes' : 'No'} />}
               {ci.checkin_employer && <CheckInField label="Employer" value={ci.checkin_employer} />}
               {ci.checkin_payment_plan && <CheckInField label="Payment Plan" value={ci.checkin_payment_plan} />}
-              {ci.needs_ride !== null && <CheckInField label="Needs Ride" value={ci.needs_ride ? 'Yes' : 'No'} color={ci.needs_ride ? '#c2410c' : '#71717a'} />}
+              {ci.needs_ride !== null && <CheckInField label="Needs Ride" value={ci.needs_ride ? 'Yes' : 'No'} color={ci.needs_ride ? '#c2410c' : '#52525b'} />}
             </div>
             {ci.notes && <p style={s.checkInNotes}>"{ci.notes}"</p>}
           </div>
@@ -281,7 +281,7 @@ function POClientView({ client, onBack }) {
                     <td style={{ ...s.td, color: ua.result === 'Positive' ? '#dc2626' : '#16a34a', fontWeight: '600' }}>
                       {ua.result || '—'}
                     </td>
-                    <td style={{ ...s.td, color: '#9ca3af' }}>{ua.notes || '—'}</td>
+                    <td style={{ ...s.td, color: '#6b7280' }}>{ua.notes || '—'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -352,7 +352,7 @@ function POClientView({ client, onBack }) {
               {entry.notes && entry.notes !== 'Notes' && <p style={s.timelineNotes}>{entry.notes}</p>}
               {entry.photo_url && (
                 <img src={entry.photo_url} alt="" onClick={() => window.open(entry.photo_url, '_blank')}
-                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', cursor: 'pointer', border: '1px solid #f0f0f3' }} />
+                  style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', cursor: 'pointer', border: '1px solid #d4d4da' }} />
               )}
             </div>
           </div>
@@ -365,7 +365,7 @@ function POClientView({ client, onBack }) {
 function CheckInField({ label, value, color }) {
   return (
     <div style={{ marginBottom: '6px' }}>
-      <span style={{ fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}: </span>
+      <span style={{ fontSize: '12px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.4px' }}>{label}: </span>
       <span style={{ fontSize: '14px', color: color || '#3f3f46' }}>{value}</span>
     </div>
   );
@@ -374,53 +374,53 @@ function CheckInField({ label, value, color }) {
 const s = {
   page: { padding: '0 0 60px 0', maxWidth: '860px' },
   loading: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px' },
-  spinner: { width: '32px', height: '32px', border: '3px solid #e4e4e7', borderTop: '3px solid #b22222', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
+  spinner: { width: '32px', height: '32px', border: '3px solid #c9c9cf', borderTop: '3px solid #b22222', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
   header: { marginBottom: '28px' },
   title: { color: '#18181b', fontSize: '24px', fontWeight: '700', margin: '0 0 6px 0' },
-  subtitle: { color: '#9ca3af', fontSize: '14px', margin: 0 },
+  subtitle: { color: '#6b7280', fontSize: '14px', margin: 0 },
   grid: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  card: { background: '#ffffff', border: '1px solid #f0f0f3', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.15s' },
+  card: { background: '#ffffff', border: '1px solid #d4d4da', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.15s' },
   cardLeft: { display: 'flex', alignItems: 'center', gap: '14px' },
   cardRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end' },
-  avatar: { width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e4e4e8' },
-  avatarFallback: { width: '44px', height: '44px', borderRadius: '50%', background: '#f7f7f9', border: '2px solid #e4e4e8', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a', fontSize: '14px', fontWeight: '700' },
+  avatar: { width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #c9c9cf' },
+  avatarFallback: { width: '44px', height: '44px', borderRadius: '50%', background: '#f7f7f9', border: '2px solid #c9c9cf', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#52525b', fontSize: '14px', fontWeight: '700' },
   avatarFallbackLg: { width: '64px', height: '64px', fontSize: '20px' },
   clientName: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 3px 0' },
-  clientSub: { color: '#9ca3af', fontSize: '14px', margin: 0 },
+  clientSub: { color: '#6b7280', fontSize: '14px', margin: 0 },
   badge: { padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', display: 'inline-block' },
   empty: { padding: '60px 0', textAlign: 'center' },
-  backBtn: { background: 'transparent', border: '1px solid #e4e4e8', color: '#71717a', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginBottom: '24px' },
-  clientHeader: { display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '28px', padding: '20px', background: '#ffffff', borderRadius: '12px', border: '1px solid #f0f0f3' },
-  headerAvatar: { width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #e4e4e8', flexShrink: 0 },
+  backBtn: { background: 'transparent', border: '1px solid #c9c9cf', color: '#52525b', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginBottom: '24px' },
+  clientHeader: { display: 'flex', gap: '20px', alignItems: 'flex-start', marginBottom: '28px', padding: '20px', background: '#ffffff', borderRadius: '12px', border: '1px solid #d4d4da' },
+  headerAvatar: { width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #c9c9cf', flexShrink: 0 },
   headerInfo: { flex: 1 },
   headerName: { color: '#18181b', fontSize: '22px', fontWeight: '700', margin: '0 0 6px 0' },
-  headerMeta: { color: '#9ca3af', fontSize: '14px', display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' },
-  headerSub: { color: '#a1a1aa', fontSize: '13px', margin: 0 },
-  section: { background: '#ffffff', border: '1px solid #f0f0f3', borderRadius: '12px', padding: '18px 20px', marginBottom: '14px' },
+  headerMeta: { color: '#6b7280', fontSize: '14px', display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '4px' },
+  headerSub: { color: '#71717a', fontSize: '13px', margin: 0 },
+  section: { background: '#ffffff', border: '1px solid #d4d4da', borderRadius: '12px', padding: '18px 20px', marginBottom: '14px' },
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
   sectionTitle: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 14px 0' },
-  toggleBtn: { background: '#f7f7f9', border: '1px solid #e4e4e8', color: '#71717a', padding: '5px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
+  toggleBtn: { background: '#f7f7f9', border: '1px solid #c9c9cf', color: '#52525b', padding: '5px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' },
   balanceRow: { display: 'flex', gap: '16px', flexWrap: 'wrap' },
   balanceStat: { flex: 1, minWidth: '120px', background: '#ffffff', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '4px' },
-  balanceLabel: { fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  balanceLabel: { fontSize: '12px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' },
   balanceValue: { fontSize: '18px', fontWeight: '700', color: '#18181b' },
   checkInCard: { background: '#ffffff', borderRadius: '8px', padding: '12px 14px' },
-  checkInDate: { fontSize: '12px', color: '#a1a1aa', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  checkInDate: { fontSize: '12px', color: '#71717a', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '0.5px' },
   checkInGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' },
-  checkInNotes: { color: '#9ca3af', fontSize: '14px', fontStyle: 'italic', margin: '10px 0 0 0', borderTop: '1px solid #ececef', paddingTop: '8px' },
-  empty2: { color: '#a1a1aa', fontSize: '14px', fontStyle: 'italic', margin: 0 },
+  checkInNotes: { color: '#6b7280', fontSize: '14px', fontStyle: 'italic', margin: '10px 0 0 0', borderTop: '1px solid #cfcfd4', paddingTop: '8px' },
+  empty2: { color: '#71717a', fontSize: '14px', fontStyle: 'italic', margin: 0 },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: '14px' },
-  th: { textAlign: 'left', padding: '8px 10px', color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #e4e4e8' },
+  th: { textAlign: 'left', padding: '8px 10px', color: '#71717a', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid #c9c9cf' },
   td: { padding: '8px 10px', color: '#3f3f46', borderBottom: '1px solid #ffffff' },
   meetingStats: { display: 'flex', gap: '12px' },
   meetingStat: { flex: 1, background: '#ffffff', borderRadius: '8px', padding: '12px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px' },
   meetingStatNum: { fontSize: '28px', fontWeight: '700', color: '#2563eb' },
-  meetingStatLabel: { fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  timelineEntry: { display: 'flex', gap: '12px', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid #ececef', marginBottom: '12px' },
+  meetingStatLabel: { fontSize: '12px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  timelineEntry: { display: 'flex', gap: '12px', alignItems: 'flex-start', paddingBottom: '12px', borderBottom: '1px solid #cfcfd4', marginBottom: '12px' },
   timelineDot: { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, marginTop: '5px' },
   timelineContent: { flex: 1 },
   timelineHeader: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' },
-  timelineDate: { color: '#b8b8bd', fontSize: '12px', marginLeft: 'auto' },
-  timelineNotes: { color: '#9ca3af', fontSize: '14px', margin: 0, lineHeight: 1.5 },
+  timelineDate: { color: '#8a8a92', fontSize: '12px', marginLeft: 'auto' },
+  timelineNotes: { color: '#6b7280', fontSize: '14px', margin: 0, lineHeight: 1.5 },
 };

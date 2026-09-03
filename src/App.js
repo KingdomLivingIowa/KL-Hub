@@ -144,7 +144,7 @@ const styles = {
   spinner: {
     width: '32px',
     height: '32px',
-    border: '3px solid #e4e4e7',
+    border: '3px solid #c9c9cf',
     borderTop: '3px solid #b22222',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
@@ -158,7 +158,7 @@ const styles = {
     fontFamily: 'sans-serif',
   },
   loginCard: {
-    backgroundColor: '#e4e4e8',
+    backgroundColor: '#c9c9cf',
     padding: '48px 40px',
     borderRadius: '16px',
     width: '100%',
@@ -203,7 +203,7 @@ const styles = {
   },
   input: {
     backgroundColor: '#ffffff',
-    border: '1px solid #d4d4d8',
+    border: '1px solid #b0b0b7',
     borderRadius: '8px',
     padding: '12px 14px',
     color: '#18181b',

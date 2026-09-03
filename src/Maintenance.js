@@ -14,7 +14,7 @@ const ISSUE_TYPE_COLORS = {
   'Electrical': '#ca8a04',
   'HVAC': '#7c3aed',
   'Appliances': '#0d9488',
-  'Other': '#9ca3af',
+  'Other': '#6b7280',
 };
 
 export default function Maintenance() {
@@ -118,7 +118,7 @@ export default function Maintenance() {
           <span style={{ ...s.statNum, color: '#16a34a' }}>{completedCount}</span>
           <span style={s.statLabel}>Completed</span>
         </div>
-        <div style={{ ...s.stat, borderColor: '#b8b8bd' }}>
+        <div style={{ ...s.stat, borderColor: '#8a8a92' }}>
           <span style={{ ...s.statNum, color: '#18181b' }}>{requests.length}</span>
           <span style={s.statLabel}>Total</span>
         </div>
@@ -146,10 +146,10 @@ export default function Maintenance() {
 
       {/* Requests list */}
       {loading ? (
-        <p style={{ color: '#9ca3af' }}>Loading...</p>
+        <p style={{ color: '#6b7280' }}>Loading...</p>
       ) : requests.length === 0 ? (
         <div style={s.empty}>
-          <p style={{ color: '#a1a1aa', fontSize: '15px' }}>No maintenance requests found.</p>
+          <p style={{ color: '#71717a', fontSize: '15px' }}>No maintenance requests found.</p>
         </div>
       ) : (
         <div style={s.list}>
@@ -165,7 +165,7 @@ export default function Maintenance() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                       <span style={{ ...s.badge, background: sc.bg, color: sc.color }}>{req.status}</span>
                       {req.issue_type && (
-                        <span style={{ ...s.badge, background: '#ffffff', color: ISSUE_TYPE_COLORS[req.issue_type] || '#71717a', border: `1px solid ${ISSUE_TYPE_COLORS[req.issue_type] || '#e4e4e7'}` }}>
+                        <span style={{ ...s.badge, background: '#ffffff', color: ISSUE_TYPE_COLORS[req.issue_type] || '#52525b', border: `1px solid ${ISSUE_TYPE_COLORS[req.issue_type] || '#c9c9cf'}` }}>
                           {req.issue_type}
                         </span>
                       )}
@@ -180,7 +180,7 @@ export default function Maintenance() {
                   <div style={s.cardRight}>
                     <p style={s.cardDate}>{fmtTime(req.submitted_at)}</p>
                     <p style={s.cardBy}>{req.submitted_by}</p>
-                    <span style={{ color: '#b8b8bd', fontSize: '16px' }}>{isExpanded ? '▲' : '▼'}</span>
+                    <span style={{ color: '#8a8a92', fontSize: '16px' }}>{isExpanded ? '▲' : '▼'}</span>
                   </div>
                 </div>
 
@@ -219,7 +219,7 @@ export default function Maintenance() {
                             {saving ? 'Saving...' : 'Save'}
                           </button>
                           <button onClick={() => setEditingId(null)}
-                            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                            style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                             Cancel
                           </button>
                         </div>
@@ -271,28 +271,28 @@ const s = {
   statsRow: { display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' },
   stat: { background: '#ffffff', border: '1px solid', borderRadius: '10px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' },
   statNum: { fontSize: '28px', fontWeight: '700' },
-  statLabel: { fontSize: '13px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  statLabel: { fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' },
   filters: { display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' },
   filterGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  filterLabel: { fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  select: { background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '8px', color: '#18181b', padding: '7px 12px', fontSize: '14px', cursor: 'pointer' },
+  filterLabel: { fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  select: { background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '8px', color: '#18181b', padding: '7px 12px', fontSize: '14px', cursor: 'pointer' },
   empty: { padding: '60px 0', textAlign: 'center' },
   list: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  card: { background: '#ffffff', border: '1px solid #f0f0f3', borderRadius: '12px', overflow: 'hidden' },
+  card: { background: '#ffffff', border: '1px solid #d4d4da', borderRadius: '12px', overflow: 'hidden' },
   cardHeader: { padding: '14px 16px', display: 'flex', gap: '12px', justifyContent: 'space-between', cursor: 'pointer' },
   cardLeft: { flex: 1 },
   cardRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 },
   badge: { padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', display: 'inline-block' },
   cardHouse: { color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' },
-  cardLocation: { color: '#9ca3af', fontSize: '13px', margin: '0 0 4px' },
-  cardDesc: { color: '#71717a', fontSize: '14px', margin: 0, lineHeight: 1.5 },
-  cardDate: { color: '#a1a1aa', fontSize: '12px', margin: 0 },
-  cardBy: { color: '#b8b8bd', fontSize: '12px', margin: 0 },
-  cardBody: { padding: '14px 16px', borderTop: '1px solid #ececef', background: '#f7f7f9' },
+  cardLocation: { color: '#6b7280', fontSize: '13px', margin: '0 0 4px' },
+  cardDesc: { color: '#52525b', fontSize: '14px', margin: 0, lineHeight: 1.5 },
+  cardDate: { color: '#71717a', fontSize: '12px', margin: 0 },
+  cardBy: { color: '#8a8a92', fontSize: '12px', margin: 0 },
+  cardBody: { padding: '14px 16px', borderTop: '1px solid #cfcfd4', background: '#f7f7f9' },
   detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' },
-  detailLabel: { fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
+  detailLabel: { fontSize: '12px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
   detailValue: { color: '#3f3f46', fontSize: '14px', margin: 0, lineHeight: 1.5 },
   editRow: { marginBottom: '12px' },
-  editLabel: { display: 'block', fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
-  editInput: { width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '8px', color: '#18181b', padding: '8px 10px', fontSize: '14px', boxSizing: 'border-box' },
+  editLabel: { display: 'block', fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
+  editInput: { width: '100%', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '8px', color: '#18181b', padding: '8px 10px', fontSize: '14px', boxSizing: 'border-box' },
 };
