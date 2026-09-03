@@ -2216,10 +2216,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const ChorePeriodCard = ({ record }) => {
     const todayStr = new Date().toISOString().split('T')[0];
-    const elapsedEnd = record.period_end < todayStr ? record.period_end : todayStr;
-    const days = elapsedEnd >= record.period_start ? choreDayList(record.period_start, elapsedEnd) : [];
+    // Show every day in the full period (not just elapsed ones) so it's clear this
+    // is a daily chore, not a once- or twice-a-period one — future days just sit
+    // neutral until their date arrives.
+    const allDays = choreDayList(record.period_start, record.period_end);
+    const elapsedDays = allDays.filter(d => d <= todayStr);
     const completedSet = new Set(record.completed_dates);
-    const completedCount = days.filter(d => completedSet.has(d)).length;
+    const completedCount = elapsedDays.filter(d => completedSet.has(d)).length;
     const isCurrent = record.period_end >= todayStr;
     return (
       <div style={{ background: '#1c1c24', borderRadius: '10px', border: `1px solid ${isCurrent ? '#1a3a2a' : '#333'}`, marginBottom: '10px', padding: '12px 16px' }}>
@@ -2228,19 +2231,24 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           {isCurrent && <span style={{ fontSize: '13px', padding: '2px 7px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80', fontWeight: '600' }}>Current</span>}
         </div>
         <p style={{ fontSize: '14px', color: '#999', margin: '0 0 8px' }}>
-          {formatDateShort(record.period_start)} – {formatDateShort(record.period_end)} · {completedCount}/{days.length} days done so far
+          {formatDateShort(record.period_start)} – {formatDateShort(record.period_end)} ({allDays.length}-day period, done daily) · {completedCount}/{elapsedDays.length} days so far
         </p>
-        {days.length > 0 && (
+        {allDays.length > 0 && (
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            {days.map(d => (
-              <span key={d} title={d} style={{
-                width: '22px', height: '22px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '12px', fontWeight: '700',
-                background: completedSet.has(d) ? '#1e3a2f' : '#3a1e1e', color: completedSet.has(d) ? '#4ade80' : '#f87171',
-              }}>
-                {completedSet.has(d) ? '✓' : '✗'}
-              </span>
-            ))}
+            {allDays.map(d => {
+              const done = completedSet.has(d);
+              const isFuture = d > todayStr;
+              return (
+                <span key={d} title={d} style={{
+                  width: '22px', height: '22px', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '12px', fontWeight: '700',
+                  background: done ? '#1e3a2f' : isFuture ? '#2a2a2a' : '#3a1e1e',
+                  color: done ? '#4ade80' : isFuture ? '#666' : '#f87171',
+                }}>
+                  {done ? '✓' : isFuture ? '·' : '✗'}
+                </span>
+              );
+            })}
           </div>
         )}
       </div>

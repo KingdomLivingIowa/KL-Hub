@@ -1768,6 +1768,9 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
               const totalDaysSoFar = settings?.current_period_start
                 ? Math.max(Math.round((new Date(elapsedEnd + 'T12:00:00') - new Date(settings.current_period_start + 'T12:00:00')) / 86400000) + 1, 0)
                 : 0;
+              const totalPeriodDays = settings?.current_period_start && settings?.current_period_end
+                ? Math.max(Math.round((new Date(settings.current_period_end + 'T12:00:00') - new Date(settings.current_period_start + 'T12:00:00')) / 86400000) + 1, 0)
+                : 0;
               return (
                 <div key={chore.id} style={{
                   background: '#1c1c24', borderRadius: '10px', padding: '12px 14px',
@@ -1784,7 +1787,7 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                       <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
                         {!unfilled && (
                           <span style={{ background: '#1e2d3a', color: '#60a5fa', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>
-                            {doneCount}/{totalDaysSoFar} days done
+                            {doneCount}/{totalDaysSoFar} days done{totalPeriodDays ? ` (${totalPeriodDays}-day period, checked daily)` : ''}
                           </span>
                         )}
                         {assignment.is_manual && <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>Manually changed</span>}
