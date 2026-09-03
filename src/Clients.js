@@ -2484,6 +2484,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <ReadField label="House" value={selected.house_name} />
                       <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
                       <ReadField label="House manager" value={selected.house_manager} />
+                      <EditableField label="Door code" field="door_code" value={selected.door_code} />
                       <EditableField label="Move-in date" field="start_date" value={selected.start_date} type="date" />
                       {selected.status === 'Pending' && (
                         <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
