@@ -463,7 +463,7 @@ function Messaging() {
             {totalUnread > 0 && <span style={ms.unreadBadge}>{totalUnread}</span>}
           </p>
           <button onClick={() => { setShowNewChat(!showNewChat); setSelectedMembers([]); setGroupChatName(''); setContactSearch(''); }}
-            style={{ background: showNewChat ? '#999' : '#b22222', border: 'none', color: '#fff', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+            style={{ background: showNewChat ? '#6b7280' : '#b22222', border: 'none', color: '#18181b', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
             {showNewChat ? 'Cancel' : '+ New Chat'}
           </button>
         </div>
@@ -471,7 +471,7 @@ function Messaging() {
         {/* New chat creator */}
         {showNewChat && (
           <div style={ms.newChatPanel}>
-            <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 8px 0' }}>Select people to message:</p>
+            <p style={{ color: '#71717a', fontSize: '14px', margin: '0 0 8px 0' }}>Select people to message:</p>
 
             <input
               placeholder="Search by name..."
@@ -482,21 +482,21 @@ function Messaging() {
 
             <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '10px' }}>
               {/* Staff */}
-              <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '4px 8px 2px', margin: 0 }}>Staff</p>
+              <p style={{ color: '#a1a1aa', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '4px 8px 2px', margin: 0 }}>Staff</p>
               {staffList.filter(s => s.id !== user.id && (!contactSearch.trim() || (s.full_name || s.email || '').toLowerCase().includes(contactSearch.toLowerCase()))).map(s => {
                 const isSelected = selectedMembers.find(m => m.id === s.id);
                 return (
                   <div key={s.id} onClick={() => toggleMember(s)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#1e3a2f' : 'transparent', marginBottom: '2px' }}
-                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#333'; }}
-                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#1e3a2f' : 'transparent'; }}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#4ade80' : '#999'}`, background: isSelected ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#dcfce7' : 'transparent', marginBottom: '2px' }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#e4e4e7'; }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#dcfce7' : 'transparent'; }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#16a34a' : '#6b7280'}`, background: isSelected ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {isSelected && <span style={{ color: '#000', fontSize: '14px', fontWeight: '700' }}>✓</span>}
                     </div>
                     <div style={ms.avatar}>{initials(s.full_name || s.email)}</div>
                     <div>
-                      <p style={{ color: '#fff', fontSize: '14px', margin: 0 }}>{s.full_name || s.email}</p>
-                      <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>{(s.role || '').replace(/_/g, ' ')}</p>
+                      <p style={{ color: '#18181b', fontSize: '14px', margin: 0 }}>{s.full_name || s.email}</p>
+                      <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>{(s.role || '').replace(/_/g, ' ')}</p>
                     </div>
                   </div>
                 );
@@ -504,21 +504,21 @@ function Messaging() {
               {/* Clients with portal accounts */}
               {clientList.length > 0 && (
                 <>
-                  <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '8px 8px 2px', margin: 0 }}>Residents</p>
+                  <p style={{ color: '#a1a1aa', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.07em', padding: '8px 8px 2px', margin: 0 }}>Residents</p>
                   {clientList.filter(c => !contactSearch.trim() || (c.full_name || c.email || '').toLowerCase().includes(contactSearch.toLowerCase())).map(c => {
                     const isSelected = selectedMembers.find(m => m.id === c.id);
                     return (
                       <div key={c.id} onClick={() => toggleMember(c)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#1e3a2f' : 'transparent', marginBottom: '2px' }}
-                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#333'; }}
-                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#1e3a2f' : 'transparent'; }}>
-                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#4ade80' : '#999'}`, background: isSelected ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 8px', borderRadius: '8px', cursor: 'pointer', background: isSelected ? '#dcfce7' : 'transparent', marginBottom: '2px' }}
+                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#e4e4e7'; }}
+                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isSelected ? '#dcfce7' : 'transparent'; }}>
+                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: `2px solid ${isSelected ? '#16a34a' : '#6b7280'}`, background: isSelected ? '#16a34a' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {isSelected && <span style={{ color: '#000', fontSize: '14px', fontWeight: '700' }}>✓</span>}
                         </div>
-                        <div style={{ ...ms.avatar, background: '#2d1e3a', color: '#c084fc' }}>{initials(c.full_name || c.email)}</div>
+                        <div style={{ ...ms.avatar, background: '#f3e8ff', color: '#9333ea' }}>{initials(c.full_name || c.email)}</div>
                         <div>
-                          <p style={{ color: '#fff', fontSize: '14px', margin: 0 }}>{c.full_name || c.email}</p>
-                          <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>{c.house_name ? `Resident · ${c.house_name}` : 'Resident'}</p>
+                          <p style={{ color: '#18181b', fontSize: '14px', margin: 0 }}>{c.full_name || c.email}</p>
+                          <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>{c.house_name ? `Resident · ${c.house_name}` : 'Resident'}</p>
                         </div>
                       </div>
                     );
@@ -526,7 +526,7 @@ function Messaging() {
                 </>
               )}
               {clientList.length === 0 && (
-                <p style={{ color: '#555', fontSize: '13px', padding: '4px 8px', fontStyle: 'italic' }}>No residents with portal accounts yet.</p>
+                <p style={{ color: '#b8b8bd', fontSize: '13px', padding: '4px 8px', fontStyle: 'italic' }}>No residents with portal accounts yet.</p>
               )}
             </div>
 
@@ -542,7 +542,7 @@ function Messaging() {
 
             {selectedMembers.length > 0 && (
               <div style={{ marginBottom: '8px' }}>
-                <p style={{ color: '#4ade80', fontSize: '14px', margin: '0 0 6px 0' }}>
+                <p style={{ color: '#16a34a', fontSize: '14px', margin: '0 0 6px 0' }}>
                   {selectedMembers.length === 1
                     ? `Direct message with ${selectedMembers[0].full_name || selectedMembers[0].email}`
                     : `Group chat with ${selectedMembers.length} people`}
@@ -551,14 +551,14 @@ function Messaging() {
             )}
 
             <button onClick={createChat} disabled={creatingChat || selectedMembers.length === 0}
-              style={{ width: '100%', background: selectedMembers.length > 0 ? '#b22222' : '#333', border: 'none', color: selectedMembers.length > 0 ? '#fff' : '#bbb', padding: '8px', borderRadius: '8px', fontSize: '14px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
+              style={{ width: '100%', background: selectedMembers.length > 0 ? '#b22222' : '#e4e4e7', border: 'none', color: selectedMembers.length > 0 ? '#18181b' : '#71717a', padding: '8px', borderRadius: '8px', fontSize: '14px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
               {creatingChat ? 'Creating...' : selectedMembers.length > 1 ? 'Create Group Chat' : 'Start Conversation'}
             </button>
           </div>
         )}
 
         {loadingConvs ? (
-          <p style={{ color: '#999', fontSize: '14px', padding: '12px 16px' }}>Loading...</p>
+          <p style={{ color: '#6b7280', fontSize: '14px', padding: '12px 16px' }}>Loading...</p>
         ) : (
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {/* Preset group chats */}
@@ -613,7 +613,7 @@ function Messaging() {
             )}
 
             {conversations.length === 0 && (
-              <p style={{ color: '#bbb', fontSize: '14px', padding: '12px 16px' }}>No conversations yet.</p>
+              <p style={{ color: '#71717a', fontSize: '14px', padding: '12px 16px' }}>No conversations yet.</p>
             )}
           </div>
         )}
@@ -624,28 +624,28 @@ function Messaging() {
         {!selectedConv ? (
           <div style={ms.emptyState}>
             <p style={{ fontSize: '32px', margin: '0 0 12px 0' }}>💬</p>
-            <p style={{ color: '#fff', fontSize: '16px', fontWeight: '500', margin: '0 0 6px 0' }}>Select a conversation</p>
-            <p style={{ color: '#bbb', fontSize: '14px', margin: 0 }}>Choose a group chat or start a new conversation</p>
+            <p style={{ color: '#18181b', fontSize: '16px', fontWeight: '500', margin: '0 0 6px 0' }}>Select a conversation</p>
+            <p style={{ color: '#71717a', fontSize: '14px', margin: 0 }}>Choose a group chat or start a new conversation</p>
           </div>
         ) : (
           <>
             <div style={ms.chatHeader}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ ...ms.avatar, background: selectedConv.type === 'group' ? '#1e2d3a' : '#2d1e3a', color: selectedConv.type === 'group' ? '#60a5fa' : '#c084fc', fontSize: '14px' }}>
+                <div style={{ ...ms.avatar, background: selectedConv.type === 'group' ? '#dbeafe' : '#f3e8ff', color: selectedConv.type === 'group' ? '#2563eb' : '#9333ea', fontSize: '14px' }}>
                   {selectedConv.type === 'group' ? '#' : initials(getConvName(selectedConv))}
                 </div>
                 <div>
-                  <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>{getConvName(selectedConv)}</p>
-                  <p style={{ color: '#bbb', fontSize: '14px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
+                  <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>{getConvName(selectedConv)}</p>
+                  <p style={{ color: '#71717a', fontSize: '14px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
                 </div>
               </div>
             </div>
 
             <div style={ms.messages}>
               {loadingMessages ? (
-                <p style={{ color: '#bbb', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>Loading messages...</p>
+                <p style={{ color: '#71717a', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>Loading messages...</p>
               ) : messages.length === 0 ? (
-                <p style={{ color: '#bbb', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
+                <p style={{ color: '#71717a', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
               ) : (
                 <>
                   {messages.map((msg, idx) => {
@@ -666,7 +666,7 @@ function Messaging() {
                         return (
                           <span key={i} style={{
                             background: isMine ? 'rgba(251,191,36,0.35)' : 'transparent',
-                            color: isMine ? '#fbbf24' : '#fff',
+                            color: isMine ? '#ca8a04' : '#18181b',
                             borderRadius: '4px',
                             padding: '0 3px',
                             fontWeight: '700',
@@ -680,24 +680,24 @@ function Messaging() {
                         style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}
                         >
                         {showSender && (
-                          <p style={{ color: '#bbb', fontSize: '14px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
+                          <p style={{ color: '#71717a', fontSize: '14px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>
                         )}
                         <div style={{
                           maxWidth: '70%',
-                          background: isMentionedInMsg && !isMe ? '#2d2a1e' : isMe ? '#b22222' : '#333',
+                          background: isMentionedInMsg && !isMe ? '#ffedd5' : isMe ? '#b22222' : '#e4e4e7',
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                           padding: '9px 14px',
-                          border: isMentionedInMsg && !isMe ? '1px solid #fbbf24' : 'none',
+                          border: isMentionedInMsg && !isMe ? '1px solid #ca8a04' : 'none',
                         }}>
                           {isMentionedInMsg && !isMe && (
-                            <p style={{ color: '#fbbf24', fontSize: '11px', fontWeight: '700', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            <p style={{ color: '#ca8a04', fontSize: '11px', fontWeight: '700', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                               You were mentioned
                             </p>
                           )}
-                          <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{renderBody(msg.body)}</p>
+                          <p style={{ color: '#18181b', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{renderBody(msg.body)}</p>
                         </div>
                         {!isGrouped && (
-                          <p style={{ color: '#999', fontSize: '13px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>
+                          <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>
                         )}
                       </div>
                     );
@@ -710,23 +710,23 @@ function Messaging() {
             <div style={{ position: 'relative' }}>
               {/* Mention picker */}
               {showMentionPicker && (
-                <div style={{ position: 'absolute', bottom: '100%', left: 20, right: 20, background: '#26262e', border: '1px solid #3a3a48', borderRadius: '10px', marginBottom: '6px', maxHeight: '180px', overflowY: 'auto', zIndex: 50, boxShadow: '0 -4px 16px rgba(0,0,0,0.4)' }}>
-                  <p style={{ color: '#666', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 12px 4px', margin: 0 }}>Mention someone</p>
+                <div style={{ position: 'absolute', bottom: '100%', left: 20, right: 20, background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '10px', marginBottom: '6px', maxHeight: '180px', overflowY: 'auto', zIndex: 50, boxShadow: '0 -4px 16px rgba(0,0,0,0.4)' }}>
+                  <p style={{ color: '#a1a1aa', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '8px 12px 4px', margin: 0 }}>Mention someone</p>
                   {convMembers
                     .filter(m => !mentionQuery || m.full_name?.toLowerCase().includes(mentionQuery))
                     .map((m, i) => (
                       <div key={i} onClick={() => insertMention(m)}
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', cursor: 'pointer' }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#333'}
+                        onMouseEnter={e => e.currentTarget.style.background = '#e4e4e7'}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         <div style={ms.avatar}>{initials(m.full_name || m.email)}</div>
-                        <span style={{ color: '#fff', fontSize: '14px' }}>{m.full_name || m.email}</span>
-                        <span style={{ color: '#666', fontSize: '13px' }}>{(m.role || '').replace(/_/g, ' ')}</span>
+                        <span style={{ color: '#18181b', fontSize: '14px' }}>{m.full_name || m.email}</span>
+                        <span style={{ color: '#a1a1aa', fontSize: '13px' }}>{(m.role || '').replace(/_/g, ' ')}</span>
                       </div>
                     ))
                   }
                   {convMembers.filter(m => !mentionQuery || m.full_name?.toLowerCase().includes(mentionQuery)).length === 0 && (
-                    <p style={{ color: '#666', fontSize: '13px', padding: '8px 12px' }}>No matches</p>
+                    <p style={{ color: '#a1a1aa', fontSize: '13px', padding: '8px 12px' }}>No matches</p>
                   )}
                 </div>
               )}
@@ -743,7 +743,7 @@ function Messaging() {
                   style={ms.input}
                 />
                 <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-                  style={{ background: newMessage.trim() ? '#b22222' : '#333', border: 'none', color: newMessage.trim() ? '#fff' : '#bbb', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+                  style={{ background: newMessage.trim() ? '#b22222' : '#e4e4e7', border: 'none', color: newMessage.trim() ? '#18181b' : '#71717a', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
                   Send
                 </button>
               </div>
@@ -757,26 +757,26 @@ function Messaging() {
 
 function ConvItem({ selected, onClick, name, preview, unread, isGroup, onDelete }) {
   const [hovered, setHovered] = useState(false);
-  const avatarBg = isGroup ? '#1e2d3a' : '#2d1e3a';
-  const avatarColor = isGroup ? '#60a5fa' : '#c084fc';
+  const avatarBg = isGroup ? '#dbeafe' : '#f3e8ff';
+  const avatarColor = isGroup ? '#2563eb' : '#9333ea';
   return (
     <div onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#252525' : hovered ? '#1a1a1a' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer', position: 'relative' }}>
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: selected ? '#f7f7f9' : hovered ? '#ffffff' : 'transparent', borderLeft: selected ? '3px solid #b22222' : '3px solid transparent', cursor: 'pointer', position: 'relative' }}>
       <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: avatarBg, color: avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isGroup ? '14px' : '13px', fontWeight: '600', flexShrink: 0 }}>
         {isGroup ? '#' : initials(name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <p style={{ color: unread > 0 ? '#fff' : '#ccc', fontSize: '14px', fontWeight: unread > 0 ? '600' : '400', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-          {unread > 0 && <span style={{ background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '13px', fontWeight: '700', flexShrink: 0, marginLeft: '4px' }}>{unread}</span>}
+          <p style={{ color: unread > 0 ? '#18181b' : '#52525b', fontSize: '14px', fontWeight: unread > 0 ? '600' : '400', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+          {unread > 0 && <span style={{ background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '1px 6px', fontSize: '13px', fontWeight: '700', flexShrink: 0, marginLeft: '4px' }}>{unread}</span>}
         </div>
-        <p style={{ color: '#bbb', fontSize: '14px', margin: '1px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</p>
+        <p style={{ color: '#71717a', fontSize: '14px', margin: '1px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</p>
       </div>
       {hovered && onDelete && (
         <button onClick={onDelete}
-          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: '1px solid #3a3a48', color: '#f87171', borderRadius: '6px', padding: '2px 7px', fontSize: '13px', cursor: 'pointer', flexShrink: 0 }}>
+          style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: '1px solid #d8d8dd', color: '#dc2626', borderRadius: '6px', padding: '2px 7px', fontSize: '13px', cursor: 'pointer', flexShrink: 0 }}>
           ×
         </button>
       )}
@@ -788,19 +788,19 @@ const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(
 
 const ms = {
   container: { display: 'flex', height: 'calc(100vh - 80px)', fontFamily: "'Inter', 'system-ui', sans-serif", overflow: 'hidden' },
-  sidebar: { width: '280px', borderRight: '1px solid #2a2a2a', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#1e1e24' },
-  sidebarHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 14px', borderBottom: '1px solid #2a2a2a' },
-  sidebarTitle: { color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' },
-  unreadBadge: { background: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '14px', fontWeight: '700' },
-  convSectionLabel: { color: '#bbb', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 14px 4px 14px', margin: 0 },
-  newChatPanel: { padding: '12px 14px', borderBottom: '1px solid #2a2a2a', background: '#1c1c24' },
-  chatArea: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#1c1c24' },
-  chatHeader: { padding: '14px 20px', borderBottom: '1px solid #2a2a2a', background: '#1e1e24', flexShrink: 0 },
+  sidebar: { width: '280px', borderRight: '1px solid #e4e4e8', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#ffffff' },
+  sidebarHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 14px', borderBottom: '1px solid #e4e4e8' },
+  sidebarTitle: { color: '#18181b', fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' },
+  unreadBadge: { background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '2px 7px', fontSize: '14px', fontWeight: '700' },
+  convSectionLabel: { color: '#71717a', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 14px 4px 14px', margin: 0 },
+  newChatPanel: { padding: '12px 14px', borderBottom: '1px solid #e4e4e8', background: '#ffffff' },
+  chatArea: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#ffffff' },
+  chatHeader: { padding: '14px 20px', borderBottom: '1px solid #e4e4e8', background: '#ffffff', flexShrink: 0 },
   messages: { flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column' },
-  inputArea: { display: 'flex', gap: '10px', padding: '14px 20px', borderTop: '1px solid #2a2a2a', background: '#1e1e24', flexShrink: 0 },
-  input: { flex: 1, background: '#26262e', border: '1px solid #3a3a48', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+  inputArea: { display: 'flex', gap: '10px', padding: '14px 20px', borderTop: '1px solid #e4e4e8', background: '#ffffff', flexShrink: 0 },
+  input: { flex: 1, background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '10px', padding: '10px 14px', color: '#18181b', fontSize: '14px', outline: 'none', width: '100%', boxSizing: 'border-box' },
   emptyState: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
-  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600', flexShrink: 0 },
+  avatar: { width: '32px', height: '32px', borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '600', flexShrink: 0 },
 };
 
 export default Messaging;

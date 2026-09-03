@@ -5,10 +5,10 @@ import { useUser } from './UserContext';
 import ClientPayments from './ClientPayments';
 
 const ROOM_TYPE_COLORS = {
-  'Single':      { bg: '#1e2d3a', color: '#60a5fa' },
-  'Double':      { bg: '#2d1e3a', color: '#c084fc' },
-  'Houseperson': { bg: '#1e3a2f', color: '#4ade80' },
-  'Live-Out':    { bg: '#3a2d1e', color: '#fb923c' },
+  'Single':      { bg: '#dbeafe', color: '#2563eb' },
+  'Double':      { bg: '#f3e8ff', color: '#9333ea' },
+  'Houseperson': { bg: '#dcfce7', color: '#16a34a' },
+  'Live-Out':    { bg: '#ffedd5', color: '#c2410c' },
 };
 
 function Payments() {
@@ -126,7 +126,7 @@ function Payments() {
           {hasFullAccess && (
             <button onClick={() => setShowFeeSettings(!showFeeSettings)}
               title="Fee Settings"
-              style={{ background: showFeeSettings ? '#b22222' : 'transparent', border: '1px solid #3a3a48', color: showFeeSettings ? '#fff' : '#bbb', width: '36px', height: '36px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ background: showFeeSettings ? '#b22222' : 'transparent', border: '1px solid #d8d8dd', color: showFeeSettings ? '#18181b' : '#71717a', width: '36px', height: '36px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ⚙️
             </button>
           )}
@@ -135,23 +135,23 @@ function Payments() {
 
       {/* Fee Settings panel */}
       {showFeeSettings && hasFullAccess && (
-        <div style={{ background: '#26262e', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #3a3a48' }}>
+        <div style={{ background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #d8d8dd' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Fee Settings</p>
+            <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Fee Settings</p>
             <button onClick={saveFeeSettings} disabled={savingFees}
-              style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+              style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
               {savingFees ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
             {feeSettings.map(f => (
-              <div key={f.id} style={{ background: '#1c1c24', borderRadius: '10px', padding: '14px 16px', border: '1px solid #32323e' }}>
-                <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>{f.room_type}</p>
+              <div key={f.id} style={{ background: '#ffffff', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e4e4e8' }}>
+                <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 12px 0' }}>{f.room_type}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
                     <label style={ps.label}>Weekly Fee</label>
                     <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#999', fontSize: '14px' }}>$</span>
+                      <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: '14px' }}>$</span>
                       <input
                         type="number"
                         step="0.01"
@@ -164,7 +164,7 @@ function Payments() {
                   <div>
                     <label style={ps.label}>Move-In Fee</label>
                     <div style={{ position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#999', fontSize: '14px' }}>$</span>
+                      <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280', fontSize: '14px' }}>$</span>
                       <input
                         type="number"
                         step="0.01"
@@ -178,16 +178,16 @@ function Payments() {
               </div>
             ))}
           </div>
-          <p style={{ color: '#bbb', fontSize: '13px', margin: '12px 0 0 0' }}>Changes take effect immediately for new charges. Existing charges are not affected.</p>
+          <p style={{ color: '#71717a', fontSize: '13px', margin: '12px 0 0 0' }}>Changes take effect immediately for new charges. Existing charges are not affected.</p>
         </div>
       )}
 
       {/* Summary strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-        <SummaryCard label="Total Outstanding" value={formatCurrency(totalOutstanding)} color="#f87171" bg="#3a1e1e" />
-        <SummaryCard label="Total Collected" value={formatCurrency(totalCollected)} color="#4ade80" bg="#1e3a2f" />
-        <SummaryCard label="Clients with Balance" value={clientsWithBalance} color="#facc15" bg="#2d2d1e" />
-        <SummaryCard label="Active Clients" value={clients.filter(c => c.status === 'Active').length} color="#c084fc" bg="#2d1e3a" />
+        <SummaryCard label="Total Outstanding" value={formatCurrency(totalOutstanding)} color="#dc2626" bg="#fee2e2" />
+        <SummaryCard label="Total Collected" value={formatCurrency(totalCollected)} color="#16a34a" bg="#dcfce7" />
+        <SummaryCard label="Clients with Balance" value={clientsWithBalance} color="#ca8a04" bg="#ffedd5" />
+        <SummaryCard label="Active Clients" value={clients.filter(c => c.status === 'Active').length} color="#9333ea" bg="#f3e8ff" />
       </div>
 
       {/* Toolbar */}
@@ -200,11 +200,11 @@ function Payments() {
         />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button onClick={() => setViewFilter('current')}
-            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3a3a48', background: viewFilter === 'current' ? '#b22222' : 'transparent', color: viewFilter === 'current' ? '#fff' : '#bbb', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #d8d8dd', background: viewFilter === 'current' ? '#b22222' : 'transparent', color: viewFilter === 'current' ? '#18181b' : '#71717a', fontSize: '14px', cursor: 'pointer' }}>
             Current
           </button>
           <button onClick={() => setViewFilter('all')}
-            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #3a3a48', background: viewFilter === 'all' ? '#b22222' : 'transparent', color: viewFilter === 'all' ? '#fff' : '#bbb', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #d8d8dd', background: viewFilter === 'all' ? '#b22222' : 'transparent', color: viewFilter === 'all' ? '#18181b' : '#71717a', fontSize: '14px', cursor: 'pointer' }}>
             All
           </button>
         </div>
@@ -212,9 +212,9 @@ function Payments() {
 
       {/* Client cards grouped by house */}
       {loading ? (
-        <p style={{ color: '#bbb' }}>Loading...</p>
+        <p style={{ color: '#71717a' }}>Loading...</p>
       ) : filteredClients.length === 0 ? (
-        <p style={{ color: '#bbb' }}>No clients found.</p>
+        <p style={{ color: '#71717a' }}>No clients found.</p>
       ) : (
         (() => {
           // Group clients by house
@@ -239,11 +239,11 @@ function Payments() {
             return (
               <div key={houseName} style={{ marginBottom: '32px' }}>
                 {/* House header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #32323e' }}>
-                  <span style={{ color: '#fff', fontSize: '15px', fontWeight: '600' }}>{houseName}</span>
-                  <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#26262e', color: '#bbb' }}>{houseClients.length} client{houseClients.length !== 1 ? 's' : ''}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #e4e4e8' }}>
+                  <span style={{ color: '#18181b', fontSize: '15px', fontWeight: '600' }}>{houseName}</span>
+                  <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#f7f7f9', color: '#71717a' }}>{houseClients.length} client{houseClients.length !== 1 ? 's' : ''}</span>
                   {houseBalance > 0 && (
-                    <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: '#f87171', marginLeft: 'auto' }}>
+                    <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#fee2e2', color: '#dc2626', marginLeft: 'auto' }}>
                       {formatCurrency(houseBalance)} outstanding
                     </span>
                   )}
@@ -252,44 +252,44 @@ function Payments() {
                   {houseClients.map(client => {
                     const b = balances[client.id] || { charged: 0, paid: 0 };
                     const balance = b.charged - b.paid;
-                    const roomCol = ROOM_TYPE_COLORS[client.room_type] || { bg: '#333', color: '#aaa' };
+                    const roomCol = ROOM_TYPE_COLORS[client.room_type] || { bg: '#e4e4e7', color: '#71717a' };
 
                     return (
                       <div key={client.id} style={ps.card}>
                         {/* Card header */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '600', flexShrink: 0, overflow: 'hidden' }}>
+                          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '600', flexShrink: 0, overflow: 'hidden' }}>
                             {client.photo_url
                               ? <img src={client.photo_url} alt={client.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                               : initials(client.full_name)
                             }
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.full_name}</p>
-                            <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email || '—'}</p>
+                            <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.full_name}</p>
+                            <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email || '—'}</p>
                           </div>
                         </div>
 
                         {/* Badges */}
                         <div style={{ display: 'flex', gap: '6px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#1e2d3a', color: '#60a5fa' }}>Level {client.level || 1}</span>
+                          <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#dbeafe', color: '#2563eb' }}>Level {client.level || 1}</span>
                           {client.room_type && (
                             <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: roomCol.bg, color: roomCol.color }}>{client.room_type}</span>
                           )}
                           {client.status !== 'Active' && (
-                            <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#26262e', color: '#bbb' }}>{client.status}</span>
+                            <span style={{ fontSize: '12px', padding: '2px 7px', borderRadius: '10px', background: '#f7f7f9', color: '#71717a' }}>{client.status}</span>
                           )}
                         </div>
 
                         {/* Balance */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px', padding: '10px', background: '#1e1e24', borderRadius: '8px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px', padding: '10px', background: '#ffffff', borderRadius: '8px' }}>
                           <div>
-                            <p style={{ color: '#999', fontSize: '12px', margin: '0 0 2px 0' }}>Total Charged</p>
-                            <p style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>{formatCurrency(b.charged)}</p>
+                            <p style={{ color: '#6b7280', fontSize: '12px', margin: '0 0 2px 0' }}>Total Charged</p>
+                            <p style={{ color: '#18181b', fontSize: '16px', fontWeight: '700', margin: 0 }}>{formatCurrency(b.charged)}</p>
                           </div>
                           <div>
-                            <p style={{ color: '#999', fontSize: '12px', margin: '0 0 2px 0' }}>Balance Owed</p>
-                            <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '16px', fontWeight: '700', margin: 0 }}>
+                            <p style={{ color: '#6b7280', fontSize: '12px', margin: '0 0 2px 0' }}>Balance Owed</p>
+                            <p style={{ color: balance > 0 ? '#dc2626' : '#16a34a', fontSize: '16px', fontWeight: '700', margin: 0 }}>
                               {balance > 0 ? formatCurrency(balance) : 'Paid up'}
                             </p>
                           </div>
@@ -297,7 +297,7 @@ function Payments() {
 
                         {/* View button */}
                         <button onClick={() => setSelectedClient(client)}
-                          style={{ width: '100%', background: '#b22222', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                          style={{ width: '100%', background: '#b22222', border: 'none', color: '#18181b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                           View
                         </button>
                       </div>
@@ -314,21 +314,21 @@ function Payments() {
       {selectedClient && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' }}
           onClick={() => setSelectedClient(null)}>
-          <div style={{ background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '700px', overflow: 'hidden' }}
+          <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e4e4e8', width: '100%', maxWidth: '700px', overflow: 'hidden' }}
             onClick={e => e.stopPropagation()}>
             {/* Modal header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #32323e' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1e3a2f', color: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '600', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', borderBottom: '1px solid #e4e4e8' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '600', flexShrink: 0 }}>
                 {initials(selectedClient.full_name)}
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: '600', margin: 0 }}>{selectedClient.full_name}</h3>
-                <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>
+                <h3 style={{ color: '#18181b', fontSize: '16px', fontWeight: '600', margin: 0 }}>{selectedClient.full_name}</h3>
+                <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0 0' }}>
                   {selectedClient.house_name || 'No house'}{selectedClient.room_type ? ` · ${selectedClient.room_type}` : ''}
                 </p>
               </div>
               <button onClick={() => setSelectedClient(null)}
-                style={{ width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #3a3a48', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                style={{ width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #d8d8dd', background: 'transparent', cursor: 'pointer', color: '#71717a', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 ×
               </button>
             </div>
@@ -353,14 +353,14 @@ function SummaryCard({ label, value, color, bg }) {
 }
 
 const ps = {
-  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#fff' },
+  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#18181b' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
-  label: { display: 'block', color: '#aaa', fontSize: '13px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  sub: { color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' },
+  label: { display: 'block', color: '#71717a', fontSize: '13px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
   cardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  card: { background: '#26262e', borderRadius: '12px', padding: '18px', border: '1px solid #32323e' },
+  card: { background: '#f7f7f9', borderRadius: '12px', padding: '18px', border: '1px solid #e4e4e8' },
 };
 
 export default Payments;

@@ -21,9 +21,9 @@ function generateReceiptPDF(payment, client, balance, logoSrc) {
     : `<div style="width:65px;height:65px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#8b1c1c;">KL</div>`;
 
   const row = (label, value, bold = false) => `
-    <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee;">
-      <span style="font-size:14px;color:#666;">${label}</span>
-      <span style="font-size:14px;${bold ? 'font-weight:700;' : ''}color:#111;">${value}</span>
+    <div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #e4e4e8;">
+      <span style="font-size:14px;color:#a1a1aa;">${label}</span>
+      <span style="font-size:14px;${bold ? 'font-weight:700;' : ''}color:#f4f4f6;">${value}</span>
     </div>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
@@ -31,20 +31,20 @@ function generateReceiptPDF(payment, client, balance, logoSrc) {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #f5f5f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-    .card { background: #fff; border-radius: 12px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    .card { background: #18181b; border-radius: 12px; padding: 40px; max-width: 420px; width: 100%; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
     .header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #b22222; }
-    .org-name { font-size: 18px; font-weight: 700; color: #111; }
-    .org-sub { font-size: 12px; color: #888; margin-top: 2px; }
+    .org-name { font-size: 18px; font-weight: 700; color: #f4f4f6; }
+    .org-sub { font-size: 12px; color: #9ca3af; margin-top: 2px; }
     .receipt-title { text-align: center; margin-bottom: 24px; }
-    .receipt-title h2 { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 4px; }
-    .receipt-title p { font-size: 12px; color: #999; }
+    .receipt-title h2 { font-size: 22px; font-weight: 700; color: #f4f4f6; margin-bottom: 4px; }
+    .receipt-title p { font-size: 12px; color: #6b7280; }
     .amount-box { background: #f0faf4; border: 2px solid #16a34a; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0; }
     .amount-label { font-size: 13px; color: #16a34a; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
     .amount-value { font-size: 40px; font-weight: 700; color: #16a34a; }
     .balance-box { background: ${remainingBalance > 0 ? '#fff5f5' : '#f0faf4'}; border-radius: 8px; padding: 12px 16px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center; }
     .print-btn { display: block; width: 100%; margin-top: 24px; padding: 12px; background: #b22222; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #bbb; }
-    @media print { body { background: #fff; padding: 0; } .card { box-shadow: none; } .print-btn { display: none; } }
+    .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #71717a; }
+    @media print { body { background: #18181b; padding: 0; } .card { box-shadow: none; } .print-btn { display: none; } }
   </style></head><body>
   <div class="card">
     <div class="header">
@@ -73,7 +73,7 @@ function generateReceiptPDF(payment, client, balance, logoSrc) {
     </div>
 
     <div class="balance-box">
-      <span style="font-size:14px;color:#555;">Remaining Balance</span>
+      <span style="font-size:14px;color:#b8b8bd;">Remaining Balance</span>
       <span style="font-size:16px;font-weight:700;color:${remainingBalance > 0 ? '#dc2626' : '#16a34a'};">
         ${remainingBalance > 0 ? `$${remainingBalance.toFixed(2)} owed` : remainingBalance < 0 ? `$${Math.abs(remainingBalance).toFixed(2)} credit` : 'Paid in full'}
       </span>
@@ -115,15 +115,15 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const timelineRows = timeline.map(t => `
-    <tr style="background:${t.type === 'payment' ? '#f0faf4' : '#fff'};">
-      <td style="padding:9px 12px;border-bottom:1px solid #eee;font-size:13px;color:#555;">${fmtDate(t.date)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #eee;">
-        <span style="font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#111'};">${t.type === 'payment' ? 'Payment' : 'Charge'}</span>
-        <span style="font-size:12px;color:#888;margin-left:6px;">${t.label}</span>
-        ${t.description ? `<div style="font-size:12px;color:#aaa;margin-top:2px;">${t.description}</div>` : ''}
-        ${t.by ? `<div style="font-size:11px;color:#bbb;">by ${t.by}</div>` : ''}
+    <tr style="background:${t.type === 'payment' ? '#f0faf4' : '#18181b'};">
+      <td style="padding:9px 12px;border-bottom:1px solid #e4e4e8;font-size:13px;color:#b8b8bd;">${fmtDate(t.date)}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #e4e4e8;">
+        <span style="font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#f4f4f6'};">${t.type === 'payment' ? 'Payment' : 'Charge'}</span>
+        <span style="font-size:12px;color:#9ca3af;margin-left:6px;">${t.label}</span>
+        ${t.description ? `<div style="font-size:12px;color:#71717a;margin-top:2px;">${t.description}</div>` : ''}
+        ${t.by ? `<div style="font-size:11px;color:#71717a;">by ${t.by}</div>` : ''}
       </td>
-      <td style="padding:9px 12px;border-bottom:1px solid #eee;text-align:right;font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#dc2626'};">
+      <td style="padding:9px 12px;border-bottom:1px solid #e4e4e8;text-align:right;font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#dc2626'};">
         ${t.type === 'payment' ? '+' : '-'}${fmtAmt(t.amount)}
       </td>
     </tr>`).join('');
@@ -132,28 +132,28 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
   <title>Payment History – ${name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #111; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #f4f4f6; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 22px; font-weight: 700; }
-    .org-sub { font-size: 13px; color: #888; margin-top: 2px; }
+    .org-sub { font-size: 13px; color: #9ca3af; margin-top: 2px; }
     .divider { height: 3px; background: #b22222; margin: 14px 0 20px 0; }
     .report-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 4px; }
-    .report-sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .report-sub { font-size: 13px; color: #9ca3af; margin-bottom: 24px; }
     .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
     .sum-box { background: #f5f5f5; border-radius: 8px; padding: 14px; text-align: center; }
     .sum-num { font-size: 26px; font-weight: 700; }
-    .sum-label { font-size: 12px; color: #888; margin-top: 4px; }
+    .sum-label { font-size: 12px; color: #9ca3af; margin-top: 4px; }
     .section-title { font-size: 13px; font-weight: 700; color: #b22222; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; border-left: 4px solid #b22222; padding-left: 10px; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 28px; }
-    th { background: #111; color: #fff; padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    th { background: #f4f4f6; color: #18181b; padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
     th:last-child { text-align: right; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 28px; }
-    .info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; }
-    .info-label { font-size: 13px; color: #888; }
-    .info-value { font-size: 13px; font-weight: 500; color: #111; }
+    .info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #e4e4e8; }
+    .info-label { font-size: 13px; color: #9ca3af; }
+    .info-value { font-size: 13px; font-weight: 500; color: #f4f4f6; }
     .balance-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: ${balance > 0 ? '#fff5f5' : '#f0faf4'}; border-radius: 8px; margin-bottom: 28px; }
     .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
-    .footer { text-align: center; color: #bbb; font-size: 12px; margin-top: 32px; }
+    .footer { text-align: center; color: #71717a; font-size: 12px; margin-top: 32px; }
     @media print { .print-btn { display: none; } body { padding: 20px; } }
   </style></head><body>
   <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
@@ -182,14 +182,14 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
   </div>
 
   <div class="balance-row">
-    <span style="font-size:15px;font-weight:600;color:#555;">Current Balance</span>
+    <span style="font-size:15px;font-weight:600;color:#b8b8bd;">Current Balance</span>
     <span style="font-size:20px;font-weight:700;color:${balance > 0 ? '#dc2626' : '#16a34a'};">
       ${balance > 0 ? `${fmtAmt(balance)} owed` : balance < 0 ? `${fmtAmt(Math.abs(balance))} credit` : 'Paid in full ✓'}
     </span>
   </div>
 
   <div class="section-title">Transaction History</div>
-  ${timeline.length === 0 ? '<p style="color:#888;font-size:14px;margin-bottom:20px;">No transactions on record.</p>' : `
+  ${timeline.length === 0 ? '<p style="color:#9ca3af;font-size:14px;margin-bottom:20px;">No transactions on record.</p>' : `
   <table>
     <thead><tr><th>Date</th><th>Description</th><th style="text-align:right;">Amount</th></tr></thead>
     <tbody>${timelineRows}</tbody>
@@ -412,28 +412,28 @@ function ClientPayments({ client, onPaymentChange }) {
   return (
     <div>
       {/* Balance header */}
-      <div style={{ background: balance > 0 ? '#3a1e1e' : '#1e3a2f', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: balance > 0 ? '#fee2e2' : '#dcfce7', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '28px', fontWeight: '700', margin: 0 }}>
+          <p style={{ color: balance > 0 ? '#dc2626' : '#16a34a', fontSize: '28px', fontWeight: '700', margin: 0 }}>
             {balance > 0 ? formatCurrency(balance) : isCredit ? `Credit $${Math.abs(balance).toFixed(2)}` : 'Paid up'}
           </p>
-          <p style={{ color: balance > 0 ? '#f87171' : '#4ade80', fontSize: '13px', opacity: 0.7, margin: '2px 0 0 0' }}>
+          <p style={{ color: balance > 0 ? '#dc2626' : '#16a34a', fontSize: '13px', opacity: 0.7, margin: '2px 0 0 0' }}>
             {balance > 0 ? 'Balance owed' : isCredit ? 'Credit on account' : 'No balance owed'}
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
           <div style={{ display: 'flex', gap: '16px' }}>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Total charged</p>
-              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(totalCharged)}</p>
+              <p style={{ color: '#71717a', fontSize: '13px', margin: 0 }}>Total charged</p>
+              <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(totalCharged)}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Total paid</p>
-              <p style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(totalPaid)}</p>
+              <p style={{ color: '#71717a', fontSize: '13px', margin: 0 }}>Total paid</p>
+              <p style={{ color: '#16a34a', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(totalPaid)}</p>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>Weekly rate</p>
-              <p style={{ color: '#60a5fa', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(weeklyRate)}</p>
+              <p style={{ color: '#71717a', fontSize: '13px', margin: 0 }}>Weekly rate</p>
+              <p style={{ color: '#2563eb', fontSize: '14px', fontWeight: '600', margin: 0 }}>{formatCurrency(weeklyRate)}</p>
             </div>
           </div>
         </div>
@@ -442,22 +442,22 @@ function ClientPayments({ client, onPaymentChange }) {
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <button onClick={() => { setShowPaymentForm(!showPaymentForm); setShowAddCharge(false); }}
-          style={{ background: showPaymentForm ? 'transparent' : '#16a34a', border: showPaymentForm ? '1px solid #444' : 'none', color: showPaymentForm ? '#aaa' : '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+          style={{ background: showPaymentForm ? 'transparent' : '#16a34a', border: showPaymentForm ? '1px solid #d4d4d8' : 'none', color: showPaymentForm ? '#71717a' : '#18181b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
           {showPaymentForm ? 'Cancel' : '+ Record Payment'}
         </button>
         {hasFullAccess && (
           <button onClick={() => { setShowAddCharge(!showAddCharge); setShowPaymentForm(false); }}
-            style={{ background: showAddCharge ? 'transparent' : 'transparent', border: '1px solid #3a3a48', color: showAddCharge ? '#aaa' : '#bbb', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ background: showAddCharge ? 'transparent' : 'transparent', border: '1px solid #d8d8dd', color: showAddCharge ? '#71717a' : '#71717a', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             {showAddCharge ? 'Cancel' : '+ Add Charge'}
           </button>
         )}
         {balance > 0 && (
           <button onClick={handlePayOnline} disabled={sendingLink}
-            style={{ background: 'transparent', border: '1px solid #60a5fa', color: '#60a5fa', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginLeft: 'auto' }}>
+            style={{ background: 'transparent', border: '1px solid #2563eb', color: '#2563eb', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginLeft: 'auto' }}>
             {sendingLink ? 'Getting link...' : '🔗 Send Pay Link'}
           </button>
         )}
-        <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
+        <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #0d9488', color: '#16a34a', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
         {hasFullAccess && (charges.length > 0 || payments.length > 0) && (
           <button onClick={() => {
             const img = new Image();
@@ -471,7 +471,7 @@ function ClientPayments({ client, onPaymentChange }) {
             img.onerror = () => generatePaymentHistoryPDF(client, charges, payments, null);
             img.src = klLogo;
           }}
-            style={{ background: 'transparent', border: '1px solid #7c3aed', color: '#a78bfa', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #7c3aed', color: '#7c3aed', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             📄 Export History
           </button>
         )}
@@ -479,8 +479,8 @@ function ClientPayments({ client, onPaymentChange }) {
 
       {/* Record payment form */}
       {showPaymentForm && (
-        <div style={{ background: '#26262e', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #32323e' }}>
-          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Record Payment</p>
+        <div style={{ background: '#f7f7f9', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #e4e4e8' }}>
+          <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Record Payment</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={fl.label}>Amount *</label>
@@ -514,7 +514,7 @@ function ClientPayments({ client, onPaymentChange }) {
             </div>
           )}
           <button onClick={savePayment} disabled={savingPayment}
-            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+            style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
             {savingPayment ? 'Saving...' : 'Save Payment'}
           </button>
         </div>
@@ -522,8 +522,8 @@ function ClientPayments({ client, onPaymentChange }) {
 
       {/* Add charge form */}
       {showAddCharge && hasFullAccess && (
-        <div style={{ background: '#26262e', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #32323e' }}>
-          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Add Charge</p>
+        <div style={{ background: '#f7f7f9', borderRadius: '10px', padding: '16px', marginBottom: '16px', border: '1px solid #e4e4e8' }}>
+          <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Add Charge</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
             <div>
               <label style={fl.label}>Charge Type</label>
@@ -576,25 +576,25 @@ function ClientPayments({ client, onPaymentChange }) {
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <p style={{ color: '#4ade80', fontSize: '15px', fontWeight: '700', margin: 0 }}>Total: {formatCurrency(chargeAmount)}</p>
+            <p style={{ color: '#16a34a', fontSize: '15px', fontWeight: '700', margin: 0 }}>Total: {formatCurrency(chargeAmount)}</p>
             <button onClick={saveCharge} disabled={savingCharge}
-              style={{ background: '#b22222', border: 'none', color: '#fff', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+              style={{ background: '#b22222', border: 'none', color: '#18181b', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
               {savingCharge ? 'Saving...' : 'Add Charge'}
             </button>
           </div>
         </div>
       )}
 
-      {loading ? <p style={{ color: '#999', fontSize: '14px' }}>Loading...</p> : (
+      {loading ? <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</p> : (
         <>
           {/* View toggle */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
             <button onClick={() => setActiveView('charges')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #3a3a48', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#fff' : '#bbb', fontSize: '13px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #d8d8dd', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#18181b' : '#71717a', fontSize: '13px', cursor: 'pointer' }}>
               Charges ({charges.length})
             </button>
             <button onClick={() => setActiveView('payments')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #3a3a48', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#fff' : '#bbb', fontSize: '13px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #d8d8dd', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#18181b' : '#71717a', fontSize: '13px', cursor: 'pointer' }}>
               Payments ({payments.length})
             </button>
           </div>
@@ -602,21 +602,21 @@ function ClientPayments({ client, onPaymentChange }) {
           {/* Charges list */}
           {activeView === 'charges' && (
             charges.length === 0 ? (
-              <p style={{ color: '#999', fontSize: '14px' }}>No charges yet.</p>
+              <p style={{ color: '#6b7280', fontSize: '14px' }}>No charges yet.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {charges.map(c => (
-                  <div key={c.id} style={{ background: '#1c1c24', borderRadius: '8px', padding: '10px 14px', border: '1px solid #32323e', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div key={c.id} style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 14px', border: '1px solid #e4e4e8', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                        <span style={{ color: '#fff', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(c.amount)}</span>
-                        <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: '#26262e', color: '#bbb' }}>
+                        <span style={{ color: '#18181b', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(c.amount)}</span>
+                        <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: '#f7f7f9', color: '#71717a' }}>
                           {CHARGE_TYPE_LABELS[c.charge_type] || c.charge_type}
                         </span>
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDate(c.due_date)}</span>
-                        <span style={{ color: '#999', fontSize: '13px' }}>· {c.description}</span>
+                        <span style={{ color: '#71717a', fontSize: '13px' }}>{formatDate(c.due_date)}</span>
+                        <span style={{ color: '#6b7280', fontSize: '13px' }}>· {c.description}</span>
                       </div>
                     </div>
                     {hasFullAccess && (
@@ -634,28 +634,28 @@ function ClientPayments({ client, onPaymentChange }) {
           {/* Payments list */}
           {activeView === 'payments' && (
             payments.length === 0 ? (
-              <p style={{ color: '#999', fontSize: '14px' }}>No payments recorded yet.</p>
+              <p style={{ color: '#6b7280', fontSize: '14px' }}>No payments recorded yet.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {payments.map(p => (
-                  <div key={p.id} style={{ background: '#1c1c24', borderRadius: '8px', padding: '10px 14px', border: '1px solid #32323e', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div key={p.id} style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 14px', border: '1px solid #e4e4e8', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                        <span style={{ color: '#4ade80', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(p.amount)}</span>
-                        <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: '#1e3a2f', color: '#4ade80' }}>
+                        <span style={{ color: '#16a34a', fontSize: '14px', fontWeight: '600' }}>{formatCurrency(p.amount)}</span>
+                        <span style={{ fontSize: '12px', padding: '1px 6px', borderRadius: '10px', background: '#dcfce7', color: '#16a34a' }}>
                           {p.payment_method === 'third_party' ? '3rd Party' : p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1)}
                         </span>
-                        {p.payer_name && <span style={{ fontSize: '12px', color: '#bbb' }}>{p.payer_name}</span>}
+                        {p.payer_name && <span style={{ fontSize: '12px', color: '#71717a' }}>{p.payer_name}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: '10px' }}>
-                        <span style={{ color: '#bbb', fontSize: '13px' }}>{formatDate(p.payment_date)}</span>
-                        {p.notes && <span style={{ color: '#999', fontSize: '13px' }}>· {p.notes}</span>}
-                        {p.created_by && <span style={{ color: '#bbb', fontSize: '12px' }}>· by {p.created_by}</span>}
+                        <span style={{ color: '#71717a', fontSize: '13px' }}>{formatDate(p.payment_date)}</span>
+                        {p.notes && <span style={{ color: '#6b7280', fontSize: '13px' }}>· {p.notes}</span>}
+                        {p.created_by && <span style={{ color: '#71717a', fontSize: '12px' }}>· by {p.created_by}</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button onClick={() => setShowReceipt(p)}
-                        style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' }}>
                         Receipt
                       </button>
                       {hasFullAccess && (
@@ -677,13 +677,13 @@ function ClientPayments({ client, onPaymentChange }) {
       {showReceipt && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '20px' }}
           onClick={() => setShowReceipt(null)}>
-          <div style={{ background: '#fff', borderRadius: '12px', padding: '32px', maxWidth: '400px', width: '100%', color: '#111' }}
+          <div style={{ background: '#18181b', borderRadius: '12px', padding: '32px', maxWidth: '400px', width: '100%', color: '#f4f4f6' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <p style={{ fontSize: '18px', fontWeight: '700', margin: '0 0 4px 0' }}>Kingdom Living</p>
-              <p style={{ fontSize: '14px', color: '#999', margin: 0 }}>Payment Receipt</p>
+              <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>Payment Receipt</p>
             </div>
-            <div style={{ borderTop: '1px solid #eee', borderBottom: '1px solid #eee', padding: '16px 0', marginBottom: '16px' }}>
+            <div style={{ borderTop: '1px solid #e4e4e8', borderBottom: '1px solid #e4e4e8', padding: '16px 0', marginBottom: '16px' }}>
               {[
                 ['Client', client.full_name],
                 ['Date', formatDate(showReceipt.payment_date)],
@@ -692,7 +692,7 @@ function ClientPayments({ client, onPaymentChange }) {
                 showReceipt.notes ? ['Notes', showReceipt.notes] : null,
               ].filter(Boolean).map(([label, value]) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '14px', color: '#999' }}>{label}</span>
+                  <span style={{ fontSize: '14px', color: '#6b7280' }}>{label}</span>
                   <span style={{ fontSize: '14px', fontWeight: '500' }}>{value}</span>
                 </div>
               ))}
@@ -714,11 +714,11 @@ function ClientPayments({ client, onPaymentChange }) {
                 img.onerror = () => generateReceiptPDF(showReceipt, client, balance, null);
                 img.src = klLogo;
               }}
-                style={{ flex: 1, background: '#b22222', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                style={{ flex: 1, background: '#b22222', border: 'none', color: '#18181b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 ⬇ Download Receipt
               </button>
               <button onClick={() => setShowReceipt(null)}
-                style={{ flex: 1, background: 'transparent', border: '1px solid #ccc', color: '#999', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ flex: 1, background: 'transparent', border: '1px solid #52525b', color: '#6b7280', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Close
               </button>
             </div>
@@ -730,8 +730,8 @@ function ClientPayments({ client, onPaymentChange }) {
 }
 
 const fl = {
-  label: { display: 'block', color: '#aaa', fontSize: '14px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
+  label: { display: 'block', color: '#71717a', fontSize: '14px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
 };
 
 export default ClientPayments;

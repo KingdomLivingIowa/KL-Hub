@@ -3,17 +3,17 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 
 const STATUS_COLORS = {
-  'Open': { bg: '#3a1e1e', color: '#f87171' },
-  'In Progress': { bg: '#3a2d1e', color: '#fb923c' },
-  'Completed': { bg: '#1e3a2f', color: '#4ade80' },
+  'Open': { bg: '#fee2e2', color: '#dc2626' },
+  'In Progress': { bg: '#ffedd5', color: '#c2410c' },
+  'Completed': { bg: '#dcfce7', color: '#16a34a' },
 };
 
 const ISSUE_TYPE_COLORS = {
-  'Safety & Security': '#f87171',
-  'Plumbing': '#60a5fa',
-  'Electrical': '#fbbf24',
-  'HVAC': '#a78bfa',
-  'Appliances': '#34d399',
+  'Safety & Security': '#dc2626',
+  'Plumbing': '#2563eb',
+  'Electrical': '#ca8a04',
+  'HVAC': '#7c3aed',
+  'Appliances': '#0d9488',
   'Other': '#9ca3af',
 };
 
@@ -106,20 +106,20 @@ export default function Maintenance() {
 
       {/* Summary stats */}
       <div style={s.statsRow}>
-        <div style={{ ...s.stat, borderColor: '#f87171' }}>
-          <span style={{ ...s.statNum, color: '#f87171' }}>{openCount}</span>
+        <div style={{ ...s.stat, borderColor: '#dc2626' }}>
+          <span style={{ ...s.statNum, color: '#dc2626' }}>{openCount}</span>
           <span style={s.statLabel}>Open</span>
         </div>
-        <div style={{ ...s.stat, borderColor: '#fb923c' }}>
-          <span style={{ ...s.statNum, color: '#fb923c' }}>{inProgressCount}</span>
+        <div style={{ ...s.stat, borderColor: '#c2410c' }}>
+          <span style={{ ...s.statNum, color: '#c2410c' }}>{inProgressCount}</span>
           <span style={s.statLabel}>In Progress</span>
         </div>
-        <div style={{ ...s.stat, borderColor: '#4ade80' }}>
-          <span style={{ ...s.statNum, color: '#4ade80' }}>{completedCount}</span>
+        <div style={{ ...s.stat, borderColor: '#16a34a' }}>
+          <span style={{ ...s.statNum, color: '#16a34a' }}>{completedCount}</span>
           <span style={s.statLabel}>Completed</span>
         </div>
-        <div style={{ ...s.stat, borderColor: '#555' }}>
-          <span style={{ ...s.statNum, color: '#fff' }}>{requests.length}</span>
+        <div style={{ ...s.stat, borderColor: '#b8b8bd' }}>
+          <span style={{ ...s.statNum, color: '#18181b' }}>{requests.length}</span>
           <span style={s.statLabel}>Total</span>
         </div>
       </div>
@@ -146,10 +146,10 @@ export default function Maintenance() {
 
       {/* Requests list */}
       {loading ? (
-        <p style={{ color: '#888' }}>Loading...</p>
+        <p style={{ color: '#9ca3af' }}>Loading...</p>
       ) : requests.length === 0 ? (
         <div style={s.empty}>
-          <p style={{ color: '#666', fontSize: '15px' }}>No maintenance requests found.</p>
+          <p style={{ color: '#a1a1aa', fontSize: '15px' }}>No maintenance requests found.</p>
         </div>
       ) : (
         <div style={s.list}>
@@ -165,12 +165,12 @@ export default function Maintenance() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
                       <span style={{ ...s.badge, background: sc.bg, color: sc.color }}>{req.status}</span>
                       {req.issue_type && (
-                        <span style={{ ...s.badge, background: '#1c1c24', color: ISSUE_TYPE_COLORS[req.issue_type] || '#aaa', border: `1px solid ${ISSUE_TYPE_COLORS[req.issue_type] || '#333'}` }}>
+                        <span style={{ ...s.badge, background: '#ffffff', color: ISSUE_TYPE_COLORS[req.issue_type] || '#71717a', border: `1px solid ${ISSUE_TYPE_COLORS[req.issue_type] || '#e4e4e7'}` }}>
                           {req.issue_type}
                         </span>
                       )}
                       {req.previously_submitted === 'Yes' && (
-                        <span style={{ ...s.badge, background: '#3a2a0f', color: '#fb923c', border: '1px solid #92400e' }}>Previously Reported</span>
+                        <span style={{ ...s.badge, background: '#ffedd5', color: '#c2410c', border: '1px solid #92400e' }}>Previously Reported</span>
                       )}
                     </div>
                     <p style={s.cardHouse}>{req.house_name || '—'}</p>
@@ -180,7 +180,7 @@ export default function Maintenance() {
                   <div style={s.cardRight}>
                     <p style={s.cardDate}>{fmtTime(req.submitted_at)}</p>
                     <p style={s.cardBy}>{req.submitted_by}</p>
-                    <span style={{ color: '#555', fontSize: '16px' }}>{isExpanded ? '▲' : '▼'}</span>
+                    <span style={{ color: '#b8b8bd', fontSize: '16px' }}>{isExpanded ? '▲' : '▼'}</span>
                   </div>
                 </div>
 
@@ -215,11 +215,11 @@ export default function Maintenance() {
                         </div>
                         <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                           <button onClick={() => saveEdit(req.id)} disabled={saving}
-                            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                            style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '8px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                             {saving ? 'Saving...' : 'Save'}
                           </button>
                           <button onClick={() => setEditingId(null)}
-                            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                             Cancel
                           </button>
                         </div>
@@ -249,7 +249,7 @@ export default function Maintenance() {
                           </div>
                         )}
                         <button onClick={() => startEdit(req)}
-                          style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginTop: '8px' }}>
+                          style={{ background: '#dbeafe', border: '1px solid #e7eff3', color: '#2563eb', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginTop: '8px' }}>
                           ✏️ Update Request
                         </button>
                       </div>
@@ -267,32 +267,32 @@ export default function Maintenance() {
 
 const s = {
   page: { padding: '0 0 60px' },
-  title: { color: '#fff', fontSize: '26px', fontWeight: '700', margin: '0 0 24px' },
+  title: { color: '#18181b', fontSize: '26px', fontWeight: '700', margin: '0 0 24px' },
   statsRow: { display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' },
-  stat: { background: '#1c1c24', border: '1px solid', borderRadius: '10px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' },
+  stat: { background: '#ffffff', border: '1px solid', borderRadius: '10px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '100px' },
   statNum: { fontSize: '28px', fontWeight: '700' },
-  statLabel: { fontSize: '13px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  statLabel: { fontSize: '13px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' },
   filters: { display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' },
   filterGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
-  filterLabel: { fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  select: { background: '#1c1c24', border: '1px solid #32323e', borderRadius: '8px', color: '#fff', padding: '7px 12px', fontSize: '14px', cursor: 'pointer' },
+  filterLabel: { fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px' },
+  select: { background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '8px', color: '#18181b', padding: '7px 12px', fontSize: '14px', cursor: 'pointer' },
   empty: { padding: '60px 0', textAlign: 'center' },
   list: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  card: { background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '12px', overflow: 'hidden' },
+  card: { background: '#ffffff', border: '1px solid #f0f0f3', borderRadius: '12px', overflow: 'hidden' },
   cardHeader: { padding: '14px 16px', display: 'flex', gap: '12px', justifyContent: 'space-between', cursor: 'pointer' },
   cardLeft: { flex: 1 },
   cardRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px', flexShrink: 0 },
   badge: { padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', display: 'inline-block' },
-  cardHouse: { color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' },
-  cardLocation: { color: '#888', fontSize: '13px', margin: '0 0 4px' },
-  cardDesc: { color: '#aaa', fontSize: '14px', margin: 0, lineHeight: 1.5 },
-  cardDate: { color: '#666', fontSize: '12px', margin: 0 },
-  cardBy: { color: '#555', fontSize: '12px', margin: 0 },
-  cardBody: { padding: '14px 16px', borderTop: '1px solid #222', background: '#141414' },
+  cardHouse: { color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' },
+  cardLocation: { color: '#9ca3af', fontSize: '13px', margin: '0 0 4px' },
+  cardDesc: { color: '#71717a', fontSize: '14px', margin: 0, lineHeight: 1.5 },
+  cardDate: { color: '#a1a1aa', fontSize: '12px', margin: 0 },
+  cardBy: { color: '#b8b8bd', fontSize: '12px', margin: 0 },
+  cardBody: { padding: '14px 16px', borderTop: '1px solid #ececef', background: '#f7f7f9' },
   detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' },
-  detailLabel: { fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
-  detailValue: { color: '#ddd', fontSize: '14px', margin: 0, lineHeight: 1.5 },
+  detailLabel: { fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
+  detailValue: { color: '#3f3f46', fontSize: '14px', margin: 0, lineHeight: 1.5 },
   editRow: { marginBottom: '12px' },
-  editLabel: { display: 'block', fontSize: '12px', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
-  editInput: { width: '100%', background: '#1c1c24', border: '1px solid #32323e', borderRadius: '8px', color: '#fff', padding: '8px 10px', fontSize: '14px', boxSizing: 'border-box' },
+  editLabel: { display: 'block', fontSize: '12px', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' },
+  editInput: { width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '8px', color: '#18181b', padding: '8px 10px', fontSize: '14px', boxSizing: 'border-box' },
 };

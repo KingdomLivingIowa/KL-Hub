@@ -10,16 +10,16 @@ const CATEGORIES = [
 ];
 
 const s = {
-  card: { background: '#26262e', borderRadius: 12, border: '1px solid #32323e', borderTop: '2px solid #b22222', marginBottom: 16, overflow: 'hidden' },
-  cardHeader: { padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #32323e' },
+  card: { background: '#f7f7f9', borderRadius: 12, border: '1px solid #e4e4e8', borderTop: '2px solid #b22222', marginBottom: 16, overflow: 'hidden' },
+  cardHeader: { padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e4e4e8' },
   cardBody: { padding: '16px 18px' },
-  label: { fontSize: 12, color: '#999', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  input: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
-  textarea: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box', resize: 'vertical' },
-  select: { background: '#1c1c24', border: '1px solid #3a3a48', borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 14, width: '100%', boxSizing: 'border-box' },
-  btn: (color) => ({ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#fff' }),
-  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#aaa' },
-  tag: (color) => ({ display: 'inline-block', background: color || '#2a2a2a', border: '1px solid #3a3a48', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: '#aaa' }),
+  label: { fontSize: 12, color: '#6b7280', marginBottom: 5, display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  input: { background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  textarea: { background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box', resize: 'vertical' },
+  select: { background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: 8, padding: '9px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
+  btn: (color) => ({ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#18181b' }),
+  ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #d8d8dd', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#71717a' },
+  tag: (color) => ({ display: 'inline-block', background: color || '#e4e4e8', border: '1px solid #d8d8dd', borderRadius: 20, padding: '3px 10px', fontSize: 12, color: '#71717a' }),
 };
 
 export default function Resources() {
@@ -89,17 +89,17 @@ export default function Resources() {
   };
 
   const filtered = activeCategory === 'all' ? resources : resources.filter(r => r.category === activeCategory);
-  if (loading) return <div style={{ padding: 32, color: '#555' }}>Loading resources...</div>;
+  if (loading) return <div style={{ padding: 32, color: '#b8b8bd' }}>Loading resources...</div>;
 
   return (
     <div style={{ fontFamily: "'Inter', 'system-ui', sans-serif" }}>
       {/* Main tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 14,
-          background: activeTab === 'resources' ? '#2a2a2a' : 'transparent', color: activeTab === 'resources' ? '#fff' : '#aaa', fontWeight: activeTab === 'resources' ? 600 : 400 }}
+        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #d8d8dd', cursor: 'pointer', fontSize: 14,
+          background: activeTab === 'resources' ? '#e4e4e8' : 'transparent', color: activeTab === 'resources' ? '#18181b' : '#71717a', fontWeight: activeTab === 'resources' ? 600 : 400 }}
           onClick={() => setActiveTabMain('resources')}>Resources</button>
-        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #3a3a48', cursor: 'pointer', fontSize: 14,
-          background: activeTab === 'levels' ? '#2a2a2a' : 'transparent', color: activeTab === 'levels' ? '#fff' : '#aaa', fontWeight: activeTab === 'levels' ? 600 : 400 }}
+        <button style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid #d8d8dd', cursor: 'pointer', fontSize: 14,
+          background: activeTab === 'levels' ? '#e4e4e8' : 'transparent', color: activeTab === 'levels' ? '#18181b' : '#71717a', fontWeight: activeTab === 'levels' ? 600 : 400 }}
           onClick={() => setActiveTabMain('levels')}>Level Requirements</button>
       </div>
 
@@ -110,12 +110,12 @@ export default function Resources() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setActiveCategory('all')}
-            style={{ ...s.tag(), background: activeCategory === 'all' ? '#b22222' : '#2a2a2a', color: activeCategory === 'all' ? '#fff' : '#aaa', cursor: 'pointer', border: 'none' }}>
+            style={{ ...s.tag(), background: activeCategory === 'all' ? '#b22222' : '#e4e4e8', color: activeCategory === 'all' ? '#18181b' : '#71717a', cursor: 'pointer', border: 'none' }}>
             All
           </button>
           {CATEGORIES.map(c => (
             <button key={c.id} onClick={() => setActiveCategory(c.id)}
-              style={{ ...s.tag(), background: activeCategory === c.id ? '#b22222' : '#2a2a2a', color: activeCategory === c.id ? '#fff' : '#aaa', cursor: 'pointer', border: 'none' }}>
+              style={{ ...s.tag(), background: activeCategory === c.id ? '#b22222' : '#e4e4e8', color: activeCategory === c.id ? '#18181b' : '#71717a', cursor: 'pointer', border: 'none' }}>
               {c.label}
             </button>
           ))}
@@ -131,8 +131,8 @@ export default function Resources() {
       {showAdd && canEdit && (
         <div style={{ ...s.card, marginBottom: 24 }}>
           <div style={s.cardHeader}>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{editingId ? 'Edit Resource' : 'Add Resource'}</span>
-            <button onClick={() => { setShowAdd(false); setEditingId(null); resetForm(); }} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18 }}>×</button>
+            <span style={{ fontSize: 15, fontWeight: 600, color: '#18181b' }}>{editingId ? 'Edit Resource' : 'Add Resource'}</span>
+            <button onClick={() => { setShowAdd(false); setEditingId(null); resetForm(); }} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 18 }}>×</button>
           </div>
           <div style={s.cardBody}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
@@ -155,7 +155,7 @@ export default function Resources() {
               <label style={s.label}>Document</label>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                  style={{ background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                  style={{ background: '#dcfce7', border: '1px solid #0d9488', color: '#16a34a', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
                   {uploading ? '⏳ Uploading...' : '📄 Upload PDF'}
                 </button>
                 <input ref={fileInputRef} type="file" accept="application/pdf" onChange={e => {
@@ -164,9 +164,9 @@ export default function Resources() {
                 }} style={{ display: 'none' }} />
                 {form.url && (
                   <>
-                    <span style={{ fontSize: 13, color: '#4ade80' }}>✓ Uploaded</span>
-                    <a href={form.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#60a5fa' }}>Preview ↗</a>
-                    <button onClick={() => setForm(f => ({ ...f, url: '' }))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>Remove</button>
+                    <span style={{ fontSize: 13, color: '#16a34a' }}>✓ Uploaded</span>
+                    <a href={form.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#2563eb' }}>Preview ↗</a>
+                    <button onClick={() => setForm(f => ({ ...f, url: '' }))} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 12 }}>Remove</button>
                   </>
                 )}
               </div>
@@ -196,7 +196,7 @@ export default function Resources() {
 
       {/* Resource List */}
       {filtered.length === 0 && (
-        <div style={{ color: '#555', fontSize: 14, padding: '32px 0', textAlign: 'center' }}>
+        <div style={{ color: '#b8b8bd', fontSize: 14, padding: '32px 0', textAlign: 'center' }}>
           No resources yet. {canEdit ? 'Click "+ Add Resource" to get started.' : ''}
         </div>
       )}
@@ -211,24 +211,24 @@ export default function Resources() {
               <div key={r.id} style={s.card}>
                 <div style={s.cardHeader}>
                   <div>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>{r.title}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#18181b' }}>{r.title}</span>
                     {r.visible_to === 'staff' && (
-                      <span style={{ marginLeft: 8, fontSize: 11, background: '#1e2d3a', color: '#60a5fa', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>Staff Only</span>
+                      <span style={{ marginLeft: 8, fontSize: 11, background: '#dbeafe', color: '#2563eb', borderRadius: 4, padding: '2px 8px', fontWeight: 600 }}>Staff Only</span>
                     )}
                   </div>
                   {canEdit && (
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button onClick={() => startEdit(r)} style={{ ...s.ghost, padding: '5px 12px', fontSize: 12 }}>Edit</button>
-                      <button onClick={() => deleteResource(r.id)} style={{ ...s.btn('#ef4444'), padding: '5px 12px', fontSize: 12 }}>Delete</button>
+                      <button onClick={() => deleteResource(r.id)} style={{ ...s.btn('#dc2626'), padding: '5px 12px', fontSize: 12 }}>Delete</button>
                     </div>
                   )}
                 </div>
                 {(r.content || r.url) && (
                   <div style={s.cardBody}>
-                    {r.content && <p style={{ color: '#ccc', fontSize: 14, margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.content}</p>}
+                    {r.content && <p style={{ color: '#52525b', fontSize: 14, margin: 0, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.content}</p>}
                     {r.url && (
                       <button onClick={() => setPdfViewer(r.url)}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: r.content ? 12 : 0, color: '#60a5fa', fontSize: 14, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: r.content ? 12 : 0, color: '#2563eb', fontSize: 14, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                         📄 {r.url?.includes('supabase') ? 'View PDF' : 'Open Document'}
                       </button>
                     )}
@@ -243,12 +243,12 @@ export default function Resources() {
       {pdfViewer && (
         <div onClick={() => setPdfViewer(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '90vw', height: '90vh', background: '#fff', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#1c1c24', flexShrink: 0 }}>
-              <span style={{ color: '#fff', fontSize: 14, fontWeight: 600 }}>Document Viewer</span>
+          <div onClick={e => e.stopPropagation()} style={{ width: '90vw', height: '90vh', background: '#18181b', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', background: '#ffffff', flexShrink: 0 }}>
+              <span style={{ color: '#18181b', fontSize: 14, fontWeight: 600 }}>Document Viewer</span>
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <a href={pdfViewer} target="_blank" rel="noreferrer" style={{ color: '#60a5fa', fontSize: 13, textDecoration: 'none' }}>Open in new tab ↗</a>
-                <button onClick={() => setPdfViewer(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 22 }}>×</button>
+                <a href={pdfViewer} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: 13, textDecoration: 'none' }}>Open in new tab ↗</a>
+                <button onClick={() => setPdfViewer(null)} style={{ background: 'none', border: 'none', color: '#18181b', cursor: 'pointer', fontSize: 22 }}>×</button>
               </div>
             </div>
             <iframe src={pdfViewer} title="Document" style={{ flex: 1, border: 'none', width: '100%' }} />

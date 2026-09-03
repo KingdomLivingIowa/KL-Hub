@@ -130,7 +130,7 @@ function HouseWeeklyReflectionForm({ entryForm, setEntryForm }) {
         <label style={s.label}>Overall mood this week (1–10): {entryForm.reflection_mood || 5}</label>
         <input type="range" min="1" max="10" value={entryForm.reflection_mood || 5}
           onChange={e => setEntryForm(p => ({ ...p, reflection_mood: e.target.value }))} style={{ width: '100%' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#bbb', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', color: '#71717a', marginTop: '2px' }}>
           <span>1 — Rough</span><span>10 — Great</span>
         </div>
       </div>
@@ -160,14 +160,14 @@ function HouseWeeklyReflectionCard({ entry }) {
     <div style={{ marginTop: '6px' }}>
       {data?.mood && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ fontSize: '14px', color: '#bbb' }}>Mood:</span>
-          <span style={{ fontSize: '14px', padding: '2px 8px', borderRadius: '20px', background: '#3a2d1e', color: '#fb923c', fontWeight: '500' }}>{data.mood}/10</span>
+          <span style={{ fontSize: '14px', color: '#71717a' }}>Mood:</span>
+          <span style={{ fontSize: '14px', padding: '2px 8px', borderRadius: '20px', background: '#ffedd5', color: '#c2410c', fontWeight: '500' }}>{data.mood}/10</span>
         </div>
       )}
-      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
-      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
-      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
-      {entry.notes && <div><p style={{ fontSize: '14px', color: '#bbb', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '14px', color: '#aaa', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
+      {data?.challenge && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Challenge</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{data.challenge}</p></div>}
+      {data?.win && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{data.win}</p></div>}
+      {data?.goals && <div style={{ marginBottom: '8px' }}><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Goals for next week</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{data.goals}</p></div>}
+      {entry.notes && <div><p style={{ fontSize: '14px', color: '#71717a', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional notes</p><p style={{ fontSize: '14px', color: '#71717a', margin: 0, lineHeight: 1.5 }}>{entry.notes}</p></div>}
     </div>
   );
 }
@@ -651,30 +651,30 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
   }, [timeline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const entryColor = (type) => {
-    if (type === 'House Check-In') return '#7F77DD';
-    if (type === 'Batch UA') return '#1D9E75';
-    if (type === 'Crisis') return '#E24B4A';
-    if (type === 'Event Attendance') return '#378ADD';
-    if (type === 'General Note') return '#f59e0b';
-    if (type === 'Weekly Reflection') return '#a78bfa';
-    if (type === 'Maintenance/Repair') return '#f97316';
-    if (type === 'House Inspection') return '#06b6d4';
-    if (type === 'House Meeting Notes') return '#84cc16';
-    if (type === 'Supplies/Inventory') return '#e879f9';
-    if (type === 'Maintenance Update') return '#60a5fa';
-    return '#bbb';
+    if (type === 'House Check-In') return '#7f77dd';
+    if (type === 'Batch UA') return '#0d9488';
+    if (type === 'Crisis') return '#e24b4a';
+    if (type === 'Event Attendance') return '#2563eb';
+    if (type === 'General Note') return '#b45309';
+    if (type === 'Weekly Reflection') return '#7c3aed';
+    if (type === 'Maintenance/Repair') return '#c2410c';
+    if (type === 'House Inspection') return '#0891b2';
+    if (type === 'House Meeting Notes') return '#65a30d';
+    if (type === 'Supplies/Inventory') return '#c026d3';
+    if (type === 'Maintenance Update') return '#2563eb';
+    return '#71717a';
   };
 
   const severityColor = (sv) => {
-    if (sv === 'High') return { bg: '#3a1e1e99', color: '#f87171' };
-    if (sv === 'Medium') return { bg: '#3a2d1e', color: '#fb923c' };
-    return { bg: '#1e3a2f', color: '#4ade80' };
+    if (sv === 'High') return { bg: '#3a1e1e99', color: '#dc2626' };
+    if (sv === 'Medium') return { bg: '#ffedd5', color: '#c2410c' };
+    return { bg: '#dcfce7', color: '#16a34a' };
   };
 
   const statusColor = (st) => {
-    if (st === 'Active') return { bg: '#2d1e3a', color: '#c084fc' };
-    if (st === 'Pending') return { bg: '#2d2d1e', color: '#facc15' };
-    return { bg: '#333', color: '#aaa' };
+    if (st === 'Active') return { bg: '#f3e8ff', color: '#9333ea' };
+    if (st === 'Pending') return { bg: '#ffedd5', color: '#ca8a04' };
+    return { bg: '#e4e4e7', color: '#71717a' };
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
@@ -685,12 +685,12 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     const address = locationLabels[entryId];
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
     return (
-      <div style={{ background: '#1c1c24', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+      <div style={{ background: '#ffffff', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
-          <span style={{ fontSize: '14px', color: '#aaa', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          <span style={{ fontSize: '14px', color: '#71717a', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
         </div>
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #2a3d52', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #dbeafe', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
     );
   };
@@ -716,10 +716,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {lastRefreshed && (
-            <span style={{ fontSize: '14px', color: '#bbb' }}>{formatRefreshed()}</span>
+            <span style={{ fontSize: '14px', color: '#71717a' }}>{formatRefreshed()}</span>
           )}
           <button onClick={() => loadAllData(true)} disabled={refreshing}
-            style={{ background: 'transparent', border: '1px solid #3a3a48', color: refreshing ? '#bbb' : '#aaa', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: refreshing ? '#71717a' : '#71717a', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
             {refreshing ? '↻ Refreshing...' : '↻ Refresh'}
           </button>
           <div style={s.viewToggle}>
@@ -748,10 +748,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
         </div>
       )}
 
-      {loading ? <p style={{ color: '#bbb' }}>Loading...</p> : (
+      {loading ? <p style={{ color: '#71717a' }}>Loading...</p> : (
         <>
           {mainView === 'houses' && (
-            houses.length === 0 ? <p style={{ color: '#bbb' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
+            houses.length === 0 ? <p style={{ color: '#71717a' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
               <div style={s.houseGrid}>
                 {houses.map(house => (
                   <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
@@ -760,14 +760,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <p style={s.houseName}>{house.name}</p>
                         <p style={s.houseAddress}>{house.address}{house.city ? `, ${house.city}` : ''}</p>
                       </div>
-                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: house.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{house.type}</span>
+                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#fce7f3' : '#dbeafe', color: house.type === 'Women' ? '#db2777' : '#2563eb' }}>{house.type}</span>
                     </div>
                     <div style={s.bedBar}><div style={s.bedBarFill(house)} /></div>
                     <div style={s.houseStats}>
                       <span style={s.statItem}><span style={s.statNum}>{house.total_beds || 0}</span><span style={s.statLbl}>Total</span></span>
-                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#c084fc' }}>{house.occupied_beds || 0}</span><span style={s.statLbl}>Active</span></span>
-                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#facc15' }}>{house.pending_count || 0}</span><span style={s.statLbl}>Pending</span></span>
-                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#4ade80' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLbl}>Available</span></span>
+                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#9333ea' }}>{house.occupied_beds || 0}</span><span style={s.statLbl}>Active</span></span>
+                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#ca8a04' }}>{house.pending_count || 0}</span><span style={s.statLbl}>Pending</span></span>
+                      <span style={s.statItem}><span style={{ ...s.statNum, color: '#16a34a' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLbl}>Available</span></span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
                       {house.house_manager ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p> : <span />}
@@ -788,7 +788,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   <div key={house.id} style={s.houseGroup}>
                     <div style={s.houseGroupHeader}>
                       <span style={s.houseGroupName}>{house.name}</span>
-                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: house.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{house.type}</span>
+                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#fce7f3' : '#dbeafe', color: house.type === 'Women' ? '#db2777' : '#2563eb' }}>{house.type}</span>
                       <span style={s.houseGroupCount}>{houseResidents.length} resident{houseResidents.length !== 1 ? 's' : ''}</span>
                     </div>
                     <div style={s.residentTable}>
@@ -805,16 +805,16 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={s.resAvatar}>{initials(r.full_name)}</div>
                             <div>
-                              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
-                              <p style={{ color: '#999', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
+                              <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
+                              <p style={{ color: '#6b7280', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
                           </div>
                           <span style={{ flex: 1 }}>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </span>
-                          <span style={{ flex: 1, color: '#aaa', fontSize: '14px' }}>{r.start_date || '—'}</span>
-                          <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#f87171' : '#4ade80', fontSize: '14px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
-                          <span style={{ flex: 1, color: '#aaa', fontSize: '14px' }}>{r.phone || '—'}</span>
+                          <span style={{ flex: 1, color: '#71717a', fontSize: '14px' }}>{r.start_date || '—'}</span>
+                          <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#dc2626' : '#16a34a', fontSize: '14px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
+                          <span style={{ flex: 1, color: '#71717a', fontSize: '14px' }}>{r.phone || '—'}</span>
                           <div style={{ flex: 2 }} onClick={e => e.stopPropagation()}>
                             {editingNotes.hasOwnProperty(r.id) ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -823,13 +823,13 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                   onBlur={() => saveNotes(r.id)}
                                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes(r.id); } }}
                                   rows={2} placeholder="Add a note..."
-                                  style={{ width: '100%', backgroundColor: '#1c1c24', border: '1px solid #555', borderRadius: '6px', padding: '6px 8px', color: '#fff', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
-                                <span style={{ color: '#bbb', fontSize: '13px' }}>Enter to save · Shift+Enter for new line</span>
+                                  style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bd', borderRadius: '6px', padding: '6px 8px', color: '#18181b', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
+                                <span style={{ color: '#71717a', fontSize: '13px' }}>Enter to save · Shift+Enter for new line</span>
                               </div>
                             ) : (
                               <div onClick={e => { e.stopPropagation(); startEditingNotes(r.id, r.staff_notes); }}
-                                style={{ color: r.staff_notes ? '#aaa' : '#999', fontSize: '14px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.borderColor = '#999'}
+                                style={{ color: r.staff_notes ? '#71717a' : '#6b7280', fontSize: '14px', lineHeight: '1.4', cursor: 'text', minHeight: '20px', padding: '4px 6px', borderRadius: '6px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+                                onMouseEnter={e => e.currentTarget.style.borderColor = '#6b7280'}
                                 onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
                                 {r.staff_notes || <span style={{ fontStyle: 'italic' }}>Click to add notes...</span>}
                               </div>
@@ -841,7 +841,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   </div>
                 );
               })}
-              {allResidents.length === 0 && <p style={{ color: '#bbb' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
+              {allResidents.length === 0 && <p style={{ color: '#71717a' }}>{isHouseManagerRole ? 'No residents found in your assigned houses.' : 'No active residents found.'}</p>}
             </div>
           )}
         </>
@@ -856,17 +856,17 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 <h2 style={s.modalName}>{selected.name}</h2>
                 <p style={s.modalSub}>{selected.address}{selected.city ? `, ${selected.city}` : ''}{selected.zip ? ` ${selected.zip}` : ''}</p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ ...s.typeBadge, background: selected.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: selected.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{selected.type}</span>
-                  <span style={{ ...s.typeBadge, background: '#2d1e3a', color: '#c084fc' }}>{selected.occupied_beds || 0} active</span>
-                  <span style={{ ...s.typeBadge, background: '#2d2d1e', color: '#facc15' }}>{selected.pending_count || 0} pending</span>
-                  <span style={{ ...s.typeBadge, background: '#1e3a2f', color: '#4ade80' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
-                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#26262e', color: '#aaa' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
-                  {selected.door_code && <span style={{ ...s.typeBadge, background: '#3a2d1e', color: '#fb923c' }}>🔑 Door: {selected.door_code}</span>}
+                  <span style={{ ...s.typeBadge, background: selected.type === 'Women' ? '#fce7f3' : '#dbeafe', color: selected.type === 'Women' ? '#db2777' : '#2563eb' }}>{selected.type}</span>
+                  <span style={{ ...s.typeBadge, background: '#f3e8ff', color: '#9333ea' }}>{selected.occupied_beds || 0} active</span>
+                  <span style={{ ...s.typeBadge, background: '#ffedd5', color: '#ca8a04' }}>{selected.pending_count || 0} pending</span>
+                  <span style={{ ...s.typeBadge, background: '#dcfce7', color: '#16a34a' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
+                  {selected.house_manager && <span style={{ ...s.typeBadge, background: '#f7f7f9', color: '#71717a' }}>Manager: {selected.house_manager}{selected.phone ? ` · ${selected.phone}` : ''}</span>}
+                  {selected.door_code && <span style={{ ...s.typeBadge, background: '#ffedd5', color: '#c2410c' }}>🔑 Door: {selected.door_code}</span>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button onClick={() => { setHouseEditForm({ type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '', door_code: selected.door_code || '' }); setEditingHouse(true); }}
-                  style={{ background: '#26262e', border: '1px solid #32323e', color: '#ccc', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  style={{ background: '#f7f7f9', border: '1px solid #e4e4e8', color: '#52525b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                   ✏ Edit House
                 </button>
                 <button onClick={() => setSelected(null)} style={s.closeBtn}>×</button>
@@ -874,49 +874,49 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
             </div>
 
             {editingHouse && (
-              <div style={{ background: '#1a1a24', border: '1px solid #32323e', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px' }}>
-                <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Edit House Details</p>
+              <div style={{ background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px' }}>
+                <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Edit House Details</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Type</label>
+                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Type</label>
                     <select value={houseEditForm.type} onChange={e => setHouseEditForm(p => ({ ...p, type: e.target.value }))}
-                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px' }}>
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px' }}>
                       <option value="Men">Men</option>
                       <option value="Women">Women</option>
                       <option value="Co-ed">Co-ed</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Total Beds</label>
+                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Total Beds</label>
                     <input type="number" value={houseEditForm.total_beds} onChange={e => setHouseEditForm(p => ({ ...p, total_beds: e.target.value }))}
-                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>House Manager</label>
+                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>House Manager</label>
                     <input value={houseEditForm.house_manager} onChange={e => setHouseEditForm(p => ({ ...p, house_manager: e.target.value }))}
                       placeholder="Manager name"
-                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Manager Phone</label>
+                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Manager Phone</label>
                     <input value={houseEditForm.phone} onChange={e => setHouseEditForm(p => ({ ...p, phone: e.target.value }))}
                       placeholder="Phone number"
-                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ color: '#aaa', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Door Code</label>
+                    <label style={{ color: '#71717a', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Door Code</label>
                     <input value={houseEditForm.door_code} onChange={e => setHouseEditForm(p => ({ ...p, door_code: e.target.value }))}
                       placeholder="e.g. 1234#"
-                      style={{ width: '100%', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '8px', padding: '8px 10px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={saveHouseEdit}
-                    style={{ background: '#1D9E75', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                    style={{ background: '#0d9488', border: 'none', color: '#18181b', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
                     Save Changes
                   </button>
                   <button onClick={() => setEditingHouse(false)}
-                    style={{ background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                    style={{ background: 'transparent', border: '1px solid #d4d4d8', color: '#71717a', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </div>
@@ -929,12 +929,12 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}), position: 'relative' }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                   {t === 'forms' && houseFormsPending[selected?.id] > 0 && (
-                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
+                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
                       {houseFormsPending[selected.id]}
                     </span>
                   )}
                   {t === 'messages' && houseChatUnread[selected?.id] > 0 && (
-                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#fff', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
+                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
                       {houseChatUnread[selected.id]}
                     </span>
                   )}
@@ -946,7 +946,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
               {activeTab === 'residents' && (
                 <>
                   <p style={s.sectionLabel}>Current residents ({residents.length})</p>
-                  {residents.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No current residents.</p> : (
+                  {residents.length === 0 ? <p style={{ color: '#6b7280', fontSize: '14px' }}>No current residents.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
                         <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }} onClick={() => { setSelected(null); openClientProfile(r); }}>
@@ -959,22 +959,22 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
                           {r.status === 'Pending' && (
-                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #32323e' }} onClick={e => e.stopPropagation()}>
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e4e8' }} onClick={e => e.stopPropagation()}>
                               {r.expected_move_in_date && (
-                                <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#2d2d1e', borderRadius: '6px', border: '1px solid #3a3a1e' }}>
-                                  <span style={{ fontSize: '14px', color: '#bbb' }}>Expected move-in: </span>
-                                  <span style={{ fontSize: '14px', color: '#facc15', fontWeight: '600' }}>
+                                <div style={{ marginBottom: '8px', padding: '6px 10px', background: '#ffedd5', borderRadius: '6px', border: '1px solid #f3f3e7' }}>
+                                  <span style={{ fontSize: '14px', color: '#71717a' }}>Expected move-in: </span>
+                                  <span style={{ fontSize: '14px', color: '#ca8a04', fontWeight: '600' }}>
                                     {new Date(r.expected_move_in_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                   </span>
                                 </div>
                               )}
                               <div style={{ display: 'flex', gap: '8px' }}>
                                 <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); setDidNotMoveInMode(false); }}
-                                  style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', flex: 2 }}>
+                                  style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', flex: 2 }}>
                                   ✓ Confirm Move-In
                                 </button>
                                 <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setDidNotMoveInMode(true); }}
-                                  style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '7px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', flex: 1 }}>
+                                  style={{ background: 'transparent', border: '1px solid #fee2e2', color: '#dc2626', padding: '7px 12px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', flex: 1 }}>
                                   Did Not Move In
                                 </button>
                               </div>
@@ -994,7 +994,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   {selected.notes && (
                     <>
                       <p style={{ ...s.sectionLabel, marginTop: '20px' }}>House notes</p>
-                      <p style={{ color: '#aaa', fontSize: '14px', lineHeight: '1.6' }}>{selected.notes}</p>
+                      <p style={{ color: '#71717a', fontSize: '14px', lineHeight: '1.6' }}>{selected.notes}</p>
                     </>
                   )}
                 </>
@@ -1019,7 +1019,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Severity *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Low', 'Medium', 'High'].map(sv => (
-                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={sv} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="severity" value={sv} checked={entryForm.severity === sv} onChange={() => setEntryForm(p => ({ ...p, severity: sv }))} />{sv}
                               </label>
                             ))}
@@ -1031,7 +1031,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Result *</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Pass', 'Fail'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="inspection_result" value={opt} checked={entryForm.inspection_result === opt} onChange={() => setEntryForm(p => ({ ...p, inspection_result: opt }))} />{opt}
                               </label>
                             ))}
@@ -1043,7 +1043,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Status</label>
                           <div style={{ display: 'flex', gap: '16px' }}>
                             {['Reported', 'In Progress', 'Completed'].map(opt => (
-                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="radio" name="maintenance_status" value={opt} checked={entryForm.maintenance_status === opt} onChange={() => setEntryForm(p => ({ ...p, maintenance_status: opt }))} />{opt}
                               </label>
                             ))}
@@ -1069,7 +1069,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             <label style={s.label}>Previously submitted?</label>
                             <div style={{ display: 'flex', gap: '16px' }}>
                               {['Yes', 'No'].map(opt => (
-                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                                <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                   <input type="radio" name="prev_submitted" value={opt} checked={entryForm.previously_submitted === opt} onChange={() => setEntryForm(p => ({ ...p, previously_submitted: opt }))} />{opt}
                                 </label>
                               ))}
@@ -1087,11 +1087,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Residents</label>
                           {residents.map(r => (
-                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #32323e' }}>
-                              <span style={{ color: '#ddd', fontSize: '14px' }}>{r.full_name}</span>
+                            <div key={r.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #e4e4e8' }}>
+                              <span style={{ color: '#3f3f46', fontSize: '14px' }}>{r.full_name}</span>
                               <div style={{ display: 'flex', gap: '12px' }}>
                                 {['Here', 'Not Here'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                     <input type="radio" name={`checkin-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -1104,11 +1104,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <div style={{ marginBottom: '12px' }}>
                           <label style={s.label}>Results</label>
                           {residents.map(r => (
-                            <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #32323e' }}>
-                              <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>{r.full_name}</p>
+                            <div key={r.id} style={{ padding: '8px 0', borderBottom: '1px solid #e4e4e8' }}>
+                              <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>{r.full_name}</p>
                               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                                 {['Positive', 'Negative', 'Inconclusive', 'Refused'].map(opt => (
-                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                                  <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                     <input type="radio" name={`ua-${r.id}`} value={opt} checked={residentChecks[r.id]?.value === opt} onChange={() => setResCheck(r.id, opt)} />{opt}
                                   </label>
                                 ))}
@@ -1122,7 +1122,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <label style={s.label}>Attendance</label>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                             {residents.map(r => (
-                              <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#aaa', fontSize: '14px', cursor: 'pointer' }}>
+                              <label key={r.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#71717a', fontSize: '14px', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={residentChecks[r.id]?.value === 'Attended'} onChange={e => setResCheck(r.id, e.target.checked ? 'Attended' : '')} />{r.full_name}
                               </label>
                             ))}
@@ -1143,19 +1143,19 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <button onClick={saveEntry} style={s.saveBtn}>Save Entry</button>
                     </div>
                   )}
-                  {timeline.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No timeline entries yet.</p> : (
+                  {timeline.length === 0 ? <p style={{ color: '#6b7280', fontSize: '14px' }}>No timeline entries yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {timeline.map(entry => (
                         <div key={entry.id} style={s.timelineCard}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: entryColor(entry.entry_type), flexShrink: 0 }} />
-                              <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{entry.entry_type}</span>
+                              <span style={{ color: '#18181b', fontSize: '14px', fontWeight: '500' }}>{entry.entry_type}</span>
                               {entry.severity && <span style={{ ...s.typeBadge, background: severityColor(entry.severity).bg, color: severityColor(entry.severity).color }}>{entry.severity}</span>}
-                              {entry.event_name && <span style={{ color: '#60a5fa', fontSize: '14px' }}>{entry.event_name}</span>}
+                              {entry.event_name && <span style={{ color: '#2563eb', fontSize: '14px' }}>{entry.event_name}</span>}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ color: '#bbb', fontSize: '14px' }}>{formatDate(entry.created_at)}</span>
+                              <span style={{ color: '#71717a', fontSize: '14px' }}>{formatDate(entry.created_at)}</span>
                               <button onClick={() => deleteEntry(entry.id)} style={{ ...s.deleteBtn, padding: '2px 8px', fontSize: '14px' }}>×</button>
                             </div>
                           </div>
@@ -1165,9 +1165,9 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                               {entry.entry_type === 'House Check-In' && (
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
-                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#26262e', borderRadius: '4px' }}>
-                                      <span style={{ color: '#aaa', fontSize: '14px' }}>{r.name}</span>
-                                      <span style={{ fontSize: '14px', color: r.value === 'Here' ? '#4ade80' : '#f87171', fontWeight: '600' }}>{r.value}</span>
+                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#f7f7f9', borderRadius: '4px' }}>
+                                      <span style={{ color: '#71717a', fontSize: '14px' }}>{r.name}</span>
+                                      <span style={{ fontSize: '14px', color: r.value === 'Here' ? '#16a34a' : '#dc2626', fontWeight: '600' }}>{r.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1175,9 +1175,9 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                               {entry.entry_type === 'Batch UA' && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value).map(r => (
-                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#26262e', borderRadius: '4px' }}>
-                                      <span style={{ color: '#aaa', fontSize: '14px' }}>{r.name}</span>
-                                      <span style={{ fontSize: '14px', fontWeight: '600', color: r.value === 'Negative' ? '#4ade80' : r.value === 'Positive' ? '#f87171' : '#fb923c' }}>{r.value}</span>
+                                    <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px', background: '#f7f7f9', borderRadius: '4px' }}>
+                                      <span style={{ color: '#71717a', fontSize: '14px' }}>{r.name}</span>
+                                      <span style={{ fontSize: '14px', fontWeight: '600', color: r.value === 'Negative' ? '#16a34a' : r.value === 'Positive' ? '#dc2626' : '#c2410c' }}>{r.value}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1185,17 +1185,17 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                               {entry.entry_type === 'Event Attendance' && (
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                   {entry.resident_data.filter(r => r.value === 'Attended').map(r => (
-                                    <span key={r.id} style={{ ...s.typeBadge, background: '#1e2d3a', color: '#60a5fa', fontSize: '14px' }}>{r.name}</span>
+                                    <span key={r.id} style={{ ...s.typeBadge, background: '#dbeafe', color: '#2563eb', fontSize: '14px' }}>{r.name}</span>
                                   ))}
                                 </div>
                               )}
                               {entry.entry_type === 'House Inspection' && entry.inspection_result && (
-                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', background: entry.inspection_result === 'Pass' ? '#14532d' : '#7f1d1d', color: entry.inspection_result === 'Pass' ? '#4ade80' : '#f87171' }}>
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', background: entry.inspection_result === 'Pass' ? '#14532d' : '#fee2e2', color: entry.inspection_result === 'Pass' ? '#16a34a' : '#dc2626' }}>
                                   {entry.inspection_result}
                                 </span>
                               )}
                               {entry.entry_type === 'Maintenance/Repair' && entry.maintenance_status && (
-                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', background: entry.maintenance_status === 'Completed' ? '#14532d' : entry.maintenance_status === 'In Progress' ? '#78350f' : '#1e3a5f', color: entry.maintenance_status === 'Completed' ? '#4ade80' : entry.maintenance_status === 'In Progress' ? '#fb923c' : '#60a5fa' }}>
+                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', background: entry.maintenance_status === 'Completed' ? '#14532d' : entry.maintenance_status === 'In Progress' ? '#78350f' : '#dbeafe', color: entry.maintenance_status === 'Completed' ? '#16a34a' : entry.maintenance_status === 'In Progress' ? '#c2410c' : '#2563eb' }}>
                                   {entry.maintenance_status}
                                 </span>
                               )}
@@ -1203,10 +1203,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           )}
                           {entry.entry_type === 'Weekly Reflection'
                             ? <HouseWeeklyReflectionCard entry={entry} />
-                            : entry.notes && <p style={{ color: '#aaa', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
+                            : entry.notes && <p style={{ color: '#71717a', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>
                           }
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                            <span style={{ color: '#bbb', fontSize: '14px' }}>By {entry.author}</span>
+                            <span style={{ color: '#71717a', fontSize: '14px' }}>By {entry.author}</span>
                           </div>
                         </div>
                       ))}
@@ -1231,13 +1231,13 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <button onClick={addRoom} style={s.saveBtn}>Save Room</button>
                     </div>
                   )}
-                  {rooms.length === 0 ? <p style={{ color: '#999', fontSize: '14px' }}>No rooms added yet.</p> : (
+                  {rooms.length === 0 ? <p style={{ color: '#6b7280', fontSize: '14px' }}>No rooms added yet.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {rooms.map(r => (
                         <div key={r.id} style={s.roomRow}>
                           <div style={{ flex: 1 }}>
-                            <p style={{ color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
-                            <p style={{ color: '#999', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
+                            <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
+                            <p style={{ color: '#6b7280', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
                           </div>
                           <button onClick={() => deleteRoom(r.id)} style={s.deleteBtn}>Remove</button>
                         </div>
@@ -1264,7 +1264,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 canSeeHouseChat ? (
                   <HouseChatTab houseId={selected.id} houseName={selected.name} user={user} />
                 ) : (
-                  <p style={{ color: '#888', fontSize: '14px' }}>You don't have access to this house's chat.</p>
+                  <p style={{ color: '#9ca3af', fontSize: '14px' }}>You don't have access to this house's chat.</p>
                 )
               )}
             </div>
@@ -1275,10 +1275,10 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
       {/* Confirm Move-In modal */}
       {moveInModal && (
         <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => { setMoveInModal(null); setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}>
-          <div style={{ background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #32323e' }}>
-              <h3 style={{ color: '#fff', margin: 0, fontSize: '16px' }}>{didNotMoveInMode ? 'Did Not Move In' : 'Confirm Move-In'}</h3>
-              <p style={{ color: '#999', fontSize: '14px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
+          <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #e4e4e8', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e4e4e8' }}>
+              <h3 style={{ color: '#18181b', margin: 0, fontSize: '16px' }}>{didNotMoveInMode ? 'Did Not Move In' : 'Confirm Move-In'}</h3>
+              <p style={{ color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' }}>{moveInModal.full_name}</p>
             </div>
             <div style={{ padding: '20px 24px' }}>
               {!didNotMoveInMode ? (
@@ -1291,31 +1291,31 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <option value="Houseperson">Houseperson — $110/week</option>
                     </select>
                   </div>
-                  <div style={{ background: '#26262e', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
-                    <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
-                    <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
-                    <p style={{ color: '#ddd', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
-                    <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
+                  <div style={{ background: '#f7f7f9', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
+                    <p style={{ color: '#71717a', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
+                    <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
+                    <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
+                    <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                     <button onClick={confirmMoveIn} disabled={savingMoveIn}
-                      style={{ flex: 2, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 2, background: '#16a34a', border: 'none', color: '#18181b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       {savingMoveIn ? 'Confirming...' : 'Confirm Move-In'}
                     </button>
                     <button onClick={() => setDidNotMoveInMode(true)}
-                      style={{ flex: 1, background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #fee2e2', color: '#dc2626', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
                       Did Not Move In
                     </button>
                   </div>
                   <button onClick={() => setMoveInModal(null)}
-                    style={{ width: '100%', background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                    style={{ width: '100%', background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                     Cancel
                   </button>
                 </>
               ) : (
                 <>
-                  <p style={{ color: '#aaa', fontSize: '14px', margin: '0 0 12px 0' }}>
-                    This will revert <strong style={{ color: '#fff' }}>{moveInModal.full_name}</strong> back to Accepted status and log the reason in their stays history.
+                  <p style={{ color: '#71717a', fontSize: '14px', margin: '0 0 12px 0' }}>
+                    This will revert <strong style={{ color: '#18181b' }}>{moveInModal.full_name}</strong> back to Accepted status and log the reason in their stays history.
                   </p>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={s.label}>Reason *</label>
@@ -1329,11 +1329,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   </div>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={handleDidNotMoveIn} disabled={savingMoveIn}
-                      style={{ flex: 1, background: '#7f1d1d', border: 'none', color: '#f87171', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 1, background: '#fee2e2', border: 'none', color: '#dc2626', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       {savingMoveIn ? 'Saving...' : 'Confirm Did Not Move In'}
                     </button>
                     <button onClick={() => { setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}
-                      style={{ flex: 1, background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ flex: 1, background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                       Back
                     </button>
                   </div>
@@ -1351,65 +1351,65 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
 // Suppress unused warning
 
 const s = {
-  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#fff' },
+  page: { padding: '32px', fontFamily: "'Inter', 'system-ui', sans-serif", color: '#18181b' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
-  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
-  addForm: { background: '#26262e', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #32323e' },
-  miniForm: { background: '#26262e', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #32323e' },
-  addTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
+  sub: { color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' },
+  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
+  smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
+  addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #e4e4e8' },
+  miniForm: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #e4e4e8' },
+  addTitle: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' },
-  label: { display: 'block', color: '#aaa', fontSize: '14px', marginBottom: '4px' },
-  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
-  saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
+  label: { display: 'block', color: '#71717a', fontSize: '14px', marginBottom: '4px' },
+  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
+  saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
-  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#666', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
-  viewToggle: { display: 'flex', background: '#26262e', borderRadius: '8px', border: '1px solid #32323e', overflow: 'hidden' },
-  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#bbb', cursor: 'pointer', fontSize: '14px' },
-  toggleBtnActive: { background: '#999', color: '#fff' },
+  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #d4d4d8', color: '#a1a1aa', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
+  viewToggle: { display: 'flex', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #e4e4e8', overflow: 'hidden' },
+  toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#71717a', cursor: 'pointer', fontSize: '14px' },
+  toggleBtnActive: { background: '#6b7280', color: '#18181b' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  houseCard: { background: '#26262e', borderRadius: '12px', padding: '18px 20px', border: '1px solid #32323e', cursor: 'pointer' },
+  houseCard: { background: '#f7f7f9', borderRadius: '12px', padding: '18px 20px', border: '1px solid #e4e4e8', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
-  houseName: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' },
-  houseAddress: { color: '#999', fontSize: '14px', margin: 0 },
+  houseName: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' },
+  houseAddress: { color: '#6b7280', fontSize: '14px', margin: 0 },
   typeBadge: { fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', whiteSpace: 'nowrap' },
-  bedBar: { height: '4px', background: '#26262e', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
-  bedBarFill: (house) => ({ height: '100%', width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`, background: '#c084fc', borderRadius: '2px' }),
+  bedBar: { height: '4px', background: '#f7f7f9', borderRadius: '2px', marginBottom: '12px', overflow: 'hidden' },
+  bedBarFill: (house) => ({ height: '100%', width: `${Math.min((((house.occupied_beds || 0) + (house.pending_count || 0)) / (house.total_beds || 1)) * 100, 100)}%`, background: '#9333ea', borderRadius: '2px' }),
   houseStats: { display: 'flex', gap: '16px', marginBottom: '10px' },
   statItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  statNum: { fontSize: '18px', fontWeight: '700', color: '#fff' },
-  statLbl: { fontSize: '14px', color: '#999' },
-  manager: { color: '#bbb', fontSize: '14px', margin: 0 },
+  statNum: { fontSize: '18px', fontWeight: '700', color: '#18181b' },
+  statLbl: { fontSize: '14px', color: '#6b7280' },
+  manager: { color: '#71717a', fontSize: '14px', margin: 0 },
   houseGroup: { marginBottom: '32px' },
-  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #32323e' },
-  houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#fff' },
-  houseGroupCount: { fontSize: '14px', color: '#999', marginLeft: 'auto' },
-  residentTable: { background: '#26262e', borderRadius: '10px', overflow: 'hidden', border: '1px solid #32323e' },
-  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#26262e', fontSize: '14px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
-  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #32323e', gap: '12px' },
+  houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #e4e4e8' },
+  houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#18181b' },
+  houseGroupCount: { fontSize: '14px', color: '#6b7280', marginLeft: 'auto' },
+  residentTable: { background: '#f7f7f9', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e4e4e8' },
+  residentTableHeader: { display: 'flex', padding: '10px 16px', background: '#f7f7f9', fontSize: '14px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', gap: '12px' },
+  residentTableRow: { display: 'flex', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #e4e4e8', gap: '12px' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '24px 16px', zIndex: 1000, overflowY: 'auto' },
-  modal: { background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '680px', overflow: 'hidden' },
-  modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #32323e' },
-  modalName: { fontSize: '20px', fontWeight: '600', margin: 0, color: '#fff' },
-  modalSub: { fontSize: '14px', color: '#999', margin: '4px 0 0 0' },
-  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #3a3a48', background: 'transparent', cursor: 'pointer', color: '#bbb', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  tabs: { display: 'flex', borderBottom: '1px solid #32323e', padding: '0 20px' },
-  tab: { padding: '10px 16px', fontSize: '14px', cursor: 'pointer', color: '#999', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
-  tabActive: { color: '#fff', borderBottomColor: '#fff' },
+  modal: { background: '#ffffff', borderRadius: '16px', border: '1px solid #e4e4e8', width: '100%', maxWidth: '680px', overflow: 'hidden' },
+  modalHeader: { display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '20px 24px', borderBottom: '1px solid #e4e4e8' },
+  modalName: { fontSize: '20px', fontWeight: '600', margin: 0, color: '#18181b' },
+  modalSub: { fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' },
+  closeBtn: { width: '30px', height: '30px', borderRadius: '50%', border: '1px solid #d8d8dd', background: 'transparent', cursor: 'pointer', color: '#71717a', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  tabs: { display: 'flex', borderBottom: '1px solid #e4e4e8', padding: '0 20px' },
+  tab: { padding: '10px 16px', fontSize: '14px', cursor: 'pointer', color: '#6b7280', background: 'transparent', border: 'none', borderBottom: '2px solid transparent', whiteSpace: 'nowrap' },
+  tabActive: { color: '#18181b', borderBottomColor: '#18181b' },
   modalBody: { padding: '20px 24px', maxHeight: '520px', overflowY: 'auto' },
-  sectionLabel: { fontSize: '14px', fontWeight: '500', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
-  residentCard: { background: '#26262e', borderRadius: '10px', padding: '14px 16px', border: '1px solid #32323e' },
-  resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#2d1e3a', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '500', flexShrink: 0 },
-  resName: { color: '#fff', fontSize: '14px', fontWeight: '500', margin: 0 },
-  resMeta: { color: '#999', fontSize: '14px', margin: '2px 0 0 0' },
+  sectionLabel: { fontSize: '14px', fontWeight: '500', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px 0' },
+  residentCard: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', border: '1px solid #e4e4e8' },
+  resAvatar: { width: '36px', height: '36px', borderRadius: '50%', background: '#f3e8ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '500', flexShrink: 0 },
+  resName: { color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 },
+  resMeta: { color: '#6b7280', fontSize: '14px', margin: '2px 0 0 0' },
   resDetailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '10px' },
   resDetailItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  resDetailLabel: { fontSize: '13px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  resDetailVal: { fontSize: '14px', color: '#ddd' },
-  roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#26262e', borderRadius: '10px' },
-  timelineCard: { background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' },
+  resDetailLabel: { fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' },
+  resDetailVal: { fontSize: '14px', color: '#3f3f46' },
+  roomRow: { display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#f7f7f9', borderRadius: '10px' },
+  timelineCard: { background: '#f7f7f9', borderRadius: '10px', padding: '12px 14px', border: '1px solid #e4e4e8' },
 };
 
 // ── Chore Rotation Tab ────────────────────────────────────────────────────────
@@ -1657,26 +1657,26 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
     setSettings(prev => ({ ...prev, period_days: days }));
   };
 
-  if (loading) return <p style={{ color: '#888', fontSize: '14px' }}>Loading chore rotation...</p>;
+  if (loading) return <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading chore rotation...</p>;
 
   const fmtD = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   return (
     <div>
       {/* Rotation settings */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '18px', padding: '12px 14px', background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '18px', padding: '12px 14px', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px' }}>
         <div>
-          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 2px' }}>
+          <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 2px' }}>
             Current period: {fmtD(settings?.current_period_start)} → {fmtD(settings?.current_period_end)}
           </p>
-          <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Rotates automatically when the period ends.</p>
+          <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>Rotates automatically when the period ends.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ color: '#aaa', fontSize: '13px' }}>Rotate every</label>
+          <label style={{ color: '#71717a', fontSize: '13px' }}>Rotate every</label>
           <input type="number" min="1" value={periodDaysInput} onChange={e => setPeriodDaysInput(e.target.value)}
             onBlur={savePeriodDays}
-            style={{ width: '56px', background: '#26262e', border: '1px solid #3a3a48', borderRadius: '6px', padding: '5px 8px', color: '#fff', fontSize: '13px', textAlign: 'center' }} />
-          <span style={{ color: '#aaa', fontSize: '13px' }}>days</span>
+            style={{ width: '56px', background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '6px', padding: '5px 8px', color: '#18181b', fontSize: '13px', textAlign: 'center' }} />
+          <span style={{ color: '#71717a', fontSize: '13px' }}>days</span>
         </div>
       </div>
 
@@ -1687,55 +1687,55 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
         </div>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
           <input value={newChoreName} onChange={e => setNewChoreName(e.target.value)} placeholder="New chore name (e.g. Kitchen)"
-            style={{ flex: '1 1 200px', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ flex: '1 1 200px', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
           <input value={newChoreDesc} onChange={e => setNewChoreDesc(e.target.value)} placeholder="Notes (optional)"
-            style={{ flex: '1 1 200px', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ flex: '1 1 200px', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
           <button onClick={handleAddChore} disabled={addingChore || !newChoreName.trim()}
-            style={{ background: '#1e3a5f', border: '1px solid #3b82f6', color: '#60a5fa', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+            style={{ background: '#dbeafe', border: '1px solid #2563eb', color: '#2563eb', padding: '9px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
             {addingChore ? 'Adding...' : '+ Add Chore'}
           </button>
         </div>
         {chores.length === 0 ? (
-          <p style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>No chores set up yet — add one above.</p>
+          <p style={{ color: '#a1a1aa', fontSize: '13px', fontStyle: 'italic' }}>No chores set up yet — add one above.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {chores.map(chore => {
               const excludedIds = exclusionsMap[chore.id] || new Set();
               return (
-                <div key={chore.id} style={{ background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', padding: '10px 14px' }}>
+                <div key={chore.id} style={{ background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '10px 14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                     <div>
-                      <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{chore.name}</p>
-                      {chore.description && <p style={{ color: '#888', fontSize: '12px', margin: '2px 0 0' }}>{chore.description}</p>}
+                      <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0 }}>{chore.name}</p>
+                      {chore.description && <p style={{ color: '#9ca3af', fontSize: '12px', margin: '2px 0 0' }}>{chore.description}</p>}
                       {excludedIds.size > 0 && (
-                        <p style={{ color: '#fb923c', fontSize: '12px', margin: '4px 0 0' }}>
+                        <p style={{ color: '#c2410c', fontSize: '12px', margin: '4px 0 0' }}>
                           Excluded: {[...excludedIds].map(residentName).join(', ')}
                         </p>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button onClick={() => setManagingExclusionsFor(managingExclusionsFor === chore.id ? null : chore.id)}
-                        style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Exclusions
                       </button>
                       <button onClick={() => handleRemoveChore(chore.id)}
-                        style={{ background: 'transparent', border: '1px solid #7f1d1d', color: '#f87171', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #fee2e2', color: '#dc2626', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Remove
                       </button>
                     </div>
                   </div>
                   {managingExclusionsFor === chore.id && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #2a2a2a', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                      {activeResidents.length === 0 && <p style={{ color: '#666', fontSize: '12px' }}>No active residents.</p>}
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e4e8', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {activeResidents.length === 0 && <p style={{ color: '#a1a1aa', fontSize: '12px' }}>No active residents.</p>}
                       {activeResidents.map(r => {
                         const isExcluded = excludedIds.has(r.id);
                         return (
                           <button key={r.id} onClick={() => toggleExclusion(chore.id, r.id)}
                             style={{
                               padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-                              border: `1px solid ${isExcluded ? '#7f1d1d' : '#3a3a48'}`,
-                              background: isExcluded ? '#3a0f0f' : '#26262e',
-                              color: isExcluded ? '#f87171' : '#aaa',
+                              border: `1px solid ${isExcluded ? '#fee2e2' : '#d8d8dd'}`,
+                              background: isExcluded ? '#fee2e2' : '#f7f7f9',
+                              color: isExcluded ? '#dc2626' : '#71717a',
                             }}>
                             {isExcluded ? '✗ ' : ''}{r.full_name}
                           </button>
@@ -1751,12 +1751,12 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
       </div>
 
       {/* This period's assignments */}
-      <div style={{ borderTop: '1px solid #222', paddingTop: '20px' }}>
+      <div style={{ borderTop: '1px solid #ececef', paddingTop: '20px' }}>
         <p style={s.sectionLabel}>This Period's Assignments</p>
         {rotating ? (
-          <p style={{ color: '#888', fontSize: '14px' }}>Generating this period's assignments...</p>
+          <p style={{ color: '#9ca3af', fontSize: '14px' }}>Generating this period's assignments...</p>
         ) : chores.length === 0 ? (
-          <p style={{ color: '#666', fontSize: '13px', fontStyle: 'italic' }}>Add a chore above to start the rotation.</p>
+          <p style={{ color: '#a1a1aa', fontSize: '13px', fontStyle: 'italic' }}>Add a chore above to start the rotation.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {chores.map(chore => {
@@ -1773,46 +1773,46 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                 : 0;
               return (
                 <div key={chore.id} style={{
-                  background: '#1c1c24', borderRadius: '10px', padding: '12px 14px',
-                  border: `1px solid ${unfilled ? '#7f1d1d' : '#32323e'}`,
+                  background: '#ffffff', borderRadius: '10px', padding: '12px 14px',
+                  border: `1px solid ${unfilled ? '#fee2e2' : '#e4e4e8'}`,
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
                     <div>
-                      <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' }}>{chore.name}</p>
+                      <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 3px' }}>{chore.name}</p>
                       {unfilled ? (
-                        <p style={{ color: '#f87171', fontSize: '13px', fontWeight: '600', margin: 0 }}>⚠ Unfilled — no eligible resident</p>
+                        <p style={{ color: '#dc2626', fontSize: '13px', fontWeight: '600', margin: 0 }}>⚠ Unfilled — no eligible resident</p>
                       ) : (
-                        <p style={{ color: '#ccc', fontSize: '13px', margin: 0 }}>{residentName(assignment.client_id)}</p>
+                        <p style={{ color: '#52525b', fontSize: '13px', margin: 0 }}>{residentName(assignment.client_id)}</p>
                       )}
                       <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
                         {!unfilled && (
-                          <span style={{ background: '#1e2d3a', color: '#60a5fa', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>
+                          <span style={{ background: '#dbeafe', color: '#2563eb', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>
                             {doneCount}/{totalDaysSoFar} days done{totalPeriodDays ? ` (${totalPeriodDays}-day period, checked daily)` : ''}
                           </span>
                         )}
-                        {assignment.is_manual && <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>Manually changed</span>}
+                        {assignment.is_manual && <span style={{ background: '#ffedd5', color: '#c2410c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' }}>Manually changed</span>}
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <button onClick={() => setReassigningId(reassigningId === assignment.id ? null : assignment.id)}
-                        style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
+                        style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>
                         Reassign
                       </button>
                     </div>
                   </div>
                   {reassigningId === assignment.id && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #2a2a2a', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e4e4e8', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       <button onClick={() => handleReassign(assignment.id, null)}
-                        style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: '1px solid #7f1d1d', background: '#3a0f0f', color: '#f87171' }}>
+                        style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: '1px solid #fee2e2', background: '#fee2e2', color: '#dc2626' }}>
                         Unassign
                       </button>
                       {activeResidents.map(r => (
                         <button key={r.id} onClick={() => handleReassign(assignment.id, r.id)}
                           style={{
                             padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer',
-                            border: `1px solid ${assignment.client_id === r.id ? '#3b82f6' : '#3a3a48'}`,
-                            background: assignment.client_id === r.id ? '#1e3a5f' : '#26262e',
-                            color: assignment.client_id === r.id ? '#60a5fa' : '#aaa',
+                            border: `1px solid ${assignment.client_id === r.id ? '#2563eb' : '#d8d8dd'}`,
+                            background: assignment.client_id === r.id ? '#dbeafe' : '#f7f7f9',
+                            color: assignment.client_id === r.id ? '#2563eb' : '#71717a',
                           }}>
                           {r.full_name}{exclusionsMap[chore.id]?.has(r.id) ? ' (excluded)' : ''}
                         </button>
@@ -1857,22 +1857,22 @@ function FormsTab({ houseId, houseName, currentUser, onReviewed }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '22px', paddingBottom: '16px', borderBottom: '1px solid #2a2a2a', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '22px', paddingBottom: '16px', borderBottom: '1px solid #e4e4e8', flexWrap: 'wrap' }}>
         {SUB_TABS.map(t => (
           <button key={t.id} onClick={() => setSubTab(t.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: '7px',
               padding: '9px 16px', borderRadius: '9px', border: 'none', cursor: 'pointer',
               fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap',
-              background: subTab === t.id ? '#b22222' : '#1c1c24',
-              color: subTab === t.id ? '#fff' : '#999',
+              background: subTab === t.id ? '#b22222' : '#ffffff',
+              color: subTab === t.id ? '#18181b' : '#6b7280',
               transition: 'background 0.15s, color 0.15s',
             }}>
             {t.label}
             {!!t.count && (
               <span style={{
-                background: subTab === t.id ? 'rgba(255,255,255,0.25)' : '#7f1d1d',
-                color: '#fff', fontSize: '11px', fontWeight: '700',
+                background: subTab === t.id ? 'rgba(255,255,255,0.25)' : '#fee2e2',
+                color: '#18181b', fontSize: '11px', fontWeight: '700',
                 borderRadius: '10px', padding: '1px 7px', minWidth: '18px', textAlign: 'center',
               }}>
                 {t.count}
@@ -1951,20 +1951,20 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
     const itemsData = w.items || {};
     const sectionsHtml = WALKTHROUGH_SECTIONS.map(sec => `
       <div style="margin-bottom:20px;">
-        <div style="background:#1e3a5f;color:#fff;padding:8px 12px;font-size:13px;font-weight:700;border-radius:4px;margin-bottom:8px;">${sec.section}</div>
+        <div style="background:#dbeafe;color:#18181b;padding:8px 12px;font-size:13px;font-weight:700;border-radius:4px;margin-bottom:8px;">${sec.section}</div>
         <table width="100%" style="border-collapse:collapse;font-size:13px;">
           <thead><tr>
-            <th style="width:50px;padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;text-align:center;">OK</th>
-            <th style="width:60px;padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;text-align:center;">Std.</th>
-            <th style="padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;">Item</th>
-            <th style="width:200px;padding:6px 8px;background:#f5f5f5;border:1px solid #ddd;">Notes</th>
+            <th style="width:50px;padding:6px 8px;background:#f5f5f5;border:1px solid #3f3f46;text-align:center;">OK</th>
+            <th style="width:60px;padding:6px 8px;background:#f5f5f5;border:1px solid #3f3f46;text-align:center;">Std.</th>
+            <th style="padding:6px 8px;background:#f5f5f5;border:1px solid #3f3f46;">Item</th>
+            <th style="width:200px;padding:6px 8px;background:#f5f5f5;border:1px solid #3f3f46;">Notes</th>
           </tr></thead>
           <tbody>
             ${sec.items.map(item => `<tr>
-              <td style="padding:7px 8px;border:1px solid #ddd;text-align:center;font-size:16px;">${itemsData[item.id]?.ok ? '✓' : ''}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;text-align:center;color:#666;">${item.std}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;">${item.text}</td>
-              <td style="padding:7px 8px;border:1px solid #ddd;color:#555;">${itemsData[item.id]?.notes || ''}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;font-size:16px;">${itemsData[item.id]?.ok ? '✓' : ''}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;color:#a1a1aa;">${item.std}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;">${item.text}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;color:#b8b8bd;">${itemsData[item.id]?.notes || ''}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -1972,14 +1972,14 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>House Walkthrough — ${w.house_name}</title>
     <style>
-      body { font-family: Arial, sans-serif; margin: 40px; color: #111; font-size: 14px; }
-      .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #1e3a5f; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+      body { font-family: Arial, sans-serif; margin: 40px; color: #f4f4f6; font-size: 14px; }
+      .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #dbeafe; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
       @media print { .print-btn { display: none; } }
     </style></head><body>
     <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
-    <div style="text-align:right;font-size:11px;color:#888;margin-bottom:4px;">INTERNAL USE ONLY — Staff / House Manager Walkthrough</div>
+    <div style="text-align:right;font-size:11px;color:#9ca3af;margin-bottom:4px;">INTERNAL USE ONLY — Staff / House Manager Walkthrough</div>
     <h2 style="text-align:center;margin:0 0 4px;">House Walkthrough Checklist</h2>
-    <p style="text-align:center;font-style:italic;color:#666;margin:0 0 20px;font-size:13px;">Physical Environment — NARR Standard 3.0, Domain 2 (Standards 14–19)</p>
+    <p style="text-align:center;font-style:italic;color:#a1a1aa;margin:0 0 20px;font-size:13px;">Physical Environment — NARR Standard 3.0, Domain 2 (Standards 14–19)</p>
     <p><strong>Address:</strong> ${w.house_name}</p>
     <p><strong>House Manager:</strong> ${w.submitted_by}</p>
     <p><strong>Date of Walkthrough:</strong> ${fmtDate(w.walkthrough_date)}</p>
@@ -1987,7 +1987,7 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
     <p style="margin:0 0 20px;"><strong>Score:</strong> ${w.score} / ${w.total_items} items checked OK (${Math.round((w.score / w.total_items) * 100)}%)</p>
     ${sectionsHtml}
     ${w.corrective_actions ? `<div style="margin-top:20px;"><strong>Corrective Actions Needed:</strong><p style="margin-top:8px;line-height:1.6;">${w.corrective_actions}</p></div>` : ''}
-    <div style="margin-top:40px;border-top:1px solid #ccc;padding-top:16px;display:flex;gap:60px;">
+    <div style="margin-top:40px;border-top:1px solid #52525b;padding-top:16px;display:flex;gap:60px;">
       <div><strong>House Manager Signature:</strong> _____________________________</div>
       <div><strong>Date:</strong> _________________</div>
     </div>
@@ -2002,30 +2002,30 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
 
   const resultBadge = (result) => {
     const map = {
-      meets_standard: { label: 'Meets Standard', bg: '#14532d', color: '#4ade80' },
-      needs_improvement: { label: 'Needs Improvement', bg: '#3a2d1e', color: '#fb923c' },
-      not_acceptable: { label: 'Not Acceptable', bg: '#3a0f0f', color: '#f87171' },
+      meets_standard: { label: 'Meets Standard', bg: '#14532d', color: '#16a34a' },
+      needs_improvement: { label: 'Needs Improvement', bg: '#ffedd5', color: '#c2410c' },
+      not_acceptable: { label: 'Not Acceptable', bg: '#fee2e2', color: '#dc2626' },
     };
-    const r = map[result] || { label: result, bg: '#333', color: '#aaa' };
+    const r = map[result] || { label: result, bg: '#e4e4e7', color: '#71717a' };
     return <span style={{ background: r.bg, color: r.color, fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '10px', whiteSpace: 'nowrap' }}>{r.label}</span>;
   };
 
   if (showForm) return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h3 style={{ color: '#fff', margin: 0, fontSize: '16px', fontWeight: '600' }}>New House Walkthrough</h3>
-        <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+        <h3 style={{ color: '#18181b', margin: 0, fontSize: '16px', fontWeight: '600' }}>New House Walkthrough</h3>
+        <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '7px', padding: '5px 12px', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Date of Walkthrough</label>
+          <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '4px' }}>Date of Walkthrough</label>
           <input type="date" value={walkthroughDate} onChange={e => setWalkthroughDate(e.target.value)}
-            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+            style={{ width: '100%', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
         </div>
         <div>
-          <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '4px' }}>Overall Result</label>
+          <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '4px' }}>Overall Result</label>
           <select value={overallResult} onChange={e => setOverallResult(e.target.value)}
-            style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '9px 12px', color: overallResult ? '#fff' : '#666', fontSize: '14px', boxSizing: 'border-box' }}>
+            style={{ width: '100%', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '9px 12px', color: overallResult ? '#18181b' : '#a1a1aa', fontSize: '14px', boxSizing: 'border-box' }}>
             <option value="">Select result...</option>
             <option value="meets_standard">Meets Standard</option>
             <option value="needs_improvement">Needs Improvement</option>
@@ -2033,32 +2033,32 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
           </select>
         </div>
       </div>
-      <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#1e1e24', borderRadius: '8px', border: '1px solid #32323e' }}>
-        <p style={{ color: '#aaa', fontSize: '13px', margin: 0 }}>
-          Progress: <span style={{ color: '#fff', fontWeight: '600' }}>{score} / {TOTAL_WALKTHROUGH_ITEMS}</span> items checked OK
-          &nbsp;·&nbsp; <span style={{ color: score === TOTAL_WALKTHROUGH_ITEMS ? '#4ade80' : '#fb923c' }}>{Math.round((score / TOTAL_WALKTHROUGH_ITEMS) * 100)}%</span>
+      <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #e4e4e8' }}>
+        <p style={{ color: '#71717a', fontSize: '13px', margin: 0 }}>
+          Progress: <span style={{ color: '#18181b', fontWeight: '600' }}>{score} / {TOTAL_WALKTHROUGH_ITEMS}</span> items checked OK
+          &nbsp;·&nbsp; <span style={{ color: score === TOTAL_WALKTHROUGH_ITEMS ? '#16a34a' : '#c2410c' }}>{Math.round((score / TOTAL_WALKTHROUGH_ITEMS) * 100)}%</span>
         </p>
       </div>
       {WALKTHROUGH_SECTIONS.map(sec => (
         <div key={sec.section} style={{ marginBottom: '20px' }}>
-          <div style={{ background: '#1e3a5f', padding: '8px 14px', borderRadius: '6px', marginBottom: '8px' }}>
-            <p style={{ color: '#fff', fontWeight: '700', fontSize: '13px', margin: 0 }}>{sec.section}</p>
+          <div style={{ background: '#dbeafe', padding: '8px 14px', borderRadius: '6px', marginBottom: '8px' }}>
+            <p style={{ color: '#18181b', fontWeight: '700', fontSize: '13px', margin: 0 }}>{sec.section}</p>
           </div>
           {sec.items.map(item => (
-            <div key={item.id} style={{ padding: '10px 0', borderBottom: '1px solid #1a1a1a' }}>
+            <div key={item.id} style={{ padding: '10px 0', borderBottom: '1px solid #ffffff' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <button onClick={() => toggleItem(item.id)}
-                  style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${items[item.id]?.ok ? '#16a34a' : '#3a3a48'}`, background: items[item.id]?.ok ? '#16a34a' : 'transparent', color: '#fff', cursor: 'pointer', flexShrink: 0, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+                  style={{ width: '24px', height: '24px', borderRadius: '4px', border: `2px solid ${items[item.id]?.ok ? '#16a34a' : '#d8d8dd'}`, background: items[item.id]?.ok ? '#16a34a' : 'transparent', color: '#18181b', cursor: 'pointer', flexShrink: 0, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
                   {items[item.id]?.ok ? '✓' : ''}
                 </button>
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: '#ddd', fontSize: '13px', margin: '0 0 6px', lineHeight: '1.5' }}>
-                    <span style={{ color: '#888', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
+                  <p style={{ color: '#3f3f46', fontSize: '13px', margin: '0 0 6px', lineHeight: '1.5' }}>
+                    <span style={{ color: '#9ca3af', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
                     {item.text}
                   </p>
                   <input placeholder="Notes (optional)" value={items[item.id]?.notes || ''}
                     onChange={e => setItemNote(item.id, e.target.value)}
-                    style={{ width: '100%', background: '#1e1e24', border: '1px solid #2a2a2a', borderRadius: '6px', padding: '6px 10px', color: '#ddd', fontSize: '12px', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '6px', padding: '6px 10px', color: '#3f3f46', fontSize: '12px', boxSizing: 'border-box' }} />
                 </div>
               </div>
             </div>
@@ -2066,13 +2066,13 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
         </div>
       ))}
       <div style={{ marginBottom: '20px' }}>
-        <label style={{ display: 'block', fontSize: '12px', color: '#aaa', marginBottom: '6px' }}>Corrective Actions Needed</label>
+        <label style={{ display: 'block', fontSize: '12px', color: '#71717a', marginBottom: '6px' }}>Corrective Actions Needed</label>
         <textarea value={correctiveActions} onChange={e => setCorrectiveActions(e.target.value)} rows={4}
           placeholder="Describe any corrective actions needed..."
-          style={{ width: '100%', background: '#1e1e24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', resize: 'vertical', fontFamily: "'Inter','system-ui',sans-serif", boxSizing: 'border-box' }} />
+          style={{ width: '100%', background: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', resize: 'vertical', fontFamily: "'Inter','system-ui',sans-serif", boxSizing: 'border-box' }} />
       </div>
       <button onClick={handleSubmit} disabled={saving}
-        style={{ width: '100%', padding: '12px', background: saving ? '#333' : '#1e3a5f', border: `1px solid ${saving ? '#444' : '#3b82f6'}`, borderRadius: '9px', color: saving ? '#666' : '#60a5fa', fontSize: '15px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
+        style={{ width: '100%', padding: '12px', background: saving ? '#e4e4e7' : '#dbeafe', border: `1px solid ${saving ? '#d4d4d8' : '#2563eb'}`, borderRadius: '9px', color: saving ? '#a1a1aa' : '#2563eb', fontSize: '15px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
         {saving ? 'Saving...' : 'Submit Walkthrough'}
       </button>
     </div>
@@ -2082,45 +2082,45 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <p style={{ color: '#fff', fontWeight: '600', margin: '0 0 4px' }}>
+          <p style={{ color: '#18181b', fontWeight: '600', margin: '0 0 4px' }}>
             {new Date(viewingWalkthrough.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
-          <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>By {viewingWalkthrough.submitted_by}</p>
+          <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>By {viewingWalkthrough.submitted_by}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => generateWalkthroughPDF(viewingWalkthrough)}
-            style={{ background: '#1a2a1a', border: '1px solid #2a5a2a', color: '#4ade80', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+            style={{ background: '#dcfce7', border: '1px solid #2a5a2a', color: '#16a34a', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
             ⬇ Export PDF
           </button>
           <button onClick={() => setViewingId(null)}
-            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '7px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}>
+            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '7px', padding: '6px 12px', cursor: 'pointer', fontSize: '13px' }}>
             ← Back
           </button>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         {resultBadge(viewingWalkthrough.overall_result)}
-        <span style={{ color: '#aaa', fontSize: '13px', alignSelf: 'center' }}>
-          Score: <strong style={{ color: '#fff' }}>{viewingWalkthrough.score} / {viewingWalkthrough.total_items}</strong>
+        <span style={{ color: '#71717a', fontSize: '13px', alignSelf: 'center' }}>
+          Score: <strong style={{ color: '#18181b' }}>{viewingWalkthrough.score} / {viewingWalkthrough.total_items}</strong>
           ({Math.round((viewingWalkthrough.score / viewingWalkthrough.total_items) * 100)}%)
         </span>
       </div>
       {WALKTHROUGH_SECTIONS.map(sec => (
         <div key={sec.section} style={{ marginBottom: '16px' }}>
-          <div style={{ background: '#1e3a5f', padding: '7px 12px', borderRadius: '6px', marginBottom: '6px' }}>
-            <p style={{ color: '#fff', fontWeight: '700', fontSize: '12px', margin: 0 }}>{sec.section}</p>
+          <div style={{ background: '#dbeafe', padding: '7px 12px', borderRadius: '6px', marginBottom: '6px' }}>
+            <p style={{ color: '#18181b', fontWeight: '700', fontSize: '12px', margin: 0 }}>{sec.section}</p>
           </div>
           {sec.items.map(item => {
             const itemData = viewingWalkthrough.items?.[item.id] || {};
             return (
-              <div key={item.id} style={{ display: 'flex', gap: '10px', padding: '7px 0', borderBottom: '1px solid #1a1a1a', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '14px', flexShrink: 0, width: '20px', color: itemData.ok ? '#4ade80' : '#f87171' }}>{itemData.ok ? '✓' : '✗'}</span>
+              <div key={item.id} style={{ display: 'flex', gap: '10px', padding: '7px 0', borderBottom: '1px solid #ffffff', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '14px', flexShrink: 0, width: '20px', color: itemData.ok ? '#16a34a' : '#dc2626' }}>{itemData.ok ? '✓' : '✗'}</span>
                 <div style={{ flex: 1 }}>
-                  <p style={{ color: itemData.ok ? '#ddd' : '#f87171', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
-                    <span style={{ color: '#666', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
+                  <p style={{ color: itemData.ok ? '#3f3f46' : '#dc2626', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
+                    <span style={{ color: '#a1a1aa', fontSize: '11px', marginRight: '6px' }}>[{item.std}]</span>
                     {item.text}
                   </p>
-                  {itemData.notes && <p style={{ color: '#888', fontSize: '12px', margin: '3px 0 0', fontStyle: 'italic' }}>Note: {itemData.notes}</p>}
+                  {itemData.notes && <p style={{ color: '#9ca3af', fontSize: '12px', margin: '3px 0 0', fontStyle: 'italic' }}>Note: {itemData.notes}</p>}
                 </div>
               </div>
             );
@@ -2128,8 +2128,8 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
         </div>
       ))}
       {viewingWalkthrough.corrective_actions && (
-        <div style={{ marginTop: '16px', padding: '12px 14px', background: '#3a0f0f', border: '1px solid #7f1d1d', borderRadius: '8px' }}>
-          <p style={{ color: '#f87171', fontSize: '12px', fontWeight: '700', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Corrective Actions Needed</p>
+        <div style={{ marginTop: '16px', padding: '12px 14px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px' }}>
+          <p style={{ color: '#dc2626', fontSize: '12px', fontWeight: '700', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Corrective Actions Needed</p>
           <p style={{ color: '#fca5a5', fontSize: '14px', margin: 0, lineHeight: '1.6' }}>{viewingWalkthrough.corrective_actions}</p>
         </div>
       )}
@@ -2139,17 +2139,17 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <p style={{ color: '#fff', fontWeight: '600', margin: 0, fontSize: '15px' }}>House Walkthroughs</p>
+        <p style={{ color: '#18181b', fontWeight: '600', margin: 0, fontSize: '15px' }}>House Walkthroughs</p>
         <button onClick={() => setShowForm(true)}
-          style={{ background: '#1e3a5f', border: '1px solid #3b82f6', color: '#60a5fa', padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+          style={{ background: '#dbeafe', border: '1px solid #2563eb', color: '#2563eb', padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
           + New Walkthrough
         </button>
       </div>
-      {loading ? <p style={{ color: '#888', fontSize: '14px' }}>Loading...</p> :
+      {loading ? <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p> :
         walkthroughs.length === 0 ? (
           <div style={{ padding: '24px 0', textAlign: 'center' }}>
-            <p style={{ color: '#888', fontSize: '15px', margin: '0 0 4px' }}>No walkthroughs submitted yet.</p>
-            <p style={{ color: '#666', fontSize: '13px', margin: 0 }}>Click "+ New Walkthrough" to complete the first one.</p>
+            <p style={{ color: '#9ca3af', fontSize: '15px', margin: '0 0 4px' }}>No walkthroughs submitted yet.</p>
+            <p style={{ color: '#a1a1aa', fontSize: '13px', margin: 0 }}>Click "+ New Walkthrough" to complete the first one.</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2157,27 +2157,27 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
               const pct = Math.round((w.score / w.total_items) * 100);
               const fmtD = new Date(w.walkthrough_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
               return (
-                <div key={w.id} style={{ background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', padding: '12px 14px' }}>
+                <div key={w.id} style={{ background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '12px 14px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                     <div>
-                      <p style={{ color: '#fff', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{fmtD}</p>
-                      <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>By {w.submitted_by}</p>
+                      <p style={{ color: '#18181b', fontWeight: '600', fontSize: '14px', margin: '0 0 2px' }}>{fmtD}</p>
+                      <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>By {w.submitted_by}</p>
                     </div>
                     {resultBadge(w.overall_result)}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <div style={{ flex: 1, height: '6px', background: '#2a2a2a', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: '6px', background: '#e4e4e8', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626', borderRadius: '3px', transition: 'width 0.3s' }} />
                     </div>
-                    <span style={{ color: '#aaa', fontSize: '12px', whiteSpace: 'nowrap' }}>{w.score}/{w.total_items} ({pct}%)</span>
+                    <span style={{ color: '#71717a', fontSize: '12px', whiteSpace: 'nowrap' }}>{w.score}/{w.total_items} ({pct}%)</span>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => setViewingId(w.id)}
-                      style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
+                      style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
                       View Full Report
                     </button>
                     <button onClick={() => generateWalkthroughPDF(w)}
-                      style={{ background: 'transparent', border: '1px solid #2a5a2a', color: '#4ade80', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
+                      style={{ background: 'transparent', border: '1px solid #2a5a2a', color: '#16a34a', borderRadius: '6px', padding: '5px 12px', fontSize: '12px', cursor: 'pointer' }}>
                       ⬇ Export PDF
                     </button>
                   </div>
@@ -2269,8 +2269,8 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
     'Complete Step 9 with a sponsor', 'Must have a service position in your home group',
   ];
 
-  const statusColor = (s) => s === 'approved' ? '#4ade80' : s === 'denied' ? '#f87171' : '#fb923c';
-  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#7f1d1d' : '#78350f';
+  const statusColor = (s) => s === 'approved' ? '#16a34a' : s === 'denied' ? '#dc2626' : '#c2410c';
+  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#fee2e2' : '#78350f';
   const statusLabel = (s) => s === 'approved' ? '✓ Approved' : s === 'denied' ? '✗ Denied' : '⏳ Pending';
 
   return (
@@ -2280,7 +2280,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#2a2a2a', color: filter === f ? '#fff' : '#888' }}>
+              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#e4e4e8', color: filter === f ? '#18181b' : '#9ca3af' }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
@@ -2288,19 +2288,19 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
       </div>
 
       {loading ? (
-        <p style={{ color: '#888', fontSize: '14px' }}>Loading...</p>
+        <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p>
       ) : requests.length === 0 ? (
-        <p style={{ color: '#888', fontSize: '14px' }}>No {filter === 'all' ? '' : filter} move-out requests.</p>
+        <p style={{ color: '#9ca3af', fontSize: '14px' }}>No {filter === 'all' ? '' : filter} move-out requests.</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {requests.map(r => (
-            <div key={r.id} style={{ background: '#1c1c24', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#2a2a2a'}`, borderRadius: '10px', overflow: 'hidden' }}>
+            <div key={r.id} style={{ background: '#ffffff', border: `1px solid ${r.status === 'pending' ? '#fb923c44' : '#e4e4e8'}`, borderRadius: '10px', overflow: 'hidden' }}>
               {/* Header */}
               <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                 onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
                 <div>
-                  <p style={{ margin: 0, color: '#fff', fontWeight: '600', fontSize: '15px' }}>{r.clients?.full_name}</p>
-                  <p style={{ margin: '3px 0 0', color: '#888', fontSize: '13px' }}>
+                  <p style={{ margin: 0, color: '#18181b', fontWeight: '600', fontSize: '15px' }}>{r.clients?.full_name}</p>
+                  <p style={{ margin: '3px 0 0', color: '#9ca3af', fontSize: '13px' }}>
                     Requested: {r.requested_move_out_date ? new Date(r.requested_move_out_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     &nbsp;·&nbsp; Submitted: {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </p>
@@ -2309,13 +2309,13 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                   <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', background: statusBg(r.status), color: statusColor(r.status) }}>
                     {statusLabel(r.status)}
                   </span>
-                  <span style={{ color: '#666', fontSize: '14px' }}>{expanded === r.id ? '▲' : '▼'}</span>
+                  <span style={{ color: '#a1a1aa', fontSize: '14px' }}>{expanded === r.id ? '▲' : '▼'}</span>
                 </div>
               </div>
 
               {/* Expanded details */}
               {expanded === r.id && (
-                <div style={{ borderTop: '1px solid #2a2a2a', padding: '16px' }}>
+                <div style={{ borderTop: '1px solid #e4e4e8', padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
                     {[
                       ['Moving To', r.moving_to],
@@ -2326,22 +2326,22 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                       ['All Requirements Met', r.all_requirements_met ? 'Yes' : 'No'],
                       ['Marketing Permission', r.marketing_permission ? 'Yes' : 'No'],
                     ].map(([label, val]) => (
-                      <div key={label} style={{ background: '#1e1e24', borderRadius: '8px', padding: '10px 12px' }}>
-                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
-                        <p style={{ margin: 0, fontSize: '14px', color: '#ddd' }}>{val || '—'}</p>
+                      <div key={label} style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 12px' }}>
+                        <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</p>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46' }}>{val || '—'}</p>
                       </div>
                     ))}
                   </div>
 
                   {/* Requirements checklist */}
-                  <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#666', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
+                  <p style={{ margin: '0 0 8px', fontSize: '13px', color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Requirements Checked Off</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '16px' }}>
                     {LEVEL_REQS.map(req => {
                       const done = (r.requirements_completed || []).includes(req);
                       return (
-                        <div key={req} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: done ? '#0f2e1a' : '#111', borderRadius: '6px' }}>
-                          <span style={{ color: done ? '#4ade80' : '#444', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
-                          <span style={{ fontSize: '14px', color: done ? '#4ade80' : '#555' }}>{req}</span>
+                        <div key={req} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: done ? '#dcfce7' : '#f4f4f6', borderRadius: '6px' }}>
+                          <span style={{ color: done ? '#16a34a' : '#d4d4d8', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
+                          <span style={{ fontSize: '14px', color: done ? '#16a34a' : '#b8b8bd' }}>{req}</span>
                         </div>
                       );
                     })}
@@ -2350,17 +2350,17 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                   {/* Feedback */}
                   {(r.liked || r.disliked || r.other_notes) && (
                     <>
-                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.liked}</p></div>}
-                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.disliked}</p></div>}
-                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
+                      {r.liked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>What They Liked</p><p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.liked}</p></div>}
+                      {r.disliked && <div style={{ marginBottom: '10px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>What They Didn't Like</p><p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.disliked}</p></div>}
+                      {r.other_notes && <div style={{ marginBottom: '16px' }}><p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>Other Notes</p><p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.other_notes}</p></div>}
                     </>
                   )}
 
                   {/* Review notes if already reviewed */}
                   {r.status !== 'pending' && r.review_notes && (
-                    <div style={{ background: '#1e1e24', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
-                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#666', textTransform: 'uppercase' }}>Review Notes</p>
-                      <p style={{ margin: 0, fontSize: '14px', color: '#aaa', fontStyle: 'italic' }}>{r.review_notes}</p>
+                    <div style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 12px', marginBottom: '12px' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: '12px', color: '#a1a1aa', textTransform: 'uppercase' }}>Review Notes</p>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#71717a', fontStyle: 'italic' }}>{r.review_notes}</p>
                     </div>
                   )}
 
@@ -2368,19 +2368,19 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                   {canReview && r.status === 'pending' && (
                     reviewing?.id === r.id ? (
                       <div>
-                        <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#aaa' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '14px', color: '#71717a' }}>
                           {reviewing.action === 'approved' ? '✓ Approving' : '✗ Denying'} — add a note (optional):
                         </p>
                         <textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)}
                           rows={3} placeholder="Add a note to the resident..."
-                          style={{ width: '100%', background: '#1e1e24', border: '1px solid #32323e', borderRadius: '8px', color: '#fff', fontSize: '14px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
+                          style={{ width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '8px', color: '#18181b', fontSize: '14px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button onClick={() => handleReview(r, reviewing.action)} disabled={saving}
-                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#7f1d1d', color: reviewing.action === 'approved' ? '#4ade80' : '#f87171', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#fee2e2', color: reviewing.action === 'approved' ? '#16a34a' : '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                             {saving ? 'Saving...' : `Confirm ${reviewing.action === 'approved' ? 'Approval' : 'Denial'}`}
                           </button>
                           <button onClick={() => { setReviewing(null); setReviewNotes(''); }}
-                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #32323e', background: 'transparent', color: '#888', fontSize: '14px', cursor: 'pointer' }}>
+                            style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #e4e4e8', background: 'transparent', color: '#9ca3af', fontSize: '14px', cursor: 'pointer' }}>
                             Cancel
                           </button>
                         </div>
@@ -2388,11 +2388,11 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                     ) : (
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => setReviewing({ id: r.id, action: 'approved' })}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #166534', background: '#14532d', color: '#4ade80', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #166534', background: '#14532d', color: '#16a34a', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                           ✓ Approve
                         </button>
                         <button onClick={() => setReviewing({ id: r.id, action: 'denied' })}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #7f1d1d', background: '#450a0a', color: '#f87171', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #fee2e2', background: '#fee2e2', color: '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                           ✗ Deny
                         </button>
                       </div>
@@ -2485,31 +2485,31 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
   };
 
   const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
-  const statusColor = (s) => s === 'approved' ? '#4ade80' : s === 'denied' ? '#f87171' : '#fb923c';
-  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#3a0f0f' : '#3a2d1e';
+  const statusColor = (s) => s === 'approved' ? '#16a34a' : s === 'denied' ? '#dc2626' : '#c2410c';
+  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#fee2e2' : '#ffedd5';
 
   return (
     <div style={{ marginTop: '28px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-        <h4 style={{ color: '#fff', margin: 0, fontSize: '15px' }}>🌙 Overnight Pass Requests</h4>
+        <h4 style={{ color: '#18181b', margin: 0, fontSize: '15px' }}>🌙 Overnight Pass Requests</h4>
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #333', color: filter === f ? '#fff' : '#888', textTransform: 'capitalize' }}>
+              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #e4e4e7', color: filter === f ? '#18181b' : '#9ca3af', textTransform: 'capitalize' }}>
               {f}
             </button>
           ))}
         </div>
       </div>
 
-      {loading ? <p style={{ color: '#888', fontSize: '14px' }}>Loading...</p>
-        : requests.length === 0 ? <p style={{ color: '#666', fontSize: '14px', fontStyle: 'italic' }}>No overnight requests found.</p>
+      {loading ? <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading...</p>
+        : requests.length === 0 ? <p style={{ color: '#a1a1aa', fontSize: '14px', fontStyle: 'italic' }}>No overnight requests found.</p>
         : requests.map(req => (
-          <div key={req.id} style={{ background: '#1c1c24', border: '1px solid #2e2e3a', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
+          <div key={req.id} style={{ background: '#ffffff', border: '1px solid #f0f0f3', borderRadius: '10px', padding: '14px', marginBottom: '10px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
               <div>
-                <p style={{ color: '#fff', fontWeight: '600', fontSize: '14px', margin: '0 0 3px' }}>{req.client_name}</p>
-                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>
+                <p style={{ color: '#18181b', fontWeight: '600', fontSize: '14px', margin: '0 0 3px' }}>{req.client_name}</p>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>
                   {fmt(req.departure_datetime)} → {fmt(req.return_datetime)}
                 </p>
               </div>
@@ -2519,24 +2519,24 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
               <div>
-                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
-                <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>{req.reason || '—'}</p>
+                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Reason</p>
+                <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>{req.reason || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
-                <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>{req.location || '—'}</p>
+                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Location</p>
+                <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>{req.location || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
-                <p style={{ color: '#ddd', fontSize: '14px', margin: 0 }}>{req.who_seeing || '—'}</p>
+                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Who Seeing</p>
+                <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>{req.who_seeing || '—'}</p>
               </div>
               <div>
-                <p style={{ color: '#666', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
-                <p style={{ color: '#ddd', fontSize: '14px', margin: 0, fontStyle: 'italic' }}>{req.signature || '—'}</p>
+                <p style={{ color: '#a1a1aa', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 2px' }}>Signature</p>
+                <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0, fontStyle: 'italic' }}>{req.signature || '—'}</p>
               </div>
             </div>
             {req.review_notes && (
-              <p style={{ color: '#aaa', fontSize: '13px', margin: '0 0 10px', padding: '6px 10px', background: '#1e1e24', borderRadius: '6px' }}>
+              <p style={{ color: '#71717a', fontSize: '13px', margin: '0 0 10px', padding: '6px 10px', background: '#ffffff', borderRadius: '6px' }}>
                 Review note: {req.review_notes}
               </p>
             )}
@@ -2545,25 +2545,25 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
                 <div>
                   <textarea value={reviewForm.notes} onChange={e => setReviewForm(p => ({ ...p, notes: e.target.value }))}
                     placeholder="Optional note to client..." rows={2}
-                    style={{ width: '100%', background: '#1e1e24', border: '1px solid #32323e', borderRadius: '6px', color: '#fff', padding: '8px', fontSize: '14px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                    style={{ width: '100%', background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '6px', color: '#18181b', padding: '8px', fontSize: '14px', resize: 'vertical', marginBottom: '8px', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button onClick={() => handleReview('approved')} disabled={saving}
-                      style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 1, background: '#16a34a', border: 'none', color: '#18181b', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       ✓ Approve
                     </button>
                     <button onClick={() => handleReview('denied')} disabled={saving}
-                      style={{ flex: 1, background: '#b22222', border: 'none', color: '#fff', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 1, background: '#b22222', border: 'none', color: '#18181b', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       ✗ Deny
                     </button>
                     <button onClick={() => setReviewing(null)}
-                      style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
+                      style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
                 <button onClick={() => { setReviewing(req); setReviewForm({ decision: '', notes: '' }); }}
-                  style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
+                  style={{ background: '#dbeafe', border: '1px solid #e7eff3', color: '#2563eb', padding: '7px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>
                   Review Request
                 </button>
               )
@@ -2659,13 +2659,13 @@ function HouseChatTab({ houseId, houseName, user }) {
     setSending(false);
   };
 
-  if (loading) return <p style={{ color: '#888', fontSize: '14px' }}>Loading chat...</p>;
+  if (loading) return <p style={{ color: '#9ca3af', fontSize: '14px' }}>Loading chat...</p>;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '500px', background: '#1c1c24', borderRadius: 10, overflow: 'hidden', border: '1px solid #32323e' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '500px', background: '#ffffff', borderRadius: 10, overflow: 'hidden', border: '1px solid #e4e4e8' }}>
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column' }}>
         {messages.length === 0 ? (
-          <p style={{ color: '#888', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
+          <p style={{ color: '#9ca3af', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
         ) : messages.map((msg, idx) => {
           const isMe = msg.sender_id === user.id;
           const prevMsg = messages[idx - 1];
@@ -2673,24 +2673,24 @@ function HouseChatTab({ houseId, houseName, user }) {
           const isGrouped = prevMsg && prevMsg.sender_id === msg.sender_id && new Date(msg.created_at) - new Date(prevMsg.created_at) < 60000;
           return (
             <div key={msg.id} style={{ marginBottom: isGrouped ? '2px' : '12px', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-              {showSender && <p style={{ color: '#888', fontSize: '13px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>}
-              <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#333', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
-                <p style={{ color: '#fff', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
+              {showSender && <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 3px 8px' }}>{getSenderName(msg.sender_id)}</p>}
+              <div style={{ maxWidth: '70%', background: isMe ? '#b22222' : '#e4e4e7', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '9px 14px' }}>
+                <p style={{ color: '#18181b', fontSize: '14px', margin: 0, lineHeight: '1.4', wordBreak: 'break-word' }}>{msg.body}</p>
               </div>
-              {!isGrouped && <p style={{ color: '#999', fontSize: '12px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>}
+              {!isGrouped && <p style={{ color: '#6b7280', fontSize: '12px', margin: '2px 4px 0 4px' }}>{formatTime(msg.created_at)}</p>}
             </div>
           );
         })}
         <div ref={messagesEndRef} />
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', borderTop: '1px solid #32323e', background: '#1e1e24', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', borderTop: '1px solid #e4e4e8', background: '#ffffff', flexShrink: 0 }}>
         <input ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
           placeholder={`Message ${houseName}...`}
-          style={{ flex: 1, background: '#26262e', border: '1px solid #3a3a48', borderRadius: '10px', padding: '10px 14px', color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+          style={{ flex: 1, background: '#f7f7f9', border: '1px solid #d8d8dd', borderRadius: '10px', padding: '10px 14px', color: '#18181b', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
         <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-          style={{ background: newMessage.trim() ? '#b22222' : '#333', border: 'none', color: newMessage.trim() ? '#fff' : '#bbb', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+          style={{ background: newMessage.trim() ? '#b22222' : '#e4e4e7', border: 'none', color: newMessage.trim() ? '#18181b' : '#71717a', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
           Send
         </button>
       </div>

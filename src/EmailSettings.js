@@ -162,7 +162,7 @@ export default function EmailSettings() {
   if (loading) return (
     <div style={s.loadingWrap}>
       <div style={s.spinner} />
-      <p style={{ color: '#888', marginTop: '12px' }}>Loading email settings...</p>
+      <p style={{ color: '#9ca3af', marginTop: '12px' }}>Loading email settings...</p>
     </div>
   );
 
@@ -193,7 +193,7 @@ export default function EmailSettings() {
 
               <div style={s.staffList}>
                 {staffList.length === 0 && (
-                  <p style={{ color: '#666', fontSize: '14px' }}>No staff found.</p>
+                  <p style={{ color: '#a1a1aa', fontSize: '14px' }}>No staff found.</p>
                 )}
                                 {staffList
                   .filter(staff => canEdit || staff.id === currentUserId)
@@ -254,14 +254,14 @@ const s = {
   },
   spinner: {
     width: '32px', height: '32px',
-    border: '3px solid #333', borderTop: '3px solid #b22222',
+    border: '3px solid #e4e4e7', borderTop: '3px solid #b22222',
     borderRadius: '50%', animation: 'spin 0.8s linear infinite',
   },
   header: {
     marginBottom: '28px',
   },
   subtitle: {
-    color: '#999', fontSize: '14px', margin: 0, lineHeight: '1.5',
+    color: '#6b7280', fontSize: '14px', margin: 0, lineHeight: '1.5',
   },
   grid: {
     display: 'grid',
@@ -269,8 +269,8 @@ const s = {
     gap: '20px',
   },
   card: {
-    background: '#1c1c24',
-    border: '1px solid #2e2e3a',
+    background: '#ffffff',
+    border: '1px solid #f0f0f3',
     borderRadius: '12px',
     overflow: 'hidden',
   },
@@ -282,13 +282,13 @@ const s = {
     fontSize: '24px', lineHeight: '1', marginTop: '2px', flexShrink: 0,
   },
   notifLabel: {
-    color: '#fff', fontWeight: '600', fontSize: '15px', marginBottom: '4px',
+    color: '#18181b', fontWeight: '600', fontSize: '15px', marginBottom: '4px',
   },
   notifDesc: {
-    color: '#888', fontSize: '13px', lineHeight: '1.4',
+    color: '#9ca3af', fontSize: '13px', lineHeight: '1.4',
   },
   divider: {
-    height: '1px', background: '#26262e', margin: '0',
+    height: '1px', background: '#f7f7f9', margin: '0',
   },
   staffList: {
     padding: '10px 20px',
@@ -305,16 +305,16 @@ const s = {
   },
   staffAvatar: {
     width: '32px', height: '32px', borderRadius: '50%',
-    background: '#26262e', border: '1px solid #32323e',
+    background: '#f7f7f9', border: '1px solid #e4e4e8',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: '#ccc', fontSize: '14px', fontWeight: '600', flexShrink: 0,
+    color: '#52525b', fontSize: '14px', fontWeight: '600', flexShrink: 0,
   },
   staffName: {
-    color: '#ddd', fontSize: '14px', fontWeight: '500',
+    color: '#3f3f46', fontSize: '14px', fontWeight: '500',
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   },
   staffRole: {
-    color: '#666', fontSize: '12px',
+    color: '#a1a1aa', fontSize: '12px',
   },
   toggle: {
     padding: '4px 12px', borderRadius: '20px',
@@ -322,23 +322,23 @@ const s = {
     minWidth: '52px', textAlign: 'center', transition: 'all 0.15s',
   },
   toggleOn: {
-    background: '#14532d', color: '#4ade80',
+    background: '#14532d', color: '#16a34a',
     border: '1px solid #166534',
   },
   toggleOff: {
-    background: '#26262e', color: '#666',
-    border: '1px solid #32323e',
+    background: '#f7f7f9', color: '#a1a1aa',
+    border: '1px solid #e4e4e8',
   },
   cardFooter: {
     padding: '10px 20px 14px',
-    borderTop: '1px solid #2a2a2a',
+    borderTop: '1px solid #e4e4e8',
   },
   assignedCount: {
-    fontSize: '12px', color: '#555', fontStyle: 'italic',
+    fontSize: '12px', color: '#b8b8bd', fontStyle: 'italic',
   },
   toast: {
     position: 'fixed', bottom: '24px', right: '24px',
-    background: '#14532d', color: '#4ade80',
+    background: '#14532d', color: '#16a34a',
     padding: '10px 18px', borderRadius: '8px',
     fontSize: '14px', fontWeight: '500',
     border: '1px solid #166534',

@@ -63,10 +63,10 @@ function WaitingList({ onOpenClient, setActivePage }) {
     if (!date) return null;
     const now = new Date(); now.setHours(12,0,0,0);
     const days = Math.floor((new Date(date + 'T12:00:00') - now) / (1000 * 60 * 60 * 24));
-    if (days < 0) return { label: 'Ready now', color: '#4ade80' };
-    if (days <= 7) return { label: `${days}d`, color: '#f59e0b' };
-    if (days <= 30) return { label: `${Math.ceil(days / 7)}w`, color: '#60a5fa' };
-    return { label: `${Math.ceil(days / 30)}mo`, color: '#aaa' };
+    if (days < 0) return { label: 'Ready now', color: '#16a34a' };
+    if (days <= 7) return { label: `${days}d`, color: '#b45309' };
+    if (days <= 30) return { label: `${Math.ceil(days / 7)}w`, color: '#2563eb' };
+    return { label: `${Math.ceil(days / 30)}mo`, color: '#71717a' };
   };
 
   return (
@@ -131,9 +131,9 @@ function WaitingList({ onOpenClient, setActivePage }) {
       ) : clients.length === 0 ? (
         <p style={styles.empty}>No one on the {activeList} list yet.</p>
       ) : (
-        <div style={{ background: '#26262e', borderRadius: 10, border: '1px solid #32323e', overflow: 'hidden' }}>
+        <div style={{ background: '#f7f7f9', borderRadius: 10, border: '1px solid #e4e4e8', overflow: 'hidden' }}>
           {/* Header row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', background: '#1c1c24', borderBottom: '1px solid #444' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', background: '#ffffff', borderBottom: '1px solid #d4d4d8' }}>
             {['#', 'Name', 'Ready Date', 'Notes', ''].map((h, i) => (
               <span key={i} style={{ fontSize: 11, color: '#b22222', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
             ))}
@@ -142,13 +142,13 @@ function WaitingList({ onOpenClient, setActivePage }) {
           {clients.map((client, idx) => {
             const badge = readyBadge(client.ready_date);
             return (
-              <div key={client.id} style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: idx % 2 === 0 ? 'transparent' : '#252525', borderBottom: '1px solid #2a2a2a' }}>
-                <span style={{ fontSize: 13, color: '#555', fontWeight: 600 }}>{idx + 1}</span>
+              <div key={client.id} style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: idx % 2 === 0 ? 'transparent' : '#f7f7f9', borderBottom: '1px solid #e4e4e8' }}>
+                <span style={{ fontSize: 13, color: '#b8b8bd', fontWeight: 600 }}>{idx + 1}</span>
 
                 {/* Name */}
                 <div>
                   <div
-                    style={{ fontSize: 14, color: client.client_id ? '#e57373' : '#fff', fontWeight: 500, cursor: client.client_id ? 'pointer' : 'default', textDecoration: client.client_id ? 'underline' : 'none' }}
+                    style={{ fontSize: 14, color: client.client_id ? '#dc2626' : '#18181b', fontWeight: 500, cursor: client.client_id ? 'pointer' : 'default', textDecoration: client.client_id ? 'underline' : 'none' }}
                     onClick={() => {
                       if (client.client_id && onOpenClient && setActivePage) {
                         onOpenClient(client.client_id);
@@ -158,7 +158,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
                   >
                     {client.full_name}
                   </div>
-                  {client.email && <div style={{ fontSize: 12, color: '#666' }}>{client.email}</div>}
+                  {client.email && <div style={{ fontSize: 12, color: '#a1a1aa' }}>{client.email}</div>}
                 </div>
 
                 {/* Ready Date - inline editable */}
@@ -171,7 +171,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
                   ) : (
                     <div onClick={() => hasFullAccess && setEditingId(client.id)}
                       style={{ cursor: hasFullAccess ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 13, color: client.ready_date ? '#60a5fa' : '#444' }}>
+                      <span style={{ fontSize: 13, color: client.ready_date ? '#2563eb' : '#d4d4d8' }}>
                         {client.ready_date ? formatDate(client.ready_date) : '+ Add date'}
                       </span>
                       {badge && <span style={{ fontSize: 11, color: badge.color, border: `1px solid ${badge.color}`, borderRadius: 10, padding: '1px 6px' }}>{badge.label}</span>}
@@ -188,7 +188,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
                       style={{ ...styles.input, padding: '4px 8px', fontSize: 13, width: '100%' }} />
                   ) : (
                     <span onClick={() => hasFullAccess && setEditingNoteId(client.id)}
-                      style={{ fontSize: 13, color: client.notes ? '#aaa' : '#444', cursor: hasFullAccess ? 'pointer' : 'default' }}>
+                      style={{ fontSize: 13, color: client.notes ? '#71717a' : '#d4d4d8', cursor: hasFullAccess ? 'pointer' : 'default' }}>
                       {client.notes || (hasFullAccess ? '+ Add note' : '—')}
                     </span>
                   )}
@@ -209,16 +209,16 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
 const styles = {
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' },
-  tab: { backgroundColor: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', cursor: 'pointer' },
-  tabActive: { backgroundColor: '#b22222', border: '1px solid #b22222', color: '#fff' },
+  tab: { backgroundColor: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', cursor: 'pointer' },
+  tabActive: { backgroundColor: '#b22222', border: '1px solid #b22222', color: '#18181b' },
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-  listCount: { color: '#aaa', fontSize: '14px', margin: 0 },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: 600 },
-  addForm: { background: '#26262e', borderRadius: 10, border: '1px solid #32323e', padding: '16px', marginBottom: 20 },
-  formLabel: { fontSize: 12, color: '#999', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' },
-  input: { backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '6px', padding: '8px 12px', color: '#fff', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
-  removeBtn: { backgroundColor: 'transparent', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
-  empty: { color: '#555', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
+  listCount: { color: '#71717a', fontSize: '14px', margin: 0 },
+  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: 600 },
+  addForm: { background: '#f7f7f9', borderRadius: 10, border: '1px solid #e4e4e8', padding: '16px', marginBottom: 20 },
+  formLabel: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' },
+  input: { backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '6px', padding: '8px 12px', color: '#18181b', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
+  removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
+  empty: { color: '#b8b8bd', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
 };
 
 export default WaitingList;

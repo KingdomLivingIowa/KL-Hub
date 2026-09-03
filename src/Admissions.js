@@ -482,13 +482,13 @@ function Admissions() {
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalCount);
 
   const flagInfo = (flag, flagReason) => {
-    if (flag === 'sex_offender') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Registered sex offender' };
-    if (flag === 'not_allowed_back') return { icon: '🚫', color: '#f87171', label: 'Auto-denied: Client is flagged as not allowed back' };
-    if (flag === 'disability_review') return { icon: '♿', color: '#fb923c', label: 'Needs review: Disability indicated' };
-    if (flag === 'past_balance') { const match = (flagReason || '').match(/\$([\d.]+)/); const amt = match ? ` of $${parseFloat(match[1]).toFixed(2)}` : ''; return { icon: '💰', color: '#fb923c', label: `Needs review: Returning client with outstanding balance${amt}` }; }
-    if (flag === 'returning_merge') return { icon: '🔄', color: '#60a5fa', label: 'Returning client — merge with existing profile' };
-    if (flag === 'needs_review_before_readmit') return { icon: '⚠️', color: '#fb923c', label: 'Needs review by upper management before re-admitting' };
-    return { icon: '⚠', color: '#fb923c', label: flag };
+    if (flag === 'sex_offender') return { icon: '🚫', color: '#dc2626', label: 'Auto-denied: Registered sex offender' };
+    if (flag === 'not_allowed_back') return { icon: '🚫', color: '#dc2626', label: 'Auto-denied: Client is flagged as not allowed back' };
+    if (flag === 'disability_review') return { icon: '♿', color: '#c2410c', label: 'Needs review: Disability indicated' };
+    if (flag === 'past_balance') { const match = (flagReason || '').match(/\$([\d.]+)/); const amt = match ? ` of $${parseFloat(match[1]).toFixed(2)}` : ''; return { icon: '💰', color: '#c2410c', label: `Needs review: Returning client with outstanding balance${amt}` }; }
+    if (flag === 'returning_merge') return { icon: '🔄', color: '#2563eb', label: 'Returning client — merge with existing profile' };
+    if (flag === 'needs_review_before_readmit') return { icon: '⚠️', color: '#c2410c', label: 'Needs review by upper management before re-admitting' };
+    return { icon: '⚠', color: '#c2410c', label: flag };
   };
 
   const getFlags = (auto_flag, flagReason) => {
@@ -515,7 +515,7 @@ function Admissions() {
             {flags.length > 0 && (
               <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {flags.map((f, i) => (
-                  <div key={i} style={{ padding: '8px 12px', background: '#1c1c24', borderRadius: '8px', borderLeft: `3px solid ${f.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div key={i} style={{ padding: '8px 12px', background: '#ffffff', borderRadius: '8px', borderLeft: `3px solid ${f.color}`, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>{f.icon}</span>
                     <span style={{ fontSize: '14px', color: f.color, fontWeight: '500' }}>{f.label}</span>
                   </div>
@@ -553,7 +553,7 @@ function Admissions() {
             {expanded === app.id ? 'Hide Application' : 'View Full Application'}
           </button>
             {(app.auto_flag?.includes('returning_merge') || app.auto_flag?.includes('past_balance')) && app.status === 'pending' && (
-            <button style={{ padding: '7px 14px', background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: '8px', color: '#60a5fa', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
+            <button style={{ padding: '7px 14px', background: '#dbeafe', border: '1px solid #2563eb', borderRadius: '8px', color: '#2563eb', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
                 const { data: existing } = await supabase.from('clients')
                   .select('*')
@@ -567,12 +567,12 @@ function Admissions() {
             )}          {app.status === 'pending' && (
             <div style={{ position: 'relative' }} data-email-dropdown>
               <button
-                style={{ ...s.acceptBtn, background: '#1e3a2f', border: '1px solid #16a34a', color: '#4ade80' }}
+                style={{ ...s.acceptBtn, background: '#dcfce7', border: '1px solid #16a34a', color: '#16a34a' }}
                 onClick={() => setShowEmailButtons(showEmailButtons === app.id + '_accept' ? null : app.id + '_accept')}>
                 ✓ Accept ▾
               </button>
               {showEmailButtons === app.id + '_accept' && (
-                <div data-email-dropdown style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                <div data-email-dropdown style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                   {[
                     { type: 'accept_doc', label: '📋 DOC Acceptance', desc: 'Waiting for parole confirmation' },
                     { type: 'accept_tx', label: '🏥 Treatment (TX) Acceptance', desc: 'Uses client name, asks for move-in date' },
@@ -583,11 +583,11 @@ function Admissions() {
                     <button key={btn.type}
                       disabled={sendingEmail === btn.type + app.id}
                       onClick={() => sendTemplatedEmail(app, btn.type)}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #2a2a2a', cursor: 'pointer', color: '#fff' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#26262e'}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #e4e4e8', cursor: 'pointer', color: '#18181b' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f7f7f9'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <div style={{ fontSize: '13px', fontWeight: '600' }}>{sendingEmail === btn.type + app.id ? 'Sending...' : btn.label}</div>
-                      <div style={{ fontSize: '11px', color: '#888', marginTop: '2px' }}>{btn.desc}</div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>{btn.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -602,7 +602,7 @@ function Admissions() {
                 ✕ Deny ▾
               </button>
               {showEmailButtons === app.id + '_deny' && (
-                <div data-email-dropdown style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#1c1c24', border: '1px solid #32323e', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+                <div data-email-dropdown style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '10px', zIndex: 50, minWidth: '220px', boxShadow: '0 8px 24px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
                   {[
                     { type: 'deny_sex_offender', label: '🚫 Sex Offender Denial' },
                     { type: 'deny_disability', label: '♿ Disability Denial' },
@@ -611,8 +611,8 @@ function Admissions() {
                     <button key={btn.type}
                       disabled={sendingEmail === btn.type + app.id}
                       onClick={() => sendTemplatedEmail(app, btn.type)}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #2a2a2a', cursor: 'pointer', color: '#fff' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#26262e'}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: '1px solid #e4e4e8', cursor: 'pointer', color: '#18181b' }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f7f7f9'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <div style={{ fontSize: '13px', fontWeight: '600' }}>{sendingEmail === btn.type + app.id ? 'Sending...' : btn.label}</div>
                     </button>
@@ -622,7 +622,7 @@ function Admissions() {
             </div>
           )}
           {isAdmin && (
-            <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#f87171', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
+            <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #fee2e2', borderRadius: '8px', color: '#dc2626', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={() => deleteApplication(app.id)}>
               🗑 Delete
             </button>
@@ -759,8 +759,8 @@ function Admissions() {
             return (
               <div style={{ marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#fb923c' }}>⚠ Needs Review</span>
-                  <span style={{ background: '#3a2d1e', color: '#fb923c', fontSize: '13px', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>{flagged.length}</span>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: '#c2410c' }}>⚠ Needs Review</span>
+                  <span style={{ background: '#ffedd5', color: '#c2410c', fontSize: '13px', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>{flagged.length}</span>
                 </div>
                 <div style={s.list}>
                   {flagged.map(app => {
@@ -910,40 +910,40 @@ function Admissions() {
       {mergeReturningModal && !mergeWizardOpen && (
         <div style={s.modalOverlay} onClick={() => setMergeReturningModal(null)}>
           <div style={{ ...s.modalBox, maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: '#fff', margin: '0 0 8px 0', fontSize: '16px' }}>Merge with Existing Profile</h3>
-            <p style={{ color: '#999', fontSize: '14px', margin: '0 0 20px 0' }}>
+            <h3 style={{ color: '#18181b', margin: '0 0 8px 0', fontSize: '16px' }}>Merge with Existing Profile</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 20px 0' }}>
               Choose how to handle the merge — quick auto-merge or review each field with the wizard.
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ background: '#1e3a2f', border: '1px solid #2a5a3a', borderRadius: '10px', padding: '14px' }}>
-                <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>Existing Client</p>
-                <p style={{ color: '#fff', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.existingClient?.full_name}</p>
-                <p style={{ color: '#888', fontSize: '13px', margin: '0 0 2px' }}>{mergeReturningModal.existingClient?.email}</p>
-                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Status: {mergeReturningModal.existingClient?.status}</p>
+              <div style={{ background: '#dcfce7', border: '1px solid #e7f3eb', borderRadius: '10px', padding: '14px' }}>
+                <p style={{ color: '#16a34a', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>Existing Client</p>
+                <p style={{ color: '#18181b', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.existingClient?.full_name}</p>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 2px' }}>{mergeReturningModal.existingClient?.email}</p>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Status: {mergeReturningModal.existingClient?.status}</p>
               </div>
-              <div style={{ background: '#1e2d3a', border: '1px solid #2a4a5a', borderRadius: '10px', padding: '14px' }}>
-                <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>New Application</p>
-                <p style={{ color: '#fff', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.app.first_name} {mergeReturningModal.app.last_name}</p>
-                <p style={{ color: '#888', fontSize: '13px', margin: '0 0 2px' }}>{mergeReturningModal.app.email}</p>
-                <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Applied: {mergeReturningModal.app.created_at ? new Date(mergeReturningModal.app.created_at).toLocaleDateString() : '—'}</p>
+              <div style={{ background: '#dbeafe', border: '1px solid #e7eff3', borderRadius: '10px', padding: '14px' }}>
+                <p style={{ color: '#2563eb', fontWeight: '600', fontSize: '14px', margin: '0 0 4px' }}>New Application</p>
+                <p style={{ color: '#18181b', fontWeight: '700', fontSize: '15px', margin: '0 0 6px' }}>{mergeReturningModal.app.first_name} {mergeReturningModal.app.last_name}</p>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 2px' }}>{mergeReturningModal.app.email}</p>
+                <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>Applied: {mergeReturningModal.app.created_at ? new Date(mergeReturningModal.app.created_at).toLocaleDateString() : '—'}</p>
               </div>
             </div>
-            <div style={{ background: '#1c1c24', borderRadius: '8px', padding: '12px 14px', marginBottom: '20px' }}>
-              <p style={{ color: '#aaa', fontSize: '14px', margin: 0 }}>
+            <div style={{ background: '#ffffff', borderRadius: '8px', padding: '12px 14px', marginBottom: '20px' }}>
+              <p style={{ color: '#71717a', fontSize: '14px', margin: 0 }}>
                 ℹ️ The existing client's ID and history (payments, timeline, UAs, stays) will be fully preserved. Only profile fields will be updated.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={handleMergeReturning} disabled={merging}
-                style={{ flex: 1, background: '#16a34a', border: 'none', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                style={{ flex: 1, background: '#16a34a', border: 'none', color: '#18181b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 {merging ? 'Merging...' : '⚡ Quick Merge'}
               </button>
               <button onClick={() => setMergeWizardOpen(true)}
-                style={{ flex: 1, background: '#1e2d3a', border: '1px solid #2a4a5a', color: '#60a5fa', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                style={{ flex: 1, background: '#dbeafe', border: '1px solid #e7eff3', color: '#2563eb', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 🧙 Merge Wizard
               </button>
               <button onClick={() => setMergeReturningModal(null)}
-                style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '10px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Cancel
               </button>
             </div>
@@ -983,42 +983,42 @@ function Admissions() {
 const s = {
   page: {
     padding: '32px',
-    backgroundColor: '#1c1c24',
+    backgroundColor: '#ffffff',
     minHeight: '100vh',
-    color: '#fff',
+    color: '#18181b',
     fontFamily: "'Inter', 'system-ui', sans-serif",
   },
   title: { fontSize: '24px', fontWeight: '600', margin: '0 0 24px 0' },
   toolbar: { display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' },
-  sub: { color: '#999', fontSize: '14px', margin: 0 },
+  sub: { color: '#6b7280', fontSize: '14px', margin: 0 },
   search: {
     width: '100%',
     maxWidth: '360px',
-    backgroundColor: '#1c1c24',
-    border: '1px solid #3a3a48',
+    backgroundColor: '#ffffff',
+    border: '1px solid #d8d8dd',
     borderRadius: '8px',
     padding: '10px 14px',
-    color: '#fff',
+    color: '#18181b',
     fontSize: '14px',
   },
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   tab: {
     padding: '8px 18px',
     borderRadius: '20px',
-    border: '1px solid #3a3a48',
+    border: '1px solid #d8d8dd',
     background: 'transparent',
-    color: '#bbb',
+    color: '#71717a',
     cursor: 'pointer',
     fontSize: '14px',
   },
-  tabActive: { background: '#b22222', color: '#fff', borderColor: '#b22222' },
-  empty: { color: '#999', fontSize: '14px' },
+  tabActive: { background: '#b22222', color: '#18181b', borderColor: '#b22222' },
+  empty: { color: '#6b7280', fontSize: '14px' },
   list: { display: 'flex', flexDirection: 'column', gap: '16px' },
   card: {
-    background: '#26262e',
+    background: '#f7f7f9',
     borderRadius: '12px',
     padding: '20px',
-    border: '1px solid #32323e',
+    border: '1px solid #e4e4e8',
   },
   cardHeader: {
     display: 'flex',
@@ -1026,13 +1026,13 @@ const s = {
     alignItems: 'flex-start',
     marginBottom: '16px',
   },
-  name: { fontSize: '18px', fontWeight: '600', color: '#fff' },
-  meta: { fontSize: '14px', color: '#bbb', margin: '2px 0 0 0' },
+  name: { fontSize: '18px', fontWeight: '600', color: '#18181b' },
+  meta: { fontSize: '14px', color: '#71717a', margin: '2px 0 0 0' },
   badge: {
     fontSize: '13px',
     padding: '4px 12px',
     borderRadius: '20px',
-    color: '#fff',
+    color: '#18181b',
     fontWeight: '500',
     flexShrink: 0,
   },
@@ -1041,7 +1041,7 @@ const s = {
     padding: '3px 10px',
     borderRadius: '20px',
     background: '#78350f',
-    color: '#fbbf24',
+    color: '#ca8a04',
     border: '1px solid #92400e',
     cursor: 'pointer',
     fontFamily: "'Inter', 'system-ui', sans-serif",
@@ -1050,7 +1050,7 @@ const s = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '12px',
-    background: '#26262e',
+    background: '#f7f7f9',
     borderRadius: '8px',
     padding: '14px',
     marginBottom: '16px',
@@ -1058,18 +1058,18 @@ const s = {
   snapshotItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   snapshotLabel: {
     fontSize: '10px',
-    color: '#999',
+    color: '#6b7280',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  snapshotVal: { fontSize: '14px', color: '#fff' },
+  snapshotVal: { fontSize: '14px', color: '#18181b' },
   cardActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   viewBtn: {
     padding: '7px 14px',
     borderRadius: '8px',
-    border: '1px solid #3a3a48',
+    border: '1px solid #d8d8dd',
     background: 'transparent',
-    color: '#aaa',
+    color: '#71717a',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: "'Inter', 'system-ui', sans-serif",
@@ -1079,7 +1079,7 @@ const s = {
     borderRadius: '8px',
     border: 'none',
     background: '#16a34a',
-    color: '#fff',
+    color: '#18181b',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: "'Inter', 'system-ui', sans-serif",
@@ -1089,21 +1089,21 @@ const s = {
     borderRadius: '8px',
     border: 'none',
     background: '#dc2626',
-    color: '#fff',
+    color: '#18181b',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: "'Inter', 'system-ui', sans-serif",
   },
-  fullApp: { marginTop: '16px', borderTop: '1px solid #32323e', paddingTop: '16px' },
+  fullApp: { marginTop: '16px', borderTop: '1px solid #e4e4e8', paddingTop: '16px' },
   sectionDivider: {
     fontSize: '12px',
     fontWeight: '600',
-    color: '#999',
+    color: '#6b7280',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     margin: '16px 0 10px 0',
     paddingBottom: '6px',
-    borderBottom: '1px solid #32323e',
+    borderBottom: '1px solid #e4e4e8',
   },
   fullGrid: {
     display: 'grid',
@@ -1113,16 +1113,16 @@ const s = {
   fullItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
   fullLabel: {
     fontSize: '10px',
-    color: '#999',
+    color: '#6b7280',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  fullVal: { fontSize: '14px', color: '#ddd', lineHeight: '1.4' },
+  fullVal: { fontSize: '14px', color: '#3f3f46', lineHeight: '1.4' },
   subCard: {
-    background: '#1c1c24',
+    background: '#ffffff',
     borderRadius: '8px',
     padding: '12px 14px',
-    border: '1px solid #32323e',
+    border: '1px solid #e4e4e8',
   },
   overlay: {
     position: 'fixed',
@@ -1138,29 +1138,29 @@ const s = {
     padding: '20px',
   },
   modal: {
-    background: '#26262e',
+    background: '#f7f7f9',
     borderRadius: '16px',
     padding: '28px',
     maxWidth: '700px',
     width: '100%',
     maxHeight: '90vh',
     overflowY: 'auto',
-    border: '1px solid #3a3a48',
+    border: '1px solid #d8d8dd',
   },
   modalHeader: { marginBottom: '20px' },
-  modalTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 6px 0', color: '#fff' },
-  modalSub: { fontSize: '14px', color: '#bbb', margin: 0 },
+  modalTitle: { fontSize: '18px', fontWeight: '600', margin: '0 0 6px 0', color: '#18181b' },
+  modalSub: { fontSize: '14px', color: '#71717a', margin: 0 },
   compareGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '16px',
     marginBottom: '24px',
   },
-  compareCol: { background: '#1c1c24', borderRadius: '10px', padding: '14px' },
+  compareCol: { background: '#ffffff', borderRadius: '10px', padding: '14px' },
   compareColHeader: {
     fontSize: '12px',
     fontWeight: '600',
-    color: '#bbb',
+    color: '#71717a',
     textTransform: 'uppercase',
     letterSpacing: '0.06em',
     marginBottom: '12px',
@@ -1168,18 +1168,18 @@ const s = {
   compareRow: { display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '10px' },
   compareLabel: {
     fontSize: '10px',
-    color: '#999',
+    color: '#6b7280',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  compareVal: { fontSize: '14px', color: '#fff' },
+  compareVal: { fontSize: '14px', color: '#18181b' },
   modalActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   mergeBtn: {
     padding: '10px 18px',
     borderRadius: '8px',
     border: 'none',
     background: '#b22222',
-    color: '#fff',
+    color: '#18181b',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '600',
@@ -1188,9 +1188,9 @@ const s = {
   ignoreBtn: {
     padding: '10px 18px',
     borderRadius: '8px',
-    border: '1px solid #3a3a48',
+    border: '1px solid #d8d8dd',
     background: 'transparent',
-    color: '#aaa',
+    color: '#71717a',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: "'Inter', 'system-ui', sans-serif",
@@ -1198,9 +1198,9 @@ const s = {
   cancelBtn: {
     padding: '10px 18px',
     borderRadius: '8px',
-    border: '1px solid #3a3a48',
+    border: '1px solid #d8d8dd',
     background: 'transparent',
-    color: '#999',
+    color: '#6b7280',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: "'Inter', 'system-ui', sans-serif",
@@ -1216,9 +1216,9 @@ const s = {
   pageBtn: {
     padding: '6px 12px',
     borderRadius: '8px',
-    border: '1px solid #3a3a48',
+    border: '1px solid #d8d8dd',
     background: 'transparent',
-    color: '#aaa',
+    color: '#71717a',
     fontSize: '14px',
     cursor: 'pointer',
     transition: 'all 0.15s',
@@ -1226,11 +1226,11 @@ const s = {
   pageBtnActive: {
     background: '#b22222',
     borderColor: '#b22222',
-    color: '#fff',
+    color: '#18181b',
     fontWeight: '600',
   },
   pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
-  ellipsis: { color: '#bbb', fontSize: '14px', padding: '0 4px' },
+  ellipsis: { color: '#71717a', fontSize: '14px', padding: '0 4px' },
   pageNumbers: { display: 'flex', alignItems: 'center', gap: '6px' },
 };
 
@@ -1284,14 +1284,14 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
 
   const ws = {
     overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 3000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', overflowY: 'auto' },
-    box: { background: '#1c1c24', borderRadius: '16px', border: '1px solid #32323e', width: '100%', maxWidth: '820px', marginTop: '20px', marginBottom: '40px', overflow: 'hidden' },
-    header: { padding: '20px 24px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    box: { background: '#ffffff', borderRadius: '16px', border: '1px solid #e4e4e8', width: '100%', maxWidth: '820px', marginTop: '20px', marginBottom: '40px', overflow: 'hidden' },
+    header: { padding: '20px 24px', borderBottom: '1px solid #e4e4e8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     colHeader: { padding: '10px 14px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' },
-    row: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #1e1e1e' },
+    row: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #ffffff' },
     cell: { padding: '10px 14px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' },
-    label: { padding: '6px 14px 2px', fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', background: '#141414' },
-    arrow: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '2px 6px', borderRadius: '4px', color: '#60a5fa' },
-    input: { background: '#1e1e24', border: '1px solid #32323e', borderRadius: '6px', color: '#fff', padding: '5px 8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
+    label: { padding: '6px 14px 2px', fontSize: '10px', color: '#b8b8bd', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', background: '#f7f7f9' },
+    arrow: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '2px 6px', borderRadius: '4px', color: '#2563eb' },
+    input: { background: '#ffffff', border: '1px solid #e4e4e8', borderRadius: '6px', color: '#18181b', padding: '5px 8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
   };
 
   return (
@@ -1299,33 +1299,33 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
       <div style={ws.box} onClick={e => e.stopPropagation()}>
         <div style={ws.header}>
           <div>
-            <p style={{ color: '#fff', fontWeight: '700', fontSize: '16px', margin: 0 }}>Merge Wizard</p>
-            <p style={{ color: '#888', fontSize: '13px', margin: '3px 0 0' }}>
+            <p style={{ color: '#18181b', fontWeight: '700', fontSize: '16px', margin: 0 }}>Merge Wizard</p>
+            <p style={{ color: '#9ca3af', fontSize: '13px', margin: '3px 0 0' }}>
               Choose which value to keep for each field. The existing client's history is always preserved.
             </p>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#888', fontSize: '20px', cursor: 'pointer' }}>×</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer' }}>×</button>
         </div>
 
         {/* Column headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#141414', borderBottom: '1px solid #2a2a2a' }}>
-          <div style={{ ...ws.colHeader, color: '#4ade80' }}>← Existing Client</div>
-          <div style={{ ...ws.colHeader, color: '#aaa' }}>Will Be Saved</div>
-          <div style={{ ...ws.colHeader, color: '#60a5fa' }}>New Application →</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#f7f7f9', borderBottom: '1px solid #e4e4e8' }}>
+          <div style={{ ...ws.colHeader, color: '#16a34a' }}>← Existing Client</div>
+          <div style={{ ...ws.colHeader, color: '#71717a' }}>Will Be Saved</div>
+          <div style={{ ...ws.colHeader, color: '#2563eb' }}>New Application →</div>
         </div>
 
         {/* Client summary row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#1a2a1a', borderBottom: '1px solid #2a2a2a' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', background: '#dcfce7', borderBottom: '1px solid #e4e4e8' }}>
           <div style={{ ...ws.cell, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <p style={{ color: '#4ade80', fontWeight: '600', fontSize: '14px', margin: 0 }}>{existingClient.full_name}</p>
-            <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Status: {existingClient.status}</p>
+            <p style={{ color: '#16a34a', fontWeight: '600', fontSize: '14px', margin: 0 }}>{existingClient.full_name}</p>
+            <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>Status: {existingClient.status}</p>
           </div>
           <div style={{ ...ws.cell, justifyContent: 'center' }}>
-            <span style={{ color: '#666', fontSize: '13px' }}>Merged result will update existing</span>
+            <span style={{ color: '#a1a1aa', fontSize: '13px' }}>Merged result will update existing</span>
           </div>
           <div style={{ ...ws.cell, flexDirection: 'column', alignItems: 'flex-end' }}>
-            <p style={{ color: '#60a5fa', fontWeight: '600', fontSize: '14px', margin: 0 }}>{app.first_name} {app.last_name}</p>
-            <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
+            <p style={{ color: '#2563eb', fontWeight: '600', fontSize: '14px', margin: 0 }}>{app.first_name} {app.last_name}</p>
+            <p style={{ color: '#9ca3af', fontSize: '12px', margin: 0 }}>Applied: {app.created_at ? new Date(app.created_at).toLocaleDateString() : '—'}</p>
           </div>
         </div>
 
@@ -1339,40 +1339,40 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
 
             return (
               <div key={f.key}>
-                <div style={{ ...ws.row, background: '#1e1e24' }}>
-                  <div style={{ ...ws.cell, fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', padding: '5px 14px 2px', background: '#141414' }}>
+                <div style={{ ...ws.row, background: '#ffffff' }}>
+                  <div style={{ ...ws.cell, fontSize: '10px', color: '#b8b8bd', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', padding: '5px 14px 2px', background: '#f7f7f9' }}>
                     {f.label}
                   </div>
                 </div>
-                <div style={{ ...ws.row, background: same ? '#141414' : '#1a1a1a' }}>
+                <div style={{ ...ws.row, background: same ? '#f7f7f9' : '#ffffff' }}>
                   {/* Existing client value */}
-                  <div style={{ ...ws.cell, background: merged[f.key] === clientVal && !isEditing && clientVal ? '#1e3a2f' : 'transparent' }}>
+                  <div style={{ ...ws.cell, background: merged[f.key] === clientVal && !isEditing && clientVal ? '#dcfce7' : 'transparent' }}>
                     <button onClick={() => { setMerged(p => ({ ...p, [f.key]: clientVal })); setEditing(p => ({ ...p, [f.key]: false })); }}
-                      style={{ ...ws.arrow, color: '#4ade80' }} title="Use this value">→</button>
-                    <span style={{ color: clientVal ? '#ddd' : '#444' }}>{fmt(clientVal)}</span>
+                      style={{ ...ws.arrow, color: '#16a34a' }} title="Use this value">→</button>
+                    <span style={{ color: clientVal ? '#3f3f46' : '#d4d4d8' }}>{fmt(clientVal)}</span>
                   </div>
 
                   {/* Merged value (center) */}
-                  <div style={{ ...ws.cell, background: '#1c1c24', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ ...ws.cell, background: '#ffffff', justifyContent: 'center', flexDirection: 'column', gap: '4px' }}>
                     {isEditing ? (
                       <input value={merged[f.key]} onChange={e => setMerged(p => ({ ...p, [f.key]: e.target.value }))}
                         style={ws.input} autoFocus onBlur={() => setEditing(p => ({ ...p, [f.key]: false }))} />
                     ) : (
-                      <span style={{ color: '#fff', fontWeight: '500', fontSize: '14px', textAlign: 'center' }}>
+                      <span style={{ color: '#18181b', fontWeight: '500', fontSize: '14px', textAlign: 'center' }}>
                         {fmt(merged[f.key])}
                       </span>
                     )}
                     <button onClick={() => setEditing(p => ({ ...p, [f.key]: true }))}
-                      style={{ background: 'transparent', border: 'none', color: '#555', fontSize: '12px', cursor: 'pointer', padding: '0' }}>
+                      style={{ background: 'transparent', border: 'none', color: '#b8b8bd', fontSize: '12px', cursor: 'pointer', padding: '0' }}>
                       ✏️ edit
                     </button>
                   </div>
 
                   {/* App value */}
-                  <div style={{ ...ws.cell, justifyContent: 'flex-end', background: merged[f.key] === appVal && !isEditing && appVal ? '#1e2d3a' : 'transparent' }}>
-                    <span style={{ color: appVal ? '#ddd' : '#444' }}>{fmt(appVal)}</span>
+                  <div style={{ ...ws.cell, justifyContent: 'flex-end', background: merged[f.key] === appVal && !isEditing && appVal ? '#dbeafe' : 'transparent' }}>
+                    <span style={{ color: appVal ? '#3f3f46' : '#d4d4d8' }}>{fmt(appVal)}</span>
                     <button onClick={() => { setMerged(p => ({ ...p, [f.key]: appVal })); setEditing(p => ({ ...p, [f.key]: false })); }}
-                      style={{ ...ws.arrow, color: '#60a5fa' }} title="Use this value">←</button>
+                      style={{ ...ws.arrow, color: '#2563eb' }} title="Use this value">←</button>
                   </div>
                 </div>
               </div>
@@ -1381,13 +1381,13 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #2a2a2a', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#141414' }}>
+        <div style={{ padding: '16px 24px', borderTop: '1px solid #e4e4e8', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: '#f7f7f9' }}>
           <button onClick={onClose}
-            style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
             Cancel
           </button>
           <button onClick={handleMerge} disabled={saving}
-            style={{ background: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', opacity: saving ? 0.6 : 1 }}>
+            style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', opacity: saving ? 0.6 : 1 }}>
             {saving ? 'Merging...' : '✓ Confirm Merge'}
           </button>
         </div>

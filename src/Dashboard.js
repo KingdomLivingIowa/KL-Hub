@@ -249,9 +249,9 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const alertColor = (level) => {
-    if (level === 'high') return { bg: '#3a1e1e', border: '#7f1d1d', color: '#f87171', dot: '#ef4444' };
-    if (level === 'medium') return { bg: '#3a2d1e', border: '#7c4a1e', color: '#fb923c', dot: '#f97316' };
-    return { bg: '#1e2d3a', border: '#1e3a5f', color: '#60a5fa', dot: '#3b82f6' };
+    if (level === 'high') return { bg: '#fee2e2', border: '#fecaca', color: '#dc2626', dot: '#dc2626' };
+    if (level === 'medium') return { bg: '#ffedd5', border: '#fed7aa', color: '#c2410c', dot: '#c2410c' };
+    return { bg: '#dbeafe', border: '#bfdbfe', color: '#2563eb', dot: '#2563eb' };
   };
 
   const availableBeds = (h) => Math.max((h.total_beds || 0) - (h.activeCount || 0) - (h.pendingCount || 0), 0);
@@ -308,7 +308,7 @@ function DashboardHome({ counts, currentUser }) {
       </div>
 
       {loadingDashboard ? (
-        <p style={{ color: '#bbb', fontSize: '14px', marginTop: '32px' }}>Loading dashboard...</p>
+        <p style={{ color: '#71717a', fontSize: '14px', marginTop: '32px' }}>Loading dashboard...</p>
       ) : (
         <div style={ds.contentGrid}>
 
@@ -317,20 +317,20 @@ function DashboardHome({ counts, currentUser }) {
 
             {/* Waiting List Breakdown — admin/upper management only */}
             {!isHouseManagerRole && (
-            <Section title="Waiting Lists" count={totalWaiting} countColor="#fb923c">
+            <Section title="Waiting Lists" count={totalWaiting} countColor="#c2410c">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
+                <p style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px 0', fontWeight: '600' }}>Men's</p>
                 {['DOC Men', 'Community Men', 'Treatment Men'].map(list => (
-                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1c1c24', borderRadius: '8px', border: '1px solid #2e2e3a' }}>
-                    <span style={{ fontSize: '13px', color: '#aaa' }}>{list}</span>
-                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#60a5fa' : '#999' }}>{waitingListCounts[list] || 0}</span>
+                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #f0f0f3' }}>
+                    <span style={{ fontSize: '13px', color: '#71717a' }}>{list}</span>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#2563eb' : '#6b7280' }}>{waitingListCounts[list] || 0}</span>
                   </div>
                 ))}
-                <p style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 4px 0', fontWeight: '600' }}>Women's</p>
+                <p style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '10px 0 4px 0', fontWeight: '600' }}>Women's</p>
                 {['DOC Women', 'Community Women', 'Treatment Women'].map(list => (
-                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#1c1c24', borderRadius: '8px', border: '1px solid #2e2e3a' }}>
-                    <span style={{ fontSize: '13px', color: '#aaa' }}>{list}</span>
-                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#f9a8d4' : '#999' }}>{waitingListCounts[list] || 0}</span>
+                  <div key={list} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #f0f0f3' }}>
+                    <span style={{ fontSize: '13px', color: '#71717a' }}>{list}</span>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: waitingListCounts[list] > 0 ? '#db2777' : '#6b7280' }}>{waitingListCounts[list] || 0}</span>
                   </div>
                 ))}
               </div>
@@ -339,7 +339,7 @@ function DashboardHome({ counts, currentUser }) {
 
             {/* Alerts & Notifications */}
             {(alerts.length > 0 || notifications.length > 0 || isHouseManagerRole) && (
-              <Section title="Alerts" count={totalUnread > 0 ? totalUnread : undefined} countColor="#f87171">
+              <Section title="Alerts" count={totalUnread > 0 ? totalUnread : undefined} countColor="#dc2626">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {/* Unread notifications */}
                   {unreadNotifications.map(notif => {
@@ -384,15 +384,15 @@ function DashboardHome({ counts, currentUser }) {
                   {readNotifications.length > 0 && (
                     <div style={{ marginTop: '4px' }}>
                       <button onClick={() => setShowReadNotifications(p => !p)}
-                        style={{ background: 'transparent', border: 'none', color: '#666', fontSize: '11px', padding: '4px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        style={{ background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '11px', padding: '4px 0', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>{showReadNotifications ? '▲' : '▼'}</span>
                         {showReadNotifications ? 'Hide' : `Show ${readNotifications.length} read`}
                       </button>
                       {showReadNotifications && readNotifications.map(notif => (
-                        <div key={notif.id} style={{ background: '#252525', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
+                        <div key={notif.id} style={{ background: '#f7f7f9', border: '1px solid #e4e4e8', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px', opacity: 0.5 }}>
                           <span style={{ fontSize: '13px', flexShrink: 0 }}>{notifIcon(notif.type)}</span>
-                          <p style={{ color: '#999', fontSize: '12px', margin: 0, flex: 1 }}>{notif.message}</p>
-                          <span style={{ color: '#999', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(notif.created_at)}</span>
+                          <p style={{ color: '#6b7280', fontSize: '12px', margin: 0, flex: 1 }}>{notif.message}</p>
+                          <span style={{ color: '#6b7280', fontSize: '11px', flexShrink: 0 }}>{formatTimeAgo(notif.created_at)}</span>
                         </div>
                       ))}
                     </div>
@@ -400,13 +400,13 @@ function DashboardHome({ counts, currentUser }) {
                   {/* Mark all read if there are unread notifications */}
                   {unreadNotifications.length > 1 && (
                     <button onClick={markAllNotificationsRead}
-                      style={{ alignSelf: 'flex-end', background: 'transparent', border: '1px solid #444', color: '#aaa', fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', marginTop: '4px' }}>
+                      style={{ alignSelf: 'flex-end', background: 'transparent', border: '1px solid #d4d4d8', color: '#71717a', fontSize: '11px', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', marginTop: '4px' }}>
                       Mark all read
                     </button>
                   )}
                   {/* Empty state for house managers */}
                   {alerts.length === 0 && notifications.length === 0 && (
-                    <p style={{ color: '#666', fontSize: '13px', textAlign: 'center', padding: '12px 0', margin: 0 }}>No new notifications</p>
+                    <p style={{ color: '#a1a1aa', fontSize: '13px', textAlign: 'center', padding: '12px 0', margin: 0 }}>No new notifications</p>
                   )}
                 </div>
               </Section>
@@ -415,7 +415,7 @@ function DashboardHome({ counts, currentUser }) {
             {/* Bed availability */}
             <Section title="Bed Availability">
               {houses.length === 0 ? (
-                <p style={{ color: '#bbb', fontSize: '14px' }}>No houses found.</p>
+                <p style={{ color: '#71717a', fontSize: '14px' }}>No houses found.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {houses.map(h => {
@@ -423,22 +423,22 @@ function DashboardHome({ counts, currentUser }) {
                     const pct = occupancyPct(h);
                     const isAlmostFull = available <= 1;
                     return (
-                      <div key={h.id} style={{ background: '#26262e', borderRadius: '10px', padding: '12px 14px', border: '1px solid #32323e' }}>
+                      <div key={h.id} style={{ background: '#f7f7f9', borderRadius: '10px', padding: '12px 14px', border: '1px solid #e4e4e8' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>{h.name}</span>
-                            <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: h.type === 'Women' ? '#3a1e2d' : '#1e2d3a', color: h.type === 'Women' ? '#f9a8d4' : '#60a5fa' }}>{h.type}</span>
+                            <span style={{ color: '#18181b', fontSize: '14px', fontWeight: '500' }}>{h.name}</span>
+                            <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: h.type === 'Women' ? '#fce7f3' : '#dbeafe', color: h.type === 'Women' ? '#db2777' : '#2563eb' }}>{h.type}</span>
                           </div>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#f87171' : '#4ade80' }}>{available} available</span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#dc2626' : '#16a34a' }}>{available} available</span>
                         </div>
-                        <div style={{ height: '4px', background: '#333', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: isAlmostFull ? '#ef4444' : '#c084fc', borderRadius: '2px', transition: 'width 0.3s' }} />
+                        <div style={{ height: '4px', background: '#e4e4e7', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: isAlmostFull ? '#dc2626' : '#9333ea', borderRadius: '2px', transition: 'width 0.3s' }} />
                         </div>
                         <div style={{ display: 'flex', gap: '14px' }}>
-                          <BedStat label="Total" value={h.total_beds || 0} color="#aaa" />
-                          <BedStat label="Active" value={h.activeCount} color="#c084fc" />
-                          <BedStat label="Pending" value={h.pendingCount} color="#facc15" />
-                          <BedStat label="Available" value={available} color={isAlmostFull ? '#f87171' : '#4ade80'} />
+                          <BedStat label="Total" value={h.total_beds || 0} color="#71717a" />
+                          <BedStat label="Active" value={h.activeCount} color="#9333ea" />
+                          <BedStat label="Pending" value={h.pendingCount} color="#ca8a04" />
+                          <BedStat label="Available" value={available} color={isAlmostFull ? '#dc2626' : '#16a34a'} />
                         </div>
                       </div>
                     );
@@ -454,14 +454,14 @@ function DashboardHome({ counts, currentUser }) {
             {/* Open Charges */}
             {openCharges.length > 0 && (
               <Section title="Open Charges">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#3a1e1e', borderRadius: '10px', border: '1px solid #7f1d1d', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fee2e2', borderRadius: '10px', border: '1px solid #fee2e2', marginBottom: '14px' }}>
                   <div>
-                    <p style={{ color: '#f87171', fontSize: '12px', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Outstanding</p>
-                    <p style={{ color: '#fff', fontSize: '24px', fontWeight: '700', margin: 0 }}>${totalOutstanding.toFixed(2)}</p>
+                    <p style={{ color: '#dc2626', fontSize: '12px', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Outstanding</p>
+                    <p style={{ color: '#18181b', fontSize: '24px', fontWeight: '700', margin: 0 }}>${totalOutstanding.toFixed(2)}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <p style={{ color: '#f87171', fontSize: '20px', fontWeight: '700', margin: 0 }}>{new Set(openCharges.map(c => c.client_id)).size}</p>
-                    <p style={{ color: '#bbb', fontSize: '11px', margin: '2px 0 0 0' }}>client{new Set(openCharges.map(c => c.client_id)).size !== 1 ? 's' : ''} with balance</p>
+                    <p style={{ color: '#dc2626', fontSize: '20px', fontWeight: '700', margin: 0 }}>{new Set(openCharges.map(c => c.client_id)).size}</p>
+                    <p style={{ color: '#71717a', fontSize: '11px', margin: '2px 0 0 0' }}>client{new Set(openCharges.map(c => c.client_id)).size !== 1 ? 's' : ''} with balance</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -478,15 +478,15 @@ function DashboardHome({ counts, currentUser }) {
                       <div key={houseId}>
                         {!isHouseManagerRole && (
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <p style={{ fontSize: '11px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, fontWeight: '600' }}>{group.name}</p>
-                            <span style={{ fontSize: '12px', color: '#f87171', fontWeight: '600' }}>${houseTotal.toFixed(2)}</span>
+                            <p style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0, fontWeight: '600' }}>{group.name}</p>
+                            <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>${houseTotal.toFixed(2)}</span>
                           </div>
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {Object.values(clientMap).map((client, i) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', background: '#1a1a1a', borderRadius: '7px', border: '1px solid #2a2a2a' }}>
-                              <span style={{ fontSize: '13px', color: '#ddd' }}>{client.name}</span>
-                              <span style={{ fontSize: '13px', color: '#f87171', fontWeight: '600' }}>${client.total.toFixed(2)}</span>
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', background: '#ffffff', borderRadius: '7px', border: '1px solid #e4e4e8' }}>
+                              <span style={{ fontSize: '13px', color: '#3f3f46' }}>{client.name}</span>
+                              <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>${client.total.toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
@@ -517,15 +517,15 @@ function Section({ title, children, count, countColor }) {
     });
   };
   return (
-    <div style={{ background: '#26262e', borderRadius: '12px', border: '1px solid #32323e', overflow: 'hidden' }}>
+    <div style={{ background: '#f7f7f9', borderRadius: '12px', border: '1px solid #e4e4e8', overflow: 'hidden' }}>
       <div onClick={toggle} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', cursor: 'pointer', userSelect: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
+          <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0 }}>{title}</p>
           {count !== undefined && (
-            <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#3a1e1e', color: countColor || '#f87171', fontWeight: '600' }}>{count}</span>
+            <span style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px', background: '#fee2e2', color: countColor || '#dc2626', fontWeight: '600' }}>{count}</span>
           )}
         </div>
-        <span style={{ color: '#666', fontSize: '13px', display: 'inline-block', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</span>
+        <span style={{ color: '#a1a1aa', fontSize: '13px', display: 'inline-block', transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▾</span>
       </div>
       {!collapsed && (
         <div style={{ padding: '0 20px 18px 20px' }}>
@@ -540,7 +540,7 @@ function BedStat({ label, value, color }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
       <span style={{ fontSize: '15px', fontWeight: '700', color }}>{value}</span>
-      <span style={{ fontSize: '10px', color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+      <span style={{ fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
     </div>
   );
 }
@@ -689,8 +689,8 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
 
   if (loadingRole) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#1a1a1a' }}>
-        <p style={{ color: '#999', fontSize: '14px' }}>Loading...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#ffffff' }}>
+        <p style={{ color: '#6b7280', fontSize: '14px' }}>Loading...</p>
       </div>
     );
   }
@@ -698,16 +698,16 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
   // Parole Officer gets their own restricted view
   if (isParoleOfficer) {
     return (
-      <div style={{ minHeight: '100vh', background: '#1e1e24', padding: '32px 24px', maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ minHeight: '100vh', background: '#ffffff', padding: '32px 24px', maxWidth: '900px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img src={klLogo} alt="KL" style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover' }} />
             <div>
-              <p style={{ color: '#fff', fontWeight: '700', fontSize: '16px', margin: 0 }}>KL Hub</p>
-              <p style={{ color: '#666', fontSize: '11px', margin: 0 }}>Parole Officer Portal</p>
+              <p style={{ color: '#18181b', fontWeight: '700', fontSize: '16px', margin: 0 }}>KL Hub</p>
+              <p style={{ color: '#a1a1aa', fontSize: '11px', margin: 0 }}>Parole Officer Portal</p>
             </div>
           </div>
-          <button onClick={() => supabase.auth.signOut()} style={{ background: 'transparent', border: '1px solid #333', color: '#888', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+          <button onClick={() => supabase.auth.signOut()} style={{ background: 'transparent', border: '1px solid #e4e4e7', color: '#9ca3af', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
             Sign Out
           </button>
         </div>
@@ -816,31 +816,31 @@ function Dashboard({ user }) {
 
 const ds = {
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' },
-  statCard: { backgroundColor: '#26262e', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222', border: '1px solid #32323e' },
+  statCard: { backgroundColor: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', borderTop: '3px solid #b22222', border: '1px solid #e4e4e8' },
   statLabel: { color: '#a0a0a0', fontSize: '13px', margin: '0 0 8px 0' },
-  statValue: { color: '#ffffff', fontSize: '32px', fontWeight: '700', margin: '0' },
+  statValue: { color: '#18181b', fontSize: '32px', fontWeight: '700', margin: '0' },
   contentGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' },
 };
 
 const styles = {
-  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#1e1e24', fontFamily: "'Inter', 'system-ui', -apple-system, sans-serif", fontSize: '15px', color: '#e0e0e0' },
-  sidebar: { width: '230px', backgroundColor: '#13131a', borderRight: '1px solid #2a2a35', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh' },
-  sidebarLogo: { padding: '20px 20px', borderBottom: '1px solid #2a2a35' },
-  logoText: { color: '#ffffff', fontSize: '22px', fontWeight: '700', margin: '0' },
-  logoSub: { color: '#bbb', fontSize: '13px', margin: '3px 0 0 0' },
+  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: "'Inter', 'system-ui', -apple-system, sans-serif", fontSize: '15px', color: '#e0e0e0' },
+  sidebar: { width: '230px', backgroundColor: '#f7f7f9', borderRight: '1px solid #f7f7f9', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh' },
+  sidebarLogo: { padding: '20px 20px', borderBottom: '1px solid #f7f7f9' },
+  logoText: { color: '#18181b', fontSize: '22px', fontWeight: '700', margin: '0' },
+  logoSub: { color: '#71717a', fontSize: '13px', margin: '3px 0 0 0' },
   nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
-  navItem: { backgroundColor: 'transparent', border: 'none', color: '#bbb', padding: '13px 20px', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
-  navItemActive: { backgroundColor: '#252525', color: '#ffffff', borderLeft: '3px solid #b22222', fontWeight: '600' },
-  badge: { backgroundColor: '#b22222', color: '#fff', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
-  settingsSection: { marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '8px' },
-  settingsSectionLabel: { color: '#999', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
-  sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #2a2a35' },
+  navItem: { backgroundColor: 'transparent', border: 'none', color: '#71717a', padding: '13px 20px', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
+  navItemActive: { backgroundColor: '#f7f7f9', color: '#18181b', borderLeft: '3px solid #b22222', fontWeight: '600' },
+  badge: { backgroundColor: '#b22222', color: '#18181b', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
+  settingsSection: { marginTop: 'auto', borderTop: '1px solid #e4e4e7', paddingTop: '8px' },
+  settingsSectionLabel: { color: '#6b7280', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
+  sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #f7f7f9' },
   userRole: { color: '#b22222', fontSize: '12px', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  userEmail: { color: '#bbb', fontSize: '12px', margin: '0 0 10px 0', wordBreak: 'break-all' },
-  signOutBtn: { backgroundColor: 'transparent', border: '1px solid #555', color: '#bbb', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
+  userEmail: { color: '#71717a', fontSize: '12px', margin: '0 0 10px 0', wordBreak: 'break-all' },
+  signOutBtn: { backgroundColor: 'transparent', border: '1px solid #b8b8bd', color: '#71717a', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
   main: { marginLeft: '230px', flex: 1, display: 'flex', flexDirection: 'column' },
-  header: { backgroundColor: '#13131a', borderBottom: '2px solid #8b1c1c', padding: '22px 36px' },
-  pageTitle: { color: '#ffffff', fontSize: '26px', fontWeight: '700', margin: '0' },
+  header: { backgroundColor: '#f7f7f9', borderBottom: '2px solid #8b1c1c', padding: '22px 36px' },
+  pageTitle: { color: '#18181b', fontSize: '26px', fontWeight: '700', margin: '0' },
   content: { padding: '36px' },
 };
 
@@ -885,17 +885,17 @@ function NotificationSettingsPage({ currentUser }) {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  if (!prefs) return <p style={{ color: '#bbb', padding: '20px' }}>Loading...</p>;
+  if (!prefs) return <p style={{ color: '#71717a', padding: '20px' }}>Loading...</p>;
 
   return (
     <div style={{ maxWidth: '540px' }}>
-      <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '0 0 6px 0' }}>My Profile</h2>
-      <p style={{ color: '#999', fontSize: '14px', margin: '0 0 28px 0' }}>Manage your notification preferences. Changes apply to your account only.</p>
+      <h2 style={{ color: '#18181b', fontSize: '20px', fontWeight: '700', margin: '0 0 6px 0' }}>My Profile</h2>
+      <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 28px 0' }}>Manage your notification preferences. Changes apply to your account only.</p>
 
-      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
-          <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Email</p>
-          <p style={{ color: '#888', fontSize: '13px', margin: '4px 0 0 0' }}>Current: <span style={{ color: '#ddd' }}>{currentUser?.email}</span></p>
+      <div style={{ background: '#ffffff', border: '1px solid #e4e4e7', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e4e4e7' }}>
+          <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Email</p>
+          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>Current: <span style={{ color: '#3f3f46' }}>{currentUser?.email}</span></p>
         </div>
         <div style={{ padding: '16px 20px' }}>
           <input
@@ -903,9 +903,9 @@ function NotificationSettingsPage({ currentUser }) {
             placeholder="New email address"
             value={newEmail}
             onChange={e => { setNewEmail(e.target.value); setEmailMsg(null); }}
-            style={{ width: '100%', background: '#2a2a2a', border: '1px solid #444', borderRadius: '8px', padding: '9px 12px', color: '#fff', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
+            style={{ width: '100%', background: '#e4e4e8', border: '1px solid #d4d4d8', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
           />
-          {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#4ade80' : '#f87171', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
+          {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
           <button
             onClick={async () => {
               if (!newEmail.trim()) return;
@@ -921,19 +921,19 @@ function NotificationSettingsPage({ currentUser }) {
               setEmailSaving(false);
             }}
             disabled={emailSaving || !newEmail.trim()}
-            style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
+            style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#b8b8bd' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
             {emailSaving ? 'Saving...' : 'Update Email'}
           </button>
         </div>
       </div>
 
-      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
-          <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Password</p>
-          <p style={{ color: '#888', fontSize: '13px', margin: '4px 0 0 0' }}>We'll send a password reset link to your current email.</p>
+      <div style={{ background: '#ffffff', border: '1px solid #e4e4e7', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e4e4e7' }}>
+          <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Password</p>
+          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>We'll send a password reset link to your current email.</p>
         </div>
         <div style={{ padding: '16px 20px' }}>
-          {pwMsg && <p style={{ fontSize: '13px', color: pwMsg.ok ? '#4ade80' : '#f87171', margin: '0 0 10px 0' }}>{pwMsg.text}</p>}
+          {pwMsg && <p style={{ fontSize: '13px', color: pwMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{pwMsg.text}</p>}
           <button
             onClick={async () => {
               setPwSaving(true);
@@ -949,29 +949,29 @@ function NotificationSettingsPage({ currentUser }) {
               setPwSaving(false);
             }}
             disabled={pwSaving}
-            style={{ padding: '9px 20px', background: pwSaving ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
+            style={{ padding: '9px 20px', background: pwSaving ? '#b8b8bd' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
             {pwSaving ? 'Sending...' : 'Send Reset Link'}
           </button>
         </div>
       </div>
 
-      <div style={{ background: '#1e1e1e', border: '1px solid #333', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #333' }}>
-          <p style={{ color: '#fff', fontSize: '15px', fontWeight: '600', margin: 0 }}>Notification Preferences</p>
-          <p style={{ color: '#888', fontSize: '13px', margin: '4px 0 0 0' }}>Notifications appear in the Alerts section of your dashboard, scoped to your assigned house(s).</p>
+      <div style={{ background: '#ffffff', border: '1px solid #e4e4e7', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #e4e4e7' }}>
+          <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Notification Preferences</p>
+          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '4px 0 0 0' }}>Notifications appear in the Alerts section of your dashboard, scoped to your assigned house(s).</p>
         </div>
         {Object.entries(NOTIF_LABELS_MAP).map(([key, label]) => (
-          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #2a2a2a' }}>
-            <span style={{ fontSize: '14px', color: '#ddd' }}>{label}</span>
+          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #e4e4e8' }}>
+            <span style={{ fontSize: '14px', color: '#3f3f46' }}>{label}</span>
             <button onClick={() => toggle(key)}
               style={{
                 width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                background: prefs[key] !== false ? '#b22222' : '#444',
+                background: prefs[key] !== false ? '#b22222' : '#d4d4d8',
                 position: 'relative', transition: 'background 0.2s', flexShrink: 0,
               }}>
               <span style={{
                 position: 'absolute', top: '3px', width: '18px', height: '18px', borderRadius: '50%',
-                background: '#fff', transition: 'left 0.2s',
+                background: '#18181b', transition: 'left 0.2s',
                 left: prefs[key] !== false ? '23px' : '3px',
               }} />
             </button>
@@ -980,7 +980,7 @@ function NotificationSettingsPage({ currentUser }) {
       </div>
 
       <button onClick={savePrefs} disabled={saving}
-        style={{ padding: '10px 24px', background: saving ? '#555' : '#b22222', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
+        style={{ padding: '10px 24px', background: saving ? '#b8b8bd' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
         {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save Preferences'}
       </button>
     </div>

@@ -243,8 +243,8 @@ function ApplicationForm() {
 
         <div style={s.steps}>
           {sections.map((sec, i) => (
-            <div key={i} style={{ ...s.stepItem, color: i === step ? '#b22222' : i < step ? '#16a34a' : '#666' }}>
-              <div style={{ ...s.stepDot, backgroundColor: i === step ? '#b22222' : i < step ? '#16a34a' : '#444' }} />
+            <div key={i} style={{ ...s.stepItem, color: i === step ? '#b22222' : i < step ? '#16a34a' : '#a1a1aa' }}>
+              <div style={{ ...s.stepDot, backgroundColor: i === step ? '#b22222' : i < step ? '#16a34a' : '#d4d4d8' }} />
               <span style={s.stepLabel}>{sec}</span>
             </div>
           ))}
@@ -256,8 +256,8 @@ function ApplicationForm() {
 
             <Row label="Profile Photo">
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                {profilePhotoPreview && <img src={profilePhotoPreview} alt="Preview" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #444' }} />}
-                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ color: '#aaa', fontSize: '13px' }} />
+                {profilePhotoPreview && <img src={profilePhotoPreview} alt="Preview" style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #d4d4d8' }} />}
+                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ color: '#71717a', fontSize: '13px' }} />
               </div>
             </Row>
 
@@ -314,14 +314,14 @@ function ApplicationForm() {
               <p style={s.hint}>Select all that apply.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
                 {DRUG_OPTIONS.map(drug => (
-                  <label key={drug} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${selectedDrugs.includes(drug) ? '#b22222' : '#333'}`, background: selectedDrugs.includes(drug) ? 'rgba(178,34,34,0.1)' : '#1a1a1a', transition: 'all 0.15s' }}>
+                  <label key={drug} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${selectedDrugs.includes(drug) ? '#b22222' : '#e4e4e7'}`, background: selectedDrugs.includes(drug) ? 'rgba(178,34,34,0.1)' : '#ffffff', transition: 'all 0.15s' }}>
                     <input
                       type="checkbox"
                       checked={selectedDrugs.includes(drug)}
                       onChange={() => toggleDrug(drug)}
                       style={{ accentColor: '#b22222', width: '16px', height: '16px', flexShrink: 0 }}
                     />
-                    <span style={{ color: selectedDrugs.includes(drug) ? '#fff' : '#aaa', fontSize: '13px', lineHeight: '1.3' }}>{drug}</span>
+                    <span style={{ color: selectedDrugs.includes(drug) ? '#18181b' : '#71717a', fontSize: '13px', lineHeight: '1.3' }}>{drug}</span>
                   </label>
                 ))}
               </div>
@@ -352,7 +352,7 @@ function ApplicationForm() {
               {treatments.map((t, i) => (
                 <div key={i} style={s.treatmentBlock}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>Treatment {i + 1}</span>
+                    <span style={{ color: '#18181b', fontSize: '14px', fontWeight: '500' }}>Treatment {i + 1}</span>
                     {treatments.length > 1 && <button onClick={() => setTreatments(treatments.filter((_, idx) => idx !== i))} style={s.removeBtn}>Remove</button>}
                   </div>
                   <div style={s.grid2}>
@@ -379,7 +379,7 @@ function ApplicationForm() {
               {medications.map((med, i) => (
                 <div key={i} style={s.medBlock}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                    <span style={{ color: '#fff', fontSize: '14px', fontWeight: '500' }}>Medication {i + 1}</span>
+                    <span style={{ color: '#18181b', fontSize: '14px', fontWeight: '500' }}>Medication {i + 1}</span>
                     {medications.length > 1 && <button onClick={() => setMedications(medications.filter((_, idx) => idx !== i))} style={s.removeBtn}>Remove</button>}
                   </div>
                   <div style={s.grid2}>
@@ -456,45 +456,45 @@ const Row = ({ label, children }) => (
 
 const Input = ({ value, onChange, placeholder, type = 'text' }) => (
   <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-    style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' }} />
+    style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '8px', padding: '10px 14px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
 );
 
 const Textarea = ({ value, onChange, placeholder }) => (
   <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3}
-    style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: '#fff', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }} />
+    style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '8px', padding: '10px 14px', color: '#18181b', fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }} />
 );
 
 const Select = ({ value, onChange, options }) => (
   <select value={value} onChange={e => onChange(e.target.value)}
-    style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px', padding: '10px 14px', color: value ? '#fff' : '#888', fontSize: '14px' }}>
+    style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #d4d4d8', borderRadius: '8px', padding: '10px 14px', color: value ? '#18181b' : '#9ca3af', fontSize: '14px' }}>
     <option value="">Select an option</option>
     {options.map(o => <option key={o} value={o}>{o}</option>)}
   </select>
 );
 
 const s = {
-  container: { minHeight: '100vh', backgroundColor: '#1a1a1a', display: 'flex', justifyContent: 'center', padding: '40px 20px', fontFamily: 'sans-serif' },
-  card: { backgroundColor: '#2a2a2a', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '680px', borderTop: '4px solid #b22222' },
+  container: { minHeight: '100vh', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'center', padding: '40px 20px', fontFamily: 'sans-serif' },
+  card: { backgroundColor: '#e4e4e8', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '680px', borderTop: '4px solid #b22222' },
   logo: { width: '150px', display: 'block', margin: '0 auto 16px auto', borderRadius: '4px' },
-  title: { color: '#fff', fontSize: '22px', fontWeight: '700', textAlign: 'center', margin: '0 0 24px 0' },
+  title: { color: '#18181b', fontSize: '22px', fontWeight: '700', textAlign: 'center', margin: '0 0 24px 0' },
   steps: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '28px' },
   stepItem: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' },
   stepDot: { width: '8px', height: '8px', borderRadius: '50%' },
   stepLabel: {},
   section: {},
-  sectionTitle: { color: '#fff', fontSize: '16px', fontWeight: '600', margin: '0 0 16px 0', paddingBottom: '8px', borderBottom: '1px solid #444' },
-  hint: { color: '#888', fontSize: '12px', margin: '0 0 8px 0', lineHeight: '1.5' },
+  sectionTitle: { color: '#18181b', fontSize: '16px', fontWeight: '600', margin: '0 0 16px 0', paddingBottom: '8px', borderBottom: '1px solid #d4d4d8' },
+  hint: { color: '#9ca3af', fontSize: '12px', margin: '0 0 8px 0', lineHeight: '1.5' },
   nav: { display: 'flex', justifyContent: 'space-between', marginTop: '32px' },
-  prevBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#a0a0a0', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
-  nextBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginLeft: 'auto' },
-  submitBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginLeft: 'auto' },
-  successTitle: { color: '#fff', fontSize: '22px', textAlign: 'center', margin: '16px 0 8px 0' },
+  prevBtn: { backgroundColor: 'transparent', border: '1px solid #d4d4d8', color: '#a0a0a0', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
+  nextBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginLeft: 'auto' },
+  submitBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 28px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginLeft: 'auto' },
+  successTitle: { color: '#18181b', fontSize: '22px', textAlign: 'center', margin: '16px 0 8px 0' },
   successText: { color: '#a0a0a0', fontSize: '15px', textAlign: 'center', lineHeight: '1.6' },
-  medBlock: { background: '#1a1a1a', borderRadius: '10px', padding: '16px', marginBottom: '12px', border: '1px solid #333' },
-  treatmentBlock: { background: '#1a1a1a', borderRadius: '10px', padding: '16px', marginBottom: '12px', border: '1px solid #333' },
+  medBlock: { background: '#ffffff', borderRadius: '10px', padding: '16px', marginBottom: '12px', border: '1px solid #e4e4e7' },
+  treatmentBlock: { background: '#ffffff', borderRadius: '10px', padding: '16px', marginBottom: '12px', border: '1px solid #e4e4e7' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' },
-  fieldLabel: { display: 'block', color: '#aaa', fontSize: '12px', marginBottom: '4px' },
-  addBtn: { backgroundColor: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '16px' },
+  fieldLabel: { display: 'block', color: '#71717a', fontSize: '12px', marginBottom: '4px' },
+  addBtn: { backgroundColor: 'transparent', border: '1px solid #d4d4d8', color: '#71717a', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer', marginBottom: '16px' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
 };
 

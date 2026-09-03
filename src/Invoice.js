@@ -30,25 +30,25 @@ export function InvoiceButton({ client, style }) {
   <title>Invoice – ${client.full_name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #111; background: #fff; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #f4f4f6; background: #18181b; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .header img { width: 80px; height: 80px; object-fit: contain; }
-    .org-name { font-size: 26px; font-weight: 700; color: #111; }
-    .org-sub { font-size: 14px; color: #888; margin-top: 2px; }
+    .org-name { font-size: 26px; font-weight: 700; color: #f4f4f6; }
+    .org-sub { font-size: 14px; color: #9ca3af; margin-top: 2px; }
     .divider { height: 3px; background: #b22222; margin: 16px 0; }
     .invoice-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 16px; }
     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; background: #f9f9f9; padding: 16px; border-radius: 8px; }
-    .meta-item label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 3px; }
-    .meta-item span { font-size: 15px; font-weight: 600; color: #111; }
+    .meta-item label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 3px; }
+    .meta-item span { font-size: 15px; font-weight: 600; color: #f4f4f6; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-    th { background: #111; color: #fff; padding: 10px 12px; text-align: left; font-size: 13px; }
-    td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+    th { background: #f4f4f6; color: #18181b; padding: 10px 12px; text-align: left; font-size: 13px; }
+    td { padding: 10px 12px; border-bottom: 1px solid #e4e4e8; font-size: 14px; }
     tr:nth-child(even) td { background: #f9f9f9; }
-    .section-title { font-size: 15px; font-weight: 700; color: #111; margin: 24px 0 10px; border-left: 4px solid #b22222; padding-left: 10px; }
-    .summary { background: #111; color: #fff; border-radius: 8px; padding: 16px 20px; margin-top: 24px; }
+    .section-title { font-size: 15px; font-weight: 700; color: #f4f4f6; margin: 24px 0 10px; border-left: 4px solid #b22222; padding-left: 10px; }
+    .summary { background: #f4f4f6; color: #18181b; border-radius: 8px; padding: 16px 20px; margin-top: 24px; }
     .summary-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
-    .summary-row.balance { font-size: 20px; font-weight: 700; border-top: 1px solid #444; margin-top: 8px; padding-top: 10px; color: ${balance > 0 ? '#ef4444' : '#4ade80'}; }
-    .footer { margin-top: 32px; text-align: center; color: #aaa; font-size: 12px; }
+    .summary-row.balance { font-size: 20px; font-weight: 700; border-top: 1px solid #d4d4d8; margin-top: 8px; padding-top: 10px; color: ${balance > 0 ? '#dc2626' : '#16a34a'}; }
+    .footer { margin-top: 32px; text-align: center; color: #71717a; font-size: 12px; }
     @media print { body { padding: 20px; } }
   </style>
 </head>
@@ -72,7 +72,7 @@ export function InvoiceButton({ client, style }) {
   </div>
 
   <div class="section-title">Charges</div>
-  ${charges.length === 0 ? '<p style="color:#888;font-size:14px;margin-bottom:16px">No charges on record.</p>' : `
+  ${charges.length === 0 ? '<p style="color:#9ca3af;font-size:14px;margin-bottom:16px">No charges on record.</p>' : `
   <table>
     <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
     <tbody>
@@ -81,7 +81,7 @@ export function InvoiceButton({ client, style }) {
   </table>`}
 
   <div class="section-title">Payments</div>
-  ${payments.length === 0 ? '<p style="color:#888;font-size:14px;margin-bottom:16px">No payments on record.</p>' : `
+  ${payments.length === 0 ? '<p style="color:#9ca3af;font-size:14px;margin-bottom:16px">No payments on record.</p>' : `
   <table>
     <thead><tr><th>Date</th><th>Method</th><th>Note</th><th style="text-align:right">Amount</th></tr></thead>
     <tbody>

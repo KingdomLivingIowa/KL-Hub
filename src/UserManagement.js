@@ -11,11 +11,11 @@ const ROLES = [
 ];
 
 const ROLE_COLORS = {
-  admin: { bg: '#3a1e1e', color: '#f87171' },
-  upper_management: { bg: '#3a1e1e', color: '#f87171' },
-  head_house_manager: { bg: '#2d1e3a', color: '#c084fc' },
-  house_manager: { bg: '#1e3a2f', color: '#4ade80' },
-  parole_officer: { bg: '#1e2d3a', color: '#60a5fa' },
+  admin: { bg: '#fee2e2', color: '#dc2626' },
+  upper_management: { bg: '#fee2e2', color: '#dc2626' },
+  head_house_manager: { bg: '#f3e8ff', color: '#9333ea' },
+  house_manager: { bg: '#dcfce7', color: '#16a34a' },
+  parole_officer: { bg: '#dbeafe', color: '#2563eb' },
 };
 
 const PRESET_GROUP_NAMES = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
@@ -313,7 +313,7 @@ function UserManagement({ currentUser }) {
   };
 
   const roleLabel = (role) => ROLES.find(r => r.value === role)?.label || role;
-  const roleColor = (role) => ROLE_COLORS[role] || { bg: '#333', color: '#aaa' };
+  const roleColor = (role) => ROLE_COLORS[role] || { bg: '#e4e4e7', color: '#71717a' };
   const needsHouseAssignment = (role) => role === 'house_manager' || role === 'head_house_manager';
 
   return (
@@ -366,7 +366,7 @@ function UserManagement({ currentUser }) {
 
       {/* Users Table */}
       {loading ? (
-        <p style={{ color: '#bbb' }}>Loading...</p>
+        <p style={{ color: '#71717a' }}>Loading...</p>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {users.map(u => {
@@ -381,8 +381,8 @@ function UserManagement({ currentUser }) {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
                   {/* Name + email */}
                   <div style={{ flex: 2, minWidth: '160px' }}>
-                    <p style={{ color: '#fff', fontSize: '14px', fontWeight: '600', margin: 0 }}>{u.full_name}</p>
-                    <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>{u.email}</p>
+                    <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: 0 }}>{u.full_name}</p>
+                    <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0 0' }}>{u.email}</p>
                     {isCurrentUser && <span style={{ fontSize: '10px', color: '#b22222' }}>You</span>}
                   </div>
 
@@ -417,7 +417,7 @@ function UserManagement({ currentUser }) {
                         )}
                       </div>
                     ) : (
-                      <span style={{ color: '#bbb', fontSize: '13px' }}>All houses</span>
+                      <span style={{ color: '#71717a', fontSize: '13px' }}>All houses</span>
                     )}
                   </div>
 
@@ -434,22 +434,22 @@ function UserManagement({ currentUser }) {
 
                 {/* Permissions */}
                 {!isCurrentUser && (
-                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #32323e' }}>
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e4e4e8' }}>
                     <p style={s.fieldLabel}>Permissions</p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       <button
                         onClick={() => toggleOrgEventPermission(u.id, u.can_manage_org_events)}
-                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_manage_org_events ? 'none' : '1px dashed #444', background: u.can_manage_org_events ? '#1e3a2a' : 'transparent', color: u.can_manage_org_events ? '#4ade80' : '#bbb', transition: 'all 0.15s' }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_manage_org_events ? 'none' : '1px dashed #d4d4d8', background: u.can_manage_org_events ? '#dcfce7' : 'transparent', color: u.can_manage_org_events ? '#16a34a' : '#71717a', transition: 'all 0.15s' }}>
                         {u.can_manage_org_events ? '✓ ' : '+ '}Can Add Org Events
                       </button>
                       <button
                         onClick={() => toggleMaintenancePermission(u.id, u.can_see_maintenance)}
-                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_maintenance ? 'none' : '1px dashed #444', background: u.can_see_maintenance ? '#1e3a2a' : 'transparent', color: u.can_see_maintenance ? '#4ade80' : '#bbb', transition: 'all 0.15s' }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_maintenance ? 'none' : '1px dashed #d4d4d8', background: u.can_see_maintenance ? '#dcfce7' : 'transparent', color: u.can_see_maintenance ? '#16a34a' : '#71717a', transition: 'all 0.15s' }}>
                         {u.can_see_maintenance ? '✓ ' : '+ '}Can See Maintenance
                       </button>
                       <button
                         onClick={() => toggleReportsPermission(u.id, u.can_see_reports)}
-                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_reports ? 'none' : '1px dashed #444', background: u.can_see_reports ? '#1e3a2a' : 'transparent', color: u.can_see_reports ? '#4ade80' : '#bbb', transition: 'all 0.15s' }}>
+                        style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '13px', cursor: 'pointer', fontWeight: '500', border: u.can_see_reports ? 'none' : '1px dashed #d4d4d8', background: u.can_see_reports ? '#dcfce7' : 'transparent', color: u.can_see_reports ? '#16a34a' : '#71717a', transition: 'all 0.15s' }}>
                         {u.can_see_reports ? '✓ ' : '+ '}Can See Reports
                       </button>
                     </div>
@@ -458,7 +458,7 @@ function UserManagement({ currentUser }) {
 
                 {/* Group chat memberships */}
                 {!isCurrentUser && presetGroups.length > 0 && (
-                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #32323e' }}>
+                  <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e4e4e8' }}>
                     <p style={s.fieldLabel}>Group Chat Memberships</p>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                       {presetGroups.map(group => {
@@ -476,9 +476,9 @@ function UserManagement({ currentUser }) {
                               fontSize: '13px',
                               cursor: 'pointer',
                               fontWeight: '500',
-                              border: isMember ? 'none' : '1px dashed #444',
-                              background: isMember ? '#1e2d3a' : 'transparent',
-                              color: isMember ? '#60a5fa' : '#bbb',
+                              border: isMember ? 'none' : '1px dashed #d4d4d8',
+                              background: isMember ? '#dbeafe' : 'transparent',
+                              color: isMember ? '#2563eb' : '#71717a',
                               opacity: isToggling ? 0.5 : 1,
                               transition: 'all 0.15s',
                             }}>
@@ -499,22 +499,22 @@ function UserManagement({ currentUser }) {
       {showHouseModal && (
         <div style={s.overlay} onClick={() => setShowHouseModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: '#fff', margin: '0 0 6px 0', fontSize: '16px' }}>Assign House to {showHouseModal.full_name}</h3>
-            <p style={{ color: '#999', fontSize: '14px', margin: '0 0 16px 0' }}>Select a house to assign. You can assign multiple houses.</p>
+            <h3 style={{ color: '#18181b', margin: '0 0 6px 0', fontSize: '16px' }}>Assign House to {showHouseModal.full_name}</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px 0' }}>Select a house to assign. You can assign multiple houses.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {houses.map(h => {
                 const alreadyAssigned = (houseAssignments[showHouseModal.id] || []).some(a => a.id === h.id);
                 return (
-                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#26262e', borderRadius: '8px', border: '1px solid #32323e' }}>
+                  <div key={h.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #e4e4e8' }}>
                     <div>
-                      <p style={{ color: '#fff', fontSize: '14px', margin: 0 }}>{h.name}</p>
-                      <p style={{ color: '#999', fontSize: '13px', margin: '2px 0 0 0' }}>{h.type}</p>
+                      <p style={{ color: '#18181b', fontSize: '14px', margin: 0 }}>{h.name}</p>
+                      <p style={{ color: '#6b7280', fontSize: '13px', margin: '2px 0 0 0' }}>{h.type}</p>
                     </div>
                     {alreadyAssigned ? (
-                      <span style={{ fontSize: '13px', color: '#4ade80' }}>✓ Assigned</span>
+                      <span style={{ fontSize: '13px', color: '#16a34a' }}>✓ Assigned</span>
                     ) : (
                       <button onClick={() => assignHouse(showHouseModal.id, h.id)}
-                        style={{ background: '#b22222', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
+                        style={{ background: '#b22222', border: 'none', color: '#18181b', padding: '6px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
                         Assign
                       </button>
                     )}
@@ -524,7 +524,7 @@ function UserManagement({ currentUser }) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button onClick={() => setShowHouseModal(null)}
-                style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Done
               </button>
             </div>
@@ -536,23 +536,23 @@ function UserManagement({ currentUser }) {
       {resetModal && (
         <div style={s.overlay} onClick={() => setResetModal(null)}>
           <div style={s.modal} onClick={e => e.stopPropagation()}>
-            <h3 style={{ color: '#fff', margin: '0 0 6px 0', fontSize: '16px' }}>Reset Password</h3>
-            <p style={{ color: '#999', fontSize: '14px', margin: '0 0 16px 0' }}>
-              Set a new temporary password for <strong style={{ color: '#ddd' }}>{resetModal.full_name}</strong>.
+            <h3 style={{ color: '#18181b', margin: '0 0 6px 0', fontSize: '16px' }}>Reset Password</h3>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '0 0 16px 0' }}>
+              Set a new temporary password for <strong style={{ color: '#3f3f46' }}>{resetModal.full_name}</strong>.
             </p>
             <label style={s.label}>New Password</label>
             <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') resetPassword(); }}
               placeholder="Min 8 characters" style={{ ...s.input, marginBottom: '12px' }} />
-            {resetError && <p style={{ color: '#f87171', fontSize: '14px', margin: '0 0 12px 0' }}>{resetError}</p>}
-            {resetSuccess && <p style={{ color: '#4ade80', fontSize: '14px', margin: '0 0 12px 0' }}>{resetSuccess}</p>}
+            {resetError && <p style={{ color: '#dc2626', fontSize: '14px', margin: '0 0 12px 0' }}>{resetError}</p>}
+            {resetSuccess && <p style={{ color: '#16a34a', fontSize: '14px', margin: '0 0 12px 0' }}>{resetSuccess}</p>}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setResetModal(null)}
-                style={{ background: 'transparent', border: '1px solid #3a3a48', color: '#aaa', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                style={{ background: 'transparent', border: '1px solid #d8d8dd', color: '#71717a', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                 Cancel
               </button>
               <button onClick={resetPassword} disabled={resetting}
-                style={{ background: '#ca8a04', border: 'none', color: '#fff', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                style={{ background: '#ca8a04', border: 'none', color: '#18181b', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                 {resetting ? 'Saving...' : 'Set New Password'}
               </button>
             </div>
@@ -564,31 +564,31 @@ function UserManagement({ currentUser }) {
 }
 
 const s = {
-  page: { fontFamily: "'Inter', 'system-ui', sans-serif", color: '#fff' },
+  page: { fontFamily: "'Inter', 'system-ui', sans-serif", color: '#18181b' },
   topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
-  sub: { color: '#999', fontSize: '14px', margin: '4px 0 0 0' },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#fff', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
-  addForm: { background: '#26262e', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #32323e' },
-  formTitle: { color: '#fff', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
+  sub: { color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' },
+  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
+  addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #e4e4e8' },
+  formTitle: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' },
-  label: { display: 'block', color: '#aaa', fontSize: '14px', marginBottom: '4px' },
-  fieldLabel: { color: '#bbb', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' },
-  input: { width: '100%', backgroundColor: '#1c1c24', border: '1px solid #3a3a48', borderRadius: '8px', padding: '10px 12px', color: '#fff', fontSize: '14px', boxSizing: 'border-box' },
-  saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#fff', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
-  hint: { color: '#bbb', fontSize: '13px', margin: 0, lineHeight: '1.5' },
-  errorText: { color: '#f87171', fontSize: '14px', margin: '0 0 12px 0' },
-  successBanner: { background: '#1e3a2f', border: '1px solid #1D9E75', color: '#4ade80', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' },
-  userCard: { background: '#26262e', borderRadius: '12px', padding: '16px 20px', border: '1px solid #32323e' },
+  label: { display: 'block', color: '#71717a', fontSize: '14px', marginBottom: '4px' },
+  fieldLabel: { color: '#71717a', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px 0' },
+  input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #d8d8dd', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
+  saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
+  hint: { color: '#71717a', fontSize: '13px', margin: 0, lineHeight: '1.5' },
+  errorText: { color: '#dc2626', fontSize: '14px', margin: '0 0 12px 0' },
+  successBanner: { background: '#dcfce7', border: '1px solid #0d9488', color: '#16a34a', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' },
+  userCard: { background: '#f7f7f9', borderRadius: '12px', padding: '16px 20px', border: '1px solid #e4e4e8' },
   roleBadge: { fontSize: '12px', padding: '3px 10px', borderRadius: '20px', fontWeight: '500' },
   roleSelect: { fontSize: '12px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', border: '1px solid', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' },
-  houseTag: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: '#1e2d3a', color: '#60a5fa' },
-  removeHouseBtn: { background: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '14px', padding: '0', lineHeight: 1 },
-  assignHouseBtn: { fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: 'transparent', border: '1px dashed #444', color: '#999', cursor: 'pointer' },
+  houseTag: { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: '#dbeafe', color: '#2563eb' },
+  removeHouseBtn: { background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '14px', padding: '0', lineHeight: 1 },
+  assignHouseBtn: { fontSize: '12px', padding: '2px 8px', borderRadius: '20px', background: 'transparent', border: '1px dashed #d4d4d8', color: '#6b7280', cursor: 'pointer' },
   resetBtn: { backgroundColor: 'transparent', border: '1px solid #ca8a04', color: '#ca8a04', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' },
-  modal: { background: '#1c1c24', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #32323e' },
+  modal: { background: '#ffffff', borderRadius: '16px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto', border: '1px solid #e4e4e8' },
 };
 
 export default UserManagement;
