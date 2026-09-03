@@ -431,7 +431,7 @@ function DashboardHome({ counts, currentUser }) {
                           </div>
                           <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#dc2626' : '#16a34a' }}>{available} available</span>
                         </div>
-                        <div style={{ height: '4px', background: '#c9c9cf', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
+                        <div style={{ height: '4px', background: '#e4e4e8', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${pct}%`, background: isAlmostFull ? '#dc2626' : '#9333ea', borderRadius: '2px', transition: 'width 0.3s' }} />
                         </div>
                         <div style={{ display: 'flex', gap: '14px' }}>
@@ -454,7 +454,7 @@ function DashboardHome({ counts, currentUser }) {
             {/* Open Charges */}
             {openCharges.length > 0 && (
               <Section title="Open Charges">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fee2e2', borderRadius: '10px', border: '1px solid #fee2e2', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#fee2e2', borderRadius: '10px', border: '1px solid #fecaca', marginBottom: '14px' }}>
                   <div>
                     <p style={{ color: '#dc2626', fontSize: '12px', margin: '0 0 2px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Outstanding</p>
                     <p style={{ color: '#18181b', fontSize: '24px', fontWeight: '700', margin: 0 }}>${totalOutstanding.toFixed(2)}</p>
@@ -823,9 +823,9 @@ const ds = {
 };
 
 const styles = {
-  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: "'Inter', 'system-ui', -apple-system, sans-serif", fontSize: '15px', color: '#e0e0e0' },
-  sidebar: { width: '230px', backgroundColor: '#f7f7f9', borderRight: '1px solid #f7f7f9', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh' },
-  sidebarLogo: { padding: '20px 20px', borderBottom: '1px solid #f7f7f9' },
+  container: { display: 'flex', minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: "'Inter', 'system-ui', -apple-system, sans-serif", fontSize: '15px', color: '#18181b' },
+  sidebar: { width: '230px', backgroundColor: '#f7f7f9', borderRight: '1px solid #e4e4e8', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh' },
+  sidebarLogo: { padding: '20px 20px', borderBottom: '1px solid #e4e4e8' },
   logoText: { color: '#18181b', fontSize: '22px', fontWeight: '700', margin: '0' },
   logoSub: { color: '#52525b', fontSize: '13px', margin: '3px 0 0 0' },
   nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
@@ -834,10 +834,10 @@ const styles = {
   badge: { backgroundColor: '#b22222', color: '#18181b', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
   settingsSection: { marginTop: 'auto', borderTop: '1px solid #c9c9cf', paddingTop: '8px' },
   settingsSectionLabel: { color: '#4b5563', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
-  sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #f7f7f9' },
+  sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #e4e4e8' },
   userRole: { color: '#b22222', fontSize: '12px', fontWeight: '600', margin: '0 0 4px 0', textTransform: 'uppercase', letterSpacing: '0.05em' },
   userEmail: { color: '#52525b', fontSize: '12px', margin: '0 0 10px 0', wordBreak: 'break-all' },
-  signOutBtn: { backgroundColor: 'transparent', border: '1px solid #8a8a92', color: '#52525b', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
+  signOutBtn: { backgroundColor: 'transparent', border: '1px solid #71717a', color: '#52525b', padding: '8px 14px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', width: '100%' },
   main: { marginLeft: '230px', flex: 1, display: 'flex', flexDirection: 'column' },
   header: { backgroundColor: '#f7f7f9', borderBottom: '2px solid #8b1c1c', padding: '22px 36px' },
   pageTitle: { color: '#18181b', fontSize: '26px', fontWeight: '700', margin: '0' },
@@ -903,7 +903,7 @@ function NotificationSettingsPage({ currentUser }) {
             placeholder="New email address"
             value={newEmail}
             onChange={e => { setNewEmail(e.target.value); setEmailMsg(null); }}
-            style={{ width: '100%', background: '#c9c9cf', border: '1px solid #b0b0b7', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
+            style={{ width: '100%', background: '#ffffff', border: '1px solid #b0b0b7', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
           />
           {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
           <button
@@ -921,7 +921,7 @@ function NotificationSettingsPage({ currentUser }) {
               setEmailSaving(false);
             }}
             disabled={emailSaving || !newEmail.trim()}
-            style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#8a8a92' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
+            style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#71717a' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
             {emailSaving ? 'Saving...' : 'Update Email'}
           </button>
         </div>
@@ -949,7 +949,7 @@ function NotificationSettingsPage({ currentUser }) {
               setPwSaving(false);
             }}
             disabled={pwSaving}
-            style={{ padding: '9px 20px', background: pwSaving ? '#8a8a92' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
+            style={{ padding: '9px 20px', background: pwSaving ? '#71717a' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
             {pwSaving ? 'Sending...' : 'Send Reset Link'}
           </button>
         </div>
@@ -980,7 +980,7 @@ function NotificationSettingsPage({ currentUser }) {
       </div>
 
       <button onClick={savePrefs} disabled={saving}
-        style={{ padding: '10px 24px', background: saving ? '#8a8a92' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
+        style={{ padding: '10px 24px', background: saving ? '#71717a' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
         {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save Preferences'}
       </button>
     </div>

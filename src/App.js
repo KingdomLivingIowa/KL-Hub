@@ -158,7 +158,7 @@ const styles = {
     fontFamily: 'sans-serif',
   },
   loginCard: {
-    backgroundColor: '#c9c9cf',
+    backgroundColor: '#e4e4e8',
     padding: '48px 40px',
     borderRadius: '16px',
     width: '100%',
@@ -197,7 +197,7 @@ const styles = {
     gap: '6px',
   },
   label: {
-    color: '#d0d0d0',
+    color: '#3f3f46',
     fontSize: '14px',
     fontWeight: '500',
   },

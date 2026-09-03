@@ -50,7 +50,7 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
     body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 22px; font-weight: bold; }
-    .org-sub { font-size: 13px; color: #8a8a92; }
+    .org-sub { font-size: 13px; color: #71717a; }
     hr { border: none; border-top: 1px solid #4b5563; margin: 14px 0 20px 0; }
     h2 { text-align: center; font-size: 18px; margin: 0 0 20px 0; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -105,14 +105,14 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   const balance = parseFloat(stay.balance_at_discharge) || 0;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
-  const row = (label, value, color) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#8a8a92;">${label}</span><span style="font-size:14px;font-weight:600;color:${color || '#f4f4f6'};">${value}</span></div>`;
+  const row = (label, value, color) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${color || '#f4f4f6'};">${value}</span></div>`;
 
   const timelineRows = history.timeline.length === 0
     ? '<p style="color:#6b7280;font-size:13px;padding:6px 0;">No timeline entries during this stay.</p>'
     : history.timeline.map(e => `
       <div style="padding:8px 0;border-bottom:1px solid #c9c9cf;">
         <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">${e.entry_type}${e.ua_result ? ' — ' + e.ua_result : ''}${e.severity ? ' — ' + e.severity : ''}</strong><span style="font-size:12px;color:#6b7280;">${fmtFull(e.created_at)}</span></div>
-        ${e.notes ? `<div style="font-size:13px;color:#8a8a92;margin-top:3px;">${e.notes}</div>` : ''}
+        ${e.notes ? `<div style="font-size:13px;color:#71717a;margin-top:3px;">${e.notes}</div>` : ''}
         ${e.author ? `<div style="font-size:12px;color:#4b5563;margin-top:2px;">By ${e.author}</div>` : ''}
       </div>`).join('');
 
@@ -121,9 +121,9 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
     : history.checkIns.map(e => `
       <div style="padding:8px 0;border-bottom:1px solid #c9c9cf;">
         <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">Weekly Check-In</strong><span style="font-size:12px;color:#6b7280;">${fmtFull(e.created_at)}</span></div>
-        ${e.checkin_meetings != null ? `<div style="font-size:13px;color:#8a8a92;">Meetings: ${e.checkin_meetings}</div>` : ''}
-        ${e.checkin_sponsor_contacts != null ? `<div style="font-size:13px;color:#8a8a92;">Sponsor contacts: ${e.checkin_sponsor_contacts}</div>` : ''}
-        ${e.notes ? `<div style="font-size:13px;color:#8a8a92;margin-top:3px;">${e.notes}</div>` : ''}
+        ${e.checkin_meetings != null ? `<div style="font-size:13px;color:#71717a;">Meetings: ${e.checkin_meetings}</div>` : ''}
+        ${e.checkin_sponsor_contacts != null ? `<div style="font-size:13px;color:#71717a;">Sponsor contacts: ${e.checkin_sponsor_contacts}</div>` : ''}
+        ${e.notes ? `<div style="font-size:13px;color:#71717a;margin-top:3px;">${e.notes}</div>` : ''}
       </div>`).join('');
 
   const formsRows = (history.overnights.length === 0 && !history.welcomePacket)
@@ -132,17 +132,17 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
       ${history.overnights.map(r => `
         <div style="padding:8px 0;border-bottom:1px solid #c9c9cf;">
           <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">Overnight Pass Request</strong><span style="font-size:12px;color:#6b7280;text-transform:capitalize;">${r.status || 'pending'}</span></div>
-          <div style="font-size:13px;color:#8a8a92;">${fmt(r.departure_datetime || r.start_date)} → ${fmt(r.return_datetime || r.end_date)}</div>
-          ${r.reason ? `<div style="font-size:13px;color:#8a8a92;">Reason: ${r.reason}</div>` : ''}
+          <div style="font-size:13px;color:#71717a;">${fmt(r.departure_datetime || r.start_date)} → ${fmt(r.return_datetime || r.end_date)}</div>
+          ${r.reason ? `<div style="font-size:13px;color:#71717a;">Reason: ${r.reason}</div>` : ''}
         </div>`).join('')}`;
 
   const chargeRows = history.charges.length === 0
     ? '<p style="color:#6b7280;font-size:13px;padding:6px 0;">No charges during this stay.</p>'
-    : history.charges.map(c => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:13px;color:#8a8a92;">${c.description || c.charge_type || 'Charge'}${c.due_date ? ` — Due ${fmt(c.due_date)}` : ''}</span><span style="font-size:13px;font-weight:600;color:#b22222;">$${parseFloat(c.amount || 0).toFixed(2)}</span></div>`).join('');
+    : history.charges.map(c => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:13px;color:#71717a;">${c.description || c.charge_type || 'Charge'}${c.due_date ? ` — Due ${fmt(c.due_date)}` : ''}</span><span style="font-size:13px;font-weight:600;color:#b22222;">$${parseFloat(c.amount || 0).toFixed(2)}</span></div>`).join('');
 
   const paymentRows = history.payments.length === 0
     ? '<p style="color:#6b7280;font-size:13px;padding:6px 0;">No payments during this stay.</p>'
-    : history.payments.map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:13px;color:#8a8a92;">${p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}${p.payment_date ? ` — ${fmt(p.payment_date)}` : ''}</span><span style="font-size:13px;font-weight:600;color:#16a34a;">$${parseFloat(p.amount || 0).toFixed(2)}</span></div>`).join('');
+    : history.payments.map(p => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:13px;color:#71717a;">${p.payment_method ? p.payment_method.charAt(0).toUpperCase() + p.payment_method.slice(1) : 'Payment'}${p.payment_date ? ` — ${fmt(p.payment_date)}` : ''}</span><span style="font-size:13px;font-weight:600;color:#16a34a;">$${parseFloat(p.amount || 0).toFixed(2)}</span></div>`).join('');
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Stay History – ${name}</title>
@@ -245,7 +245,7 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   const fmtCheckInDate = checkIn?.created_at ? new Date(checkIn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
-  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#8a8a92;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#f4f4f6'};">${value}</span></div>`;
+  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#f4f4f6'};">${value}</span></div>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Progress Report – ${name}</title>
@@ -387,7 +387,7 @@ function generateUAHistoryPDF(client, uaRecords, logoSrc) {
         <td>${fmtDate(u.created_at)}</td>
         <td><span class="result-badge" style="background:${resultColor(u.event_name)};">${u.event_name || '—'}</span></td>
         <td>${u.author || '—'}</td>
-        <td style="color:#8a8a92;">${u.notes || '—'}</td>
+        <td style="color:#71717a;">${u.notes || '—'}</td>
       </tr>`).join('')}
     </tbody>
   </table>`}
@@ -743,10 +743,10 @@ function ClientApplicationView({ client }) {
     load();
   }, [client.id, client.application_id, client.email]);
 
-  if (loading) return <div style={{ padding: 20, color: '#8a8a92' }}>Loading application...</div>;
+  if (loading) return <div style={{ padding: 20, color: '#71717a' }}>Loading application...</div>;
   if (!app) return (
     <Card title="Application" full>
-      <p style={{ color: '#8a8a92', fontSize: 14 }}>No application found for this client.</p>
+      <p style={{ color: '#71717a', fontSize: 14 }}>No application found for this client.</p>
     </Card>
   );
 
@@ -770,7 +770,7 @@ function ClientApplicationView({ client }) {
   return (
     <div style={{ padding: '4px 0' }}>
       <Card title="Application" full>
-        <div style={{ fontSize: 12, color: '#8a8a92', marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: '#71717a', marginBottom: 16 }}>
           Submitted {app.created_at ? new Date(app.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—'}
           {' · '}<span style={{ color: app.status === 'accepted' ? '#16a34a' : app.status === 'denied' ? '#dc2626' : '#b45309', textTransform: 'capitalize', fontWeight: 600 }}>{app.status}</span>
         </div>
@@ -910,8 +910,8 @@ function LatestCheckIn({ clientId }) {
       .then(({ data }) => { setEntry(data); setLoading(false); });
   }, [clientId]);
 
-  if (loading) return <p style={{ color: '#8a8a92', fontSize: 13 }}>Loading...</p>;
-  if (!entry) return <p style={{ color: '#8a8a92', fontSize: 13 }}>No weekly check-ins yet.</p>;
+  if (loading) return <p style={{ color: '#71717a', fontSize: 13 }}>Loading...</p>;
+  if (!entry) return <p style={{ color: '#71717a', fontSize: 13 }}>No weekly check-ins yet.</p>;
 
   const fmtDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const Row = ({ label, value }) => value != null && value !== '' ? (
@@ -1638,7 +1638,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       const notes = e.notes ? `<div style="color:#b0b0b7;font-size:13px;margin-top:4px;line-height:1.5;">${e.notes}</div>` : '';
       const author = e.author ? `<div style="color:#6b7280;font-size:12px;margin-top:4px;">By ${e.author}</div>` : '';
       return `<tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #c9c9cf;vertical-align:top;white-space:nowrap;color:#8a8a92;font-size:13px;">${fmt(e.created_at)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #c9c9cf;vertical-align:top;white-space:nowrap;color:#71717a;font-size:13px;">${fmt(e.created_at)}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #c9c9cf;vertical-align:top;">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span>
           <strong style="font-size:13px;">${e.entry_type}</strong>
@@ -1654,7 +1654,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; color: #f4f4f6; }
       @media print { body { padding: 16px; } .no-print { display: none; } }
       h1 { font-size: 22px; margin: 0 0 4px 0; }
-      .sub { color: #8a8a92; font-size: 14px; margin: 0 0 24px 0; }
+      .sub { color: #71717a; font-size: 14px; margin: 0 0 24px 0; }
       table { width: 100%; border-collapse: collapse; }
       th { background: #f5f5f5; text-align: left; padding: 10px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; border-bottom: 2px solid #3f3f46; }
       tr:hover td { background: #fafafa; }
@@ -2093,7 +2093,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               onChange={e => setNotes(e.target.value)}
               placeholder="Reason for early admission..."
               rows={3}
-              style={{ width: '100%', background: '#ffffff', border: '1px solid #8a8a92', borderRadius: '6px', color: '#18181b', fontSize: '14px', padding: '6px 8px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+              style={{ width: '100%', background: '#ffffff', border: '1px solid #71717a', borderRadius: '6px', color: '#18181b', fontSize: '14px', padding: '6px 8px', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
             />
             <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               <button onClick={save} style={{ padding: '4px 12px', background: '#b22222', color: '#18181b', border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>Save</button>
@@ -2116,14 +2116,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         {isEditing ? (
           options ? (
             <select autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
-              style={{ background: '#ffffff', border: '1px solid #8a8a92', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
+              style={{ background: '#ffffff', border: '1px solid #71717a', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
               <option value="">—</option>
               {options.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           ) : (
             <input autoFocus type={type || 'text'} value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
               onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
-              style={{ background: '#ffffff', border: '1px solid #8a8a92', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
+              style={{ background: '#ffffff', border: '1px solid #71717a', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
           )
         ) : (
           <span onClick={() => startEdit(field, value)} title="Click to edit"
@@ -2369,7 +2369,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <span style={{ ...st.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
                   {selected.status === 'Active' && (
                     <select value={selected.level || 1} onChange={e => updateLevel(selected.id, parseInt(e.target.value))} onClick={e => e.stopPropagation()}
-                      style={{ fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#dbeafe', color: '#2563eb', border: '1px solid #dbeafe', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
+                      style={{ fontSize: '14px', padding: '3px 8px', borderRadius: '20px', fontWeight: '500', background: '#dbeafe', color: '#2563eb', border: '1px solid #bfdbfe', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', outline: 'none' }}>
                       <option value={1}>Level 1</option><option value={2}>Level 2</option><option value={3}>Level 3</option><option value={4}>Level 4</option>
                     </select>
                   )}
@@ -2451,7 +2451,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           </button>
                         </div>
                       )}
-                      <p style={{ fontSize: '14px', color: '#8a8a92', margin: 0, fontStyle: 'italic' }}>Click any field to edit.</p>
+                      <p style={{ fontSize: '14px', color: '#71717a', margin: 0, fontStyle: 'italic' }}>Click any field to edit.</p>
                     </div>
                     {hasFullAccess && (
                       <button onClick={() => {
@@ -2767,7 +2767,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       {timelineTotal > 0 && <p style={{ color: '#52525b', fontSize: '14px', margin: '4px 0 0 0' }}>Showing {timeline.length} of {timelineTotal} entries</p>}
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => setShowTimelinePDFModal(true)} style={{ ...st.smallAddBtn, background: '#dcfce7', color: '#16a34a', border: '1px solid #dcfce7' }}>⬇ Export PDF</button>
+                      <button onClick={() => setShowTimelinePDFModal(true)} style={{ ...st.smallAddBtn, background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0' }}>⬇ Export PDF</button>
                       <button onClick={() => setShowAddEntry(!showAddEntry)} style={st.smallAddBtn}>{showAddEntry ? 'Cancel' : '+ Add Entry'}</button>
                     </div>
                   </div>
@@ -2871,7 +2871,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               {[['yes', 'Yes'], ['no', 'No']].map(([val, label]) => (
                                 <button key={val} onClick={() => setEntryForm(p => ({ ...p, wci_chore_completed: val }))}
                                   style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
-                                    borderColor: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#16a34a' : '#dc2626') : '#8a8a92',
+                                    borderColor: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#16a34a' : '#dc2626') : '#71717a',
                                     background: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#dcfce7' : '#fee2e2') : 'transparent',
                                     color: entryForm.wci_chore_completed === val ? (val === 'yes' ? '#16a34a' : '#dc2626') : '#52525b',
                                   }}>
@@ -2886,7 +2886,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               {[['yes', 'Yes'], ['no', 'No']].map(([val, label]) => (
                                 <button key={val} onClick={() => setEntryForm(p => ({ ...p, wci_employed: val }))}
                                   style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid', cursor: 'pointer', fontSize: '14px', fontWeight: '500',
-                                    borderColor: entryForm.wci_employed === val ? '#2563eb' : '#8a8a92',
+                                    borderColor: entryForm.wci_employed === val ? '#2563eb' : '#71717a',
                                     background: entryForm.wci_employed === val ? '#dbeafe' : 'transparent',
                                     color: entryForm.wci_employed === val ? '#2563eb' : '#52525b',
                                   }}>
@@ -3344,7 +3344,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     </div>
                   ) : (
                     <div style={{ marginBottom: '16px' }}>
-                      <div style={{ padding: '10px 12px', background: '#dbeafe', borderRadius: '8px', border: '1px solid #dbeafe', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ padding: '10px 12px', background: '#dbeafe', borderRadius: '8px', border: '1px solid #bfdbfe', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '14px', color: '#2563eb' }}>🏠 Already assigned: <span style={{ color: '#3f3f46' }}>{statusModal.client.house_name || 'Assigned house'}</span></span>
                         <button
                           onClick={() => setStatusForm(p => ({ ...p, changingHouse: !p.changingHouse, house_id: p.changingHouse ? statusModal.client.house_id : '' }))}

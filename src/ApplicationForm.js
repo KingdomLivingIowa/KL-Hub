@@ -310,7 +310,7 @@ function ApplicationForm() {
             </Row>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ color: '#d0d0d0', fontSize: '14px', display: 'block', marginBottom: '4px' }}>Drug(s) of Choice</label>
+              <label style={{ color: '#3f3f46', fontSize: '14px', display: 'block', marginBottom: '4px' }}>Drug(s) of Choice</label>
               <p style={s.hint}>Select all that apply.</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
                 {DRUG_OPTIONS.map(drug => (
@@ -449,7 +449,7 @@ function ApplicationForm() {
 
 const Row = ({ label, children }) => (
   <div style={{ marginBottom: '20px' }}>
-    <label style={{ color: '#d0d0d0', fontSize: '14px', display: 'block', marginBottom: '6px' }}>{label}</label>
+    <label style={{ color: '#3f3f46', fontSize: '14px', display: 'block', marginBottom: '6px' }}>{label}</label>
     {children}
   </div>
 );
@@ -474,7 +474,7 @@ const Select = ({ value, onChange, options }) => (
 
 const s = {
   container: { minHeight: '100vh', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'center', padding: '40px 20px', fontFamily: 'sans-serif' },
-  card: { backgroundColor: '#c9c9cf', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '680px', borderTop: '4px solid #b22222' },
+  card: { backgroundColor: '#e4e4e8', borderRadius: '16px', padding: '40px', width: '100%', maxWidth: '680px', borderTop: '4px solid #b22222' },
   logo: { width: '150px', display: 'block', margin: '0 auto 16px auto', borderRadius: '4px' },
   title: { color: '#18181b', fontSize: '22px', fontWeight: '700', textAlign: 'center', margin: '0 0 24px 0' },
   steps: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '28px' },

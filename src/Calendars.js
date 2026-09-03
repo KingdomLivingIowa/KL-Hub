@@ -100,7 +100,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
         <button onClick={onNext} style={s.ghost}>›</button>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-        {DAYS.map(d => <div key={d} style={{ fontSize: 12, color: '#18181b', textAlign: 'center', fontWeight: 700, padding: '6px 0', background: '#c9c9cf', borderRadius: 4 }}>{d}</div>)}
+        {DAYS.map(d => <div key={d} style={{ fontSize: 12, color: '#18181b', textAlign: 'center', fontWeight: 700, padding: '6px 0', background: '#e4e4e8', borderRadius: 4 }}>{d}</div>)}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
         {cells.map((day, i) => {
@@ -564,7 +564,7 @@ export function HouseCalendarTab({ houseId, houseType }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#4b5563' }} /><span style={{ fontSize: 12, color: '#52525b' }}>This House</span></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#6b7280' }} /><span style={{ fontSize: 12, color: '#52525b' }}>This House</span></div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 10, height: 10, borderRadius: 2, background: '#b22222' }} /><span style={{ fontSize: 12, color: '#52525b' }}>Org-Wide</span></div>
         </div>
         {canEdit && <button style={{ ...s.btn(), padding: '6px 14px', fontSize: 12 }} onClick={() => setShowAddModal(true)}>+ Add Event</button>}

@@ -823,7 +823,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                   onBlur={() => saveNotes(r.id)}
                                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveNotes(r.id); } }}
                                   rows={2} placeholder="Add a note..."
-                                  style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #8a8a92', borderRadius: '6px', padding: '6px 8px', color: '#18181b', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
+                                  style={{ width: '100%', backgroundColor: '#ffffff', border: '1px solid #71717a', borderRadius: '6px', padding: '6px 8px', color: '#18181b', fontSize: '14px', resize: 'none', boxSizing: 'border-box', outline: 'none' }} />
                                 <span style={{ color: '#52525b', fontSize: '13px' }}>Enter to save · Shift+Enter for new line</span>
                               </div>
                             ) : (
@@ -1368,7 +1368,7 @@ const s = {
   deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #b0b0b7', color: '#71717a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
   viewToggle: { display: 'flex', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #c9c9cf', overflow: 'hidden' },
   toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#52525b', cursor: 'pointer', fontSize: '14px' },
-  toggleBtnActive: { background: '#4b5563', color: '#18181b' },
+  toggleBtnActive: { background: '#6b7280', color: '#18181b' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
   houseCard: { background: '#f7f7f9', borderRadius: '12px', padding: '18px 20px', border: '1px solid #c9c9cf', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
@@ -1803,7 +1803,7 @@ function ChoreRotationTab({ houseId, houseName, residents, currentUser }) {
                   {reassigningId === assignment.id && (
                     <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #c9c9cf', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                       <button onClick={() => handleReassign(assignment.id, null)}
-                        style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: '1px solid #fee2e2', background: '#fee2e2', color: '#dc2626' }}>
+                        style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', border: '1px solid #fecaca', background: '#fee2e2', color: '#dc2626' }}>
                         Unassign
                       </button>
                       {activeResidents.map(r => (
@@ -1964,7 +1964,7 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
               <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;font-size:16px;">${itemsData[item.id]?.ok ? '✓' : ''}</td>
               <td style="padding:7px 8px;border:1px solid #3f3f46;text-align:center;color:#71717a;">${item.std}</td>
               <td style="padding:7px 8px;border:1px solid #3f3f46;">${item.text}</td>
-              <td style="padding:7px 8px;border:1px solid #3f3f46;color:#8a8a92;">${itemsData[item.id]?.notes || ''}</td>
+              <td style="padding:7px 8px;border:1px solid #3f3f46;color:#71717a;">${itemsData[item.id]?.notes || ''}</td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -2130,7 +2130,7 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
       {viewingWalkthrough.corrective_actions && (
         <div style={{ marginTop: '16px', padding: '12px 14px', background: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px' }}>
           <p style={{ color: '#dc2626', fontSize: '12px', fontWeight: '700', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Corrective Actions Needed</p>
-          <p style={{ color: '#fca5a5', fontSize: '14px', margin: 0, lineHeight: '1.6' }}>{viewingWalkthrough.corrective_actions}</p>
+          <p style={{ color: '#dc2626', fontSize: '14px', margin: 0, lineHeight: '1.6' }}>{viewingWalkthrough.corrective_actions}</p>
         </div>
       )}
     </div>
@@ -2166,7 +2166,7 @@ function HouseWalkthroughTab({ houseId, houseName, currentUser }) {
                     {resultBadge(w.overall_result)}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                    <div style={{ flex: 1, height: '6px', background: '#c9c9cf', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: '6px', background: '#e4e4e8', borderRadius: '3px', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626', borderRadius: '3px', transition: 'width 0.3s' }} />
                     </div>
                     <span style={{ color: '#52525b', fontSize: '12px', whiteSpace: 'nowrap' }}>{w.score}/{w.total_items} ({pct}%)</span>
@@ -2341,7 +2341,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                       return (
                         <div key={req} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', background: done ? '#dcfce7' : '#f4f4f6', borderRadius: '6px' }}>
                           <span style={{ color: done ? '#16a34a' : '#b0b0b7', fontSize: '14px' }}>{done ? '✓' : '○'}</span>
-                          <span style={{ fontSize: '14px', color: done ? '#16a34a' : '#8a8a92' }}>{req}</span>
+                          <span style={{ fontSize: '14px', color: done ? '#16a34a' : '#71717a' }}>{req}</span>
                         </div>
                       );
                     })}
@@ -2392,7 +2392,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                           ✓ Approve
                         </button>
                         <button onClick={() => setReviewing({ id: r.id, action: 'denied' })}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #fee2e2', background: '#fee2e2', color: '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fee2e2', color: '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                           ✗ Deny
                         </button>
                       </div>

@@ -198,7 +198,7 @@ function WalkthroughsReport() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                       {resultBadge(w.overall_result)}
                       <span style={{ color: '#52525b', fontSize: '13px' }}>{w.score}/{w.total_items} ({pct}%)</span>
-                      <div style={{ width: '80px', height: '6px', background: '#c9c9cf', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: '80px', height: '6px', background: '#e4e4e8', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: pct >= 90 ? '#16a34a' : pct >= 70 ? '#d97706' : '#dc2626', borderRadius: '3px' }} />
                       </div>
                     </div>
@@ -502,7 +502,7 @@ export default function Reports() {
                     <button style={tabBtn('maintenance')} onClick={() => setActiveTab('maintenance')}>Maintenance</button>
           <button style={tabBtn('walkthroughs')} onClick={() => setActiveTab('walkthroughs')}>Walkthroughs</button>
         </div>
-        <button onClick={generateReportPDF} style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #dcfce7', borderRadius: '8px', padding: '8px 16px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>⬇ Export PDF</button>
+        <button onClick={generateReportPDF} style={{ background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '8px 16px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>⬇ Export PDF</button>
       </div>
       <div id="report-content">
 
