@@ -864,7 +864,7 @@ export function NotificationsBell({ userId }) {
     <div style={{ position: 'relative' }}>
       <button onClick={() => setOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#52525b', fontSize: 20, position: 'relative', padding: '4px 8px' }}>
         🔔
-        {unread > 0 && <span style={{ position: 'absolute', top: 0, right: 0, background: '#b22222', color: '#18181b', borderRadius: '50%', fontSize: 10, fontWeight: 700, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread > 9 ? '9+' : unread}</span>}
+        {unread > 0 && <span style={{ position: 'absolute', top: 0, right: 0, background: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '50%', fontSize: 10, fontWeight: 700, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unread > 9 ? '9+' : unread}</span>}
       </button>
       {open && (
         <div style={{ position: 'absolute', right: 0, top: 36, width: 320, background: '#f7f7f9', border: '1px solid #c9c9cf', borderRadius: 12, zIndex: 500, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', overflow: 'hidden' }}>
@@ -915,7 +915,7 @@ export default function Calendars() {
         <button style={s.tabBtn(activeTab === 'vacation')} onClick={() => setActiveTab('vacation')}>
           Staff Vacation
           {pendingVacationCount > 0 && (
-            <span style={{ marginLeft: 6, background: '#b22222', color: '#18181b', borderRadius: 10, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
+            <span style={{ marginLeft: 6, background: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: 10, padding: '1px 6px', fontSize: 11, fontWeight: 700 }}>
               {pendingVacationCount}
             </span>
           )}

@@ -831,7 +831,7 @@ const styles = {
   nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
   navItem: { backgroundColor: 'transparent', border: 'none', color: '#52525b', padding: '13px 20px', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
   navItemActive: { backgroundColor: '#f7f7f9', color: '#18181b', borderLeft: '3px solid #b22222', fontWeight: '600' },
-  badge: { backgroundColor: '#b22222', color: '#18181b', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
+  badge: { backgroundColor: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
   settingsSection: { marginTop: 'auto', borderTop: '1px solid #c9c9cf', paddingTop: '8px' },
   settingsSectionLabel: { color: '#4b5563', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
   sidebarBottom: { padding: '16px 20px', borderTop: '1px solid #e4e4e8' },

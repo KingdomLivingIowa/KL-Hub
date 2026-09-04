@@ -929,12 +929,12 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   style={{ ...s.tab, ...(activeTab === t ? s.tabActive : {}), position: 'relative' }}>
                   {t.charAt(0).toUpperCase() + t.slice(1)}
                   {t === 'forms' && houseFormsPending[selected?.id] > 0 && (
-                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
+                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
                       {houseFormsPending[selected.id]}
                     </span>
                   )}
                   {t === 'messages' && houseChatUnread[selected?.id] > 0 && (
-                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
+                    <span style={{ position: 'absolute', top: '6px', right: '2px', background: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: '700' }}>
                       {houseChatUnread[selected.id]}
                     </span>
                   )}

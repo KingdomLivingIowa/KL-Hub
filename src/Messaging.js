@@ -526,7 +526,7 @@ function Messaging() {
                 </>
               )}
               {clientList.length === 0 && (
-                <p style={{ color: '#8a8a92', fontSize: '13px', padding: '4px 8px', fontStyle: 'italic' }}>No residents with portal accounts yet.</p>
+                <p style={{ color: '#71717a', fontSize: '13px', padding: '4px 8px', fontStyle: 'italic' }}>No residents with portal accounts yet.</p>
               )}
             </div>
 
@@ -770,7 +770,7 @@ function ConvItem({ selected, onClick, name, preview, unread, isGroup, onDelete 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <p style={{ color: unread > 0 ? '#18181b' : '#52525b', fontSize: '14px', fontWeight: unread > 0 ? '600' : '400', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
-          {unread > 0 && <span style={{ background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '1px 6px', fontSize: '13px', fontWeight: '700', flexShrink: 0, marginLeft: '4px' }}>{unread}</span>}
+          {unread > 0 && <span style={{ background: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '10px', padding: '1px 6px', fontSize: '13px', fontWeight: '700', flexShrink: 0, marginLeft: '4px' }}>{unread}</span>}
         </div>
         <p style={{ color: '#52525b', fontSize: '14px', margin: '1px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preview}</p>
       </div>
@@ -791,7 +791,7 @@ const ms = {
   sidebar: { width: '280px', borderRight: '1px solid #c9c9cf', display: 'flex', flexDirection: 'column', flexShrink: 0, background: '#ffffff' },
   sidebarHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 14px', borderBottom: '1px solid #c9c9cf' },
   sidebarTitle: { color: '#18181b', fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' },
-  unreadBadge: { background: '#b22222', color: '#18181b', borderRadius: '10px', padding: '2px 7px', fontSize: '14px', fontWeight: '700' },
+  unreadBadge: { background: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '10px', padding: '2px 7px', fontSize: '14px', fontWeight: '700' },
   convSectionLabel: { color: '#52525b', fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '12px 14px 4px 14px', margin: 0 },
   newChatPanel: { padding: '12px 14px', borderBottom: '1px solid #c9c9cf', background: '#ffffff' },
   chatArea: { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#ffffff' },
