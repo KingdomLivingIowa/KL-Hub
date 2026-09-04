@@ -1011,7 +1011,7 @@ const s = {
     cursor: 'pointer',
     fontSize: '14px',
   },
-  tabActive: { background: '#b22222', color: '#18181b', borderColor: '#b22222' },
+  tabActive: { background: '#fee2e2', color: '#b22222', borderColor: '#b22222' },
   empty: { color: '#4b5563', fontSize: '14px' },
   list: { display: 'flex', flexDirection: 'column', gap: '16px' },
   card: {

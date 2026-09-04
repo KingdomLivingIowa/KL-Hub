@@ -143,7 +143,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
             const badge = readyBadge(client.ready_date);
             return (
               <div key={client.id} style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: idx % 2 === 0 ? 'transparent' : '#f7f7f9', borderBottom: '1px solid #c9c9cf' }}>
-                <span style={{ fontSize: 13, color: '#8a8a92', fontWeight: 600 }}>{idx + 1}</span>
+                <span style={{ fontSize: 13, color: '#71717a', fontWeight: 600 }}>{idx + 1}</span>
 
                 {/* Name */}
                 <div>
@@ -210,7 +210,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
 const styles = {
   tabs: { display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' },
   tab: { backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '8px 16px', borderRadius: '20px', fontSize: '14px', cursor: 'pointer' },
-  tabActive: { backgroundColor: '#b22222', border: '1px solid #b22222', color: '#18181b' },
+  tabActive: { backgroundColor: '#fee2e2', border: '1px solid #b22222', color: '#b22222' },
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   listCount: { color: '#52525b', fontSize: '14px', margin: 0 },
   addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: 600 },
@@ -218,7 +218,7 @@ const styles = {
   formLabel: { fontSize: 12, color: '#4b5563', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' },
   input: { backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '6px', padding: '8px 12px', color: '#18181b', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
-  empty: { color: '#8a8a92', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
+  empty: { color: '#71717a', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
 };
 
 export default WaitingList;
