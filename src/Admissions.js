@@ -1055,14 +1055,14 @@ const s = {
     padding: '14px',
     marginBottom: '16px',
   },
-  snapshotItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  snapshotItem: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
   snapshotLabel: {
     fontSize: '10px',
     color: '#4b5563',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  snapshotVal: { fontSize: '14px', color: '#18181b' },
+  snapshotVal: { fontSize: '14px', color: '#18181b', overflowWrap: 'anywhere' },
   cardActions: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   viewBtn: {
     padding: '7px 14px',
@@ -1110,14 +1110,14 @@ const s = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: '12px',
   },
-  fullItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  fullItem: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 },
   fullLabel: {
     fontSize: '10px',
     color: '#4b5563',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
-  fullVal: { fontSize: '14px', color: '#3f3f46', lineHeight: '1.4' },
+  fullVal: { fontSize: '14px', color: '#3f3f46', lineHeight: '1.4', overflowWrap: 'anywhere' },
   subCard: {
     background: '#ffffff',
     borderRadius: '8px',
