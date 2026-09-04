@@ -1087,9 +1087,9 @@ const s = {
   denyBtn: {
     padding: '7px 14px',
     borderRadius: '8px',
-    border: 'none',
-    background: '#dc2626',
-    color: '#18181b',
+    border: '1px solid #dc2626',
+    background: '#fee2e2',
+    color: '#dc2626',
     cursor: 'pointer',
     fontSize: '14px',
     fontFamily: "'Inter', 'system-ui', sans-serif",
@@ -1289,7 +1289,7 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
     colHeader: { padding: '10px 14px', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' },
     row: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid #ffffff' },
     cell: { padding: '10px 14px', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' },
-    label: { padding: '6px 14px 2px', fontSize: '10px', color: '#8a8a92', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', background: '#f7f7f9' },
+    label: { padding: '6px 14px 2px', fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', background: '#f7f7f9' },
     arrow: { background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '2px 6px', borderRadius: '4px', color: '#2563eb' },
     input: { background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '6px', color: '#18181b', padding: '5px 8px', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
   };
@@ -1340,7 +1340,7 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
             return (
               <div key={f.key}>
                 <div style={{ ...ws.row, background: '#ffffff' }}>
-                  <div style={{ ...ws.cell, fontSize: '10px', color: '#8a8a92', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', padding: '5px 14px 2px', background: '#f7f7f9' }}>
+                  <div style={{ ...ws.cell, fontSize: '10px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.7px', gridColumn: 'span 3', padding: '5px 14px 2px', background: '#f7f7f9' }}>
                     {f.label}
                   </div>
                 </div>
@@ -1363,7 +1363,7 @@ function MergeWizard({ app, existingClient, onClose, onMerge }) {
                       </span>
                     )}
                     <button onClick={() => setEditing(p => ({ ...p, [f.key]: true }))}
-                      style={{ background: 'transparent', border: 'none', color: '#8a8a92', fontSize: '12px', cursor: 'pointer', padding: '0' }}>
+                      style={{ background: 'transparent', border: 'none', color: '#71717a', fontSize: '12px', cursor: 'pointer', padding: '0' }}>
                       ✏️ edit
                     </button>
                   </div>
