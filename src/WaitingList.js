@@ -14,6 +14,8 @@ function WaitingList({ onOpenClient, setActivePage }) {
   const [saving, setSaving] = useState(false);
 
   const LIST_TYPES = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
+  const MEN_LISTS = ['DOC Men', 'Community Men', 'Treatment Men'];
+  const WOMEN_LISTS = ['DOC Women', 'Community Women', 'Treatment Women'];
 
   const fetchWaitingList = useCallback(async () => {
     const { data } = await supabase
@@ -28,6 +30,9 @@ function WaitingList({ onOpenClient, setActivePage }) {
   useEffect(() => { fetchWaitingList(); }, [fetchWaitingList]);
 
   const clients = waitingClients.filter(c => c.list_type === activeList);
+  const menCount = waitingClients.filter(c => MEN_LISTS.includes(c.list_type)).length;
+  const womenCount = waitingClients.filter(c => WOMEN_LISTS.includes(c.list_type)).length;
+  const totalCount = waitingClients.length;
 
   const addToList = async () => {
     if (!addForm.full_name.trim()) return alert('Name is required.');
@@ -71,6 +76,22 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
   return (
     <div>
+      {/* Totals */}
+      <div style={styles.totals}>
+        <div style={styles.totalCard}>
+          <span style={styles.totalNum}>{totalCount}</span>
+          <span style={styles.totalLabel}>Total Waiting</span>
+        </div>
+        <div style={styles.totalCard}>
+          <span style={styles.totalNum}>{menCount}</span>
+          <span style={styles.totalLabel}>Men</span>
+        </div>
+        <div style={styles.totalCard}>
+          <span style={styles.totalNum}>{womenCount}</span>
+          <span style={styles.totalLabel}>Women</span>
+        </div>
+      </div>
+
       {/* List tabs */}
       <div style={styles.tabs}>
         {LIST_TYPES.map(list => (
@@ -213,7 +234,11 @@ const styles = {
   tabActive: { backgroundColor: '#fee2e2', border: '1px solid #b22222', color: '#b22222' },
   listHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
   listCount: { color: '#52525b', fontSize: '14px', margin: 0 },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: 600 },
+  addBtn: { backgroundColor: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: 600 },
+  totals: { display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' },
+  totalCard: { background: '#f7f7f9', border: '1px solid #c9c9cf', borderRadius: '10px', padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '120px' },
+  totalNum: { fontSize: '24px', fontWeight: 700, color: '#18181b' },
+  totalLabel: { fontSize: '12px', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' },
   addForm: { background: '#f7f7f9', borderRadius: 10, border: '1px solid #c9c9cf', padding: '16px', marginBottom: 20 },
   formLabel: { fontSize: 12, color: '#4b5563', display: 'block', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' },
   input: { backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '6px', padding: '8px 12px', color: '#18181b', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
