@@ -858,6 +858,11 @@ function NotificationSettingsPage({ currentUser }) {
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMsg, setPwMsg] = useState(null);
 
+  // Collapsible section state
+  const [openEmail, setOpenEmail] = useState(false);
+  const [openPassword, setOpenPassword] = useState(false);
+  const [openNotif, setOpenNotif] = useState(false);
+
   useEffect(() => {
     if (!currentUser?.id) return;
     supabase.from('user_profiles').select('notification_preferences').eq('id', currentUser.id).single()
@@ -887,102 +892,125 @@ function NotificationSettingsPage({ currentUser }) {
 
   if (!prefs) return <p style={{ color: '#52525b', padding: '20px' }}>Loading...</p>;
 
+  const sectionHeaderBtn = { width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' };
+  const chevron = (open) => <span style={{ color: '#71717a', fontSize: '13px', flexShrink: 0, marginLeft: '10px' }}>{open ? '▲' : '▼'}</span>;
+  const actionBtnStyle = (disabled) => disabled
+    ? { padding: '9px 20px', background: '#e4e4e8', border: '1px solid #c9c9cf', borderRadius: '8px', color: '#a1a1aa', fontSize: '14px', fontWeight: '600', cursor: 'not-allowed' }
+    : { padding: '9px 20px', background: '#fee2e2', border: '1px solid #b22222', borderRadius: '8px', color: '#b22222', fontSize: '14px', fontWeight: '600', cursor: 'pointer' };
+
   return (
     <div style={{ maxWidth: '540px' }}>
-      <h2 style={{ color: '#18181b', fontSize: '20px', fontWeight: '700', margin: '0 0 6px 0' }}>My Profile</h2>
       <p style={{ color: '#4b5563', fontSize: '14px', margin: '0 0 28px 0' }}>Manage your notification preferences. Changes apply to your account only.</p>
 
-      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #c9c9cf' }}>
-          <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Email</p>
-          <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>Current: <span style={{ color: '#3f3f46' }}>{currentUser?.email}</span></p>
-        </div>
-        <div style={{ padding: '16px 20px' }}>
-          <input
-            type="email"
-            placeholder="New email address"
-            value={newEmail}
-            onChange={e => { setNewEmail(e.target.value); setEmailMsg(null); }}
-            style={{ width: '100%', background: '#ffffff', border: '1px solid #b0b0b7', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
-          />
-          {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
-          <button
-            onClick={async () => {
-              if (!newEmail.trim()) return;
-              setEmailSaving(true);
-              setEmailMsg(null);
-              const { error } = await supabase.auth.updateUser({ email: newEmail.trim() }, { emailRedirectTo: window.location.origin });
-              if (error) {
-                setEmailMsg({ ok: false, text: 'Error: ' + error.message });
-              } else {
-                setEmailMsg({ ok: true, text: 'Confirmation link sent to ' + newEmail.trim() + '. Click the link in that email to confirm — your email will update after you confirm.' });
-                setNewEmail('');
-              }
-              setEmailSaving(false);
-            }}
-            disabled={emailSaving || !newEmail.trim()}
-            style={{ padding: '9px 20px', background: emailSaving || !newEmail.trim() ? '#71717a' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: emailSaving || !newEmail.trim() ? 'not-allowed' : 'pointer' }}>
-            {emailSaving ? 'Saving...' : 'Update Email'}
-          </button>
-        </div>
-      </div>
-
-      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #c9c9cf' }}>
-          <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Password</p>
-          <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>We'll send a password reset link to your current email.</p>
-        </div>
-        <div style={{ padding: '16px 20px' }}>
-          {pwMsg && <p style={{ fontSize: '13px', color: pwMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{pwMsg.text}</p>}
-          <button
-            onClick={async () => {
-              setPwSaving(true);
-              setPwMsg(null);
-              const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email, {
-                redirectTo: window.location.origin,
-              });
-              if (error) {
-                setPwMsg({ ok: false, text: 'Error: ' + error.message });
-              } else {
-                setPwMsg({ ok: true, text: 'Password reset link sent to ' + currentUser.email + '. Check your inbox.' });
-              }
-              setPwSaving(false);
-            }}
-            disabled={pwSaving}
-            style={{ padding: '9px 20px', background: pwSaving ? '#71717a' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: pwSaving ? 'not-allowed' : 'pointer' }}>
-            {pwSaving ? 'Sending...' : 'Send Reset Link'}
-          </button>
-        </div>
-      </div>
-
-      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '20px' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid #c9c9cf' }}>
-          <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Notification Preferences</p>
-          <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>Notifications appear in the Alerts section of your dashboard, scoped to your assigned house(s).</p>
-        </div>
-        {Object.entries(NOTIF_LABELS_MAP).map(([key, label]) => (
-          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #c9c9cf' }}>
-            <span style={{ fontSize: '14px', color: '#3f3f46' }}>{label}</span>
-            <button onClick={() => toggle(key)}
-              style={{
-                width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
-                background: prefs[key] !== false ? '#b22222' : '#b0b0b7',
-                position: 'relative', transition: 'background 0.2s', flexShrink: 0,
-              }}>
-              <span style={{
-                position: 'absolute', top: '3px', width: '18px', height: '18px', borderRadius: '50%',
-                background: '#18181b', transition: 'left 0.2s',
-                left: prefs[key] !== false ? '23px' : '3px',
-              }} />
+      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
+        <button onClick={() => setOpenEmail(o => !o)} style={sectionHeaderBtn}>
+          <div>
+            <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Email</p>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>Current: <span style={{ color: '#3f3f46' }}>{currentUser?.email}</span></p>
+          </div>
+          {chevron(openEmail)}
+        </button>
+        {openEmail && (
+          <div style={{ padding: '0 20px 16px 20px', borderTop: '1px solid #c9c9cf', paddingTop: '16px' }}>
+            <input
+              type="email"
+              placeholder="New email address"
+              value={newEmail}
+              onChange={e => { setNewEmail(e.target.value); setEmailMsg(null); }}
+              style={{ width: '100%', background: '#ffffff', border: '1px solid #b0b0b7', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
+            />
+            {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
+            <button
+              onClick={async () => {
+                if (!newEmail.trim()) return;
+                setEmailSaving(true);
+                setEmailMsg(null);
+                const { error } = await supabase.auth.updateUser({ email: newEmail.trim() }, { emailRedirectTo: window.location.origin });
+                if (error) {
+                  setEmailMsg({ ok: false, text: 'Error: ' + error.message });
+                } else {
+                  setEmailMsg({ ok: true, text: 'Confirmation link sent to ' + newEmail.trim() + '. Click the link in that email to confirm — your email will update after you confirm.' });
+                  setNewEmail('');
+                }
+                setEmailSaving(false);
+              }}
+              disabled={emailSaving || !newEmail.trim()}
+              style={actionBtnStyle(emailSaving || !newEmail.trim())}>
+              {emailSaving ? 'Saving...' : 'Update Email'}
             </button>
           </div>
-        ))}
+        )}
       </div>
 
-      <button onClick={savePrefs} disabled={saving}
-        style={{ padding: '10px 24px', background: saving ? '#71717a' : '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: saving ? 'not-allowed' : 'pointer' }}>
-        {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save Preferences'}
-      </button>
+      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
+        <button onClick={() => setOpenPassword(o => !o)} style={sectionHeaderBtn}>
+          <div>
+            <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Password</p>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>We'll send a password reset link to your current email.</p>
+          </div>
+          {chevron(openPassword)}
+        </button>
+        {openPassword && (
+          <div style={{ padding: '0 20px 16px 20px', borderTop: '1px solid #c9c9cf', paddingTop: '16px' }}>
+            {pwMsg && <p style={{ fontSize: '13px', color: pwMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{pwMsg.text}</p>}
+            <button
+              onClick={async () => {
+                setPwSaving(true);
+                setPwMsg(null);
+                const { error } = await supabase.auth.resetPasswordForEmail(currentUser.email, {
+                  redirectTo: window.location.origin,
+                });
+                if (error) {
+                  setPwMsg({ ok: false, text: 'Error: ' + error.message });
+                } else {
+                  setPwMsg({ ok: true, text: 'Password reset link sent to ' + currentUser.email + '. Check your inbox.' });
+                }
+                setPwSaving(false);
+              }}
+              disabled={pwSaving}
+              style={actionBtnStyle(pwSaving)}>
+              {pwSaving ? 'Sending...' : 'Send Reset Link'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
+        <button onClick={() => setOpenNotif(o => !o)} style={sectionHeaderBtn}>
+          <div>
+            <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Notification Preferences</p>
+            <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>Notifications appear in the Alerts section of your dashboard, scoped to your assigned house(s).</p>
+          </div>
+          {chevron(openNotif)}
+        </button>
+        {openNotif && (
+          <div style={{ borderTop: '1px solid #c9c9cf' }}>
+            {Object.entries(NOTIF_LABELS_MAP).map(([key, label]) => (
+              <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #c9c9cf' }}>
+                <span style={{ fontSize: '14px', color: '#3f3f46' }}>{label}</span>
+                <button onClick={() => toggle(key)}
+                  style={{
+                    width: '44px', height: '24px', borderRadius: '12px', cursor: 'pointer',
+                    background: prefs[key] !== false ? '#dcfce7' : '#e4e4e8',
+                    border: `1px solid ${prefs[key] !== false ? '#16a34a' : '#b0b0b7'}`,
+                    position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                  }}>
+                  <span style={{
+                    position: 'absolute', top: '2px', width: '18px', height: '18px', borderRadius: '50%',
+                    background: prefs[key] !== false ? '#16a34a' : '#71717a', transition: 'left 0.2s',
+                    left: prefs[key] !== false ? '22px' : '2px',
+                  }} />
+                </button>
+              </div>
+            ))}
+            <div style={{ padding: '16px 20px' }}>
+              <button onClick={savePrefs} disabled={saving} style={actionBtnStyle(saving)}>
+                {saving ? 'Saving...' : saved ? '✓ Saved' : 'Save Preferences'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -322,8 +322,8 @@ const s = {
     minWidth: '52px', textAlign: 'center', transition: 'all 0.15s',
   },
   toggleOn: {
-    background: '#14532d', color: '#16a34a',
-    border: '1px solid #166534',
+    background: '#dcfce7', color: '#16a34a',
+    border: '1px solid #16a34a',
   },
   toggleOff: {
     background: '#f7f7f9', color: '#71717a',
@@ -334,14 +334,14 @@ const s = {
     borderTop: '1px solid #c9c9cf',
   },
   assignedCount: {
-    fontSize: '12px', color: '#8a8a92', fontStyle: 'italic',
+    fontSize: '12px', color: '#71717a', fontStyle: 'italic',
   },
   toast: {
     position: 'fixed', bottom: '24px', right: '24px',
-    background: '#14532d', color: '#16a34a',
+    background: '#dcfce7', color: '#16a34a',
     padding: '10px 18px', borderRadius: '8px',
     fontSize: '14px', fontWeight: '500',
-    border: '1px solid #166534',
+    border: '1px solid #16a34a',
     zIndex: 9999, animation: 'fadeIn 0.2s ease',
   },
 };
