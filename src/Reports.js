@@ -58,6 +58,42 @@ function getMonthBounds(ym) {
   return { start, end };
 }
 
+const WEEKLY_MEN_LISTS = ['DOC Men', 'Community Men', 'Treatment Men'];
+const WEEKLY_WOMEN_LISTS = ['DOC Women', 'Community Women', 'Treatment Women'];
+
+function waitlistBreakdown(waitingList, lists) {
+  const waiting = waitingList.filter(w => w.status === 'waiting' && lists.includes(w.list_type));
+  return {
+    total: waiting.length,
+    DOC: waiting.filter(w => w.list_type?.startsWith('DOC')).length,
+    Community: waiting.filter(w => w.list_type?.startsWith('Community')).length,
+    Treatment: waiting.filter(w => w.list_type?.startsWith('Treatment')).length,
+  };
+}
+
+function WaitlistStatCard({ label, breakdown, accent }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div onClick={() => setExpanded(e => !e)} style={{ background: '#f7f7f9', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent}`, minWidth: 0, cursor: 'pointer' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+        <span style={{ fontSize: 11, color: '#71717a' }}>{expanded ? '▲' : '▼'}</span>
+      </div>
+      <div style={{ fontSize: 32, fontWeight: 700, color: '#18181b', lineHeight: 1.1 }}>{breakdown.total}</div>
+      {expanded && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #c9c9cf', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {['DOC', 'Community', 'Treatment'].map(k => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+              <span style={{ color: '#4b5563' }}>{k}</span>
+              <span style={{ color: '#18181b', fontWeight: 600 }}>{breakdown[k]}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatCard({ label, value, sub, accent }) {
   return (
     <div style={{ background: '#f7f7f9', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent || '#b22222'}`, minWidth: 0 }}>
@@ -266,9 +302,8 @@ export default function Reports() {
   const inProgram = activeClients.length + clients.filter(c => c.status === 'Pending').length;
   const totalBeds = houses.reduce((sum, h) => sum + (h.total_beds || 0), 0);
 
-  const docWaitlist = waitingList.filter(w => w.status === 'waiting' && w.list_type?.includes('DOC')).length;
-  const communityWaitlist = waitingList.filter(w => w.status === 'waiting' && w.list_type?.includes('Community')).length;
-  const womenWaitlist = waitingList.filter(w => w.status === 'waiting' && w.list_type?.includes('Women')).length;
+  const menWaitBreakdown = waitlistBreakdown(waitingList, WEEKLY_MEN_LISTS);
+  const womenWaitBreakdown = waitlistBreakdown(waitingList, WEEKLY_WOMEN_LISTS);
 
   const moveInsWeek = clients.filter(c => c.start_date >= week.start && c.start_date <= week.end).length;
   const dischargedThisWeek = clients.filter(c => c.discharge_date && c.discharge_date >= week.start && c.discharge_date <= week.end);
@@ -515,18 +550,17 @@ export default function Reports() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
             <StatCard label="Male Applicants" value={maleAppsWeek} accent="#2563eb" />
             <StatCard label="Female Applicants" value={femaleAppsWeek} accent="#db2777" />
-            <StatCard label="DOC Waitlist" value={docWaitlist} accent="#b45309" />
-            <StatCard label="Community Waitlist" value={communityWaitlist} accent="#b45309" />
-            <StatCard label="Women's Waitlist" value={womenWaitlist} accent="#db2777" />
+            <WaitlistStatCard label="Men's Waiting List" breakdown={menWaitBreakdown} accent="#2563eb" />
+            <WaitlistStatCard label="Women's Waiting List" breakdown={womenWaitBreakdown} accent="#db2777" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
             <StatCard label="Total in Program" value={inProgram} sub={`${totalBeds} beds total`} accent="#b22222" />
-            <StatCard label="People in Beds" value={activeClients.length} accent="#b22222" />
-            <StatCard label="Move Ins This Week" value={moveInsWeek} accent="#059669" />
+            <StatCard label="People in Beds" value={activeClients.length} accent="#0d9488" />
+            <StatCard label="Move Ins This Week" value={moveInsWeek} accent="#16a34a" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
-            <StatCard label="Discharges This Week" value={dischargedThisWeek.length} accent="#dc2626" />
-            <StatCard label="Successful Discharges" value={successfulDischargesWeek} accent="#059669" />
+            <StatCard label="Discharges This Week" value={dischargedThisWeek.length} accent="#b45309" />
+            <StatCard label="Successful Discharges" value={successfulDischargesWeek} accent="#16a34a" />
             <StatCard label="Payments This Week" value={fmtMoney(paymentsWeekTotal)} accent="#7c3aed" />
           </div>
 
