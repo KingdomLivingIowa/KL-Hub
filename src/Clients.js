@@ -823,19 +823,34 @@ function ClientApplicationView({ client }) {
         <Section title="Legal" fields={[
           ['PO Name', app.po_name],
           ['PO Phone', app.po_phone],
+          ['PO Email', app.po_email],
           ['On Probation?', app.on_probation],
           ['On Parole?', app.on_parole],
-          ['Sex Offense?', app.sex_offense],
-          ['Personal Status', app.personal_status],
+          ['Registered Sex Offender?', app.sex_offender],
+          ['Sex Offense Details', app.sex_offense_details],
+        ]} />
+
+        <Section title="Emergency Contact" fields={[
+          ['Emergency Contact Name', app.emergency_contact_name],
+          ['Emergency Contact Phone', app.emergency_contact_phone],
+          ['Emergency Contact Relationship', app.emergency_contact_relationship],
+          ['Collateral Contacts', app.collateral_contacts],
         ]} />
 
         <Section title="Other" fields={[
-          ['Emergency Contact', app.emergency_contact],
           ['Sponsor', app.sponsor_name],
           ['Allergy Info', app.allergy_info],
           ['Doctor Info', app.doctor_info],
           ['Referral Source', app.referral_source],
           ['Correspondence Contact', app.correspondence_contact],
+        ]} />
+
+        <Section title="Consent & Signature" fields={[
+          ['Form Completed By', app.form_completed_by],
+          ['Agrees to Rules?', app.agree_to_rules],
+          ['Agrees to KL Levels?', app.agree_to_levels],
+          ['Applicant Notes', app.client_notes],
+          ['Signature', app.signature],
         ]} />
 
         {parsedMeds.length > 0 && (
@@ -867,6 +882,84 @@ function ClientApplicationView({ client }) {
         )}
       </Card>
     </div>
+  );
+}
+
+// ── Client Documents Tab (PDF uploads) ───────────────────────────────────────
+function ClientDocumentsTab({ client }) {
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const folder = `documents/${client.id}`;
+
+  const loadDocs = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.storage.from('client-documents').list(folder, { sortBy: { column: 'created_at', order: 'desc' } });
+    if (!error) setDocs((data || []).filter(d => d.name !== '.emptyFolderPlaceholder'));
+    setLoading(false);
+  }, [folder]);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    for (const file of files) {
+      if (file.type !== 'application/pdf') { alert(`${file.name} is not a PDF and was skipped.`); continue; }
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const path = `${folder}/${Date.now()}_${safeName}`;
+      const { error } = await supabase.storage.from('client-documents').upload(path, file);
+      if (error) alert(`Error uploading ${file.name}: ${error.message}`);
+    }
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    loadDocs();
+  };
+
+  const deleteDoc = async (name) => {
+    if (!window.confirm('Delete this document?')) return;
+    const { error } = await supabase.storage.from('client-documents').remove([`${folder}/${name}`]);
+    if (error) { alert('Error deleting: ' + error.message); return; }
+    loadDocs();
+  };
+
+  const viewDoc = (name) => {
+    const { data } = supabase.storage.from('client-documents').getPublicUrl(`${folder}/${name}`);
+    window.open(data.publicUrl, '_blank');
+  };
+
+  const fmtSize = (bytes) => !bytes ? '' : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  const displayName = (name) => name.replace(/^\d+_/, '');
+
+  return (
+    <Card title="Documents" full action={
+      <label style={{ display: 'inline-block', background: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '5px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: uploading ? 'default' : 'pointer', opacity: uploading ? 0.6 : 1 }}>
+        {uploading ? 'Uploading...' : '+ Upload PDF'}
+        <input ref={fileInputRef} type="file" accept="application/pdf" multiple onChange={handleUpload} disabled={uploading} style={{ display: 'none' }} />
+      </label>
+    }>
+      {loading ? (
+        <p style={{ color: '#4b5563', fontSize: '14px' }}>Loading documents...</p>
+      ) : docs.length === 0 ? (
+        <p style={{ color: '#4b5563', fontSize: '14px' }}>No documents uploaded yet.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {docs.map(d => (
+            <div key={d.name} style={{ background: '#ffffff', borderRadius: '8px', padding: '10px 14px', border: '1px solid #c9c9cf', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '18px' }}>📄</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p onClick={() => viewDoc(d.name)} style={{ color: '#2563eb', fontSize: '14px', fontWeight: '500', margin: 0, cursor: 'pointer', wordBreak: 'break-word' }}>{displayName(d.name)}</p>
+                <p style={{ color: '#71717a', fontSize: '12px', margin: '2px 0 0 0' }}>{fmtDate(d.created_at)}{d.metadata?.size ? ` · ${fmtSize(d.metadata.size)}` : ''}</p>
+              </div>
+              <button onClick={() => deleteDoc(d.name)} style={{ background: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', flexShrink: 0 }}>Delete</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -3276,7 +3369,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 </Card>
               )}
 
-              {activeTab === 'documents' && <Card title="Documents" full><p style={{ color: '#4b5563', fontSize: '14px' }}>Documents will appear here once file uploads are set up.</p></Card>}
+              {activeTab === 'documents' && (
+                <ClientDocumentsTab client={selected} />
+              )}
 
               {/* Delete button at bottom — admin only */}
               {isAdmin && (
