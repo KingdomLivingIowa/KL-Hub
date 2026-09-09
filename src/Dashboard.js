@@ -578,7 +578,7 @@ function DashboardInner({ user }) {
     const channel = supabase.channel('dashboard_maintenance_badge')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'maintenance_requests' },
         async () => {
-          const { count } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+          const { count } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).eq('status', 'Open');
           setCounts(prev => ({ ...prev, maintenanceOpen: count || 0 }));
         })
       .subscribe();
@@ -650,7 +650,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     const { count: housesCount } = await supabase.from('houses').select('*', { count: 'exact', head: true });
     const { count: activeClientsCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'Active');
     const { count: waitingListCount } = await supabase.from('waiting_list').select('*', { count: 'exact', head: true }).eq('status', 'waiting');
-    const { count: maintenanceOpenCount } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).neq('status', 'Completed');
+    const { count: maintenanceOpenCount } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).eq('status', 'Open');
     const { count: vacationPendingCount } = await supabase.from('vacation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
     setCounts({ pending: pendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0, maintenanceOpen: maintenanceOpenCount || 0, vacationPending: vacationPendingCount || 0 });
   };
