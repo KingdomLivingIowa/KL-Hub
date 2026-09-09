@@ -347,7 +347,7 @@ function generateUAHistoryPDF(client, uaRecords, logoSrc) {
   <title>UA History – ${name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #f4f4f6; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 24px; font-weight: 700; }
     .org-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
@@ -1207,7 +1207,7 @@ function MedicationsTab({ client, setSelected, setClients }) {
 
   return (
     <Card title="Medications" full action={
-      <button onClick={openAddModal} style={{ background: '#b22222', border: 'none', color: '#18181b', padding: '5px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
+      <button onClick={openAddModal} style={{ background: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '5px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
     }>
       {meds.length === 0 && <p style={{ color: '#4b5563', fontSize: '14px' }}>No medications added yet.</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -1250,7 +1250,7 @@ function MedicationsTab({ client, setSelected, setClients }) {
             ))}
             <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
               <button onClick={closeModal} style={{ flex: 1, padding: '10px', background: 'transparent', border: '1px solid #b8b8bf', borderRadius: '8px', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={saveModal} disabled={saving} style={{ flex: 1, padding: '10px', background: '#b22222', border: 'none', borderRadius: '8px', color: '#18181b', fontSize: '14px', fontWeight: '600', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+              <button onClick={saveModal} disabled={saving} style={{ flex: 1, padding: '10px', background: '#fee2e2', border: '1px solid #b22222', borderRadius: '8px', color: '#b22222', fontSize: '14px', fontWeight: '600', cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>
                 {saving ? 'Saving...' : 'Save'}
               </button>
             </div>
@@ -2150,14 +2150,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     </div>
   );
 
-  const LocationPin = ({ entryId, lat, lng }) => {
+  const LocationPin = ({ entryId, lat, lng, time }) => {
     const address = locationLabels[entryId];
     const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+    const timeLabel = time ? new Date(time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
     return (
       <div style={{ background: '#f7f7f9', borderRadius: '8px', padding: '8px 12px', marginBottom: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
           <span>📍</span>
           <span style={{ fontSize: '14px', color: '#52525b', lineHeight: '1.4' }}>{address || `${parseFloat(lat).toFixed(4)}, ${parseFloat(lng).toFixed(4)}`}</span>
+          {timeLabel && <span style={{ fontSize: '13px', color: '#71717a', whiteSpace: 'nowrap' }}>· {timeLabel}</span>}
         </div>
         <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '14px', color: '#2563eb', textDecoration: 'none', whiteSpace: 'nowrap', padding: '3px 8px', border: '1px solid #dbeafe', borderRadius: '4px', flexShrink: 0 }}>View map →</a>
       </div>
@@ -2192,7 +2194,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <span style={{ fontSize: '14px', color: '#2563eb', fontWeight: '500' }}>{m.meeting_name || 'Meeting'}</span>
                     <span style={{ fontSize: '14px', color: '#52525b' }}>by {m.author}</span>
                   </div>
-                  {m.latitude && m.longitude && <LocationPin entryId={m.id} lat={m.latitude} lng={m.longitude} />}
+                  {m.latitude && m.longitude && <LocationPin entryId={m.id} lat={m.latitude} lng={m.longitude} time={m.created_at} />}
                   {m.notes && <p style={{ color: '#52525b', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
                 </div>
                 <span style={{ fontSize: '14px', color: '#52525b', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
