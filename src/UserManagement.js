@@ -320,7 +320,6 @@ function UserManagement({ currentUser }) {
     <div style={s.page}>
       <div style={s.topBar}>
         <div>
-          <h2 style={s.title}>User Management</h2>
           <p style={s.sub}>{users.length} staff members</p>
         </div>
         <button onClick={() => { setShowAddUser(!showAddUser); setFormError(''); setFormSuccess(''); }} style={s.addBtn}>
@@ -514,7 +513,7 @@ function UserManagement({ currentUser }) {
                       <span style={{ fontSize: '13px', color: '#16a34a' }}>✓ Assigned</span>
                     ) : (
                       <button onClick={() => assignHouse(showHouseModal.id, h.id)}
-                        style={{ background: '#b22222', border: 'none', color: '#18181b', padding: '6px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
+                        style={{ background: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '6px 14px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' }}>
                         Assign
                       </button>
                     )}
@@ -568,7 +567,7 @@ const s = {
   topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
   sub: { color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0' },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
+  addBtn: { backgroundColor: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
   addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #c9c9cf' },
   formTitle: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 16px 0' },
   formGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' },
