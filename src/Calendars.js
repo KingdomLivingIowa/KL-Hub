@@ -72,15 +72,31 @@ const CUSTOM_RECURRENCE_OPTIONS = [
 ];
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
+// Maps a solid accent color to its translucent tint (light bg + colored border/text),
+// matching the translucent button/badge style used throughout the app.
+const TINT_MAP = {
+  '#b22222': '#fee2e2', '#dc2626': '#fee2e2',
+  '#2563eb': '#dbeafe',
+  '#db2777': '#fce7f3',
+  '#059669': '#d1fae5', '#16a34a': '#dcfce7',
+  '#ca8a04': '#fef3c7', '#b45309': '#fef3c7',
+  '#7c3aed': '#ede9fe',
+  '#4b5563': '#e4e4e8', '#6b7280': '#e4e4e8',
+};
+const tint = (color) => {
+  const c = color || '#b22222';
+  return { bg: TINT_MAP[c] || '#fee2e2', border: c, text: c };
+};
+
 const s = {
   tabBtn: (active) => ({ padding: '9px 20px', borderRadius: 8, border: '1px solid #b8b8bf', cursor: 'pointer', fontSize: 14, background: active ? '#c9c9cf' : 'transparent', color: active ? '#18181b' : '#52525b', fontWeight: active ? 600 : 400 }),
   card: { background: '#f7f7f9', borderRadius: 12, padding: '20px 22px', border: '1px solid #c9c9cf', marginBottom: 20 },
   label: { fontSize: 12, color: '#52525b', marginBottom: 5, display: 'block' },
   input: { background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: 8, padding: '8px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
   select: { background: '#ffffff', border: '1px solid #b8b8bf', borderRadius: 8, padding: '8px 12px', color: '#18181b', fontSize: 14, width: '100%', boxSizing: 'border-box' },
-  btn: (color) => ({ padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: color || '#b22222', color: '#18181b' }),
+  btn: (color) => { const t = tint(color); return { padding: '9px 18px', borderRadius: 8, border: `1px solid ${t.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 600, background: t.bg, color: t.text }; },
   ghost: { padding: '7px 14px', borderRadius: 8, border: '1px solid #b8b8bf', cursor: 'pointer', fontSize: 13, background: 'transparent', color: '#52525b' },
-  badge: (color) => ({ display: 'inline-block', background: color || '#b22222', color: '#18181b', borderRadius: 4, fontSize: 10, fontWeight: 700, padding: '2px 6px', marginLeft: 4 }),
+  badge: (color) => { const t = tint(color); return { display: 'inline-block', background: t.bg, color: t.text, border: `1px solid ${t.border}`, borderRadius: 4, fontSize: 10, fontWeight: 700, padding: '2px 6px', marginLeft: 4 }; },
 };
 
 // ─── Calendar Grid ────────────────────────────────────────────────────────────
@@ -113,7 +129,7 @@ function CalendarGrid({ year, month, eventsByDate, onDayClick, onPrev, onNext, r
               style={{ minHeight: 80, width: '100%', boxSizing: 'border-box', overflow: 'hidden', background: isToday ? '#fee2e2' : '#cfcfd4', borderRadius: 8, padding: '8px 6px', cursor: onDayClick ? 'pointer' : 'default', border: isToday ? '1px solid #b22222' : '1px solid #c9c9cf' }}>
               <div style={{ fontSize: 14, color: isToday ? '#e05555' : '#52525b', fontWeight: isToday ? 700 : 500, marginBottom: 5 }}>{day}</div>
               {events.slice(0, 3).map((ev, j) => renderDot ? renderDot(ev, j) : (
-                <div key={j} style={{ fontSize: 10, color: '#18181b', background: ev.color || '#b22222', borderRadius: 4, padding: '2px 4px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500, width: '100%', boxSizing: 'border-box' }}>{ev.label}</div>
+                <div key={j} style={{ fontSize: 10, color: tint(ev.color).text, background: tint(ev.color).bg, border: `1px solid ${tint(ev.color).border}`, borderRadius: 4, padding: '2px 4px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500, width: '100%', boxSizing: 'border-box' }}>{ev.label}</div>
               ))}
               {events.length > 3 && <div style={{ fontSize: 11, color: '#52525b' }}>+{events.length - 3} more</div>}
             </div>
@@ -333,7 +349,7 @@ function OrgEventsCalendar() {
           onPrev={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
           onNext={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
           renderDot={(ev, j) => (
-            <div key={j} style={{ fontSize: 11, color: '#18181b', background: SCOPE_COLORS[ev.scope] || '#b22222', borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
+            <div key={j} style={{ fontSize: 11, color: tint(SCOPE_COLORS[ev.scope]).text, background: tint(SCOPE_COLORS[ev.scope]).bg, border: `1px solid ${tint(SCOPE_COLORS[ev.scope]).border}`, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
           )}
         />
       </div>
@@ -576,14 +592,10 @@ export function HouseCalendarTab({ houseId, houseType }) {
           onPrev={() => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); }}
           onNext={() => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); }}
           renderDot={(ev, j) => (
-            <div key={j} style={{ fontSize: 11, color: '#18181b', background: ev.color, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
+            <div key={j} style={{ fontSize: 11, color: tint(ev.color).text, background: tint(ev.color).bg, border: `1px solid ${tint(ev.color).border}`, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
           )}
         />
       </div>
-        renderDot={(ev, j) => (
-          <div key={j} style={{ fontSize: 11, color: '#18181b', background: ev.color, borderRadius: 4, padding: '2px 6px', marginBottom: 3, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontWeight: 500 }}>{ev.label}</div>
-        )}
-      />
 
       {selectedDay && (
         <Modal title={fmtDate(selectedDay)} onClose={() => setSelectedDay(null)}>
