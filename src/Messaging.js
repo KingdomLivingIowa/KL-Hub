@@ -458,12 +458,9 @@ function Messaging() {
       {/* Sidebar */}
       <div style={ms.sidebar}>
         <div style={ms.sidebarHeader}>
-          <p style={ms.sidebarTitle}>
-            Messages
-            {totalUnread > 0 && <span style={ms.unreadBadge}>{totalUnread}</span>}
-          </p>
+          {totalUnread > 0 && <span style={ms.unreadBadge}>{totalUnread}</span>}
           <button onClick={() => { setShowNewChat(!showNewChat); setSelectedMembers([]); setGroupChatName(''); setContactSearch(''); }}
-            style={{ background: showNewChat ? '#4b5563' : '#b22222', border: 'none', color: '#18181b', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+            style={{ background: showNewChat ? '#e4e4e8' : '#fee2e2', border: showNewChat ? '1px solid #b0b0b7' : '1px solid #b22222', color: showNewChat ? '#3f3f46' : '#b22222', padding: '6px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginLeft: 'auto' }}>
             {showNewChat ? 'Cancel' : '+ New Chat'}
           </button>
         </div>
@@ -551,7 +548,7 @@ function Messaging() {
             )}
 
             <button onClick={createChat} disabled={creatingChat || selectedMembers.length === 0}
-              style={{ width: '100%', background: selectedMembers.length > 0 ? '#b22222' : '#c9c9cf', border: 'none', color: selectedMembers.length > 0 ? '#18181b' : '#52525b', padding: '8px', borderRadius: '8px', fontSize: '14px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
+              style={{ width: '100%', background: selectedMembers.length > 0 ? '#fee2e2' : '#e4e4e8', border: selectedMembers.length > 0 ? '1px solid #b22222' : '1px solid #c9c9cf', color: selectedMembers.length > 0 ? '#b22222' : '#52525b', padding: '8px', borderRadius: '8px', fontSize: '14px', cursor: selectedMembers.length > 0 ? 'pointer' : 'default', fontWeight: '600' }}>
               {creatingChat ? 'Creating...' : selectedMembers.length > 1 ? 'Create Group Chat' : 'Start Conversation'}
             </button>
           </div>
@@ -684,10 +681,10 @@ function Messaging() {
                         )}
                         <div style={{
                           maxWidth: '70%',
-                          background: isMentionedInMsg && !isMe ? '#ffedd5' : isMe ? '#b22222' : '#c9c9cf',
+                          background: isMentionedInMsg && !isMe ? '#ffedd5' : isMe ? '#fee2e2' : '#f7f7f9',
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                           padding: '9px 14px',
-                          border: isMentionedInMsg && !isMe ? '1px solid #ca8a04' : 'none',
+                          border: isMentionedInMsg && !isMe ? '1px solid #ca8a04' : isMe ? '1px solid #b22222' : '1px solid #c9c9cf',
                         }}>
                           {isMentionedInMsg && !isMe && (
                             <p style={{ color: '#ca8a04', fontSize: '11px', fontWeight: '700', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -743,7 +740,7 @@ function Messaging() {
                   style={ms.input}
                 />
                 <button onClick={sendMessage} disabled={!newMessage.trim() || sending}
-                  style={{ background: newMessage.trim() ? '#b22222' : '#c9c9cf', border: 'none', color: newMessage.trim() ? '#18181b' : '#52525b', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
+                  style={{ background: newMessage.trim() ? '#fee2e2' : '#e4e4e8', border: newMessage.trim() ? '1px solid #b22222' : '1px solid #c9c9cf', color: newMessage.trim() ? '#b22222' : '#52525b', padding: '10px 18px', borderRadius: '10px', fontSize: '14px', cursor: newMessage.trim() ? 'pointer' : 'default', fontWeight: '600' }}>
                   Send
                 </button>
               </div>
