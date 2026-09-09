@@ -2262,7 +2262,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   return (
     <div style={st.page}>
       <div style={st.header}>
-        <h2 style={st.title}>Clients</h2>
         <p style={st.sub}>
           {totalCount > 0
             ? `Showing ${rangeStart}–${rangeEnd} of ${totalCount} ${statusFilter === 'All' ? (viewMode === 'archive' ? 'archived' : 'total') : statusFilter.toLowerCase()}`
