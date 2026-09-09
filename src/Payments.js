@@ -94,7 +94,7 @@ function Payments() {
     }
     setSavingFees(false);
     fetchFeeSettings();
-    alert('Fee settings saved!');
+    setShowFeeSettings(false);
   };
 
   const formatCurrency = (n) => `$${parseFloat(n || 0).toFixed(2)}`;
@@ -119,14 +119,13 @@ function Payments() {
       {/* Header */}
       <div style={ps.header}>
         <div>
-          <h2 style={ps.title}>Payments</h2>
           <p style={ps.sub}>{filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           {hasFullAccess && (
             <button onClick={() => setShowFeeSettings(!showFeeSettings)}
               title="Fee Settings"
-              style={{ background: showFeeSettings ? '#b22222' : 'transparent', border: '1px solid #b8b8bf', color: showFeeSettings ? '#18181b' : '#52525b', width: '36px', height: '36px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ background: showFeeSettings ? '#fee2e2' : 'transparent', border: showFeeSettings ? '1px solid #b22222' : '1px solid #b8b8bf', color: showFeeSettings ? '#b22222' : '#52525b', width: '36px', height: '36px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ⚙️
             </button>
           )}
@@ -200,11 +199,11 @@ function Payments() {
         />
         <div style={{ display: 'flex', gap: '6px' }}>
           <button onClick={() => setViewFilter('current')}
-            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #b8b8bf', background: viewFilter === 'current' ? '#b22222' : 'transparent', color: viewFilter === 'current' ? '#18181b' : '#52525b', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', borderRadius: '20px', border: viewFilter === 'current' ? '1px solid #b22222' : '1px solid #b8b8bf', background: viewFilter === 'current' ? '#fee2e2' : 'transparent', color: viewFilter === 'current' ? '#b22222' : '#52525b', fontSize: '14px', cursor: 'pointer' }}>
             Current
           </button>
           <button onClick={() => setViewFilter('all')}
-            style={{ padding: '8px 16px', borderRadius: '20px', border: '1px solid #b8b8bf', background: viewFilter === 'all' ? '#b22222' : 'transparent', color: viewFilter === 'all' ? '#18181b' : '#52525b', fontSize: '14px', cursor: 'pointer' }}>
+            style={{ padding: '8px 16px', borderRadius: '20px', border: viewFilter === 'all' ? '1px solid #b22222' : '1px solid #b8b8bf', background: viewFilter === 'all' ? '#fee2e2' : 'transparent', color: viewFilter === 'all' ? '#b22222' : '#52525b', fontSize: '14px', cursor: 'pointer' }}>
             All
           </button>
         </div>
@@ -297,7 +296,7 @@ function Payments() {
 
                         {/* View button */}
                         <button onClick={() => setSelectedClient(client)}
-                          style={{ width: '100%', background: '#b22222', border: 'none', color: '#18181b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                          style={{ width: '100%', background: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                           View
                         </button>
                       </div>
