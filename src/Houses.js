@@ -177,7 +177,7 @@ function Houses({ onOpenClient }) {
 
   const [houses, setHouses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [, setLastRefreshed] = useState(null);
   const [, setRefreshing] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -710,10 +710,6 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     return '$135';
   };
 
-  const formatRefreshed = () => {
-    if (!lastRefreshed) return '';
-    return `Updated ${lastRefreshed.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-  };
 
   const canSeeHouseChat = selected && (hasFullAccess || (isHouseManagerRole && assignedHouseIds.includes(selected.id)));
 
@@ -724,9 +720,6 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
           <p style={s.sub}>{houses.length} {isHouseManagerRole ? 'assigned' : 'total'}</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {lastRefreshed && (
-            <span style={{ fontSize: '14px', color: '#52525b' }}>{formatRefreshed()}</span>
-          )}
           <div style={s.viewToggle}>
             <button onClick={() => setMainView('houses')} style={{ ...s.toggleBtn, ...(mainView === 'houses' ? s.toggleBtnActive : {}) }}>Houses</button>
             <button onClick={() => setMainView('residents')} style={{ ...s.toggleBtn, ...(mainView === 'residents' ? s.toggleBtnActive : {}) }}>All Residents</button>
