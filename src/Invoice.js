@@ -30,21 +30,21 @@ export function InvoiceButton({ client, style }) {
   <title>Invoice – ${client.full_name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #f4f4f6; background: #18181b; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .header img { width: 80px; height: 80px; object-fit: contain; }
-    .org-name { font-size: 26px; font-weight: 700; color: #f4f4f6; }
+    .org-name { font-size: 26px; font-weight: 700; color: #18181b; }
     .org-sub { font-size: 14px; color: #6b7280; margin-top: 2px; }
     .divider { height: 3px; background: #b22222; margin: 16px 0; }
     .invoice-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 16px; }
     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; background: #f9f9f9; padding: 16px; border-radius: 8px; }
     .meta-item label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 3px; }
-    .meta-item span { font-size: 15px; font-weight: 600; color: #f4f4f6; }
+    .meta-item span { font-size: 15px; font-weight: 600; color: #18181b; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
     th { background: #f4f4f6; color: #18181b; padding: 10px 12px; text-align: left; font-size: 13px; }
     td { padding: 10px 12px; border-bottom: 1px solid #c9c9cf; font-size: 14px; }
     tr:nth-child(even) td { background: #f9f9f9; }
-    .section-title { font-size: 15px; font-weight: 700; color: #f4f4f6; margin: 24px 0 10px; border-left: 4px solid #b22222; padding-left: 10px; }
+    .section-title { font-size: 15px; font-weight: 700; color: #18181b; margin: 24px 0 10px; border-left: 4px solid #b22222; padding-left: 10px; }
     .summary { background: #f4f4f6; color: #18181b; border-radius: 8px; padding: 16px 20px; margin-top: 24px; }
     .summary-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 15px; }
     .summary-row.balance { font-size: 20px; font-weight: 700; border-top: 1px solid #b0b0b7; margin-top: 8px; padding-top: 10px; color: ${balance > 0 ? '#dc2626' : '#16a34a'}; }

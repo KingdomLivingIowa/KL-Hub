@@ -73,7 +73,7 @@ function generateReceiptPDF(payment, client, balance, logoSrc) {
     </div>
 
     <div class="balance-box">
-      <span style="font-size:14px;color:#8a8a92;">Remaining Balance</span>
+      <span style="font-size:14px;color:#71717a;">Remaining Balance</span>
       <span style="font-size:16px;font-weight:700;color:${remainingBalance > 0 ? '#dc2626' : '#16a34a'};">
         ${remainingBalance > 0 ? `$${remainingBalance.toFixed(2)} owed` : remainingBalance < 0 ? `$${Math.abs(remainingBalance).toFixed(2)} credit` : 'Paid in full'}
       </span>
@@ -115,10 +115,10 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const timelineRows = timeline.map(t => `
-    <tr style="background:${t.type === 'payment' ? '#f0faf4' : '#18181b'};">
-      <td style="padding:9px 12px;border-bottom:1px solid #c9c9cf;font-size:13px;color:#8a8a92;">${fmtDate(t.date)}</td>
+    <tr style="background:${t.type === 'payment' ? '#f0faf4' : '#fef2f2'};">
+      <td style="padding:9px 12px;border-bottom:1px solid #c9c9cf;font-size:13px;color:#71717a;">${fmtDate(t.date)}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #c9c9cf;">
-        <span style="font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#f4f4f6'};">${t.type === 'payment' ? 'Payment' : 'Charge'}</span>
+        <span style="font-size:13px;font-weight:600;color:${t.type === 'payment' ? '#16a34a' : '#dc2626'};">${t.type === 'payment' ? 'Payment' : 'Charge'}</span>
         <span style="font-size:12px;color:#6b7280;margin-left:6px;">${t.label}</span>
         ${t.description ? `<div style="font-size:12px;color:#52525b;margin-top:2px;">${t.description}</div>` : ''}
         ${t.by ? `<div style="font-size:11px;color:#52525b;">by ${t.by}</div>` : ''}
@@ -132,7 +132,7 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
   <title>Payment History – ${name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #f4f4f6; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 22px; font-weight: 700; }
     .org-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
@@ -150,7 +150,7 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; margin-bottom: 28px; }
     .info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #c9c9cf; }
     .info-label { font-size: 13px; color: #6b7280; }
-    .info-value { font-size: 13px; font-weight: 500; color: #f4f4f6; }
+    .info-value { font-size: 13px; font-weight: 500; color: #18181b; }
     .balance-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: ${balance > 0 ? '#fff5f5' : '#f0faf4'}; border-radius: 8px; margin-bottom: 28px; }
     .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
     .footer { text-align: center; color: #52525b; font-size: 12px; margin-top: 32px; }
@@ -182,7 +182,7 @@ function generatePaymentHistoryPDF(client, charges, payments, logoSrc) {
   </div>
 
   <div class="balance-row">
-    <span style="font-size:15px;font-weight:600;color:#8a8a92;">Current Balance</span>
+    <span style="font-size:15px;font-weight:600;color:#71717a;">Current Balance</span>
     <span style="font-size:20px;font-weight:700;color:${balance > 0 ? '#dc2626' : '#16a34a'};">
       ${balance > 0 ? `${fmtAmt(balance)} owed` : balance < 0 ? `${fmtAmt(Math.abs(balance))} credit` : 'Paid in full ✓'}
     </span>
@@ -442,7 +442,7 @@ function ClientPayments({ client, onPaymentChange }) {
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <button onClick={() => { setShowPaymentForm(!showPaymentForm); setShowAddCharge(false); }}
-          style={{ background: showPaymentForm ? 'transparent' : '#16a34a', border: showPaymentForm ? '1px solid #b0b0b7' : 'none', color: showPaymentForm ? '#52525b' : '#18181b', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+          style={{ background: showPaymentForm ? 'transparent' : '#dcfce7', border: showPaymentForm ? '1px solid #b0b0b7' : '1px solid #16a34a', color: showPaymentForm ? '#52525b' : '#16a34a', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
           {showPaymentForm ? 'Cancel' : '+ Record Payment'}
         </button>
         {hasFullAccess && (
@@ -514,7 +514,7 @@ function ClientPayments({ client, onPaymentChange }) {
             </div>
           )}
           <button onClick={savePayment} disabled={savingPayment}
-            style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+            style={{ background: '#dcfce7', border: '1px solid #16a34a', color: '#16a34a', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
             {savingPayment ? 'Saving...' : 'Save Payment'}
           </button>
         </div>
@@ -578,7 +578,7 @@ function ClientPayments({ client, onPaymentChange }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <p style={{ color: '#16a34a', fontSize: '15px', fontWeight: '700', margin: 0 }}>Total: {formatCurrency(chargeAmount)}</p>
             <button onClick={saveCharge} disabled={savingCharge}
-              style={{ background: '#b22222', border: 'none', color: '#18181b', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+              style={{ background: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '9px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
               {savingCharge ? 'Saving...' : 'Add Charge'}
             </button>
           </div>
@@ -590,11 +590,11 @@ function ClientPayments({ client, onPaymentChange }) {
           {/* View toggle */}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '14px' }}>
             <button onClick={() => setActiveView('charges')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #b8b8bf', background: activeView === 'charges' ? '#b22222' : 'transparent', color: activeView === 'charges' ? '#18181b' : '#52525b', fontSize: '13px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: activeView === 'charges' ? '1px solid #b22222' : '1px solid #b8b8bf', background: activeView === 'charges' ? '#fee2e2' : 'transparent', color: activeView === 'charges' ? '#b22222' : '#52525b', fontSize: '13px', cursor: 'pointer' }}>
               Charges ({charges.length})
             </button>
             <button onClick={() => setActiveView('payments')}
-              style={{ padding: '5px 14px', borderRadius: '20px', border: '1px solid #b8b8bf', background: activeView === 'payments' ? '#b22222' : 'transparent', color: activeView === 'payments' ? '#18181b' : '#52525b', fontSize: '13px', cursor: 'pointer' }}>
+              style={{ padding: '5px 14px', borderRadius: '20px', border: activeView === 'payments' ? '1px solid #b22222' : '1px solid #b8b8bf', background: activeView === 'payments' ? '#fee2e2' : 'transparent', color: activeView === 'payments' ? '#b22222' : '#52525b', fontSize: '13px', cursor: 'pointer' }}>
               Payments ({payments.length})
             </button>
           </div>

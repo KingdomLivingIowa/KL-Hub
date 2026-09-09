@@ -2464,7 +2464,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         };
                         img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, latestCheckIn, null);
                         img.src = klLogo;
-                      }} style={{ padding: '5px 12px', background: '#dbeafe', border: '1px solid #bfdbfe', borderRadius: '6px', color: '#2563eb', fontSize: '13px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                      }} style={{ padding: '5px 12px', background: '#fee2e2', border: '1px solid #b22222', borderRadius: '6px', color: '#b22222', fontSize: '13px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
                         📄 Progress Report
                       </button>
                     )}
