@@ -1606,7 +1606,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     return '#52525b';
   };
 
-  const generateTimelinePDF = async (client, startDate, endDate, eventType) => {
+  const generateTimelinePDF = async (client, startDate, endDate, eventType, logoSrc) => {
     let query = supabase.from('client_timeline').select('*').eq('client_id', client.id).order('created_at', { ascending: false });
     if (startDate) query = query.gte('created_at', new Date(startDate + 'T00:00:00').toISOString());
     if (endDate) query = query.lte('created_at', new Date(endDate + 'T23:59:59').toISOString());
@@ -1622,6 +1622,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       'Event Attendance': '#2563eb',
     };
 
+    const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
+    const generatedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
     const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const rangeLabel = startDate && endDate ? `${new Date(startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} – ${new Date(endDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
       : startDate ? `From ${new Date(startDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
@@ -1635,13 +1638,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       else if (e.severity) detail = `Severity: ${e.severity}`;
       else if (e.mood_value) detail = `Mood: ${e.mood_value}/10`;
       else if (e.meeting_name) detail = e.meeting_name;
-      const notes = e.notes ? `<div style="color:#b0b0b7;font-size:13px;margin-top:4px;line-height:1.5;">${e.notes}</div>` : '';
+      const notes = e.notes ? `<div style="color:#71717a;font-size:13px;margin-top:4px;line-height:1.5;">${e.notes}</div>` : '';
       const author = e.author ? `<div style="color:#6b7280;font-size:12px;margin-top:4px;">By ${e.author}</div>` : '';
       return `<tr>
         <td style="padding:10px 12px;border-bottom:1px solid #c9c9cf;vertical-align:top;white-space:nowrap;color:#71717a;font-size:13px;">${fmt(e.created_at)}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #c9c9cf;vertical-align:top;">
           <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span>
-          <strong style="font-size:13px;">${e.entry_type}</strong>
+          <strong style="font-size:13px;color:#18181b;">${e.entry_type}</strong>
           ${detail ? `<span style="color:#71717a;font-size:12px;margin-left:6px;">${detail}</span>` : ''}
           ${notes}${author}
         </td>
@@ -1651,22 +1654,30 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>Timeline – ${client.full_name}</title>
     <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 32px; color: #f4f4f6; }
-      @media print { body { padding: 16px; } .no-print { display: none; } }
-      h1 { font-size: 22px; margin: 0 0 4px 0; }
-      .sub { color: #71717a; font-size: 14px; margin: 0 0 24px 0; }
-      table { width: 100%; border-collapse: collapse; }
-      th { background: #f5f5f5; text-align: left; padding: 10px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: #71717a; border-bottom: 2px solid #3f3f46; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
+      .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
+      .org-name { font-size: 24px; font-weight: 700; }
+      .org-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
+      .divider { height: 3px; background: #b22222; margin: 14px 0; }
+      .report-title { font-size: 20px; font-weight: 700; color: #b22222; margin-bottom: 4px; }
+      .report-sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th { background: #f4f4f6; color: #18181b; padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
       tr:hover td { background: #fafafa; }
-      .print-btn { background: #8b1c1c; color: #18181b; border: none; padding: 10px 24px; border-radius: 6px; font-size: 14px; cursor: pointer; margin-bottom: 24px; }
+      .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+      @media print { .print-btn { display: none; } body { padding: 20px; } }
     </style></head><body>
-    <button class="print-btn no-print" onclick="window.print()">⬇ Print / Save PDF</button>
-    <h1>${client.full_name} — Timeline</h1>
-    <p class="sub">${rangeLabel}${eventType !== 'All' ? ` · ${eventType}` : ''} · ${entries.length} entries · Generated ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+    <button class="print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
+    <div class="header">${logoHtml}<div><div class="org-name">KINGDOM LIVING IOWA</div><div class="org-sub">Non-Profit Recovery Community</div></div></div>
+    <div class="divider"></div>
+    <div class="report-title">Client Timeline</div>
+    <div class="report-sub">${client.full_name} &nbsp;·&nbsp; ${rangeLabel}${eventType !== 'All' ? ` · ${eventType}` : ''} &nbsp;·&nbsp; ${entries.length} entries &nbsp;·&nbsp; Generated ${generatedDate}</div>
     <table>
       <thead><tr><th style="width:180px;">Date</th><th>Entry</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
+    <div style="margin-top:32px;text-align:center;color:#52525b;font-size:12px;">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${generatedDate}</div>
     </body></html>`;
 
     const win = window.open('', '_blank');
@@ -3040,8 +3051,20 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => setShowTimelinePDFModal(false)}
                           style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #b8b8bf', background: 'transparent', color: '#52525b', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
-                        <button onClick={() => { generateTimelinePDF(selected, pdfRange.startDate, pdfRange.endDate, pdfRange.eventType); setShowTimelinePDFModal(false); }}
-                          style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#000', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Generate PDF</button>
+                        <button onClick={() => {
+                          const img = new Image();
+                          img.crossOrigin = 'anonymous';
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+                            canvas.getContext('2d').drawImage(img, 0, 0);
+                            generateTimelinePDF(selected, pdfRange.startDate, pdfRange.endDate, pdfRange.eventType, canvas.toDataURL('image/jpeg'));
+                          };
+                          img.onerror = () => generateTimelinePDF(selected, pdfRange.startDate, pdfRange.endDate, pdfRange.eventType, null);
+                          img.src = klLogo;
+                          setShowTimelinePDFModal(false);
+                        }}
+                          style={{ flex: 2, padding: '10px', borderRadius: '8px', border: '1px solid #16a34a', background: '#dcfce7', color: '#16a34a', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Generate PDF</button>
                       </div>
                     </div>
                   </div>
@@ -3582,7 +3605,7 @@ const sf = {
   label: { display: 'block', color: '#52525b', fontSize: '14px', marginBottom: '6px' },
   input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
   cancelBtn: { backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
-  confirmBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
+  confirmBtn: { backgroundColor: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '8px 18px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
 };
 
 export default Clients;
