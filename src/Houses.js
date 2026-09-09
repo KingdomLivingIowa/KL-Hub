@@ -279,8 +279,17 @@ function Houses({ onOpenClient }) {
 
   useEffect(() => {
     loadAllData();
-    const interval = setInterval(() => loadAllData(true), 60000);
+    // Safety-net poll in case a realtime event is ever missed (e.g. brief disconnect)
+    const interval = setInterval(() => loadAllData(true), 300000);
     return () => clearInterval(interval);
+  }, [loadAllData]);
+
+  useEffect(() => {
+    const channel = supabase.channel('houses_grid_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'houses' }, () => loadAllData(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => loadAllData(true))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [loadAllData]);
   useEffect(() => {
     const channel = supabase.channel('houses_chat_unread_global')
@@ -718,10 +727,6 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
           {lastRefreshed && (
             <span style={{ fontSize: '14px', color: '#52525b' }}>{formatRefreshed()}</span>
           )}
-          <button onClick={() => loadAllData(true)} disabled={refreshing}
-            style={{ background: 'transparent', border: '1px solid #b8b8bf', color: refreshing ? '#52525b' : '#52525b', padding: '7px 14px', borderRadius: '8px', fontSize: '14px', cursor: refreshing ? 'not-allowed' : 'pointer' }}>
-            {refreshing ? '↻ Refreshing...' : '↻ Refresh'}
-          </button>
           <div style={s.viewToggle}>
             <button onClick={() => setMainView('houses')} style={{ ...s.toggleBtn, ...(mainView === 'houses' ? s.toggleBtnActive : {}) }}>Houses</button>
             <button onClick={() => setMainView('residents')} style={{ ...s.toggleBtn, ...(mainView === 'residents' ? s.toggleBtnActive : {}) }}>All Residents</button>
@@ -769,10 +774,17 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <span style={s.statItem}><span style={{ ...s.statNum, color: '#ca8a04' }}>{house.pending_count || 0}</span><span style={s.statLbl}>Pending</span></span>
                       <span style={s.statItem}><span style={{ ...s.statNum, color: '#16a34a' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLbl}>Available</span></span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' }}>
-                      {house.house_manager ? <p style={s.manager}>Manager: {house.house_manager}{house.phone ? ` · ${house.phone}` : ''}</p> : <span />}
-                      {hasFullAccess && <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn}>Delete</button>}
+                    <div style={{ marginTop: '6px', paddingRight: hasFullAccess ? '28px' : 0 }}>
+                      {house.house_manager && (
+                        <>
+                          <p style={s.manager}>Manager: {house.house_manager}</p>
+                          {house.phone && <p style={s.managerPhone}>{house.phone}</p>}
+                        </>
+                      )}
                     </div>
+                    {hasFullAccess && (
+                      <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn} title="Delete house" aria-label="Delete house">✕</button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1355,7 +1367,7 @@ const s = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' },
   title: { fontSize: '24px', fontWeight: '700', margin: 0 },
   sub: { color: '#4b5563', fontSize: '14px', margin: '4px 0 0 0' },
-  addBtn: { backgroundColor: '#b22222', border: 'none', color: '#18181b', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
+  addBtn: { backgroundColor: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500' },
   smallAddBtn: { backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '6px 14px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
   addForm: { background: '#f7f7f9', borderRadius: '12px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #c9c9cf' },
   miniForm: { background: '#f7f7f9', borderRadius: '10px', padding: '14px 16px', marginBottom: '16px', border: '1px solid #c9c9cf' },
@@ -1365,12 +1377,12 @@ const s = {
   input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
-  deleteHouseBtn: { backgroundColor: 'transparent', border: '1px solid #b0b0b7', color: '#71717a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', cursor: 'pointer' },
+  deleteHouseBtn: { position: 'absolute', bottom: '14px', right: '16px', backgroundColor: '#fee2e2', border: '1px solid #dc2626', color: '#dc2626', width: '24px', height: '24px', borderRadius: '6px', fontSize: '12px', lineHeight: '22px', padding: 0, cursor: 'pointer' },
   viewToggle: { display: 'flex', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #c9c9cf', overflow: 'hidden' },
   toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#52525b', cursor: 'pointer', fontSize: '14px' },
-  toggleBtnActive: { background: '#6b7280', color: '#18181b' },
+  toggleBtnActive: { background: '#e4e4e8', border: '1px solid #b0b0b7', color: '#3f3f46' },
   houseGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' },
-  houseCard: { background: '#f7f7f9', borderRadius: '12px', padding: '18px 20px', border: '1px solid #c9c9cf', cursor: 'pointer' },
+  houseCard: { position: 'relative', background: '#f7f7f9', borderRadius: '12px', padding: '18px 20px', border: '1px solid #c9c9cf', cursor: 'pointer' },
   houseCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' },
   houseName: { color: '#18181b', fontSize: '15px', fontWeight: '600', margin: '0 0 4px 0' },
   houseAddress: { color: '#4b5563', fontSize: '14px', margin: 0 },
@@ -1382,6 +1394,7 @@ const s = {
   statNum: { fontSize: '18px', fontWeight: '700', color: '#18181b' },
   statLbl: { fontSize: '14px', color: '#4b5563' },
   manager: { color: '#52525b', fontSize: '14px', margin: 0 },
+  managerPhone: { color: '#71717a', fontSize: '13px', margin: '2px 0 0 0' },
   houseGroup: { marginBottom: '32px' },
   houseGroupHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #c9c9cf' },
   houseGroupName: { fontSize: '16px', fontWeight: '600', color: '#18181b' },
