@@ -192,7 +192,9 @@ function Admissions() {
       phone: app.phone || null,
       email: app.email || null,
 
-      emergency_contact_name: app.emergency_contact || null,
+      emergency_contact_name: app.emergency_contact_name || null,
+      emergency_contact_phone: app.emergency_contact_phone || null,
+      emergency_contact_relationship: app.emergency_contact_relationship || null,
       present_residence: app.present_residence || app.current_situation || null,
 
       po_name: app.po_name || null,
@@ -673,7 +675,9 @@ function Admissions() {
             <p style={s.sectionDivider}>Emergency Contacts</p>
             <div style={s.fullGrid}>
               {[
-                ['Emergency Contact', app.emergency_contact],
+                ['Emergency Contact Name', app.emergency_contact_name],
+                ['Emergency Contact Phone', app.emergency_contact_phone],
+                ['Emergency Contact Relationship', app.emergency_contact_relationship],
                 ['Collateral Contacts', app.collateral_contacts],
               ].map(([label, val]) => val ? (
                 <div key={label} style={s.fullItem}>
@@ -687,6 +691,7 @@ function Admissions() {
               {[
                 ['On Probation?', app.on_probation], ['On Parole?', app.on_parole],
                 ['Parole Officer', app.po_name], ['PO Phone', app.po_phone],
+                ['PO Email', app.po_email],
                 ['Criminal History', app.criminal_history], ['Sex Offender?', app.sex_offender],
                 ['Sex Offense Details', app.sex_offense_details],
               ].map(([label, val]) => val ? (
@@ -696,6 +701,40 @@ function Admissions() {
                 </div>
               ) : null)}
             </div>
+            {app.medication_details && (() => {
+              let meds = [];
+              try { meds = JSON.parse(app.medication_details); } catch { meds = []; }
+              return meds.length > 0 ? (<>
+                <p style={s.sectionDivider}>Medications</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                  {meds.map((m, i) => (
+                    <div key={i} style={s.fullItem}>
+                      <span style={s.fullLabel}>Medication {i + 1}</span>
+                      <span style={s.fullVal}>
+                        {[m.name, m.dosage, m.intake && `${m.intake}x/day`, m.count && `qty ${m.count}`, m.notes].filter(Boolean).join(' · ') || '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>) : null;
+            })()}
+            {app.treatment_details && (() => {
+              let treatments = [];
+              try { treatments = JSON.parse(app.treatment_details); } catch { treatments = []; }
+              return treatments.length > 0 ? (<>
+                <p style={s.sectionDivider}>Treatment History</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                  {treatments.map((t, i) => (
+                    <div key={i} style={s.fullItem}>
+                      <span style={s.fullLabel}>Treatment {i + 1}</span>
+                      <span style={s.fullVal}>
+                        {[t.name, t.level_of_care, t.contact_name, t.contact_phone, t.contact_email, t.was_referred && `Referred: ${t.was_referred}`, t.referral_date && `Referral: ${t.referral_date}`, t.discharge_date && `Discharge: ${t.discharge_date}`].filter(Boolean).join(' · ') || '—'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>) : null;
+            })()}
             <p style={s.sectionDivider}>Information Accuracy</p>
             <div style={s.fullGrid}>
               {[
