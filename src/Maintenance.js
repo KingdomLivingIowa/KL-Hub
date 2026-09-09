@@ -21,7 +21,7 @@ export default function Maintenance() {
   const { assignedHouseIds, isHouseManagerRole } = useUser();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('Open');
   const [houseFilter, setHouseFilter] = useState('All');
   const [houses, setHouses] = useState([]);
   const [expanded, setExpanded] = useState(null);
@@ -102,8 +102,6 @@ export default function Maintenance() {
 
   return (
     <div style={s.page}>
-      <h1 style={s.title}>Maintenance</h1>
-
       {/* Summary stats */}
       <div style={s.statsRow}>
         <div style={{ ...s.stat, borderColor: '#dc2626' }}>
@@ -118,7 +116,7 @@ export default function Maintenance() {
           <span style={{ ...s.statNum, color: '#16a34a' }}>{completedCount}</span>
           <span style={s.statLabel}>Completed</span>
         </div>
-        <div style={{ ...s.stat, borderColor: '#8a8a92' }}>
+        <div style={{ ...s.stat, borderColor: '#71717a' }}>
           <span style={{ ...s.statNum, color: '#18181b' }}>{requests.length}</span>
           <span style={s.statLabel}>Total</span>
         </div>
@@ -180,7 +178,7 @@ export default function Maintenance() {
                   <div style={s.cardRight}>
                     <p style={s.cardDate}>{fmtTime(req.submitted_at)}</p>
                     <p style={s.cardBy}>{req.submitted_by}</p>
-                    <span style={{ color: '#8a8a92', fontSize: '16px' }}>{isExpanded ? '▲' : '▼'}</span>
+                    <span style={{ color: '#71717a', fontSize: '16px' }}>{isExpanded ? '▲' : '▼'}</span>
                   </div>
                 </div>
 
@@ -287,7 +285,7 @@ const s = {
   cardLocation: { color: '#6b7280', fontSize: '13px', margin: '0 0 4px' },
   cardDesc: { color: '#52525b', fontSize: '14px', margin: 0, lineHeight: 1.5 },
   cardDate: { color: '#71717a', fontSize: '12px', margin: 0 },
-  cardBy: { color: '#8a8a92', fontSize: '12px', margin: 0 },
+  cardBy: { color: '#71717a', fontSize: '12px', margin: 0 },
   cardBody: { padding: '14px 16px', borderTop: '1px solid #cfcfd4', background: '#f7f7f9' },
   detailGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' },
   detailLabel: { fontSize: '12px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 3px' },
