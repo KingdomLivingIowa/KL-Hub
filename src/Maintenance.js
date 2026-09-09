@@ -20,6 +20,7 @@ const ISSUE_TYPE_COLORS = {
 export default function Maintenance() {
   const { assignedHouseIds, isHouseManagerRole } = useUser();
   const [requests, setRequests] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('Open');
   const [houseFilter, setHouseFilter] = useState('All');
@@ -41,7 +42,20 @@ export default function Maintenance() {
     setLoading(false);
   }, [statusFilter, houseFilter, isHouseManagerRole, assignedHouseIds]);
 
+  // Unfiltered-by-status set (still scoped to assigned houses / the house filter) so the
+  // summary stat cards always reflect the true totals, independent of the status dropdown.
+  const fetchAllRequests = useCallback(async () => {
+    let query = supabase.from('maintenance_requests').select('*');
+    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+      query = query.in('house_id', assignedHouseIds);
+    }
+    if (houseFilter !== 'All') query = query.eq('house_id', houseFilter);
+    const { data } = await query;
+    setAllRequests(data || []);
+  }, [houseFilter, isHouseManagerRole, assignedHouseIds]);
+
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  useEffect(() => { fetchAllRequests(); }, [fetchAllRequests]);
 
   useEffect(() => {
     supabase.from('houses').select('id, name').order('name')
@@ -91,14 +105,15 @@ export default function Maintenance() {
     setEditingId(null);
     setSaving(false);
     fetchRequests();
+    fetchAllRequests();
   };
 
   const fmt = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
   const fmtTime = (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
 
-  const openCount = requests.filter(r => r.status === 'Open').length;
-  const inProgressCount = requests.filter(r => r.status === 'In Progress').length;
-  const completedCount = requests.filter(r => r.status === 'Completed').length;
+  const openCount = allRequests.filter(r => r.status === 'Open').length;
+  const inProgressCount = allRequests.filter(r => r.status === 'In Progress').length;
+  const completedCount = allRequests.filter(r => r.status === 'Completed').length;
 
   return (
     <div style={s.page}>
@@ -117,7 +132,7 @@ export default function Maintenance() {
           <span style={s.statLabel}>Completed</span>
         </div>
         <div style={{ ...s.stat, borderColor: '#71717a' }}>
-          <span style={{ ...s.statNum, color: '#18181b' }}>{requests.length}</span>
+          <span style={{ ...s.statNum, color: '#18181b' }}>{allRequests.length}</span>
           <span style={s.statLabel}>Total</span>
         </div>
       </div>
