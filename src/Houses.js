@@ -1377,7 +1377,7 @@ const s = {
   input: { width: '100%', backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '10px 12px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' },
   saveBtn: { backgroundColor: '#16a34a', border: 'none', color: '#18181b', padding: '10px 24px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' },
   deleteBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer' },
-  deleteHouseBtn: { position: 'absolute', bottom: '14px', right: '16px', backgroundColor: '#fee2e2', border: '1px solid #dc2626', color: '#dc2626', width: '24px', height: '24px', borderRadius: '6px', fontSize: '12px', lineHeight: '22px', padding: 0, cursor: 'pointer' },
+  deleteHouseBtn: { position: 'absolute', bottom: '14px', right: '16px', backgroundColor: '#fee2e2', border: '1px solid #dc2626', color: '#dc2626', width: '12px', height: '12px', borderRadius: '4px', fontSize: '7px', lineHeight: '10px', padding: 0, cursor: 'pointer' },
   viewToggle: { display: 'flex', background: '#f7f7f9', borderRadius: '8px', border: '1px solid #c9c9cf', overflow: 'hidden' },
   toggleBtn: { padding: '8px 16px', border: 'none', background: 'transparent', color: '#52525b', cursor: 'pointer', fontSize: '14px' },
   toggleBtnActive: { background: '#e4e4e8', border: '1px solid #b0b0b7', color: '#3f3f46' },
