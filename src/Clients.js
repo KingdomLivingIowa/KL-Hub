@@ -3117,7 +3117,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               : entry.notes && <p style={{ color: '#52525b', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
                             {entry.photo_url && (
                                 <img src={entry.photo_url} alt="" onClick={() => setLightboxUrl(entry.photo_url)}
-                                  style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #b8b8bf', cursor: 'pointer' }} />
+                                  style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #b8b8bf', cursor: 'pointer' }} />
                               )}
                             {entry.author && <p style={{ color: '#52525b', fontSize: '14px', margin: '6px 0 0 0' }}>By {entry.author}</p>}
                           </div>
