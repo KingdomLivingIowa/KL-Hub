@@ -87,7 +87,7 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
     </tr>`;
 
   const choiceRow = (label, options, selected) => {
-    const opts = options.map(o => `<span style="margin-right:24px;">${o === selected ? `<span style="background:#b45309;color:#000;padding:1px 6px;border-radius:3px;">${o}</span>` : `<span style="color:#4b5563;">${o}</span>`}</span>`).join('');
+    const opts = options.map(o => `<span style="margin-right:24px;">${o === selected ? `<span style="background:rgba(250,204,21,0.45);color:#000;padding:1px 6px;border-radius:3px;">${o}</span>` : `<span style="color:#4b5563;">${o}</span>`}</span>`).join('');
     return row(label, `<span style="font-size:13px;">${opts}</span>`);
   };
 
@@ -125,7 +125,7 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
     ${row('Date of Discharge:', dischargeDate)}
     ${choiceRow('Type of Discharge:', ['Complete', 'Incomplete'], dischargeType)}
     ${row('Reason for Discharge:', reason, 'line-height:1.6;')}
-    ${notes ? row('Notes:', notes, 'line-height:1.6;color:#c9c9cf;') : ''}
+    ${notes ? row('Notes:', notes, 'line-height:1.6;color:#18181b;') : ''}
     ${choiceRow('UA:', ['Positive', 'Negative', 'N/A'], uaResult)}
     ${choiceRow('Did client give two-week notice?', ['Yes', 'No'], twoWeek)}
     ${row('Completed by:', completedBy)}
@@ -157,7 +157,7 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   const balance = parseFloat(stay.balance_at_discharge) || 0;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
-  const row = (label, value, color) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${color || '#f4f4f6'};">${value}</span></div>`;
+  const row = (label, value, color) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${color || '#18181b'};">${value}</span></div>`;
 
   const timelineRows = history.timeline.length === 0
     ? '<p style="color:#6b7280;font-size:13px;padding:6px 0;">No timeline entries during this stay.</p>'
@@ -201,7 +201,7 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   <title>Stay History – ${name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #f4f4f6; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 24px; font-weight: 700; }
     .org-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
@@ -298,13 +298,13 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   const fmtCheckInDate = checkIn?.created_at ? new Date(checkIn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
-  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#f4f4f6'};">${value}</span></div>`;
+  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#18181b'};">${value}</span></div>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Progress Report – ${name}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; color: #f4f4f6; padding: 40px; max-width: 800px; margin: 0 auto; }
+    body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 24px; font-weight: 700; }
     .org-sub { font-size: 13px; color: #6b7280; margin-top: 2px; }
@@ -1972,7 +1972,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       updates.discharge_date = statusForm.discharge_date || today;
       updates.reason_for_discharge = statusForm.discharge_reason;
       updates.discharge_notes = statusForm.discharge_notes || null;
-      updates.discharged_by = user?.email || user?.id || null;
+      updates.discharged_by = fullName || user?.email || user?.id || null;
       updates.level = null;
       updates.successful_discharge = statusForm.successful_discharge === 'yes' ? true : statusForm.successful_discharge === 'no' ? false : null;
       updates.graduate = statusForm.discharge_reason === 'Graduate';
@@ -1988,7 +1988,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         client_id: client.id, house_id: client.house_id || null, house_name: houseName,
         start_date: client.start_date || null, discharge_date: updates.discharge_date,
         discharge_reason: statusForm.discharge_reason, discharge_notes: statusForm.discharge_notes || null,
-        balance_at_discharge: balanceAtDischarge, discharged_by: user?.email || user?.id || null,
+        balance_at_discharge: balanceAtDischarge, discharged_by: fullName || user?.email || user?.id || null,
         successful_discharge: updates.successful_discharge,
         graduate: updates.graduate,
         discharge_type: statusForm.discharge_type || null,
