@@ -11,17 +11,22 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
-// Strips unpaired ("lone") UTF-16 surrogate characters from user-typed text.
-// These sneak in from some mobile keyboards' emoji autocorrect (a broken/incomplete
-// emoji) and are technically invalid Unicode. Supabase/PostgREST parses the whole
-// request body as JSON on the way in, so even one lone surrogate anywhere in the
-// payload makes Postgres reject the entire insert with "unsupported Unicode escape
-// sequence" — not just whichever field the bad character is actually in.
+// Strips characters that Postgres's JSON parser (used by PostgREST on every insert/
+// update request) will reject with "unsupported Unicode escape sequence":
+//  - NUL and other C0 control characters — Postgres text columns can't store a NUL
+//    byte at all, and this is the single most common trigger (a stray control
+//    character carried in from a paste, an autofill, or a voice-to-text app).
+//  - Unpaired ("lone") UTF-16 surrogates — left behind by some mobile keyboards'
+//    broken emoji autocorrect.
+// PostgREST parses the *whole* request body as JSON, so one bad character anywhere
+// in the payload fails the entire insert — not just whichever field it's actually in.
 function sanitizeText(str) {
   if (typeof str !== 'string') return str;
   return str
     .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '') // lone high surrogate
-    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, ''); // lone low surrogate
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '') // lone low surrogate
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // NUL and other control characters
 }
 
 // Defined at module scope (not inside the client-profile component) so its function
