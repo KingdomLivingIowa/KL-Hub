@@ -20,6 +20,17 @@ const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 //    broken emoji autocorrect.
 // PostgREST parses the *whole* request body as JSON, so one bad character anywhere
 // in the payload fails the entire insert — not just whichever field it's actually in.
+function calculateAge(dob) {
+  if (!dob) return null;
+  const birth = new Date(dob + 'T00:00:00');
+  if (isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
 function sanitizeText(str) {
   if (typeof str !== 'string') return str;
   return str
@@ -34,7 +45,7 @@ function sanitizeText(str) {
 // component, every keystroke re-render created a brand-new EditableField function,
 // which made React treat it as a different component and remount the <input> —
 // that's what was throwing the cursor to the end of the text on every keystroke.
-function EditableField({ label, field, value, alert: isAlert, options, type, editingField, setEditingField, saveField, startEdit }) {
+function EditableField({ label, field, value, alert: isAlert, options, type, editingField, setEditingField, saveField, startEdit, formatDisplay }) {
   const isEditing = editingField?.field === field;
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #c9c9cf', gap: '12px' }}>
@@ -56,7 +67,7 @@ function EditableField({ label, field, value, alert: isAlert, options, type, edi
           style={{ fontSize: '14px', color: isAlert ? '#dc2626' : value ? '#3f3f46' : '#4b5563', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
           onMouseEnter={e => e.currentTarget.style.borderColor = '#4b5563'}
           onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
-          {value || '—'}
+          {value ? (formatDisplay ? formatDisplay(value) : value) : '—'}
         </span>
       )}
     </div>
@@ -2607,7 +2618,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <Card title="Contact info">
                       <EditableField label="Phone" field="phone" value={selected.phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Email" field="email" value={selected.email} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
-                      <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit}
+                        formatDisplay={v => { const age = calculateAge(v); return age != null ? `${age} · ${v}` : v; }} />
                       <EditableField label="Gender" field="gender" value={selected.gender} options={['Male', 'Female', 'Non-binary', 'No Response']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <p style={{ fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '16px 0 6px 0' }}>Emergency Contact</p>
                       <EditableField label="Name" field="emergency_contact_name" value={selected.emergency_contact_name} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
