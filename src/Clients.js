@@ -11,6 +11,40 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
+// Defined at module scope (not inside the client-profile component) so its function
+// identity stays stable across re-renders. When it was declared inside the parent
+// component, every keystroke re-render created a brand-new EditableField function,
+// which made React treat it as a different component and remount the <input> —
+// that's what was throwing the cursor to the end of the text on every keystroke.
+function EditableField({ label, field, value, alert: isAlert, options, type, editingField, setEditingField, saveField, startEdit }) {
+  const isEditing = editingField?.field === field;
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #c9c9cf', gap: '12px' }}>
+      <span style={{ fontSize: '14px', color: '#4b5563', flexShrink: 0 }}>{label}</span>
+      {isEditing ? (
+        options ? (
+          <select autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
+            style={{ background: '#ffffff', border: '1px solid #71717a', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
+            <option value="">—</option>
+            {options.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input autoFocus type={type || 'text'} value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
+            onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
+            style={{ background: '#ffffff', border: '1px solid #71717a', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
+        )
+      ) : (
+        <span onClick={() => startEdit(field, value)} title="Click to edit"
+          style={{ fontSize: '14px', color: isAlert ? '#dc2626' : value ? '#3f3f46' : '#4b5563', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = '#4b5563'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
+          {value || '—'}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
   const location = stay.house_name || '—';
@@ -2212,35 +2246,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     );
   };
 
-  const EditableField = ({ label, field, value, alert: isAlert, options, type }) => {
-    const isEditing = editingField?.field === field;
-    return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #c9c9cf', gap: '12px' }}>
-        <span style={{ fontSize: '14px', color: '#4b5563', flexShrink: 0 }}>{label}</span>
-        {isEditing ? (
-          options ? (
-            <select autoFocus value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
-              style={{ background: '#ffffff', border: '1px solid #71717a', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', maxWidth: '200px' }}>
-              <option value="">—</option>
-              {options.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          ) : (
-            <input autoFocus type={type || 'text'} value={editingField.value} onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))} onBlur={saveField}
-              onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
-              style={{ background: '#ffffff', border: '1px solid #71717a', borderRadius: '4px', color: '#18181b', fontSize: '14px', padding: '1px 6px', outline: 'none', width: '100%', maxWidth: '200px', textAlign: 'right' }} />
-          )
-        ) : (
-          <span onClick={() => startEdit(field, value)} title="Click to edit"
-            style={{ fontSize: '14px', color: isAlert ? '#dc2626' : value ? '#3f3f46' : '#4b5563', textAlign: 'right', wordBreak: 'break-word', cursor: 'text', padding: '1px 4px', borderRadius: '4px', border: '1px solid transparent', transition: 'border-color 0.15s' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = '#4b5563'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
-            {value || '—'}
-          </span>
-        )}
-      </div>
-    );
-  };
-
   const ReadField = ({ label, value, alert: isAlert }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', borderBottom: '1px solid #c9c9cf', gap: '12px' }}>
       <span style={{ fontSize: '14px', color: '#4b5563', flexShrink: 0 }}>{label}</span>
@@ -2577,14 +2582,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   </div>
                   <div style={st.grid}>
                     <Card title="Contact info">
-                      <EditableField label="Phone" field="phone" value={selected.phone} />
-                      <EditableField label="Email" field="email" value={selected.email} />
-                      <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} />
-                      <EditableField label="Gender" field="gender" value={selected.gender} options={['Male', 'Female', 'Non-binary', 'No Response']} />
+                      <EditableField label="Phone" field="phone" value={selected.phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Email" field="email" value={selected.email} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="DOB" field="date_of_birth" value={selected.date_of_birth} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Gender" field="gender" value={selected.gender} options={['Male', 'Female', 'Non-binary', 'No Response']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <p style={{ fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '16px 0 6px 0' }}>Emergency Contact</p>
-                      <EditableField label="Name" field="emergency_contact_name" value={selected.emergency_contact_name} />
-                      <EditableField label="Phone" field="emergency_contact_phone" value={selected.emergency_contact_phone} />
-                      <EditableField label="Relationship" field="emergency_contact_relationship" value={selected.emergency_contact_relationship} />
+                      <EditableField label="Name" field="emergency_contact_name" value={selected.emergency_contact_name} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Phone" field="emergency_contact_phone" value={selected.emergency_contact_phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Relationship" field="emergency_contact_relationship" value={selected.emergency_contact_relationship} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                     </Card>
                     <Card title="House assignment" action={
                       selected.status === 'Active' && selected.house_id && hasFullAccess ? (
@@ -2595,35 +2600,35 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       ) : null
                     }>
                       <ReadField label="House" value={selected.house_name} />
-                      <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} />
+                      <EditableField label="Room type" field="room_type" value={selected.room_type} options={['Single', 'Double', 'Houseperson']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <ReadField label="House manager" value={selected.house_manager} />
-                      <EditableField label="Door code" field="door_code" value={selected.door_code} />
-                      <EditableField label="Move-in date" field="start_date" value={selected.start_date} type="date" />
+                      <EditableField label="Door code" field="door_code" value={selected.door_code} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Move-in date" field="start_date" value={selected.start_date} type="date" editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       {selected.status === 'Pending' && (
-                        <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} />
+                        <EditableField label="Expected move-in" field="expected_move_in_date" value={selected.expected_move_in_date} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       )}
                       <EarlyAdmissionField />
                     </Card>
                     <Card title="PO & legal">
-                      <EditableField label="PO name" field="po_name" value={selected.po_name} />
-                      <EditableField label="PO phone" field="po_phone" value={selected.po_phone} />
-                      <EditableField label="PO email" field="po_email" value={selected.po_email} />
-                      <EditableField label="Personal status" field="personal_status" value={selected.personal_status} alert={selected.personal_status === 'Currently Incarcerated'} options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} />
-                      <EditableField label="Sex offense" field="sex_offender" value={selected.sex_offender} options={['Yes', 'No']} />
-                      <EditableField label="On probation" field="on_probation" value={selected.on_probation} options={['Yes', 'No']} />
-                      <EditableField label="On parole" field="on_parole" value={selected.on_parole} options={['Yes', 'No']} />
+                      <EditableField label="PO name" field="po_name" value={selected.po_name} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="PO phone" field="po_phone" value={selected.po_phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="PO email" field="po_email" value={selected.po_email} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Personal status" field="personal_status" value={selected.personal_status} alert={selected.personal_status === 'Currently Incarcerated'} options={['Currently Incarcerated', 'Homeless', 'Housing Insecure', 'Currently staying at Inpatient Treatment', 'Currently being referred by Recovery Community Center']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Sex offense" field="sex_offender" value={selected.sex_offender} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="On probation" field="on_probation" value={selected.on_probation} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="On parole" field="on_parole" value={selected.on_parole} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                     </Card>
                     <Card title="Sponsor">
-                      <EditableField label="Sponsor name" field="sponsor_name" value={selected.sponsor_name} />
-                      <EditableField label="Sponsor phone" field="sponsor_phone" value={selected.sponsor_phone} />
-                      <EditableField label="Recovery meetings" field="recovery_meetings" value={selected.recovery_meetings} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} />
+                      <EditableField label="Sponsor name" field="sponsor_name" value={selected.sponsor_name} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Sponsor phone" field="sponsor_phone" value={selected.sponsor_phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Recovery meetings" field="recovery_meetings" value={selected.recovery_meetings} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                     </Card>
                     <Card title="Recovery">
-                      <EditableField label="Substance history" field="substance_history" value={selected.substance_history} options={['Yes', 'No']} />
-                      <EditableField label="Drug of choice" field="drug_of_choice" value={selected.drug_of_choice} />
-                      <EditableField label="Sober date" field="sober_date" value={selected.sober_date} />
-                      <EditableField label="Treatment history" field="treatment_history" value={selected.treatment_history} options={['Yes', 'No']} />
-                      <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} />
+                      <EditableField label="Substance history" field="substance_history" value={selected.substance_history} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Drug of choice" field="drug_of_choice" value={selected.drug_of_choice} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Sober date" field="sober_date" value={selected.sober_date} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Treatment history" field="treatment_history" value={selected.treatment_history} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="OUD" field="oud" value={selected.oud} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                     </Card>
                     <Card title="Latest Weekly Check-In">
                       <LatestCheckIn clientId={selected.id} />
