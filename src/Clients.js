@@ -2622,6 +2622,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Sponsor name" field="sponsor_name" value={selected.sponsor_name} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Sponsor phone" field="sponsor_phone" value={selected.sponsor_phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Recovery meetings" field="recovery_meetings" value={selected.recovery_meetings} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
+                      <EditableField label="Step" field="step" value={selected.step} options={['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                     </Card>
                     <Card title="Recovery">
                       <EditableField label="Substance history" field="substance_history" value={selected.substance_history} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
