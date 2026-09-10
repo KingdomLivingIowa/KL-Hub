@@ -2708,16 +2708,16 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                         {uaRecords.map(ua => {
                           const col = uaResultColor(ua.event_name);
                           return (
-                            <div key={ua.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #c9c9cf' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '14px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
-                                <span style={{ color: '#52525b', fontSize: '14px' }}>By {ua.author}</span>
-                                {ua.source === 'house' && <span style={{ ...st.badge, background: '#dbeafe', color: '#2563eb', fontSize: '13px' }}>House</span>}
+                            <div key={ua.id} style={{ padding: '10px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #c9c9cf' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <span style={{ ...st.badge, background: col.bg, color: col.color, fontSize: '14px', padding: '3px 10px' }}>{ua.event_name || 'Unknown'}</span>
+                                  <span style={{ color: '#52525b', fontSize: '14px' }}>By {ua.author}</span>
+                                  {ua.source === 'house' && <span style={{ ...st.badge, background: '#dbeafe', color: '#2563eb', fontSize: '13px' }}>House</span>}
+                                </div>
+                                <span style={{ color: '#52525b', fontSize: '14px', flexShrink: 0 }}>{formatDateShort(ua.created_at)}</span>
                               </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                                <span style={{ color: '#52525b', fontSize: '14px' }}>{formatDateShort(ua.created_at)}</span>
-                                {ua.notes && <span style={{ color: '#4b5563', fontSize: '14px', maxWidth: '200px', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ua.notes}</span>}
-                              </div>
+                              {ua.notes && <p style={{ color: '#4b5563', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.4', wordBreak: 'break-word' }}>{ua.notes}</p>}
                             </div>
                           );
                         })}
