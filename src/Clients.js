@@ -11,6 +11,19 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
+// Strips unpaired ("lone") UTF-16 surrogate characters from user-typed text.
+// These sneak in from some mobile keyboards' emoji autocorrect (a broken/incomplete
+// emoji) and are technically invalid Unicode. Supabase/PostgREST parses the whole
+// request body as JSON on the way in, so even one lone surrogate anywhere in the
+// payload makes Postgres reject the entire insert with "unsupported Unicode escape
+// sequence" — not just whichever field the bad character is actually in.
+function sanitizeText(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '') // lone high surrogate
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, ''); // lone low surrogate
+}
+
 // Defined at module scope (not inside the client-profile component) so its function
 // identity stays stable across re-renders. When it was declared inside the parent
 // component, every keystroke re-render created a brand-new EditableField function,
@@ -157,6 +170,7 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
         <div style="display:flex;justify-content:space-between;"><strong style="font-size:13px;">Weekly Check-In</strong><span style="font-size:12px;color:#6b7280;">${fmtFull(e.created_at)}</span></div>
         ${e.checkin_meetings != null ? `<div style="font-size:13px;color:#71717a;">Meetings: ${e.checkin_meetings}</div>` : ''}
         ${e.checkin_sponsor_contacts != null ? `<div style="font-size:13px;color:#71717a;">Sponsor contacts: ${e.checkin_sponsor_contacts}</div>` : ''}
+        ${e.checkin_step ? `<div style="font-size:13px;color:#71717a;">Step: ${e.checkin_step}</div>` : ''}
         ${e.notes ? `<div style="font-size:13px;color:#71717a;margin-top:3px;">${e.notes}</div>` : ''}
       </div>`).join('');
 
@@ -348,6 +362,7 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
     <div style="font-size:12px;color:#b22222;font-weight:600;margin-bottom:10px;">Submitted ${fmtCheckInDate}${checkIn.author ? ` by ${checkIn.author}` : ''}</div>
     ${checkIn.checkin_meetings != null ? row('Meetings attended', checkIn.checkin_meetings) : ''}
     ${checkIn.checkin_sponsor_contacts != null ? row('Sponsor contacts', checkIn.checkin_sponsor_contacts) : ''}
+    ${checkIn.checkin_step ? row('Step', checkIn.checkin_step) : ''}
     ${checkIn.checkin_chore ? row('Assigned chore', checkIn.checkin_chore) : ''}
     ${checkIn.checkin_chore_completed != null ? row('Chore completed', checkIn.checkin_chore_completed ? 'Yes ✓' : 'No ✗', checkIn.checkin_chore_completed ? '#16a34a' : '#dc2626') : ''}
     ${checkIn.checkin_employed != null ? row('Employed', checkIn.checkin_employed ? 'Yes' : 'No') : ''}
@@ -1010,6 +1025,7 @@ function WeeklyCheckInCard({ entry }) {
     <div style={{ marginTop: '8px' }}>
       <Row label="Meetings attended" value={entry.checkin_meetings} />
       <Row label="Sponsor contacts" value={entry.checkin_sponsor_contacts} />
+      <Row label="Step" value={entry.checkin_step} />
       <Row label="Assigned chore" value={entry.checkin_chore} />
       <Row label="Chore completed" value={entry.checkin_chore_completed === true ? 'Yes ✓' : entry.checkin_chore_completed === false ? 'No ✗' : null} />
       <Row label="Employed" value={entry.checkin_employed === true ? 'Yes' : entry.checkin_employed === false ? 'No' : null} />
@@ -1055,6 +1071,7 @@ function LatestCheckIn({ clientId }) {
       </p>
       <Row label="Meetings this week" value={entry.checkin_meetings} />
       <Row label="Sponsor contacts" value={entry.checkin_sponsor_contacts} />
+      <Row label="Step" value={entry.checkin_step} />
       <Row label="Assigned chore" value={entry.checkin_chore} />
       <Row label="Chore completed" value={entry.checkin_chore_completed === true ? 'Yes ✓' : entry.checkin_chore_completed === false ? 'No ✗' : null} />
       <Row label="Employed" value={entry.checkin_employed === true ? 'Yes' : entry.checkin_employed === false ? 'No' : null} />
@@ -1464,7 +1481,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     author: fullName || user?.email || '', notes: '', severity: 'Low', meeting_name: '', chore_name: '',
     chore_status: 'Completed', mood_value: '5', ua_result: 'Negative',
     checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false,
-    reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '',
+    reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', wci_step: '',
   });
   const [editingField, setEditingField] = useState(null);
   const [expandedWeeks, setExpandedWeeks] = useState({});
@@ -2056,8 +2073,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     let reflectionData = null;
     if (entryType === 'Weekly Reflection') {
       reflectionData = JSON.stringify({
-        mood: entryForm.reflection_mood, challenge: entryForm.reflection_challenge,
-        win: entryForm.reflection_win, goals: entryForm.reflection_goals,
+        mood: entryForm.reflection_mood, challenge: sanitizeText(entryForm.reflection_challenge),
+        win: sanitizeText(entryForm.reflection_win), goals: sanitizeText(entryForm.reflection_goals),
       });
     }
     // Upload photo if attached
@@ -2071,11 +2088,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       photoUrl = urlData.publicUrl;
     }
     const { error } = await supabase.from('client_timeline').insert([{
-      client_id: selected.id, entry_type: entryType, author: entryForm.author,
-      notes: entryType === 'Weekly Check-In' ? (entryForm.wci_reflection || null) : (entryForm.notes || null),
+      client_id: selected.id, entry_type: entryType, author: sanitizeText(entryForm.author),
+      notes: entryType === 'Weekly Check-In' ? sanitizeText(entryForm.wci_reflection || null) : sanitizeText(entryForm.notes || null),
       severity: entryType === 'Crisis' ? entryForm.severity : entryType === 'Infraction' ? entryForm.severity : null,
       event_name: entryType === 'UA' ? entryForm.ua_result : null,
-      meeting_name: entryType === 'Meeting' ? entryForm.meeting_name : null,
+      meeting_name: entryType === 'Meeting' ? sanitizeText(entryForm.meeting_name) : null,
       mood_value: entryType === 'Mood Check-In' ? parseInt(entryForm.mood_value) : null,
       reflection_data: reflectionData,
       latitude: entryForm.latitude ? parseFloat(entryForm.latitude) : null,
@@ -2084,11 +2101,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       source: 'staff',
       checkin_meetings: entryType === 'Weekly Check-In' && entryForm.wci_meetings !== '' ? parseInt(entryForm.wci_meetings) : null,
       checkin_sponsor_contacts: entryType === 'Weekly Check-In' && entryForm.wci_sponsor_contacts !== '' ? parseInt(entryForm.wci_sponsor_contacts) : null,
-      checkin_chore: entryType === 'Weekly Check-In' ? (entryForm.wci_chore || null) : null,
+      checkin_step: entryType === 'Weekly Check-In' ? (entryForm.wci_step || null) : null,
+      checkin_chore: entryType === 'Weekly Check-In' ? sanitizeText(entryForm.wci_chore || null) : null,
       checkin_chore_completed: entryType === 'Weekly Check-In' && entryForm.wci_chore_completed !== '' ? entryForm.wci_chore_completed === 'yes' : null,
       checkin_employed: entryType === 'Weekly Check-In' && entryForm.wci_employed !== '' ? entryForm.wci_employed === 'yes' : null,
-      checkin_employer: entryType === 'Weekly Check-In' ? (entryForm.wci_employer || null) : null,
-      checkin_payment_plan: entryType === 'Weekly Check-In' ? (entryForm.wci_payment_plan || null) : null,
+      checkin_employer: entryType === 'Weekly Check-In' ? sanitizeText(entryForm.wci_employer || null) : null,
+      checkin_payment_plan: entryType === 'Weekly Check-In' ? sanitizeText(entryForm.wci_payment_plan || null) : null,
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
 
@@ -2113,7 +2131,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     }
 
     setShowAddEntry(false);
-    setEntryForm({ author: fullName || user?.email || '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null, wci_meetings: '', wci_sponsor_contacts: '', wci_chore: '', wci_chore_completed: '', wci_employed: '', wci_employer: '', wci_payment_plan: '', wci_reflection: '' });
+    setEntryForm({ author: fullName || user?.email || '', notes: '', severity: 'Low', meeting_name: '', chore_name: '', chore_status: 'Completed', mood_value: '5', ua_result: 'Negative', checkin_status: 'Here', latitude: '', longitude: '', pinDropped: false, reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', photo_file: null, photo_preview: null, wci_meetings: '', wci_sponsor_contacts: '', wci_step: '', wci_chore: '', wci_chore_completed: '', wci_employed: '', wci_employer: '', wci_payment_plan: '', wci_reflection: '' });
     setEntryType('General Note');
     fetchTimeline(selected.id);
     fetchFullHistory(selected.id);
@@ -2971,6 +2989,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                           <div style={{ marginBottom: '12px' }}>
                             <label style={sf.label}>How many sponsor contacts in the past week? <span style={{ fontWeight: 400, color: '#6b7280' }}>(Only phone calls and in-person count)</span></label>
                             <input type="number" min="0" value={entryForm.wci_sponsor_contacts} onChange={e => setEntryForm(p => ({ ...p, wci_sponsor_contacts: e.target.value }))} style={sf.input} placeholder="Enter number" />
+                          </div>
+                          <div style={{ marginBottom: '12px' }}>
+                            <label style={sf.label}>What step are you on?</label>
+                            <select value={entryForm.wci_step} onChange={e => setEntryForm(p => ({ ...p, wci_step: e.target.value }))} style={sf.input}>
+                              <option value="">Select a step</option>
+                              {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(n => <option key={n} value={n}>{n}</option>)}
+                            </select>
                           </div>
                           <div style={{ marginBottom: '12px' }}>
                             <label style={sf.label}>Chore</label>
