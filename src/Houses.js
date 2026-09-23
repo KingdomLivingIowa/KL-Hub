@@ -248,7 +248,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
       }
       const [{ data: housesData }, { data: clientsData }] = await Promise.all([
         query,
-        supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
+        supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, room_id, bed_number, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
       ]);
 
       // Calculate real balances from charges and payments
@@ -316,7 +316,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchResidents = useCallback(async (houseId) => {
-    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date, photo_url').eq('house_id', houseId).in('status', ['Active', 'Pending']);
+    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, room_id, bed_number, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date, photo_url').eq('house_id', houseId).in('status', ['Active', 'Pending']);
     const clientIds = (data || []).map(c => c.id);
     let balanceMap = {};
     if (clientIds.length > 0) {
@@ -573,6 +573,18 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
     fetchRooms(selected.id);
   };
 
+  const assignBed = async (clientId, roomId, bedNumber) => {
+    const { error } = await supabase.from('clients').update({ room_id: roomId, bed_number: bedNumber }).eq('id', clientId);
+    if (error) { alert('Error assigning bed: ' + error.message); return; }
+    fetchResidents(selected.id);
+  };
+
+  const unassignBed = async (clientId) => {
+    const { error } = await supabase.from('clients').update({ room_id: null, bed_number: null }).eq('id', clientId);
+    if (error) { alert('Error: ' + error.message); return; }
+    fetchResidents(selected.id);
+  };
+
   const saveEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
     if (entryType === 'Crisis' && !entryForm.severity) { alert('Severity is required.'); return; }
@@ -716,6 +728,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
   };
 
   const initials = (name) => name ? name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
+  const bedLabel = (r) => {
+    if (!r.room_id || !r.bed_number) return null;
+    const room = rooms.find(rm => rm.id === r.room_id);
+    return room ? `${room.name} · Bed ${r.bed_number}` : `Bed ${r.bed_number}`;
+  };
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const formatBalance = (b) => { if (b == null) return '—'; const num = parseFloat(b); return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2); };
 
@@ -1020,7 +1037,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             </div>
                             <div style={{ flex: 1 }}>
                               <p style={s.resName}>{r.full_name}</p>
-                              <p style={s.resMeta}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}{r.room_type ? ` · ${r.room_type}` : ''}</p>
+                              <p style={s.resMeta}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}{bedLabel(r) ? ` · ${bedLabel(r)}` : (r.room_type ? ` · ${r.room_type}` : '')}</p>
                             </div>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </div>
@@ -1050,6 +1067,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                             <div style={s.resDetailGrid}>
                               <div style={s.resDetailItem}><span style={s.resDetailLabel}>Start Date</span><span style={s.resDetailVal}>{r.start_date || '—'}</span></div>
                               <div style={s.resDetailItem}><span style={s.resDetailLabel}>Room Type</span><span style={s.resDetailVal}>{r.room_type || '—'}</span></div>
+                              <div style={s.resDetailItem}><span style={s.resDetailLabel}>Bed</span><span style={s.resDetailVal}>{bedLabel(r) || 'Not assigned'}</span></div>
                               <div style={s.resDetailItem}><span style={s.resDetailLabel}>Phone</span><span style={s.resDetailVal}>{r.phone || '—'}</span></div>
                             </div>
                           )}
@@ -1298,14 +1316,43 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                     </div>
                   )}
                   {rooms.length === 0 ? <p style={{ color: '#4b5563', fontSize: '14px' }}>No rooms added yet.</p> : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {rooms.map(r => (
-                        <div key={r.id} style={s.roomRow}>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
-                            <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
+                        <div key={r.id} style={{ ...s.roomRow, flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ flex: 1 }}>
+                              <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.name}</p>
+                              <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.type} · {r.beds} bed{r.beds !== 1 ? 's' : ''}</p>
+                            </div>
+                            <button onClick={() => deleteRoom(r.id)} style={s.deleteBtn}>Remove</button>
                           </div>
-                          <button onClick={() => deleteRoom(r.id)} style={s.deleteBtn}>Remove</button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {Array.from({ length: r.beds || 0 }, (_, i) => i + 1).map(bedNum => {
+                              const occupant = residents.find(res => res.room_id === r.id && res.bed_number === bedNum);
+                              return (
+                                <div key={bedNum} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '8px', padding: '6px 10px' }}>
+                                  <span style={{ fontSize: '13px', color: '#71717a', minWidth: '54px', flexShrink: 0 }}>Bed {bedNum}</span>
+                                  {occupant ? (
+                                    <>
+                                      <span style={{ flex: 1, fontSize: '14px', color: '#18181b', fontWeight: '500' }}>{occupant.full_name}</span>
+                                      <button onClick={() => unassignBed(occupant.id)} style={{ ...s.deleteBtn, fontSize: '12px', padding: '3px 10px' }}>Unassign</button>
+                                    </>
+                                  ) : (
+                                    <select
+                                      value=""
+                                      onChange={e => { if (e.target.value) assignBed(e.target.value, r.id, bedNum); }}
+                                      style={{ ...s.input, flex: 1, padding: '6px 10px', fontSize: '13px' }}
+                                    >
+                                      <option value="">— Empty · assign resident —</option>
+                                      {residents.filter(res => !(res.room_id && res.bed_number)).map(res => (
+                                        <option key={res.id} value={res.id}>{res.full_name}</option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       ))}
                     </div>
