@@ -540,7 +540,12 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
 
   const saveHouseEdit = async () => {
     if (!selected) return;
+    if (!houseEditForm.name?.trim()) { alert('House name is required.'); return; }
     const { error } = await supabase.from('houses').update({
+      name: houseEditForm.name.trim(),
+      address: houseEditForm.address || null,
+      city: houseEditForm.city || null,
+      zip: houseEditForm.zip || null,
       type: houseEditForm.type,
       total_beds: parseInt(houseEditForm.total_beds) || selected.total_beds,
       house_manager: houseEditForm.house_manager || null,
@@ -894,7 +899,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => { setHouseEditForm({ type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '', door_code: selected.door_code || '' }); setEditingHouse(true); }}
+                <button onClick={() => { setHouseEditForm({ name: selected.name || '', address: selected.address || '', city: selected.city || '', zip: selected.zip || '', type: selected.type, total_beds: selected.total_beds, house_manager: selected.house_manager || '', phone: selected.phone || '', door_code: selected.door_code || '' }); setEditingHouse(true); }}
                   style={{ background: '#f7f7f9', border: '1px solid #c9c9cf', color: '#52525b', padding: '6px 14px', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                   ✏ Edit House
                 </button>
@@ -906,6 +911,30 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
               <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px', padding: '16px 20px', marginBottom: '16px' }}>
                 <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '0 0 14px 0' }}>Edit House Details</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>House Name</label>
+                    <input value={houseEditForm.name} onChange={e => setHouseEditForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="House name"
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Address</label>
+                    <input value={houseEditForm.address} onChange={e => setHouseEditForm(p => ({ ...p, address: e.target.value }))}
+                      placeholder="Street address"
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>City</label>
+                    <input value={houseEditForm.city} onChange={e => setHouseEditForm(p => ({ ...p, city: e.target.value }))}
+                      placeholder="City"
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Zip</label>
+                    <input value={houseEditForm.zip} onChange={e => setHouseEditForm(p => ({ ...p, zip: e.target.value }))}
+                      placeholder="Zip code"
+                      style={{ width: '100%', background: '#f7f7f9', border: '1px solid #b8b8bf', borderRadius: '8px', padding: '8px 10px', color: '#18181b', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
                   <div>
                     <label style={{ color: '#52525b', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Type</label>
                     <select value={houseEditForm.type} onChange={e => setHouseEditForm(p => ({ ...p, type: e.target.value }))}
