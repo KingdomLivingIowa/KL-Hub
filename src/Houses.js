@@ -1428,7 +1428,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
               ) : (
                 <>
                   <p style={{ color: '#52525b', fontSize: '14px', margin: '0 0 12px 0' }}>
-                    This will revert <strong style={{ color: '#18181b' }}>{moveInModal.full_name}</strong> back to Accepted status and log the reason in their stays history.
+                    This will move <strong style={{ color: '#18181b' }}>{moveInModal.full_name}</strong> to Archived status and log the reason in their stays history.
                   </p>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={s.label}>Reason *</label>
