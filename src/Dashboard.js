@@ -625,6 +625,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
 }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const [pendingClientId, setPendingClientId] = useState(null);
   const [cameFromHouses, setCameFromHouses] = useState(false);
+  const [reopenHouseId, setReopenHouseId] = useState(null);
 
   const {
     role,
@@ -785,11 +786,16 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
             />
           )}
           {activePage === 'houses' && (
-            <Houses onOpenClient={(clientId) => {
-              setPendingClientId(clientId);
-              setCameFromHouses(true);
-              setActivePage('clients');
-            }} />
+            <Houses
+              reopenHouseId={reopenHouseId}
+              onHouseReopened={() => setReopenHouseId(null)}
+              onOpenClient={(clientId, houseId) => {
+                setPendingClientId(clientId);
+                setCameFromHouses(true);
+                setReopenHouseId(houseId || null);
+                setActivePage('clients');
+              }}
+            />
           )}
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'messages' && <Messaging />}

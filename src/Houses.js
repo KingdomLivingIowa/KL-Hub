@@ -3,6 +3,12 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
+function houseTypeBadgeColor(type) {
+  if (type === 'Women') return { bg: '#fce7f3', color: '#db2777' };
+  if (type === 'Co-ed') return { bg: '#dcfce7', color: '#16a34a' };
+  return { bg: '#dbeafe', color: '#2563eb' };
+}
+
 const WALKTHROUGH_SECTIONS = [
   {
     section: 'Entrances, Exits & Egress',
@@ -172,7 +178,7 @@ function HouseWeeklyReflectionCard({ entry }) {
   );
 }
 
-function Houses({ onOpenClient }) {
+function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, fullName } = useUser();
 
   const [houses, setHouses] = useState([]);
@@ -357,9 +363,19 @@ function Houses({ onOpenClient }) {
 
   const openClientProfile = (client) => {
     if (onOpenClient) {
-      onOpenClient(client.id);
+      onOpenClient(client.id, selected?.id || null);
     }
   };
+
+  // Reopen the house we came from when returning here from a client's profile
+  // (e.g. via the client page's "← Houses" back button).
+  useEffect(() => {
+    if (!reopenHouseId || houses.length === 0 || selected) return;
+    const house = houses.find(h => h.id === reopenHouseId);
+    if (house) openHouse(house);
+    if (onHouseReopened) onHouseReopened();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reopenHouseId, houses]);
 
   const confirmMoveIn = async () => {
     if (!moveInModal) return;
@@ -479,6 +495,14 @@ function Houses({ onOpenClient }) {
     if (!window.confirm('Are you sure you want to delete this house? This cannot be undone.')) return;
     await supabase.from('rooms').delete().eq('house_id', houseId);
     await supabase.from('house_timeline').delete().eq('house_id', houseId);
+    // The house's group chat (conversations row) also has to go before the house
+    // can be deleted — otherwise Postgres blocks it with a foreign key error.
+    const { data: houseConvs } = await supabase.from('conversations').select('id').eq('house_id', houseId);
+    for (const conv of houseConvs || []) {
+      await supabase.from('messages').delete().eq('conversation_id', conv.id);
+      await supabase.from('conversation_members').delete().eq('conversation_id', conv.id);
+      await supabase.from('conversations').delete().eq('id', conv.id);
+    }
     const { error } = await supabase.from('houses').delete().eq('id', houseId);
     if (error) { alert('Error deleting: ' + error.message); return; }
     loadAllData(true);
@@ -758,7 +782,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <p style={s.houseName}>{house.name}</p>
                         <p style={s.houseAddress}>{house.address}{house.city ? `, ${house.city}` : ''}</p>
                       </div>
-                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#fce7f3' : '#dbeafe', color: house.type === 'Women' ? '#db2777' : '#2563eb' }}>{house.type}</span>
+                      <span style={{ ...s.typeBadge, background: houseTypeBadgeColor(house.type).bg, color: houseTypeBadgeColor(house.type).color }}>{house.type}</span>
                     </div>
                     <div style={s.bedBar}><div style={s.bedBarFill(house)} /></div>
                     <div style={s.houseStats}>
@@ -793,7 +817,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   <div key={house.id} style={s.houseGroup}>
                     <div style={s.houseGroupHeader}>
                       <span style={s.houseGroupName}>{house.name}</span>
-                      <span style={{ ...s.typeBadge, background: house.type === 'Women' ? '#fce7f3' : '#dbeafe', color: house.type === 'Women' ? '#db2777' : '#2563eb' }}>{house.type}</span>
+                      <span style={{ ...s.typeBadge, background: houseTypeBadgeColor(house.type).bg, color: houseTypeBadgeColor(house.type).color }}>{house.type}</span>
                       <span style={s.houseGroupCount}>{houseResidents.length} resident{houseResidents.length !== 1 ? 's' : ''}</span>
                     </div>
                     <div style={s.residentTable}>
@@ -861,7 +885,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 <h2 style={s.modalName}>{selected.name}</h2>
                 <p style={s.modalSub}>{selected.address}{selected.city ? `, ${selected.city}` : ''}{selected.zip ? ` ${selected.zip}` : ''}</p>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ ...s.typeBadge, background: selected.type === 'Women' ? '#fce7f3' : '#dbeafe', color: selected.type === 'Women' ? '#db2777' : '#2563eb' }}>{selected.type}</span>
+                  <span style={{ ...s.typeBadge, background: houseTypeBadgeColor(selected.type).bg, color: houseTypeBadgeColor(selected.type).color }}>{selected.type}</span>
                   <span style={{ ...s.typeBadge, background: '#f3e8ff', color: '#9333ea' }}>{selected.occupied_beds || 0} active</span>
                   <span style={{ ...s.typeBadge, background: '#ffedd5', color: '#ca8a04' }}>{selected.pending_count || 0} pending</span>
                   <span style={{ ...s.typeBadge, background: '#dcfce7', color: '#16a34a' }}>{(selected.total_beds || 0) - (selected.occupied_beds || 0) - (selected.pending_count || 0)} available</span>
