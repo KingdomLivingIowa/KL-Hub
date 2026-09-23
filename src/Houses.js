@@ -248,7 +248,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
       }
       const [{ data: housesData }, { data: clientsData }] = await Promise.all([
         query,
-        supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, expected_move_in_date').in('status', ['Active', 'Pending']).order('full_name'),
+        supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
       ]);
 
       // Calculate real balances from charges and payments
@@ -316,7 +316,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchResidents = useCallback(async (houseId) => {
-    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date').eq('house_id', houseId).in('status', ['Active', 'Pending']);
+    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date, photo_url').eq('house_id', houseId).in('status', ['Active', 'Pending']);
     const clientIds = (data || []).map(c => c.id);
     let balanceMap = {};
     if (clientIds.length > 0) {
@@ -837,7 +837,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       {houseResidents.map(r => (
                         <div key={r.id} style={{ ...s.residentTableRow, cursor: 'pointer' }} onClick={() => openClientProfile(r)}>
                           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={s.resAvatar}>{initials(r.full_name)}</div>
+                            <div style={s.resAvatar}>
+                              {r.photo_url
+                                ? <img src={r.photo_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                : initials(r.full_name)}
+                            </div>
                             <div>
                               <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
                               <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
@@ -1009,7 +1013,11 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       {residents.map(r => (
                         <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }} onClick={() => { setSelected(null); openClientProfile(r); }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: r.status === 'Pending' ? '10px' : '0' }}>
-                            <div style={s.resAvatar}>{initials(r.full_name)}</div>
+                            <div style={s.resAvatar}>
+                              {r.photo_url
+                                ? <img src={r.photo_url} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                : initials(r.full_name)}
+                            </div>
                             <div style={{ flex: 1 }}>
                               <p style={s.resName}>{r.full_name}</p>
                               <p style={s.resMeta}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}{r.room_type ? ` · ${r.room_type}` : ''}</p>
