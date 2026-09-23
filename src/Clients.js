@@ -3453,10 +3453,15 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           houses={houses}
           onClose={() => setMoveHouseModal(null)}
           onSuccess={(newHouseId, newHouseName) => {
+            const movedClient = moveHouseModal;
             setMoveHouseModal(null);
             fetchClients();
-            if (selected?.id === moveHouseModal.id) {
-              setSelected(prev => ({ ...prev, house_id: newHouseId, house_name: newHouseName }));
+            if (onBackToHouses) {
+              // We got to this client's profile from a house — go back there
+              // (it will reopen to the same house) instead of dropping to the flat client list.
+              onBackToHouses();
+            } else {
+              setSelected({ ...movedClient, house_id: newHouseId, house_name: newHouseName });
             }
           }}
         />
