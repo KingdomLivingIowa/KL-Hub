@@ -246,13 +246,22 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         setHouses([]); setAllResidents([]);
         return;
       }
-      const [{ data: housesData }, { data: clientsData }, { data: pendingMoveOuts }] = await Promise.all([
+      const [{ data: housesData }, { data: clientsData }, { data: pendingMoveOuts }, { data: approvedMoveOuts }] = await Promise.all([
         query,
         supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, room_id, bed_number, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
         supabase.from('move_out_requests').select('house_id').eq('status', 'pending'),
+        supabase.from('move_out_requests').select('house_id, requested_move_out_date, clients(full_name)')
+          .eq('status', 'approved')
+          .gte('requested_move_out_date', new Date().toISOString().split('T')[0])
+          .order('requested_move_out_date', { ascending: true }),
       ]);
       const moveOutCountMap = {};
       (pendingMoveOuts || []).forEach(r => { moveOutCountMap[r.house_id] = (moveOutCountMap[r.house_id] || 0) + 1; });
+      const approvedMoveOutMap = {};
+      (approvedMoveOuts || []).forEach(r => {
+        if (!approvedMoveOutMap[r.house_id]) approvedMoveOutMap[r.house_id] = [];
+        approvedMoveOutMap[r.house_id].push({ name: r.clients?.full_name || 'Resident', date: r.requested_move_out_date });
+      });
 
       // Calculate real balances from charges and payments
       const clientIds = (clientsData || []).map(c => c.id);
@@ -277,6 +286,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         occupied_beds: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Active').length,
         pending_count: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Pending').length,
         pending_move_out_count: moveOutCountMap[h.id] || 0,
+        approved_move_outs: approvedMoveOutMap[h.id] || [],
       }));
       setHouses(enriched);
       setAllResidents(clientsWithBalance);
@@ -827,13 +837,22 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       )}
                       {house.pending_move_out_count > 0 && (
                         <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '8px',
+                          display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '8px', marginRight: '6px',
                           background: '#fee2e2', border: '1px solid #b22222', color: '#b22222',
                           borderRadius: '20px', padding: '3px 10px', fontSize: '12px', fontWeight: '600',
                         }}>
                           🚪 {house.pending_move_out_count} pending move-out{house.pending_move_out_count !== 1 ? 's' : ''}
                         </span>
                       )}
+                      {(house.approved_move_outs || []).map((mo, i) => (
+                        <span key={i} style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '8px', marginRight: '6px',
+                          background: '#dcfce7', border: '1px solid #16a34a', color: '#16a34a',
+                          borderRadius: '20px', padding: '3px 10px', fontSize: '12px', fontWeight: '600',
+                        }}>
+                          ✓ {mo.name} moving out {new Date(mo.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </span>
+                      ))}
                     </div>
                     {hasFullAccess && (
                       <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn} title="Delete house" aria-label="Delete house">✕</button>
