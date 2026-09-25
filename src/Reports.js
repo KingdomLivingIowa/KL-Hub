@@ -26,16 +26,17 @@ const EXIT_LABELS = {
   'Other': 'Other',
 };
 
-function getWeekRange() {
+function getWeekRange(offsetWeeks = 0) {
+  // Weeks run Friday through Thursday.
   const now = new Date();
-  const day = now.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  const mon = new Date(now);
-  mon.setDate(now.getDate() + diff);
-  mon.setHours(0, 0, 0, 0);
-  const sun = new Date(mon);
-  sun.setDate(mon.getDate() + 6);
-  return { start: mon.toISOString().split('T')[0], end: sun.toISOString().split('T')[0] };
+  const day = now.getDay(); // 0=Sun ... 5=Fri, 6=Sat
+  const daysSinceFriday = (day - 5 + 7) % 7;
+  const fri = new Date(now);
+  fri.setDate(now.getDate() - daysSinceFriday + offsetWeeks * 7);
+  fri.setHours(0, 0, 0, 0);
+  const thu = new Date(fri);
+  thu.setDate(fri.getDate() + 6);
+  return { start: fri.toISOString().split('T')[0], end: thu.toISOString().split('T')[0] };
 }
 
 function calcLOS(startDate, endDate) {
@@ -257,6 +258,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [reportMonth, setReportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [reportHouse, setReportHouse] = useState('combined');
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const [clients, setClients] = useState([]);
   const [stays, setStays] = useState([]);
@@ -290,7 +292,7 @@ export default function Reports() {
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
   // ── Weekly ─────────────────────────────────────────────────────────────────
-  const week = getWeekRange();
+  const week = getWeekRange(weekOffset);
 
   const appsThisWeek = applications.filter(a =>
     a.created_at && a.created_at.split('T')[0] >= week.start && a.created_at.split('T')[0] <= week.end
@@ -544,8 +546,24 @@ export default function Reports() {
       {/* ── WEEKLY ──────────────────────────────────────────────────────────── */}
       {activeTab === 'weekly' && (
         <div>
-          <div style={{ fontSize: 11, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
-            Week of {week.start} — {week.end}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+            <button onClick={() => setWeekOffset(o => o - 1)}
+              style={{ background: '#f7f7f9', border: '1px solid #c9c9cf', borderRadius: 8, padding: '6px 12px', fontSize: 14, cursor: 'pointer', color: '#3f3f46', fontWeight: '600' }}>
+              ← Prev Week
+            </button>
+            <div style={{ fontSize: 11, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Week of {week.start} — {week.end}
+            </div>
+            <button onClick={() => setWeekOffset(o => o + 1)}
+              style={{ background: '#f7f7f9', border: '1px solid #c9c9cf', borderRadius: 8, padding: '6px 12px', fontSize: 14, cursor: 'pointer', color: '#3f3f46', fontWeight: '600' }}>
+              Next Week →
+            </button>
+            {weekOffset !== 0 && (
+              <button onClick={() => setWeekOffset(0)}
+                style={{ background: '#fee2e2', border: '1px solid #b22222', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer', color: '#b22222', fontWeight: '600' }}>
+                This Week
+              </button>
+            )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
             <StatCard label="Male Applicants" value={maleAppsWeek} accent="#2563eb" />
