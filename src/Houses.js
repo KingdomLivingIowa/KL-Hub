@@ -1976,17 +1976,18 @@ function FormsTab({ houseId, houseName, currentUser, onReviewed }) {
           <button key={t.id} onClick={() => setSubTab(t.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: '7px',
-              padding: '9px 16px', borderRadius: '9px', border: 'none', cursor: 'pointer',
+              padding: '9px 16px', borderRadius: '9px', cursor: 'pointer',
               fontSize: '14px', fontWeight: '600', whiteSpace: 'nowrap',
-              background: subTab === t.id ? '#b22222' : '#ffffff',
-              color: subTab === t.id ? '#18181b' : '#4b5563',
+              background: subTab === t.id ? '#fee2e2' : '#ffffff',
+              border: subTab === t.id ? '1px solid #b22222' : '1px solid transparent',
+              color: subTab === t.id ? '#b22222' : '#4b5563',
               transition: 'background 0.15s, color 0.15s',
             }}>
             {t.label}
             {!!t.count && (
               <span style={{
-                background: subTab === t.id ? 'rgba(255,255,255,0.25)' : '#fee2e2',
-                color: '#18181b', fontSize: '11px', fontWeight: '700',
+                background: '#fee2e2', border: '1px solid #b22222',
+                color: '#b22222', fontSize: '11px', fontWeight: '700',
                 borderRadius: '10px', padding: '1px 7px', minWidth: '18px', textAlign: 'center',
               }}>
                 {t.count}
@@ -2384,7 +2385,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
   ];
 
   const statusColor = (s) => s === 'approved' ? '#16a34a' : s === 'denied' ? '#dc2626' : '#c2410c';
-  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#fee2e2' : '#78350f';
+  const statusBg = (s) => s === 'approved' ? '#dcfce7' : s === 'denied' ? '#fee2e2' : '#ffedd5';
   const statusLabel = (s) => s === 'approved' ? '✓ Approved' : s === 'denied' ? '✗ Denied' : '⏳ Pending';
 
   return (
@@ -2394,7 +2395,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none', background: filter === f ? '#b22222' : '#c9c9cf', color: filter === f ? '#18181b' : '#6b7280' }}>
+              style={{ padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', background: filter === f ? '#fee2e2' : '#f7f7f9', border: filter === f ? '1px solid #b22222' : '1px solid #c9c9cf', color: filter === f ? '#b22222' : '#6b7280' }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
@@ -2490,7 +2491,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                           style={{ width: '100%', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '8px', color: '#18181b', fontSize: '14px', padding: '8px 10px', boxSizing: 'border-box', resize: 'none', marginBottom: '10px' }} />
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button onClick={() => handleReview(r, reviewing.action)} disabled={saving}
-                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#14532d' : '#fee2e2', color: reviewing.action === 'approved' ? '#16a34a' : '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+                            style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', background: reviewing.action === 'approved' ? '#dcfce7' : '#fee2e2', color: reviewing.action === 'approved' ? '#16a34a' : '#dc2626', fontSize: '14px', fontWeight: '600', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                             {saving ? 'Saving...' : `Confirm ${reviewing.action === 'approved' ? 'Approval' : 'Denial'}`}
                           </button>
                           <button onClick={() => { setReviewing(null); setReviewNotes(''); }}
@@ -2502,7 +2503,7 @@ function MoveOutRequestsTab({ houseId, houseName, onReviewed }) {
                     ) : (
                       <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={() => setReviewing({ id: r.id, action: 'approved' })}
-                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #166534', background: '#14532d', color: '#16a34a', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                          style={{ flex: 1, padding: '9px', borderRadius: '8px', border: '1px solid #16a34a', background: '#dcfce7', color: '#16a34a', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
                           ✓ Approve
                         </button>
                         <button onClick={() => setReviewing({ id: r.id, action: 'denied' })}
@@ -2600,7 +2601,7 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
 
   const fmt = (d) => d ? new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
   const statusColor = (s) => s === 'approved' ? '#16a34a' : s === 'denied' ? '#dc2626' : '#c2410c';
-  const statusBg = (s) => s === 'approved' ? '#14532d' : s === 'denied' ? '#fee2e2' : '#ffedd5';
+  const statusBg = (s) => s === 'approved' ? '#dcfce7' : s === 'denied' ? '#fee2e2' : '#ffedd5';
 
   return (
     <div style={{ marginTop: '28px' }}>
@@ -2609,7 +2610,7 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
         <div style={{ display: 'flex', gap: '6px' }}>
           {['pending', 'approved', 'denied', 'all'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#b22222' : 'transparent', border: filter === f ? 'none' : '1px solid #c9c9cf', color: filter === f ? '#18181b' : '#6b7280', textTransform: 'capitalize' }}>
+              style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: filter === f ? '600' : '400', background: filter === f ? '#fee2e2' : 'transparent', border: filter === f ? '1px solid #b22222' : '1px solid #c9c9cf', color: filter === f ? '#b22222' : '#6b7280', textTransform: 'capitalize' }}>
               {f}
             </button>
           ))}
@@ -2666,7 +2667,7 @@ function OvernightRequestsTab({ houseId, houseName, onReviewed }) {
                       ✓ Approve
                     </button>
                     <button onClick={() => handleReview('denied')} disabled={saving}
-                      style={{ flex: 1, background: '#b22222', border: 'none', color: '#18181b', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
+                      style={{ flex: 1, background: '#fee2e2', border: '1px solid #b22222', color: '#b22222', padding: '8px', borderRadius: '6px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       ✗ Deny
                     </button>
                     <button onClick={() => setReviewing(null)}
