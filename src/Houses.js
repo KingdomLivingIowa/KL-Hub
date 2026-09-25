@@ -246,10 +246,13 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         setHouses([]); setAllResidents([]);
         return;
       }
-      const [{ data: housesData }, { data: clientsData }] = await Promise.all([
+      const [{ data: housesData }, { data: clientsData }, { data: pendingMoveOuts }] = await Promise.all([
         query,
         supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, room_id, bed_number, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
+        supabase.from('move_out_requests').select('house_id').eq('status', 'pending'),
       ]);
+      const moveOutCountMap = {};
+      (pendingMoveOuts || []).forEach(r => { moveOutCountMap[r.house_id] = (moveOutCountMap[r.house_id] || 0) + 1; });
 
       // Calculate real balances from charges and payments
       const clientIds = (clientsData || []).map(c => c.id);
@@ -273,6 +276,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         ...h,
         occupied_beds: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Active').length,
         pending_count: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Pending').length,
+        pending_move_out_count: moveOutCountMap[h.id] || 0,
       }));
       setHouses(enriched);
       setAllResidents(clientsWithBalance);
@@ -294,6 +298,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
     const channel = supabase.channel('houses_grid_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'houses' }, () => loadAllData(true))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => loadAllData(true))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'move_out_requests' }, () => loadAllData(true))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadAllData]);
@@ -819,6 +824,15 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <p style={s.manager}>Manager: {house.house_manager}</p>
                           {house.phone && <p style={s.managerPhone}>{house.phone}</p>}
                         </>
+                      )}
+                      {house.pending_move_out_count > 0 && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop: '8px',
+                          background: '#fee2e2', border: '1px solid #b22222', color: '#b22222',
+                          borderRadius: '20px', padding: '3px 10px', fontSize: '12px', fontWeight: '600',
+                        }}>
+                          🚪 {house.pending_move_out_count} pending move-out{house.pending_move_out_count !== 1 ? 's' : ''}
+                        </span>
                       )}
                     </div>
                     {hasFullAccess && (
