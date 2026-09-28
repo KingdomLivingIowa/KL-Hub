@@ -109,7 +109,7 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Discharge Sheet – ${name}</title>
   <style>
-    @media print { body { margin: 0; } .no-print { display: none; } }
+    @media print { body { margin: 0; } .no-print { display: none; } img, div { break-inside: avoid; page-break-inside: avoid; } }
     body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 22px; font-weight: bold; }
@@ -117,6 +117,7 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
     hr { border: none; border-top: 1px solid #4b5563; margin: 14px 0 20px 0; }
     h2 { text-align: center; font-size: 18px; margin: 0 0 20px 0; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    img { max-width: 100%; }
     .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
   </style></head><body>
   <button class="no-print print-btn" onclick="window.print()">⬇ Print / Save PDF</button>
@@ -148,7 +149,7 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   ${photoUrls?.length ? `
     <h3 style="margin:28px 0 12px;font-size:15px;">Discharge Photos</h3>
     <div style="display:flex;flex-wrap:wrap;gap:12px;">
-      ${photoUrls.map(url => `<img src="${url}" style="width:200px;height:150px;object-fit:cover;border-radius:6px;border:1px solid #52525b;" />`).join('')}
+      ${photoUrls.map(url => `<div style="width:220px;height:220px;display:flex;align-items:center;justify-content:center;background:#f4f4f5;border-radius:6px;border:1px solid #52525b;overflow:hidden;page-break-inside:avoid;break-inside:avoid;"><img src="${url}" style="max-width:100%;max-height:100%;object-fit:contain;" /></div>`).join('')}
     </div>` : ''
   }
   </body></html>`;
