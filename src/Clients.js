@@ -3674,10 +3674,31 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   <div style={{ marginBottom: '16px' }}>
                     <label style={sf.label}>Discharge photos (optional)</label>
                     <input type="file" accept="image/*" multiple
-                      onChange={e => setStatusForm(p => ({ ...p, discharge_photos: Array.from(e.target.files) }))}
+                      onChange={e => {
+                        const newFiles = Array.from(e.target.files);
+                        setStatusForm(p => ({ ...p, discharge_photos: [...(p.discharge_photos || []), ...newFiles] }));
+                        e.target.value = ''; // reset so picking the same file again still works
+                      }}
                       style={{ ...sf.input, padding: '8px', cursor: 'pointer' }} />
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '6px 0 0 0' }}>You can upload photos one at a time — each one adds to the list below instead of replacing it.</p>
                     {statusForm.discharge_photos?.length > 0 && (
-                      <p style={{ fontSize: '13px', color: '#6b7280', margin: '6px 0 0 0' }}>{statusForm.discharge_photos.length} photo{statusForm.discharge_photos.length !== 1 ? 's' : ''} selected</p>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                        {statusForm.discharge_photos.map((file, i) => {
+                          if (!file._previewUrl) file._previewUrl = URL.createObjectURL(file);
+                          return (
+                            <div key={file._previewUrl} style={{ position: 'relative', width: '84px', height: '84px' }}>
+                              <img src={file._previewUrl} alt={file.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px', border: '1px solid #c9c9cf' }} />
+                              <button type="button"
+                                onClick={() => setStatusForm(p => ({ ...p, discharge_photos: p.discharge_photos.filter((_, idx) => idx !== i) }))}
+                                title="Remove photo"
+                                style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', background: '#dc2626', color: '#fff', border: '1px solid #fff', cursor: 'pointer', fontSize: '12px', lineHeight: '18px', padding: 0 }}>
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </>
