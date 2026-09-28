@@ -980,8 +980,8 @@ function Admissions() {
 
       {/* Merge Returning Client Modal */}
       {mergeReturningModal && !mergeWizardOpen && (
-        <div style={s.modalOverlay} onClick={() => setMergeReturningModal(null)}>
-          <div style={{ ...s.modalBox, maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
+        <div style={s.overlay} onClick={() => setMergeReturningModal(null)}>
+          <div style={{ ...s.modal, maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ color: '#18181b', margin: '0 0 8px 0', fontSize: '16px' }}>Merge with Existing Profile</h3>
             <p style={{ color: '#4b5563', fontSize: '14px', margin: '0 0 20px 0' }}>
               Choose how to handle the merge — quick auto-merge or review each field with the wizard.
