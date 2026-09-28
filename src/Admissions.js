@@ -554,13 +554,20 @@ function Admissions() {
           <button style={s.viewBtn} onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
             {expanded === app.id ? 'Hide Application' : 'View Full Application'}
           </button>
-            {(app.auto_flag?.includes('returning_merge') || app.auto_flag?.includes('past_balance')) && app.status === 'pending' && (
+            {(app.auto_flag?.includes('returning_merge') || app.auto_flag?.includes('past_balance') || (duplicate && !duplicate.isApplication)) && app.status === 'pending' && (
             <button style={{ padding: '7px 14px', background: '#dbeafe', border: '1px solid #2563eb', borderRadius: '8px', color: '#2563eb', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
-                const { data: existing } = await supabase.from('clients')
-                  .select('*')
-                  .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
-                  .limit(1).maybeSingle();
+                let existing = duplicate && !duplicate.isApplication ? duplicate : null;
+                if (existing) {
+                  const { data: fullClient } = await supabase.from('clients').select('*').eq('id', existing.id).single();
+                  existing = fullClient || existing;
+                } else {
+                  const { data } = await supabase.from('clients')
+                    .select('*')
+                    .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
+                    .limit(1).maybeSingle();
+                  existing = data;
+                }
                 setMergeReturningModal({ app, existingClient: existing || { id: null, full_name: 'unknown', email: '' } });
                 setMergeWizardOpen(false);
               }}>
