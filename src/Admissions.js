@@ -445,30 +445,49 @@ function Admissions() {
 
   const handleMergeReturning = async () => {
     if (!mergeReturningModal) return;
-    setMerging(true);
     const { app, existingClient } = mergeReturningModal;
 
-    const { error } = await supabase.from('clients').update({
-      first_name: app.first_name || existingClient.first_name,
-      last_name: app.last_name || existingClient.last_name,
-      phone: app.phone || existingClient.phone,
-      email: app.email || existingClient.email,
-      date_of_birth: app.date_of_birth || existingClient.date_of_birth,
-      ssn: app.ssn || existingClient.ssn,
-      gender: app.assigned_sex || app.gender || existingClient.gender,
-      po_name: app.po_name || existingClient.po_name,
-      po_phone: app.po_phone || existingClient.po_phone,
-      sponsor_name: app.sponsor_name || existingClient.sponsor_name,
-      sponsor_phone: app.sponsor_phone || existingClient.sponsor_phone,
-      application_id: app.id,
-    }).eq('id', existingClient.id);
+    if (!existingClient || !existingClient.id) {
+      alert('Could not merge: no existing client record was found to merge into. Try "Merge Wizard" instead, or double-check the matching client exists.');
+      return;
+    }
 
-    if (error) { alert('Error merging client: ' + error.message); setMerging(false); return; }
+    setMerging(true);
+    try {
+      const { data, error } = await supabase.from('clients').update({
+        first_name: app.first_name || existingClient.first_name,
+        last_name: app.last_name || existingClient.last_name,
+        phone: app.phone || existingClient.phone,
+        email: app.email || existingClient.email,
+        date_of_birth: app.date_of_birth || existingClient.date_of_birth,
+        ssn: app.ssn || existingClient.ssn,
+        gender: app.assigned_sex || app.gender || existingClient.gender,
+        po_name: app.po_name || existingClient.po_name,
+        po_phone: app.po_phone || existingClient.po_phone,
+        sponsor_name: app.sponsor_name || existingClient.sponsor_name,
+        sponsor_phone: app.sponsor_phone || existingClient.sponsor_phone,
+        application_id: app.id,
+      }).eq('id', existingClient.id).select();
 
-    setMergeReturningModal(null);
-    fetchApplications();
-    fetchClients();
-    setMerging(false);
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // No error, but no row was actually updated — usually a Supabase RLS
+        // policy silently blocking the update rather than a real failure.
+        alert('The merge did not go through: no matching client record could be updated (this usually means a permissions rule is blocking it). Nothing was changed — please tell Jaz/dev so the RLS policy on "clients" can be checked.');
+        setMerging(false);
+        return;
+      }
+
+      setMergeReturningModal(null);
+      fetchApplications();
+      fetchClients();
+    } catch (err) {
+      console.error('Merge with Existing error:', err);
+      alert('Error merging client: ' + (err.message || err));
+    } finally {
+      setMerging(false);
+    }
   };
 
   const statusColor = (status) => {
