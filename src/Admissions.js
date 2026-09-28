@@ -557,19 +557,26 @@ function Admissions() {
             {(app.auto_flag?.includes('returning_merge') || app.auto_flag?.includes('past_balance') || (duplicate && !duplicate.isApplication)) && app.status === 'pending' && (
             <button style={{ padding: '7px 14px', background: '#dbeafe', border: '1px solid #2563eb', borderRadius: '8px', color: '#2563eb', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
               onClick={async () => {
-                let existing = duplicate && !duplicate.isApplication ? duplicate : null;
-                if (existing) {
-                  const { data: fullClient } = await supabase.from('clients').select('*').eq('id', existing.id).single();
-                  existing = fullClient || existing;
-                } else {
-                  const { data } = await supabase.from('clients')
-                    .select('*')
-                    .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
-                    .limit(1).maybeSingle();
-                  existing = data;
+                try {
+                  let existing = duplicate && !duplicate.isApplication ? duplicate : null;
+                  if (existing) {
+                    const { data: fullClient, error } = await supabase.from('clients').select('*').eq('id', existing.id).maybeSingle();
+                    if (error) throw error;
+                    existing = fullClient || existing;
+                  } else {
+                    const { data, error } = await supabase.from('clients')
+                      .select('*')
+                      .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
+                      .limit(1).maybeSingle();
+                    if (error) throw error;
+                    existing = data;
+                  }
+                  setMergeReturningModal({ app, existingClient: existing || { id: null, full_name: 'unknown', email: '' } });
+                  setMergeWizardOpen(false);
+                } catch (err) {
+                  console.error('Merge with Existing error:', err);
+                  alert('Could not open the merge screen: ' + (err.message || err));
                 }
-                setMergeReturningModal({ app, existingClient: existing || { id: null, full_name: 'unknown', email: '' } });
-                setMergeWizardOpen(false);
               }}>
               🔄 Merge with Existing
             </button>
