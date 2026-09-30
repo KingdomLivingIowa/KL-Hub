@@ -156,12 +156,15 @@ export default function Resources() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
                   style={{ background: '#dcfce7', border: '1px solid #0d9488', color: '#16a34a', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                  {uploading ? '⏳ Uploading...' : '📄 Upload PDF'}
+                  {uploading ? '⏳ Uploading...' : '📄 Upload File'}
                 </button>
-                <input ref={fileInputRef} type="file" accept="application/pdf" onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file).then(url => url && setForm(f => ({ ...f, url })));
-                }} style={{ display: 'none' }} />
+                <input ref={fileInputRef} type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.png,.jpg,.jpeg,.gif,.heic,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/csv,text/plain,image/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file).then(url => url && setForm(f => ({ ...f, url })));
+                    e.target.value = '';
+                  }} style={{ display: 'none' }} />
                 {form.url && (
                   <>
                     <span style={{ fontSize: 13, color: '#16a34a' }}>✓ Uploaded</span>
@@ -229,7 +232,7 @@ export default function Resources() {
                     {r.url && (
                       <button onClick={() => setPdfViewer(r.url)}
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: r.content ? 12 : 0, color: '#2563eb', fontSize: 14, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                        📄 {r.url?.includes('supabase') ? 'View PDF' : 'Open Document'}
+                        📄 View Document
                       </button>
                     )}
                   </div>
