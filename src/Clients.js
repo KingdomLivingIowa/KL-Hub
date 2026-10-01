@@ -11,15 +11,6 @@ const PAGE_SIZE = 25;
 const TIMELINE_PAGE_SIZE = 50;
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 
-// Strips characters that Postgres's JSON parser (used by PostgREST on every insert/
-// update request) will reject with "unsupported Unicode escape sequence":
-//  - NUL and other C0 control characters — Postgres text columns can't store a NUL
-//    byte at all, and this is the single most common trigger (a stray control
-//    character carried in from a paste, an autofill, or a voice-to-text app).
-//  - Unpaired ("lone") UTF-16 surrogates — left behind by some mobile keyboards'
-//    broken emoji autocorrect.
-// PostgREST parses the *whole* request body as JSON, so one bad character anywhere
-// in the payload fails the entire insert — not just whichever field it's actually in.
 function calculateAge(dob) {
   if (!dob) return null;
   const birth = new Date(dob + 'T00:00:00');
@@ -34,17 +25,12 @@ function calculateAge(dob) {
 function sanitizeText(str) {
   if (typeof str !== 'string') return str;
   return str
-    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '') // lone high surrogate
-    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '') // lone low surrogate
+    .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, '')
+    .replace(/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
     // eslint-disable-next-line no-control-regex
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ''); // NUL and other control characters
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 }
 
-// Defined at module scope (not inside the client-profile component) so its function
-// identity stays stable across re-renders. When it was declared inside the parent
-// component, every keystroke re-render created a brand-new EditableField function,
-// which made React treat it as a different component and remount the <input> —
-// that's what was throwing the cursor to the end of the text on every keystroke.
 function EditableField({ label, field, value, alert: isAlert, options, type, editingField, setEditingField, saveField, startEdit, formatDisplay }) {
   const isEditing = editingField?.field === field;
   return (
@@ -73,7 +59,6 @@ function EditableField({ label, field, value, alert: isAlert, options, type, edi
     </div>
   );
 }
-
 function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
   const location = stay.house_name || '—';
@@ -109,8 +94,9 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>Discharge Sheet – ${name}</title>
   <style>
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
     @media print { body { margin: 0; } .no-print { display: none; } img, div { break-inside: avoid; page-break-inside: avoid; } }
-    body { font-family: Arial, sans-serif; margin: 40px; color: #000; }
+    body { font-family: Arial, sans-serif; margin: 40px; color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; color-adjust: exact; }
     .header { display: flex; align-items: center; gap: 20px; margin-bottom: 8px; }
     .org-name { font-size: 22px; font-weight: bold; }
     .org-sub { font-size: 13px; color: #71717a; }
@@ -158,7 +144,6 @@ function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   win.document.write(html);
   win.document.close();
 }
-
 function generateStayHistoryPDF(stay, client, history, logoSrc) {
   const name = client.full_name || '—';
   const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
@@ -259,7 +244,6 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   win.document.write(html);
   win.document.close();
 }
-
 function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, checkIn, logoSrc) {
   const name = client.full_name || '—';
   const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
@@ -267,25 +251,19 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   const today = new Date();
   const generatedDate = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-  // Sober days
   const soberDays = client.sober_date ? Math.floor((today - new Date(client.sober_date + 'T12:00:00')) / (1000*60*60*24)) : null;
 
-  // Days in program
   const daysInProgram = client.start_date ? Math.floor((today - new Date(client.start_date + 'T12:00:00')) / (1000*60*60*24)) : null;
 
-  // Meeting stats (last 4 weeks)
   const fourWeeksAgo = new Date(today); fourWeeksAgo.setDate(today.getDate() - 28);
   const recentMeetings = meetingRecords.filter(m => new Date(m.created_at) >= fourWeeksAgo);
   const totalMeetings = meetingRecords.length;
 
-  // UA stats
   const totalUAs = uaRecords.length;
   const negUAs = uaRecords.filter(u => u.event_name === 'Negative').length;
   const posUAs = uaRecords.filter(u => u.event_name === 'Positive').length;
   const lastUA = uaRecords[0];
 
-  // Chore stats (last 4 weeks) — daily rotation system: expected days vs. days actually checked off,
-  // across every chore_assignments period that overlaps the last 4 weeks.
   const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0];
   const todayStr = today.toISOString().split('T')[0];
   let choreExpectedDays = 0;
@@ -306,7 +284,6 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   });
   const choreMissedDays = Math.max(choreExpectedDays - choreCompletedDays, 0);
 
-  // Latest weekly check-in
   const fmtCheckInDate = checkIn?.created_at ? new Date(checkIn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
@@ -527,8 +504,6 @@ const groupByWeek = (entries) => {
   });
   return Object.values(weeks).sort((a, b) => b.weekStart - a.weekStart);
 };
-
-// ── Invite to Portal Button ───────────────────────────────────────────────────
 function InvitePortalButton({ client }) {
   const [status, setStatus] = useState('idle');
   const [errorMsg, setErrorMsg] = useState('');
@@ -546,7 +521,6 @@ function InvitePortalButton({ client }) {
       });
       const result = await res.json();
       if (!res.ok) {
-        // If account already exists, send a password reset instead
         if (result.error?.includes('already been registered') || result.error?.includes('already exists')) {
           const { data: { session } } = await supabase.auth.getSession();
           const resetRes = await fetch(`${SUPABASE_URL}/functions/v1/reset-portal-password`, {
@@ -568,7 +542,6 @@ function InvitePortalButton({ client }) {
         throw new Error(result.error || 'Invite failed');
       }
       setStatus('sent');
-      // Save auth_user_id to clients table and add to house chat
       if (result.user?.id) {
         await supabase.from('clients').update({ auth_user_id: result.user.id }).eq('id', client.id);
         if (client.house_id) {
@@ -606,7 +579,6 @@ function InvitePortalButton({ client }) {
   );
 }
 
-// ── Move To Button ────────────────────────────────────────────────────────────
 function MoveToButton({ client, onSelect }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -639,7 +611,6 @@ function MoveToButton({ client, onSelect }) {
   );
 }
 
-// ── Move House Modal ──────────────────────────────────────────────────────────
 function MoveHouseModal({ client, houses, onClose, onSuccess }) {
   const [toHouseId, setToHouseId] = useState('');
   const [moveDate, setMoveDate] = useState(new Date().toISOString().split('T')[0]);
@@ -656,30 +627,24 @@ function MoveHouseModal({ client, houses, onClose, onSuccess }) {
       const toHouse = houses.find(h => h.id === toHouseId);
       const toHouseName = toHouse?.name || 'Unknown house';
 
-      // 1. Update client house_id
       const { error } = await supabase.from('clients').update({ house_id: toHouseId }).eq('id', client.id);
       if (error) throw error;
 
-      // 2. Adjust occupied_beds on both houses
       const { data: fromHouseData } = await supabase.from('houses').select('occupied_beds').eq('id', client.house_id).single();
       if (fromHouseData) await supabase.from('houses').update({ occupied_beds: Math.max((fromHouseData.occupied_beds || 0) - 1, 0) }).eq('id', client.house_id);
       const { data: toHouseData } = await supabase.from('houses').select('occupied_beds').eq('id', toHouseId).single();
       if (toHouseData) await supabase.from('houses').update({ occupied_beds: (toHouseData.occupied_beds || 0) + 1 }).eq('id', toHouseId);
 
-      // 3. Swap house chat membership
       if (client.email) {
         const { data: fromAuthUser } = await supabase.from('user_profiles').select('id').eq('email', client.email).maybeSingle();
         if (fromAuthUser?.id) {
-          // Remove from old chat
           const { data: fromConv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
           if (fromConv) await supabase.from('conversation_members').delete().eq('conversation_id', fromConv.id).eq('user_id', fromAuthUser.id);
-          // Add to new chat
           const { data: toConv } = await supabase.from('conversations').select('id').eq('house_id', toHouseId).maybeSingle();
           if (toConv) await supabase.from('conversation_members').upsert({ conversation_id: toConv.id, user_id: fromAuthUser.id, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
         }
       }
 
-      // 4. Log timeline entry
       const noteText = note.trim() ? ` — ${note.trim()}` : '';
       await supabase.from('client_timeline').insert([{
         client_id: client.id,
@@ -735,7 +700,6 @@ function MoveHouseModal({ client, houses, onClose, onSuccess }) {
   );
 }
 
-// ── Weekly Reflection Form ────────────────────────────────────────────────────
 function WeeklyReflectionForm({ entryForm, setEntryForm }) {
   return (
     <>
@@ -766,7 +730,6 @@ function WeeklyReflectionForm({ entryForm, setEntryForm }) {
   );
 }
 
-// ── Weekly Reflection Display ─────────────────────────────────────────────────
 function WeeklyReflectionCard({ entry }) {
   let data = null;
   try { data = entry.reflection_data ? JSON.parse(entry.reflection_data) : null; } catch { data = null; }
@@ -785,15 +748,12 @@ function WeeklyReflectionCard({ entry }) {
     </div>
   );
 }
-
-// ── Client Application View ─────────────────────────────────────────────────
 function ClientApplicationView({ client }) {
   const [app, setApp] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      // Try by application_id first, then by email match
       let data = null;
       if (client.application_id) {
         const res = await supabase.from('applications').select('*').eq('id', client.application_id).maybeSingle();
@@ -951,7 +911,6 @@ function ClientApplicationView({ client }) {
   );
 }
 
-// ── Client Documents Tab (PDF uploads) ───────────────────────────────────────
 function ClientDocumentsTab({ client }) {
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1029,7 +988,6 @@ function ClientDocumentsTab({ client }) {
   );
 }
 
-// ── Weekly Check-In Card (timeline display) ─────────────────────────────────
 function WeeklyCheckInCard({ entry }) {
   const Row = ({ label, value }) => value != null && value !== '' ? (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #c9c9cf' }}>
@@ -1058,7 +1016,6 @@ function WeeklyCheckInCard({ entry }) {
   );
 }
 
-// ── Latest Weekly Check-In Display ───────────────────────────────────────────
 function LatestCheckIn({ clientId }) {
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1103,7 +1060,6 @@ function LatestCheckIn({ clientId }) {
     </div>
   );
 }
-
 function ClientFormsTab({ client }) {
   const [packet, setPacket] = useState(null);
   const [overnights, setOvernights] = useState([]);
@@ -1296,7 +1252,6 @@ function ClientFormsTab({ client }) {
       </div>
       )}
 
-      {/* Overnight Requests */}
       {overnights.length > 0 && (
         <div style={{ marginTop: '24px' }}>
           <div style={{ padding: '12px 0 8px', borderTop: '1px solid #cfcfd4' }}>
@@ -1328,7 +1283,7 @@ function ClientFormsTab({ client }) {
 function MedicationsTab({ client, setSelected, setClients }) {
   const parseMeds = (raw) => { try { return raw ? JSON.parse(raw) : []; } catch { return []; } };
   const [meds, setMeds] = useState(parseMeds(client.medication_details));
-  const [modalState, setModalState] = useState(null); // { index: null | number, form: {...} }
+  const [modalState, setModalState] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const persist = async (newMeds) => {
@@ -1445,7 +1400,6 @@ function StayPhotos({ clientId, stayId }) {
     </div>
   );
 }
-
 function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const { hasFullAccess, isHouseManagerRole, assignedHouseIds, user, isAdmin, fullName } = useUser();
 
@@ -1481,7 +1435,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [expandedStay, setExpandedStay] = useState(null);
   const [stayHistory, setStayHistory] = useState({});
   const [stayHistoryLoading, setStayHistoryLoading] = useState({});
-  const [stayDetailModal, setStayDetailModal] = useState(null); // { stayId, type: 'timeline'|'checkins'|'forms'|'balance' }
+  const [stayDetailModal, setStayDetailModal] = useState(null);
   const [latestCheckIn, setLatestCheckIn] = useState(null);
   const [clientBalance, setClientBalance] = useState(null);
 
@@ -1505,7 +1459,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const debounceTimer = useRef(null);
 
-  // Close More dropdown when clicking outside
   useEffect(() => {
     const handleClick = (e) => { if (moreTabRef.current && !moreTabRef.current.contains(e.target)) setShowMoreTabs(false); };
     document.addEventListener('mousedown', handleClick);
@@ -1539,7 +1492,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     return () => { supabase.removeChannel(channel); };
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-open client when coming from Houses
   useEffect(() => {
     if (!pendingClientId) return;
     supabase.from('clients').select('*, houses(name, house_manager)').eq('id', pendingClientId).single()
@@ -1602,15 +1554,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setHouses(data || []);
   }, []);
 
-  // Add a client to their house chat (only if they have an auth account)
   const addClientToHouseChat = async (clientId, houseId, clientEmail) => {
     if (!houseId || !clientEmail) return;
-    // Get auth user id for this client
     const { data: authUsers } = await supabase.from('user_profiles').select('id').eq('email', clientEmail).maybeSingle();
-    // Try auth.users via RPC if not in user_profiles
     let authUserId = authUsers?.id;
-    if (!authUserId) return; // no auth account yet
-    // Find the house chat conversation
+    if (!authUserId) return;
     const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
     if (!conv) return;
     await supabase.from('conversation_members').upsert({
@@ -1684,7 +1632,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     fetchChoreHistory(clientId);
   };
 
-  // Chore rotation history — reads the rotation system's own tables instead of the timeline.
   const fetchChoreHistory = async (clientId) => {
     const { data: assignData } = await supabase.from('chore_assignments')
       .select('*, chores(name)')
@@ -1766,7 +1713,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (type === 'Weekly Reflection') return '#7c3aed';
     return '#52525b';
   };
-
   const generateTimelinePDF = async (client, startDate, endDate, eventType, logoSrc) => {
     let query = supabase.from('client_timeline').select('*').eq('client_id', client.id).order('created_at', { ascending: false });
     if (startDate) query = query.gte('created_at', new Date(startDate + 'T00:00:00').toISOString());
@@ -1848,7 +1794,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const loadStayHistory = async (stay, client) => {
     const stayId = stay.id;
-    if (stayHistory[stayId]) return stayHistory[stayId]; // already loaded
+    if (stayHistory[stayId]) return stayHistory[stayId];
     setStayHistoryLoading(p => ({ ...p, [stayId]: true }));
     const start = stay.start_date;
     const end = stay.discharge_date || new Date().toISOString().slice(0, 10);
@@ -1905,14 +1851,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setStatusModal({ client, newStatus });
     setStatusForm({ list_type: 'DOC Men', move_in_date: '', discharge_reason: '', discharge_notes: '', discharge_date: '', house_id: client.house_id || '', successful_discharge: '', graduate: false, ready_date: '', discharge_type: '', ua_at_discharge: '', two_week_notice: '', early_admission: false, not_allowed_back: false, needs_review_before_readmit: false, discharge_photos: [] });
   };
-
   const confirmStatusChange = async () => {
     if (confirmingStatus) return;
     setConfirmingStatus(true);
     const { client, newStatus } = statusModal;
     const updates = { status: newStatus };
 
-    // If moving away from Waiting List, remove from waiting list
     if (client.status === 'Waiting List' && newStatus !== 'Waiting List') {
       await supabase.from('waiting_list')
         .update({ status: 'removed' })
@@ -1945,11 +1889,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       updates.early_admission = statusForm.early_admission || false;
       if (statusForm.room_type) updates.room_type = statusForm.room_type;
       const activeHouseId = statusForm.house_id || client.house_id;
-      // If moving to a different house, remove from old house chat first
       if (client.house_id && activeHouseId && client.house_id !== activeHouseId && client.email) {
         await removeClientFromHouseChat(client.email, client.house_id);
       }
-      // Add to new house chat
       if (activeHouseId && client.email) {
         await addClientToHouseChat(client.id, activeHouseId, client.email);
       }
@@ -1976,7 +1918,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
-      // Remove client from house chat
       if (client.house_id && client.email) {
         await removeClientFromHouseChat(client.email, client.house_id);
       }
@@ -2012,7 +1953,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
       const stayId = stayData?.id;
 
-      // Upload discharge photos
       if (statusForm.discharge_photos?.length && stayId) {
         for (const file of statusForm.discharge_photos) {
           const path = `discharge/${client.id}/${stayId}/${Date.now()}-${file.name}`;
@@ -2020,7 +1960,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         }
       }
 
-      // Update client flags
       if (statusForm.not_allowed_back || statusForm.needs_review_before_readmit) {
         await supabase.from('clients').update({
           not_allowed_back: statusForm.not_allowed_back || false,
@@ -2043,7 +1982,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       if (newStatus === 'Discharged') fetchStays(client.id);
     }
 
-    // Fire notification to house managers of the relevant house
     const notifHouseId = updates.house_id || client.house_id;
     if (notifHouseId) {
       await sendHouseNotification({
@@ -2054,7 +1992,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       });
     }
 
-    // Fire confirmed move-in email
     if (newStatus === 'Active') {
       const houseName = houses.find(h => h.id === (updates.house_id || client.house_id))?.name || client.house_name || 'Unknown House';
       const moveInDate = statusForm.move_in_date
@@ -2084,7 +2021,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       () => alert('Unable to get location. Please allow location access.')
     );
   };
-
   const saveTimelineEntry = async () => {
     if (!entryForm.author) { alert('Author is required.'); return; }
     let reflectionData = null;
@@ -2094,7 +2030,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         win: sanitizeText(entryForm.reflection_win), goals: sanitizeText(entryForm.reflection_goals),
       });
     }
-    // Upload photo if attached
     let photoUrl = null;
     if (entryForm.photo_file) {
       const ext = entryForm.photo_file.name.split('.').pop();
@@ -2127,7 +2062,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
 
-    // Fire notifications for relevant entry types
     if (selected?.house_id) {
       if (entryType === 'UA' && entryForm.ua_result === 'Positive') {
         await sendHouseNotification({
@@ -2207,7 +2141,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     if (!editingField) return;
     const { field, value } = editingField;
     await supabase.from('clients').update({ [field]: value || null }).eq('id', selected.id);
-    // If editing move-in date, also update the active client_stay
     if (field === 'start_date' && value) {
       await supabase.from('client_stays')
         .update({ start_date: value })
@@ -2349,9 +2282,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       </div>
     );
   };
-
-  // Chore rotation history for a client — one card per assignment period, sourced from
-  // chore_assignments / chore_completions (the rotation system), not the timeline.
   const choreDayList = (start, end) => {
     const days = [];
     let d = new Date(start + 'T12:00:00');
@@ -2362,9 +2292,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const ChorePeriodCard = ({ record }) => {
     const todayStr = new Date().toISOString().split('T')[0];
-    // Show every day in the full period (not just elapsed ones) so it's clear this
-    // is a daily chore, not a once- or twice-a-period one — future days just sit
-    // neutral until their date arrives.
     const allDays = choreDayList(record.period_start, record.period_end);
     const elapsedDays = allDays.filter(d => d <= todayStr);
     const completedSet = new Set(record.completed_dates);
@@ -2480,12 +2407,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           )}
         </>
       )}
-
       {selected && (
         <div style={st.overlay} onClick={() => { setSelected(null); setEditingField(null); }}>
           <div style={st.modal} onClick={e => e.stopPropagation()}>
 
-            {/* ── Modal Header ── */}
             <div style={st.modalHeader}>
                                           <div style={{ position: 'relative', flexShrink: 0 }}>
                                                 <Avatar name={selected.full_name} photoUrl={selected.photo_url} size={160} fontSize={32} square />
@@ -2522,7 +2447,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   {selected.oud === 'Yes' && <span style={{ ...st.badge, background: '#dcfce7', color: '#16a34a' }}>OUD</span>}
                 </div>
               </div>
-              {/* Action buttons top-right */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {onBackToHouses && (
                   <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
@@ -2536,7 +2460,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               </div>
             </div>
 
-            {/* ── Tabs with More dropdown ── */}
             <div style={{ ...st.tabs, position: 'relative' }}>
               {PRIMARY_TABS.map(t => (
                 <button key={t} onClick={() => { setActiveTab(t); setEditingField(null); }} style={{ ...st.tab, ...(activeTab === t ? st.tabActive : {}) }}>
@@ -2678,7 +2601,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                   </div>
                 </>
               )}
-
               {activeTab === 'UAs' && (
                 <Card title="UA Records" full action={
                   uaRecords.length > 0 && hasFullAccess ? (
@@ -2905,7 +2827,6 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               {activeTab === 'medications' && (
                 <MedicationsTab client={selected} setSelected={setSelected} setClients={setClients} />
               )}
-
               {activeTab === 'timeline' && (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
