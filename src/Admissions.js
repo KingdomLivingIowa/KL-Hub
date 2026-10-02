@@ -5,19 +5,26 @@ import { useUser } from './UserContext';
 
 const SUPABASE_URL = 'https://pmvxnetpbxuzkrxitioc.supabase.co';
 const PAGE_SIZE = 25;
-
-// Set to true to stop "accept" / "deny" emails from going out to applicants
-// (useful when bulk-accepting clients that were already accepted elsewhere,
-// e.g. an old system). Accepting/denying still updates records and creates
-// client profiles as normal — it just skips the email send. Set back to
-// false when you want emails flowing again.
-const PAUSE_APPLICATION_EMAILS = true;
+const PAUSE_EMAILS_KEY = 'kl_pause_application_emails';
 
 function Admissions() {
   const { isAdmin } = useUser();
   const [applications, setApplications] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // When on, "Accept"/"Deny" still updates records and creates client profiles
+  // as normal — it just skips sending the applicant email. Useful for
+  // bulk-accepting clients that were already accepted elsewhere. Remembered
+  // in this browser so it stays off until you flip it back.
+  const [emailsPaused, setEmailsPaused] = useState(() => localStorage.getItem(PAUSE_EMAILS_KEY) === 'true');
+  const toggleEmailsPaused = () => {
+    setEmailsPaused(prev => {
+      const next = !prev;
+      localStorage.setItem(PAUSE_EMAILS_KEY, next ? 'true' : 'false');
+      return next;
+    });
+  };
 
   const [filter, setFilter] = useState('pending');
   const [search, setSearch] = useState('');
@@ -304,7 +311,7 @@ function Admissions() {
     // Send email
     const emailTo = app.correspondence_contact || app.email;
     // email send
-    if (emailTo && !PAUSE_APPLICATION_EMAILS) {
+    if (emailTo && !emailsPaused) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const authToken = session?.access_token || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
@@ -381,7 +388,7 @@ function Admissions() {
       if (error) { alert('Error updating application: ' + error.message); return; }
 
       // Send email via edge function for manual decisions
-      if (app.email && !PAUSE_APPLICATION_EMAILS) {
+      if (app.email && !emailsPaused) {
         const { data: { session } } = await supabase.auth.getSession();
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBtdnhuZXRwYnh1emtyeGl0aW9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjE1NDcsImV4cCI6MjA5MDgzNzU0N30.IRRDTmFc3Ew1GWk69q0pSRTezsJOskK43yklIK4h2Xc';
         const authToken = session?.access_token || ANON_KEY;
@@ -815,6 +822,30 @@ function Admissions() {
             </button>
           ))}
         </div>
+
+        <button
+          onClick={toggleEmailsPaused}
+          title={emailsPaused ? 'Applicant emails are OFF — click to turn back on' : 'Applicant emails are ON — click to pause'}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '10px', alignSelf: 'flex-start',
+            padding: '8px 14px', borderRadius: '20px', cursor: 'pointer',
+            border: `1px solid ${emailsPaused ? '#dc2626' : '#16a34a'}`,
+            background: emailsPaused ? '#fee2e2' : '#dcfce7',
+            color: emailsPaused ? '#dc2626' : '#16a34a',
+            fontSize: '14px', fontWeight: '600', fontFamily: "'Inter', 'system-ui', sans-serif",
+          }}
+        >
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', width: '34px', height: '18px', borderRadius: '10px',
+            background: emailsPaused ? '#dc2626' : '#16a34a', padding: '2px', transition: 'background 0.15s',
+          }}>
+            <span style={{
+              width: '14px', height: '14px', borderRadius: '50%', background: '#ffffff',
+              transform: emailsPaused ? 'translateX(16px)' : 'translateX(0px)', transition: 'transform 0.15s',
+            }} />
+          </span>
+          {emailsPaused ? '✉️ Applicant Emails: OFF' : '✉️ Applicant Emails: ON'}
+        </button>
 
         <p style={s.sub}>
           {totalCount > 0
