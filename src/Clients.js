@@ -59,6 +59,39 @@ function EditableField({ label, field, value, alert: isAlert, options, type, edi
     </div>
   );
 }
+// Shrinks a photo down to a small, bounded-size JPEG before it gets embedded in a
+// generated PDF (discharge sheet, etc). Phone photos can be several MB each at full
+// resolution, and the browser's "Save as PDF" embeds that full file for every photo
+// on the page — that's what was causing saved discharge sheets to balloon to an
+// unreasonable size. Capping each photo at ~1000px on its longest side and JPEG
+// quality 0.72 keeps each photo well under ~200KB while still looking sharp printed.
+function compressPhotoForPDF(url, maxDim = 1000, quality = 0.72) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > maxDim || h > maxDim) {
+          const scale = maxDim / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } catch (err) {
+        console.error('compressPhotoForPDF error:', err);
+        resolve(url); // fall back to the original URL if compression fails
+      }
+    };
+    img.onerror = () => resolve(url); // fall back to the original URL if it can't load
+    img.src = url;
+  });
+}
 function generateDischargePDF(stay, client, logoSrc, photoUrls = []) {
   const name = `${client.first_name || ''} ${client.last_name || ''}`.trim();
   const location = stay.house_name || '—';
@@ -3183,7 +3216,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                         canvas.getContext('2d').drawImage(img, 0, 0);
                                         // Fetch discharge photos for this stay
                                         const { data: photoFiles } = await supabase.storage.from('discharge-photos').list(`discharge/${selected.id}/${stay.id}`);
-                                        const photoUrls = (photoFiles || []).map(f => supabase.storage.from('discharge-photos').getPublicUrl(`discharge/${selected.id}/${stay.id}/${f.name}`).data.publicUrl);
+                                        const rawPhotoUrls = (photoFiles || []).map(f => supabase.storage.from('discharge-photos').getPublicUrl(`discharge/${selected.id}/${stay.id}/${f.name}`).data.publicUrl);
+                                        // Compress each photo before embedding so the saved PDF stays a
+                                        // reasonable size no matter how large the original uploads were.
+                                        const photoUrls = await Promise.all(rawPhotoUrls.map(u => compressPhotoForPDF(u)));
                                         generateDischargePDF(stay, selected, canvas.toDataURL('image/jpeg'), photoUrls);
                                       };
                                       img.onerror = () => generateDischargePDF(stay, selected, null);
