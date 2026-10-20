@@ -7,6 +7,7 @@ export default function PODashboard() {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [tab, setTab] = useState('active');
 
   const fetchClients = useCallback(async () => {
     if (!user?.id) return;
@@ -47,6 +48,13 @@ export default function PODashboard() {
     return { bg: '#c9c9cf', color: '#52525b' };
   };
 
+  // "Active" tab = anyone still on this PO's current caseload (Active, Accepted,
+  // Pending, Waiting List, etc.) — everything except Discharged. "Discharged"
+  // tab = clients who have completed or left the program.
+  const activeClients = clients.filter(c => c.status !== 'Discharged');
+  const dischargedClients = clients.filter(c => c.status === 'Discharged');
+  const visibleClients = tab === 'active' ? activeClients : dischargedClients;
+
   if (loading) return (
     <div style={s.loading}>
       <div style={s.spinner} />
@@ -66,14 +74,33 @@ export default function PODashboard() {
         <p style={{ color: '#8a8a92', fontSize: '12px', margin: '4px 0 0 0' }}>Logged in as: {user?.email}</p>
       </div>
 
+      <div style={s.tabs}>
+        <button
+          onClick={() => setTab('active')}
+          style={{ ...s.tabBtn, ...(tab === 'active' ? s.tabBtnActive : {}) }}>
+          Active ({activeClients.length})
+        </button>
+        <button
+          onClick={() => setTab('discharged')}
+          style={{ ...s.tabBtn, ...(tab === 'discharged' ? s.tabBtnActive : {}) }}>
+          Discharged ({dischargedClients.length})
+        </button>
+      </div>
+
       {clients.length === 0 ? (
         <div style={s.empty}>
           <p style={{ color: '#71717a', fontSize: '15px' }}>No clients are currently assigned to your email address.</p>
           <p style={{ color: '#8a8a92', fontSize: '14px', marginTop: '8px' }}>Contact staff if you believe this is an error.</p>
         </div>
+      ) : visibleClients.length === 0 ? (
+        <div style={s.empty}>
+          <p style={{ color: '#71717a', fontSize: '15px' }}>
+            {tab === 'active' ? 'No active clients right now.' : 'No discharged clients on file.'}
+          </p>
+        </div>
       ) : (
         <div style={s.grid}>
-          {clients.map(c => {
+          {visibleClients.map(c => {
             const sc = statusColor(c.status);
             const initials = `${c.first_name?.[0] || ''}${c.last_name?.[0] || ''}`.toUpperCase() || '??';
             const daysIn = c.start_date ? Math.floor((new Date() - new Date(c.start_date)) / (1000 * 60 * 60 * 24)) : null;
@@ -375,9 +402,12 @@ const s = {
   page: { padding: '0 0 60px 0', maxWidth: '860px' },
   loading: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px' },
   spinner: { width: '32px', height: '32px', border: '3px solid #c9c9cf', borderTop: '3px solid #b22222', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
-  header: { marginBottom: '28px' },
+  header: { marginBottom: '20px' },
   title: { color: '#18181b', fontSize: '24px', fontWeight: '700', margin: '0 0 6px 0' },
   subtitle: { color: '#6b7280', fontSize: '14px', margin: 0 },
+  tabs: { display: 'flex', gap: '8px', marginBottom: '20px' },
+  tabBtn: { padding: '8px 18px', borderRadius: '20px', border: '1px solid #c9c9cf', background: 'transparent', color: '#52525b', cursor: 'pointer', fontSize: '14px', fontWeight: '500' },
+  tabBtnActive: { background: '#fee2e2', color: '#b22222', borderColor: '#b22222' },
   grid: { display: 'flex', flexDirection: 'column', gap: '10px' },
   card: { background: '#ffffff', border: '1px solid #d4d4da', borderRadius: '12px', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', transition: 'border-color 0.15s' },
   cardLeft: { display: 'flex', alignItems: 'center', gap: '14px' },
