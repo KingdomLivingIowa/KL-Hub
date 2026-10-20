@@ -660,7 +660,6 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     canSeeWaitingList,
     canSeeReports,
     canSeeUserManagement,
-    isAdmin,
     isParoleOfficer,
     canSeeMaintenancePage,
   } = useUser();
