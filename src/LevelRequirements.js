@@ -14,6 +14,12 @@ const s = {
 
 // ── Admin view: edit requirements ─────────────────────────────────────────────
 export function LevelRequirementsAdmin() {
+  // Editing level requirements is restricted to admins and upper management —
+  // house managers (and anyone else) can view this page but not add, edit, or
+  // delete requirements/allowances.
+  const { isAdmin, isUpperManagement, hasFullAccess } = useUser();
+  const canEdit = isAdmin || isUpperManagement || hasFullAccess;
+
   const [requirements, setRequirements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeLevel, setActiveLevel] = useState(1);
@@ -30,6 +36,7 @@ export function LevelRequirementsAdmin() {
   useEffect(() => { fetchRequirements(); }, [fetchRequirements]);
 
   const addRequirement = async () => {
+    if (!canEdit) return;
     if (!newText.trim()) return;
     setSaving(true);
     const existing = requirements.filter(r => r.level === activeLevel && r.category === newCategory);
@@ -42,11 +49,13 @@ export function LevelRequirementsAdmin() {
   };
 
   const deleteRequirement = async (id) => {
+    if (!canEdit) return;
     await supabase.from('level_requirements').delete().eq('id', id);
     fetchRequirements();
   };
 
   const updateText = async (id, text) => {
+    if (!canEdit) return;
     await supabase.from('level_requirements').update({ text }).eq('id', id);
     fetchRequirements();
   };
@@ -58,6 +67,12 @@ export function LevelRequirementsAdmin() {
 
   return (
     <div>
+      {!canEdit && (
+        <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#92400e' }}>
+          You can view level requirements here, but only admins and upper management can add, edit, or delete them.
+        </div>
+      )}
+
       {/* Level tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         {LEVELS.map(l => (
@@ -75,7 +90,7 @@ export function LevelRequirementsAdmin() {
       <div style={{ background: '#f7f7f9', borderRadius: 12, border: '1px solid #c9c9cf', padding: '16px 18px', marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Requirements</div>
         {levelReqs.map(r => (
-          <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} />
+          <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} canEdit={canEdit} />
         ))}
         {levelReqs.length === 0 && <p style={{ color: '#8a8a92', fontSize: 13 }}>No requirements added yet.</p>}
       </div>
@@ -84,38 +99,40 @@ export function LevelRequirementsAdmin() {
       <div style={{ background: '#f7f7f9', borderRadius: 12, border: '1px solid #c9c9cf', padding: '16px 18px', marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Allowances While in This Level</div>
         {levelAllowances.map(r => (
-          <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} />
+          <EditableRequirement key={r.id} req={r} onDelete={deleteRequirement} onUpdate={updateText} canEdit={canEdit} />
         ))}
         {levelAllowances.length === 0 && <p style={{ color: '#8a8a92', fontSize: 13 }}>No allowances added yet.</p>}
       </div>
 
-      {/* Add new */}
-      <div style={{ background: '#f7f7f9', borderRadius: 12, border: '1px solid #c9c9cf', padding: '16px 18px' }}>
-        <div style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Add Item</div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          <button onClick={() => setNewCategory('requirement')}
-            style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              background: newCategory === 'requirement' ? '#b22222' : '#ffffff', color: newCategory === 'requirement' ? '#18181b' : '#52525b' }}>
-            Requirement
-          </button>
-          <button onClick={() => setNewCategory('allowance')}
-            style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-              background: newCategory === 'allowance' ? '#059669' : '#ffffff', color: newCategory === 'allowance' ? '#18181b' : '#52525b' }}>
-            Allowance
-          </button>
+      {/* Add new — admins and upper management only */}
+      {canEdit && (
+        <div style={{ background: '#f7f7f9', borderRadius: 12, border: '1px solid #c9c9cf', padding: '16px 18px' }}>
+          <div style={{ fontSize: 12, color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Add Item</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <button onClick={() => setNewCategory('requirement')}
+              style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                background: newCategory === 'requirement' ? '#b22222' : '#ffffff', color: newCategory === 'requirement' ? '#18181b' : '#52525b' }}>
+              Requirement
+            </button>
+            <button onClick={() => setNewCategory('allowance')}
+              style={{ flex: 1, padding: '7px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                background: newCategory === 'allowance' ? '#059669' : '#ffffff', color: newCategory === 'allowance' ? '#18181b' : '#52525b' }}>
+              Allowance
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={newText} onChange={e => setNewText(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') addRequirement(); }}
+              style={s.input} placeholder="Enter requirement or allowance text..." />
+            <button onClick={addRequirement} disabled={saving || !newText.trim()} style={s.btn()}>Add</button>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input value={newText} onChange={e => setNewText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') addRequirement(); }}
-            style={s.input} placeholder="Enter requirement or allowance text..." />
-          <button onClick={addRequirement} disabled={saving || !newText.trim()} style={s.btn()}>Add</button>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
 
-function EditableRequirement({ req, onDelete, onUpdate }) {
+function EditableRequirement({ req, onDelete, onUpdate, canEdit }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(req.text);
 
@@ -136,8 +153,12 @@ function EditableRequirement({ req, onDelete, onUpdate }) {
       ) : (
         <>
           <span style={{ flex: 1, color: '#52525b', fontSize: 14, lineHeight: 1.5 }}>• {req.text}</span>
-          <button onClick={() => setEditing(true)} style={s.ghost}>Edit</button>
-          <button onClick={() => onDelete(req.id)} style={{ ...s.ghost, color: '#dc2626', borderColor: '#dc2626' }}>×</button>
+          {canEdit && (
+            <>
+              <button onClick={() => setEditing(true)} style={s.ghost}>Edit</button>
+              <button onClick={() => onDelete(req.id)} style={{ ...s.ghost, color: '#dc2626', borderColor: '#dc2626' }}>×</button>
+            </>
+          )}
         </>
       )}
     </div>

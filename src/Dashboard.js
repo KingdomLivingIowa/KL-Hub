@@ -778,15 +778,6 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
               ))}
             </div>
           )}
-          {!isAdmin && (
-            <div style={styles.settingsSection}>
-              <p style={styles.settingsSectionLabel}>Settings</p>
-              <button onClick={() => setActivePage('profile')}
-                style={{ ...styles.navItem, ...(activePage === 'profile' ? styles.navItemActive : {}) }}>
-                My Profile
-              </button>
-            </div>
-          )}
         </nav>
         <div style={styles.sidebarBottom}>
           {role && <p style={styles.userRole}>{roleDisplayName(role)}</p>}

@@ -753,14 +753,24 @@ function VacationCalendar() {
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const myRequests = requests.filter(r => r.user_id === user?.id);
 
+  // House managers (and anyone else who can't approve) only ever need to see
+  // their own requests — the "My Requests" tab already covers that, so the
+  // org-wide "Requests" review tab is hidden from them entirely instead of
+  // showing everyone's requests behind a permission notice.
+  useEffect(() => {
+    if (!canApprove && activeView === 'requests') setActiveView('calendar');
+  }, [canApprove, activeView]);
+
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <button style={s.tabBtn(activeView === 'calendar')} onClick={() => setActiveView('calendar')}>Calendar</button>
-          <button style={s.tabBtn(activeView === 'requests')} onClick={() => setActiveView('requests')}>
-            Requests {pendingRequests.length > 0 && <span style={s.badge('#b45309')}>{pendingRequests.length}</span>}
-          </button>
+          {canApprove && (
+            <button style={s.tabBtn(activeView === 'requests')} onClick={() => setActiveView('requests')}>
+              Requests {pendingRequests.length > 0 && <span style={s.badge('#b45309')}>{pendingRequests.length}</span>}
+            </button>
+          )}
           <button style={s.tabBtn(activeView === 'mine')} onClick={() => setActiveView('mine')}>My Requests</button>
         </div>
         <button style={s.btn()} onClick={() => setShowRequestModal(true)}>+ Request Time Off</button>
@@ -775,9 +785,9 @@ function VacationCalendar() {
         </div>
       )}
 
-      {activeView === 'requests' && (
+      {activeView === 'requests' && canApprove && (
         <div style={s.card}>
-          <div style={{ fontSize: 13, color: '#4b5563', marginBottom: 16 }}>{canApprove ? 'All submitted vacation requests' : 'You do not have permission to review requests.'}</div>
+          <div style={{ fontSize: 13, color: '#4b5563', marginBottom: 16 }}>All submitted vacation requests</div>
           {requests.length === 0 && <div style={{ color: '#52525b', fontSize: 14 }}>No requests yet.</div>}
           {requests.map(r => (
             <div key={r.id} style={{ padding: '14px 0', borderBottom: '1px solid #c9c9cf' }}>
@@ -788,7 +798,7 @@ function VacationCalendar() {
                   {r.notes && <div style={{ fontSize: 12, color: '#4b5563', marginTop: 3 }}>{r.notes}</div>}
                   <span style={{ ...s.badge(statusColor(r.status)), marginTop: 4 }}>{r.status}</span>
                 </div>
-                {canApprove && r.status === 'pending' && (
+                {r.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => reviewRequest(r.id, 'approved', r.user_id, r.user_name, r.start_date, r.end_date)} style={{ ...s.btn('#059669'), padding: '6px 14px', fontSize: 12 }}>Approve</button>
                     <button onClick={() => reviewRequest(r.id, 'denied', r.user_id, r.user_name, r.start_date, r.end_date)} style={{ ...s.btn('#dc2626'), padding: '6px 14px', fontSize: 12 }}>Deny</button>
