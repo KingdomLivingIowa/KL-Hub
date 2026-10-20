@@ -271,6 +271,12 @@ function DashboardHome({ counts, currentUser }) {
   const totalUnread = unreadAlerts.length + unreadNotifications.length;
   const totalWaiting = Object.values(waitingListCounts).reduce((sum, n) => sum + n, 0);
 
+  // House-manager-scoped stat card numbers — derived from `houses`, which
+  // fetchHouses already restricts to assignedHouseIds for this role, so no
+  // extra query is needed.
+  const myActiveClients = houses.reduce((sum, h) => sum + (h.activeCount || 0), 0);
+  const myBedsAvailable = houses.reduce((sum, h) => sum + availableBeds(h), 0);
+
   const notifIcon = (type) => {
     if (type === 'client_status_change') return '🔄';
     if (type === 'client_positive_ua') return '🚨';
@@ -293,18 +299,37 @@ function DashboardHome({ counts, currentUser }) {
     <div>
       {/* Stat cards */}
       <div style={ds.statGrid}>
-        <div style={ds.statCard}>
-          <p style={ds.statLabel}>New Applications</p>
-          <p style={ds.statValue}>{counts.pending}</p>
-        </div>
-        <div style={ds.statCard}>
-          <p style={ds.statLabel}>Active Clients</p>
-          <p style={ds.statValue}>{counts.active}</p>
-        </div>
-        <div style={ds.statCard}>
-          <p style={ds.statLabel}>Total Houses</p>
-          <p style={ds.statValue}>{counts.houses}</p>
-        </div>
+        {isHouseManagerRole ? (
+          <>
+            <div style={ds.statCard}>
+              <p style={ds.statLabel}>My Active Clients</p>
+              <p style={ds.statValue}>{myActiveClients}</p>
+            </div>
+            <div style={ds.statCard}>
+              <p style={ds.statLabel}>Beds Available</p>
+              <p style={ds.statValue}>{myBedsAvailable}</p>
+            </div>
+            <div style={ds.statCard}>
+              <p style={ds.statLabel}>My House{houses.length !== 1 ? 's' : ''}</p>
+              <p style={ds.statValue}>{houses.length}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={ds.statCard}>
+              <p style={ds.statLabel}>New Applications</p>
+              <p style={ds.statValue}>{counts.pending}</p>
+            </div>
+            <div style={ds.statCard}>
+              <p style={ds.statLabel}>Active Clients</p>
+              <p style={ds.statValue}>{counts.active}</p>
+            </div>
+            <div style={ds.statCard}>
+              <p style={ds.statLabel}>Total Houses</p>
+              <p style={ds.statValue}>{counts.houses}</p>
+            </div>
+          </>
+        )}
       </div>
 
       {loadingDashboard ? (
