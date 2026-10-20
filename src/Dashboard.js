@@ -454,16 +454,16 @@ function DashboardHome({ counts, currentUser }) {
                             <span style={{ color: '#18181b', fontSize: '14px', fontWeight: '500' }}>{h.name}</span>
                             <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '10px', background: h.type === 'Women' ? '#fce7f3' : '#dbeafe', color: h.type === 'Women' ? '#db2777' : '#2563eb' }}>{h.type}</span>
                           </div>
-                          <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#b22222' : '#16a34a' }}>{available} available</span>
+                          <span style={{ fontSize: '13px', fontWeight: '700', color: isAlmostFull ? '#52525b' : '#b22222' }}>{available} available</span>
                         </div>
                         <div style={{ height: '4px', background: '#e4e4e8', borderRadius: '2px', marginBottom: '8px', overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${pct}%`, background: isAlmostFull ? '#b22222' : '#16a34a', borderRadius: '2px', transition: 'width 0.3s' }} />
+                          <div style={{ height: '100%', width: `${pct}%`, background: isAlmostFull ? '#52525b' : '#b22222', borderRadius: '2px', transition: 'width 0.3s' }} />
                         </div>
                         <div style={{ display: 'flex', gap: '14px' }}>
                           <BedStat label="Total" value={h.total_beds || 0} color="#52525b" />
                           <BedStat label="Active" value={h.activeCount} color="#52525b" />
                           <BedStat label="Pending" value={h.pendingCount} color="#52525b" />
-                          <BedStat label="Available" value={available} color={isAlmostFull ? '#b22222' : '#16a34a'} />
+                          <BedStat label="Available" value={available} color={isAlmostFull ? '#52525b' : '#b22222'} />
                         </div>
                       </div>
                     );
