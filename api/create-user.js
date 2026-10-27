@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
 // Where the staff invite email link sends them — kl-hub itself (not the
 // resident portal). The staff_invite=1 marker lets App.js tell this apart
 // from a resident invite link, which also lands with type=invite.
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://kl-hub-xpmk.vercel.app';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://kl-hub.vercel.app';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
