@@ -19,6 +19,17 @@ function App() {
   const [resetSending, setResetSending] = useState(false);
   const [resetMsg, setResetMsg] = useState(null);
 
+  // Set-new-password flow — triggered when the user arrives via a password
+  // reset email link. Supabase signs them in automatically for a recovery
+  // link, but we intercept that and make them set a new password first
+  // instead of dropping them straight into the dashboard with the old one.
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [newPasswordSaving, setNewPasswordSaving] = useState(false);
+  const [newPasswordMsg, setNewPasswordMsg] = useState(null);
+  const [newPasswordDone, setNewPasswordDone] = useState(false);
+
   useEffect(() => {
     // If this page loaded with a token_hash in the URL (from an email link),
     // check if it's meant for the portal and redirect there instead
@@ -29,6 +40,12 @@ function App() {
     if (tokenHash && type === 'invite') {
       window.location.href = `https://kl-portal.vercel.app${window.location.search}`;
       return;
+    }
+    // Password reset links land here with type=recovery — catch that
+    // immediately in case the PASSWORD_RECOVERY auth event below fires
+    // before this component's listener is attached.
+    if (type === 'recovery') {
+      setPasswordRecovery(true);
     }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -47,6 +64,11 @@ function App() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      // Password reset link was used to sign in — require a new password
+      // before letting them into the dashboard.
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true);
+      }
       // When email is confirmed, sync user_profiles
       if (event === 'USER_UPDATED' && session?.user?.email) {
         supabase.from('user_profiles').update({ email: session.user.email }).eq('id', session.user.id);
@@ -98,6 +120,28 @@ function App() {
     setResetSending(false);
   };
 
+  const handleSetNewPassword = async (e) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      setNewPasswordMsg({ ok: false, text: 'Password must be at least 6 characters.' });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setNewPasswordMsg({ ok: false, text: 'Passwords do not match.' });
+      return;
+    }
+    setNewPasswordSaving(true);
+    setNewPasswordMsg(null);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setNewPasswordMsg({ ok: false, text: 'Error: ' + error.message });
+      setNewPasswordSaving(false);
+      return;
+    }
+    setNewPasswordSaving(false);
+    setNewPasswordDone(true);
+  };
+
   if (checking) {
     return (
       <div style={styles.loadingContainer}>
@@ -110,6 +154,59 @@ function App() {
   // Public application form
   if (window.location.pathname === '/apply') {
     return <ApplicationForm />;
+  }
+
+  // Password reset link was used — require a new password before letting
+  // them into the dashboard, even though Supabase already signed them in.
+  if (passwordRecovery) {
+    return (
+      <div style={styles.loginContainer}>
+        <div style={styles.loginCard}>
+          <img src={logo} alt="Kingdom Living" style={styles.logo} />
+          <p style={styles.subtitle}>Set a New Password</p>
+          {newPasswordMsg && (
+            <div style={newPasswordMsg.ok ? styles.success : styles.error}>{newPasswordMsg.text}</div>
+          )}
+          {newPasswordDone ? (
+            <button
+              type="button"
+              style={styles.button}
+              onClick={() => { setPasswordRecovery(false); window.history.replaceState({}, '', window.location.pathname); }}
+            >
+              Continue to Dashboard
+            </button>
+          ) : (
+            <form onSubmit={handleSetNewPassword} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  style={styles.input}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  style={styles.input}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <button type="submit" style={styles.button} disabled={newPasswordSaving}>
+                {newPasswordSaving ? 'Saving...' : 'Set New Password'}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (!user) {
