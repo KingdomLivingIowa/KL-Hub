@@ -13,6 +13,12 @@ function App() {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
 
+  // Forgot password flow
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSending, setResetSending] = useState(false);
+  const [resetMsg, setResetMsg] = useState(null);
+
   useEffect(() => {
     // If this page loaded with a token_hash in the URL (from an email link),
     // check if it's meant for the portal and redirect there instead
@@ -70,6 +76,28 @@ function App() {
     setLoading(false);
   };
 
+  const handleForgotPasswordOpen = () => {
+    setResetEmail(email); // pre-fill with whatever they'd typed in the sign-in form, if anything
+    setResetMsg(null);
+    setShowForgotPassword(true);
+  };
+
+  const handleSendResetLink = async (e) => {
+    e.preventDefault();
+    if (!resetEmail.trim()) return;
+    setResetSending(true);
+    setResetMsg(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+      redirectTo: window.location.origin,
+    });
+    if (error) {
+      setResetMsg({ ok: false, text: 'Error: ' + error.message });
+    } else {
+      setResetMsg({ ok: true, text: 'If an account exists for ' + resetEmail.trim() + ', a password reset link has been sent. Check your inbox.' });
+    }
+    setResetSending(false);
+  };
+
   if (checking) {
     return (
       <div style={styles.loadingContainer}>
@@ -85,6 +113,43 @@ function App() {
   }
 
   if (!user) {
+    if (showForgotPassword) {
+      return (
+        <div style={styles.loginContainer}>
+          <div style={styles.loginCard}>
+            <img src={logo} alt="Kingdom Living" style={styles.logo} />
+            <p style={styles.subtitle}>Reset Your Password</p>
+            {resetMsg && (
+              <div style={resetMsg.ok ? styles.success : styles.error}>{resetMsg.text}</div>
+            )}
+            <form onSubmit={handleSendResetLink} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Email</label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  style={styles.input}
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+              <button type="submit" style={styles.button} disabled={resetSending}>
+                {resetSending ? 'Sending...' : 'Send Reset Link'}
+              </button>
+            </form>
+            <button
+              type="button"
+              onClick={() => { setShowForgotPassword(false); setResetMsg(null); }}
+              style={styles.linkButton}
+            >
+              ← Back to Sign In
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={styles.loginContainer}>
         <div style={styles.loginCard}>
@@ -118,6 +183,9 @@ function App() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+          <button type="button" onClick={handleForgotPasswordOpen} style={styles.linkButton}>
+            Forgot password?
+          </button>
         </div>
       </div>
     );
@@ -186,6 +254,14 @@ const styles = {
     fontSize: '14px',
     marginBottom: '16px',
   },
+  success: {
+    backgroundColor: '#dcfce7',
+    color: '#16a34a',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '16px',
+  },
   form: {
     display: 'flex',
     flexDirection: 'column',
@@ -220,6 +296,17 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     marginTop: '8px',
+  },
+  linkButton: {
+    display: 'block',
+    margin: '18px auto 0 auto',
+    background: 'none',
+    border: 'none',
+    color: '#b22222',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    textAlign: 'center',
   },
 };
 
