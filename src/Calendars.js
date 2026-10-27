@@ -167,10 +167,16 @@ function MoveInCalendar() {
   const [selectedEvents, setSelectedEvents] = useState([]);
 
   const fetchClients = useCallback(async () => {
+    // A house manager with no houses assigned yet should see no move-ins —
+    // not every house's.
+    if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setClients([]);
+      return;
+    }
     let query = supabase.from('clients').select('id, full_name, start_date, expected_move_in_date, house_id, houses(name), gender, status')
       .in('status', ['Active', 'Pending'])
       .order('start_date');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('house_id', assignedHouseIds);
+    if (isHouseManagerRole) query = query.in('house_id', assignedHouseIds);
     const { data } = await query;
     setClients(data || []);
   }, [isHouseManagerRole, assignedHouseIds]);

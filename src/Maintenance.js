@@ -30,9 +30,16 @@ export default function Maintenance() {
   const [editForm, setEditForm] = useState({});
   const [saving, setSaving] = useState(false);
 
+  // A house manager with no houses assigned yet should see no maintenance
+  // requests at all — not every house's.
   const fetchRequests = useCallback(async () => {
+    if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
     let query = supabase.from('maintenance_requests').select('*').order('submitted_at', { ascending: false });
-    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+    if (isHouseManagerRole) {
       query = query.in('house_id', assignedHouseIds);
     }
     if (statusFilter !== 'All') query = query.eq('status', statusFilter);
@@ -45,8 +52,12 @@ export default function Maintenance() {
   // Unfiltered-by-status set (still scoped to assigned houses / the house filter) so the
   // summary stat cards always reflect the true totals, independent of the status dropdown.
   const fetchAllRequests = useCallback(async () => {
+    if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setAllRequests([]);
+      return;
+    }
     let query = supabase.from('maintenance_requests').select('*');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+    if (isHouseManagerRole) {
       query = query.in('house_id', assignedHouseIds);
     }
     if (houseFilter !== 'All') query = query.eq('house_id', houseFilter);

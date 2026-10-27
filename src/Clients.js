@@ -1546,7 +1546,10 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     } else {
       query = query.in('status', ['Archived', 'Discharged']);
     }
-        if (isHouseManagerRole && assignedHouseIds.length > 0) {
+    // Note: fetchClients already returns an empty result before ever
+    // calling this when a house manager has zero assigned houses, so this
+    // only needs to handle the "has some houses" case.
+    if (isHouseManagerRole && assignedHouseIds.length > 0) {
       query = query.in('house_id', assignedHouseIds);
       query = query.in('status', ['Active', 'Pending']);
     }
