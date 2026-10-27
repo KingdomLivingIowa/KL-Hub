@@ -75,9 +75,38 @@ function Admissions() {
       }
 
       if (debouncedSearch) {
-        query = query.or(
-          `first_name.ilike.%${debouncedSearch}%,last_name.ilike.%${debouncedSearch}%,email.ilike.%${debouncedSearch}%,phone.ilike.%${debouncedSearch}%`
-        );
+        // first_name/last_name are separate columns, so a single-field match
+        // against the whole typed string only ever catches a ONE-word
+        // search. Typing a full name like "Torque Goodwin" needs the words
+        // split and matched against first_name + last_name together too, or
+        // it would always come back "no application found" even though the
+        // applicant is right there in the table.
+        const words = debouncedSearch.split(/\s+/).filter(Boolean);
+        // Commas and parentheses are structural characters in PostgREST's
+        // or()/and() filter syntax — strip them out of each piece so a
+        // search term containing one can't break the query.
+        const clean = (s) => s.replace(/[(),]/g, '');
+        const term = clean(debouncedSearch);
+
+        const orParts = [
+          `first_name.ilike.%${term}%`,
+          `last_name.ilike.%${term}%`,
+          `email.ilike.%${term}%`,
+          `phone.ilike.%${term}%`,
+        ];
+
+        if (words.length >= 2) {
+          const first = clean(words[0]);
+          const last = clean(words[words.length - 1]);
+          const restAfterFirst = clean(words.slice(1).join(' '));
+          const restBeforeLast = clean(words.slice(0, -1).join(' '));
+          // "First Last" order
+          orParts.push(`and(first_name.ilike.%${first}%,last_name.ilike.%${restAfterFirst}%)`);
+          // "Last First" order, in case it was typed that way
+          orParts.push(`and(first_name.ilike.%${restBeforeLast}%,last_name.ilike.%${last}%)`);
+        }
+
+        query = query.or(orParts.join(','));
       }
 
       return query;
