@@ -154,8 +154,14 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchHouses = async () => {
+    // A house manager with no houses assigned yet should see nothing here —
+    // not every house in the org. Skip the query entirely in that case.
+    if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setHouses([]);
+      return;
+    }
     let query = supabase.from('houses').select('*').order('name');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('id', assignedHouseIds);
+    if (isHouseManagerRole) query = query.in('id', assignedHouseIds);
     const { data: housesData } = await query;
     const { data: clientsData } = await supabase.from('clients').select('house_id, status').in('status', ['Active', 'Pending']);
     const enriched = (housesData || []).map(h => ({
@@ -172,9 +178,14 @@ function DashboardHome({ counts, currentUser }) {
     const iso = sevenDaysAgo.toISOString();
 
     const { data: crises } = await supabase.from('client_timeline').select('id, severity, created_at, notes, clients(full_name, house_id)').eq('entry_type', 'Crisis').gte('created_at', iso).order('created_at', { ascending: false });
-    const filteredCrises = isHouseManagerRole && assignedHouseIds.length > 0
-      ? (crises || []).filter(c => assignedHouseIds.includes(c.clients?.house_id))
-      : (crises || []);
+    // A house manager with no houses assigned yet should see no crises or
+    // check-in alerts at all — not the whole org's.
+    const hasNoAssignedHouses = isHouseManagerRole && assignedHouseIds.length === 0;
+    const filteredCrises = hasNoAssignedHouses
+      ? []
+      : isHouseManagerRole
+        ? (crises || []).filter(c => assignedHouseIds.includes(c.clients?.house_id))
+        : (crises || []);
 
     const now = new Date();
     const dayOfWeek = now.getDay();
@@ -183,9 +194,13 @@ function DashboardHome({ counts, currentUser }) {
     weekStart.setDate(now.getDate() + diffToMonday);
     weekStart.setHours(0, 0, 0, 0);
 
-    let clientQuery = supabase.from('clients').select('id, full_name, house_id').eq('status', 'Active');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) clientQuery = clientQuery.in('house_id', assignedHouseIds);
-    const { data: activeClients } = await clientQuery;
+    let activeClients = [];
+    if (!hasNoAssignedHouses) {
+      let clientQuery = supabase.from('clients').select('id, full_name, house_id').eq('status', 'Active');
+      if (isHouseManagerRole) clientQuery = clientQuery.in('house_id', assignedHouseIds);
+      const { data } = await clientQuery;
+      activeClients = data || [];
+    }
 
     const { data: checkIns } = await supabase.from('client_timeline').select('client_id').in('entry_type', ['Check-In', 'House Check-In']).gte('created_at', weekStart.toISOString());
     const checkedInIds = new Set((checkIns || []).map(c => c.client_id));
@@ -213,9 +228,16 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchOpenCharges = async () => {
+    // A house manager with no houses assigned yet should see no open
+    // charges at all — not the whole org's.
+    if (isHouseManagerRole && assignedHouseIds.length === 0) {
+      setOpenCharges([]);
+      setTotalOutstanding(0);
+      return;
+    }
     const { data } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, status, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true });
     let charges = (data || []).filter(c => c.clients?.status === 'Active');
-    if (isHouseManagerRole && assignedHouseIds.length > 0) {
+    if (isHouseManagerRole) {
       charges = charges.filter(c => assignedHouseIds.includes(c.clients?.house_id));
     }
     const total = charges.reduce((sum, c) => sum + (parseFloat(c.amount) - parseFloat(c.amount_paid || 0)), 0);
