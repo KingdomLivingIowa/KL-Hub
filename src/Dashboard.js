@@ -45,7 +45,7 @@ const WAITING_LISTS = [
 ];
 
 function DashboardHome({ counts, currentUser }) {
-  const { isHouseManagerRole, assignedHouseIds } = useUser();
+  const { isHouseManagerRole, assignedHouseIds, loadingRole } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -85,7 +85,18 @@ function DashboardHome({ counts, currentUser }) {
     } finally {
       setLoadingDashboard(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // isHouseManagerRole/assignedHouseIds MUST be in this dependency array.
+    // fetchHouses/fetchAlerts/fetchOpenCharges below are plain functions
+    // redefined every render, closing over whatever isHouseManagerRole and
+    // assignedHouseIds were AT THAT RENDER. With an empty dependency array
+    // here, this callback — and the functions it closes over — would stay
+    // permanently frozen on their very first render's values. Since the
+    // role/house assignments load asynchronously (they start as
+    // isHouseManagerRole=false, assignedHouseIds=[] before UserContext
+    // finishes loading), that first render would wrongly be treated as
+    // "not a house manager" forever, silently showing org-wide data to a
+    // house manager no matter how the role data came in afterward.
+  }, [isHouseManagerRole, assignedHouseIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-fetch notifications whenever currentUser becomes available
   useEffect(() => {
@@ -245,7 +256,13 @@ function DashboardHome({ counts, currentUser }) {
     setTotalOutstanding(total);
   };
 
-  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+  useEffect(() => {
+    // Wait until the role/house assignments have finished loading before
+    // fetching — otherwise this would run once with isHouseManagerRole
+    // still false (role unknown) and cache/show unscoped org-wide data.
+    if (loadingRole) return;
+    fetchDashboardData();
+  }, [fetchDashboardData, loadingRole]);
 
   // Write to cache after data settles so next visit is instant
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { bustCache } from './dataCache';
 
 const UserContext = createContext(null);
 
@@ -20,6 +21,15 @@ export function UserProvider({ user, children }) {
 
   const fetchRoleAndAssignments = async () => {
     setLoadingRole(true);
+
+    // dataCache (used by Dashboard, Clients, Admissions, Payments) is a
+    // single in-memory store shared across the whole browser tab — it has
+    // no idea which user is signed in. If one staff member signs out and a
+    // different one signs in on the same tab within the cache's 60s TTL,
+    // the new user could briefly see the previous user's cached (and
+    // differently-scoped) data. Wipe it every time the signed-in user
+    // changes so a fresh session always starts clean.
+    bustCache();
 
     const { data: profile } = await supabase
       .from('user_profiles')
