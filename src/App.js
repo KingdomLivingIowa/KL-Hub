@@ -37,21 +37,27 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
     const type = params.get('type');
+    // Our own marker set on the staff invite link's redirectTo — this is
+    // the reliable signal, since Supabase's invite link puts the session
+    // tokens in the URL HASH fragment (not the query string like the
+    // recovery link does), so a type=invite query check alone would miss
+    // it. The staff_invite=1 query param survives either way because we
+    // control it directly in the redirectTo we pass to inviteUserByEmail.
     const staffInvite = params.get('staff_invite') === '1';
-    // Invite tokens should go to the portal — UNLESS it's a staff invite
-    // (marked with staff_invite=1), which stays here on KL Hub so the new
-    // staff member can set their password.
+    // Invite tokens should go to the portal — UNLESS it's a staff invite,
+    // which stays here on KL Hub so the new staff member can set a password.
     if (tokenHash && type === 'invite' && !staffInvite) {
       window.location.href = `https://kl-portal.vercel.app${window.location.search}`;
       return;
     }
-    // Password reset links land here with type=recovery, and staff invite
-    // links land here with type=invite&staff_invite=1 — catch both
-    // immediately in case the matching auth event below fires before this
-    // component's listener is attached.
-    if (type === 'recovery' || (type === 'invite' && staffInvite)) {
+    // Password reset links land here with type=recovery (query string), and
+    // staff invite links land here with staff_invite=1 (regardless of how
+    // Supabase formats the rest of the invite URL) — catch both immediately
+    // in case the matching auth event below fires before this component's
+    // listener is attached.
+    if (type === 'recovery' || staffInvite) {
       setPasswordRecovery(true);
-      setIsInviteFlow(type === 'invite');
+      setIsInviteFlow(staffInvite);
     }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
