@@ -453,18 +453,23 @@ function Admissions() {
 
     const firstLower = app.first_name?.toLowerCase().trim();
     const lastLower = app.last_name?.toLowerCase().trim();
+    const appEmail = app.email?.toLowerCase().trim();
     const appDob = app.date_of_birth;
     const appSsn = app.ssn?.replace(/\D/g, '');
-    // Require name + at least one other matching field to flag as duplicate
+    // Mirrors the server-side matching rule in process-application:
+    // SSN match alone = duplicate, name + email = duplicate, name + DOB = duplicate.
+    // (Previously this required a name match even for SSN, and never checked
+    // email at all — so an SSN-only match the server flagged could be
+    // invisible here, which is what caused the "unknown" client in the
+    // Merge Wizard.)
     const clientMatch = clients.find((c) => {
       if (c.application_id === app.id) return false; // same app
       const nameMatch = c.first_name?.toLowerCase().trim() === firstLower &&
                         c.last_name?.toLowerCase().trim() === lastLower;
-      if (!nameMatch) return false;
+      const emailMatch = appEmail && c.email?.toLowerCase().trim() === appEmail;
       const dobMatch = appDob && c.date_of_birth && c.date_of_birth === appDob;
       const ssnMatch = appSsn && appSsn.length >= 4 && c.ssn?.replace(/\D/g, '') === appSsn;
-      // Email alone is not enough — require name + DOB or name + SSN to avoid false positives
-      return dobMatch || ssnMatch;
+      return ssnMatch || (nameMatch && emailMatch) || (nameMatch && dobMatch);
     });
     if (clientMatch) return clientMatch;
 
@@ -626,12 +631,27 @@ function Admissions() {
                     if (error) throw error;
                     existing = fullClient || existing;
                   } else {
-                    const { data, error } = await supabase.from('clients')
-                      .select('*')
-                      .or(`email.eq.${app.email},full_name.eq.${(app.first_name + ' ' + app.last_name).trim()}`)
-                      .limit(1).maybeSingle();
+                    // Fall back to the exact same matching rule the server uses in
+                    // process-application: SSN match alone = duplicate, name+email =
+                    // duplicate, name+DOB = duplicate. The old version here only did an
+                    // exact, case-sensitive email/full_name lookup, which could miss the
+                    // very client the server had already matched (e.g. an SSN-only match)
+                    // and silently fall through to a placeholder "unknown" client below.
+                    const { data: allClients, error } = await supabase.from('clients').select('*');
                     if (error) throw error;
-                    existing = data;
+                    const firstLower = (app.first_name || '').toLowerCase().trim();
+                    const lastLower = (app.last_name || '').toLowerCase().trim();
+                    const appEmail = (app.email || '').toLowerCase().trim();
+                    const appDob = app.date_of_birth;
+                    const appSsn = app.ssn?.replace(/\D/g, '');
+                    existing = (allClients || []).find((c) => {
+                      const nameMatch = c.first_name?.toLowerCase().trim() === firstLower &&
+                                        c.last_name?.toLowerCase().trim() === lastLower;
+                      const emailMatch = appEmail && c.email?.toLowerCase().trim() === appEmail;
+                      const dobMatch = appDob && c.date_of_birth && c.date_of_birth === appDob;
+                      const ssnMatch = appSsn && appSsn.length >= 4 && c.ssn?.replace(/\D/g, '') === appSsn;
+                      return ssnMatch || (nameMatch && emailMatch) || (nameMatch && dobMatch);
+                    }) || null;
                   }
                   setMergeReturningModal({ app, existingClient: existing || { id: null, full_name: 'unknown', email: '' } });
                   setMergeWizardOpen(false);
