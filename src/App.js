@@ -20,10 +20,11 @@ function App() {
   const [resetMsg, setResetMsg] = useState(null);
 
   // Set-new-password flow — triggered when the user arrives via a password
-  // reset email link. Supabase signs them in automatically for a recovery
-  // link, but we intercept that and make them set a new password first
-  // instead of dropping them straight into the dashboard with the old one.
+  // reset email link, OR a staff invite link. Supabase signs them in
+  // automatically for both, but we intercept that and make them set a
+  // password first instead of dropping them straight into the dashboard.
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  const [isInviteFlow, setIsInviteFlow] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [newPasswordSaving, setNewPasswordSaving] = useState(false);
@@ -36,16 +37,21 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const tokenHash = params.get('token_hash');
     const type = params.get('type');
-    // Invite tokens should go to the portal
-    if (tokenHash && type === 'invite') {
+    const staffInvite = params.get('staff_invite') === '1';
+    // Invite tokens should go to the portal — UNLESS it's a staff invite
+    // (marked with staff_invite=1), which stays here on KL Hub so the new
+    // staff member can set their password.
+    if (tokenHash && type === 'invite' && !staffInvite) {
       window.location.href = `https://kl-portal.vercel.app${window.location.search}`;
       return;
     }
-    // Password reset links land here with type=recovery — catch that
-    // immediately in case the PASSWORD_RECOVERY auth event below fires
-    // before this component's listener is attached.
-    if (type === 'recovery') {
+    // Password reset links land here with type=recovery, and staff invite
+    // links land here with type=invite&staff_invite=1 — catch both
+    // immediately in case the matching auth event below fires before this
+    // component's listener is attached.
+    if (type === 'recovery' || (type === 'invite' && staffInvite)) {
       setPasswordRecovery(true);
+      setIsInviteFlow(type === 'invite');
     }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -156,14 +162,15 @@ function App() {
     return <ApplicationForm />;
   }
 
-  // Password reset link was used — require a new password before letting
-  // them into the dashboard, even though Supabase already signed them in.
+  // Password reset or staff invite link was used — require a new password
+  // before letting them into the dashboard, even though Supabase already
+  // signed them in.
   if (passwordRecovery) {
     return (
       <div style={styles.loginContainer}>
         <div style={styles.loginCard}>
           <img src={logo} alt="Kingdom Living" style={styles.logo} />
-          <p style={styles.subtitle}>Set a New Password</p>
+          <p style={styles.subtitle}>{isInviteFlow ? 'Welcome! Set Your Password' : 'Set a New Password'}</p>
           {newPasswordMsg && (
             <div style={newPasswordMsg.ok ? styles.success : styles.error}>{newPasswordMsg.text}</div>
           )}
@@ -171,7 +178,7 @@ function App() {
             <button
               type="button"
               style={styles.button}
-              onClick={() => { setPasswordRecovery(false); window.history.replaceState({}, '', window.location.pathname); }}
+              onClick={() => { setPasswordRecovery(false); setIsInviteFlow(false); window.history.replaceState({}, '', window.location.pathname); }}
             >
               Continue to Dashboard
             </button>

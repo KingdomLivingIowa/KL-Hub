@@ -42,7 +42,7 @@ function UserManagement({ currentUser }) {
   const [resetSuccess, setResetSuccess] = useState('');
   const [resetting, setResetting] = useState(false);
   const [form, setForm] = useState({
-    full_name: '', email: '', password: '', role: 'house_manager',
+    full_name: '', email: '', role: 'house_manager',
   });
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -215,23 +215,20 @@ function UserManagement({ currentUser }) {
   const createUser = async () => {
     setFormError('');
     setFormSuccess('');
-    if (!form.full_name || !form.email || !form.password || !form.role) {
+    if (!form.full_name || !form.email || !form.role) {
       setFormError('All fields are required.'); return;
-    }
-    if (form.password.length < 8) {
-      setFormError('Password must be at least 8 characters.'); return;
     }
     setSaving(true);
     try {
       const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email, password: form.password, full_name: form.full_name, role: form.role }),
+        body: JSON.stringify({ email: form.email, full_name: form.full_name, role: form.role }),
       });
       const result = await response.json();
       if (!response.ok) { setFormError(result.error || 'Failed to create user.'); setSaving(false); return; }
-      setFormSuccess(`${form.full_name} has been added successfully!`);
-      setForm({ full_name: '', email: '', password: '', role: 'house_manager' });
+      setFormSuccess(`${form.full_name} has been added — an invite email was sent to ${form.email} so they can set their own password.`);
+      setForm({ full_name: '', email: '', role: 'house_manager' });
       setShowAddUser(false);
       fetchUsers();
     } catch {
@@ -343,10 +340,6 @@ function UserManagement({ currentUser }) {
               <input value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} style={s.input} placeholder="staff@example.com" type="email" />
             </div>
             <div>
-              <label style={s.label}>Temporary Password *</label>
-              <input value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} style={s.input} placeholder="Min 8 characters" type="password" />
-            </div>
-            <div>
               <label style={s.label}>Role *</label>
               <select value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} style={s.input}>
                 {availableRoles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -356,9 +349,9 @@ function UserManagement({ currentUser }) {
           {formError && <p style={s.errorText}>{formError}</p>}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
             <button onClick={createUser} disabled={saving} style={s.saveBtn}>
-              {saving ? 'Creating...' : 'Create Account'}
+              {saving ? 'Sending Invite...' : 'Send Invite'}
             </button>
-            <p style={s.hint}>The staff member will use this email and password to log in to KL Hub.</p>
+            <p style={s.hint}>They'll get an email with a link to set their own password and log in to KL Hub.</p>
           </div>
         </div>
       )}

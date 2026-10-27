@@ -5,22 +5,27 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Where the staff invite email link sends them — kl-hub itself (not the
+// resident portal). The staff_invite=1 marker lets App.js tell this apart
+// from a resident invite link, which also lands with type=invite.
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://kl-hub-xpmk.vercel.app';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, password, full_name, role } = req.body;
+  const { email, full_name, role } = req.body;
 
-  if (!email || !password || !full_name || !role) {
+  if (!email || !full_name || !role) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Create the auth user
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
+  // Invite the new staff member — this creates their auth account AND sends
+  // them an email with a secure link to set their own password, instead of
+  // creating the account silently with a password typed in here.
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: `${APP_URL}/?staff_invite=1`,
   });
 
   if (authError) {
