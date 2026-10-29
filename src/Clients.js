@@ -2253,6 +2253,15 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     }]);
     if (error) { alert('Error saving entry: ' + error.message); return; }
 
+    // Keep the Recovery card's "Step" in sync with the latest Weekly Check-In
+    // (whether staff logged it here or the client submitted it themselves
+    // from KL Portal — see the equivalent update there).
+    if (entryType === 'Weekly Check-In' && entryForm.wci_step) {
+      await supabase.from('clients').update({ step: entryForm.wci_step }).eq('id', selected.id);
+      setSelected(prev => ({ ...prev, step: entryForm.wci_step }));
+      setClients(prev => prev.map(c => c.id === selected.id ? { ...c, step: entryForm.wci_step } : c));
+    }
+
     if (selected?.house_id) {
       if (entryType === 'UA' && entryForm.ua_result === 'Positive') {
         await sendHouseNotification({
@@ -2812,9 +2821,13 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <EditableField label="Sponsor name" field="sponsor_name" value={selected.sponsor_name} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Sponsor phone" field="sponsor_phone" value={selected.sponsor_phone} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Recovery meetings" field="recovery_meetings" value={selected.recovery_meetings} options={['AA', 'NA', 'Both AA & NA', 'Smart Recovery', 'Other', 'None']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
-                      <EditableField label="Step" field="step" value={selected.step} options={['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                     </Card>
                     <Card title="Recovery">
+                      {/* Kept in sync automatically from "What step are you on?" on the
+                          Weekly Check-In (staff-logged or the client's own, from KL
+                          Portal) — still editable here directly if it ever needs a
+                          manual correction. */}
+                      <EditableField label="Step" field="step" value={selected.step} options={['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Substance history" field="substance_history" value={selected.substance_history} options={['Yes', 'No']} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Drug of choice" field="drug_of_choice" value={selected.drug_of_choice} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
                       <EditableField label="Sober date" field="sober_date" value={selected.sober_date} editingField={editingField} setEditingField={setEditingField} saveField={saveField} startEdit={startEdit} />
