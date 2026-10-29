@@ -44,6 +44,7 @@ function Messaging() {
   const [mentionQuery, setMentionQuery] = useState('');
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const [convMembers, setConvMembers] = useState([]);
+  const [showMembers, setShowMembers] = useState(false);
 
   // (message delete removed)
 
@@ -212,6 +213,7 @@ function Messaging() {
       fetchMessages(selectedConv.id);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
+    setShowMembers(false);
   }, [selectedConv?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Real-time for selected conversation
@@ -430,6 +432,12 @@ function Messaging() {
     return profile?.role === 'resident' ? 'Resident' : 'Staff';
   };
 
+  const ROLE_LABELS = {
+    admin: 'Admin', upper_management: 'Upper Management', head_house_manager: 'Head House Manager',
+    house_manager: 'House Manager', parole_officer: 'Parole Officer', resident: 'Resident',
+  };
+  const roleLabel = (role) => ROLE_LABELS[role] || 'Staff';
+
   const formatTime = (d) => {
     const date = new Date(d);
     const now = new Date();
@@ -626,16 +634,42 @@ function Messaging() {
           </div>
         ) : (
           <>
-            <div style={ms.chatHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ ...ms.avatar, background: selectedConv.type === 'group' ? '#dbeafe' : '#f3e8ff', color: selectedConv.type === 'group' ? '#2563eb' : '#9333ea', fontSize: '14px' }}>
-                  {selectedConv.type === 'group' ? '#' : initials(getConvName(selectedConv))}
+            <div style={{ ...ms.chatHeader, position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ ...ms.avatar, background: selectedConv.type === 'group' ? '#dbeafe' : '#f3e8ff', color: selectedConv.type === 'group' ? '#2563eb' : '#9333ea', fontSize: '14px' }}>
+                    {selectedConv.type === 'group' ? '#' : initials(getConvName(selectedConv))}
+                  </div>
+                  <div>
+                    <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>{getConvName(selectedConv)}</p>
+                    <p style={{ color: '#52525b', fontSize: '14px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
+                  </div>
                 </div>
-                <div>
-                  <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>{getConvName(selectedConv)}</p>
-                  <p style={{ color: '#52525b', fontSize: '14px', margin: 0 }}>{selectedConv.type === 'group' ? 'Group chat' : 'Direct message'}</p>
-                </div>
+                {selectedConv.type === 'group' && (
+                  <button onClick={() => setShowMembers(s => !s)}
+                    style={{ background: showMembers ? '#dbeafe' : '#f7f7f9', border: '1px solid #c9c9cf', color: '#2563eb', borderRadius: '8px', padding: '6px 12px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    👥 {convMembers.length + 1} member{convMembers.length !== 0 ? 's' : ''}
+                  </button>
+                )}
               </div>
+              {showMembers && selectedConv.type === 'group' && (
+                <div style={{ position: 'absolute', top: '100%', right: '20px', marginTop: '6px', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', padding: '10px 0', minWidth: '240px', maxHeight: '320px', overflowY: 'auto', zIndex: 50 }}>
+                  <div style={{ padding: '2px 16px 8px', fontSize: '12px', fontWeight: '700', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #f0f0f0', marginBottom: '4px' }}>
+                    In this chat
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px' }}>
+                    <span style={{ fontSize: '14px', color: '#18181b', fontWeight: '600' }}>You</span>
+                  </div>
+                  {convMembers.length === 0 ? (
+                    <p style={{ padding: '6px 16px', fontSize: '13px', color: '#71717a' }}>No other members.</p>
+                  ) : convMembers.map((m, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '6px 16px' }}>
+                      <span style={{ fontSize: '14px', color: '#18181b' }}>{m.full_name || m.email || 'Member'}</span>
+                      <span style={{ fontSize: '12px', color: m.role === 'resident' ? '#9333ea' : '#2563eb', background: m.role === 'resident' ? '#f3e8ff' : '#dbeafe', borderRadius: '10px', padding: '2px 8px', whiteSpace: 'nowrap' }}>{roleLabel(m.role)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={ms.messages}>

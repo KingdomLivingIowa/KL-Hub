@@ -2730,6 +2730,8 @@ function HouseChatTab({ houseId, houseName, user }) {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [memberProfiles, setMemberProfiles] = useState({});
+  const [chatMembers, setChatMembers] = useState([]);
+  const [showMembers, setShowMembers] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const subscriptionRef = useRef(null);
@@ -2756,6 +2758,10 @@ function HouseChatTab({ houseId, houseName, user }) {
       await supabase.from('conversation_members').upsert({
         conversation_id: houseConv.id, user_id: user.id, last_read_at: new Date().toISOString(),
       }, { onConflict: 'conversation_id,user_id' });
+
+      const { data: memberRows } = await supabase.from('conversation_members').select('user_id').eq('conversation_id', houseConv.id);
+      const memberList = (memberRows || []).map(m => ({ id: m.user_id, ...map[m.user_id] })).filter(m => m.full_name || m.email);
+      if (active) setChatMembers(memberList);
 
       const { data: msgs } = await supabase.from('messages').select('*').eq('conversation_id', houseConv.id).order('created_at', { ascending: true });
       if (active) setMessages(msgs || []);
@@ -2790,6 +2796,12 @@ function HouseChatTab({ houseId, houseName, user }) {
     return profile?.role === 'resident' ? 'Resident' : 'Staff';
   };
 
+  const HC_ROLE_LABELS = {
+    admin: 'Admin', upper_management: 'Upper Management', head_house_manager: 'Head House Manager',
+    house_manager: 'House Manager', parole_officer: 'Parole Officer', resident: 'Resident',
+  };
+  const roleLabel = (role) => HC_ROLE_LABELS[role] || 'Staff';
+
   const formatTime = (d) => {
     const date = new Date(d);
     const now = new Date();
@@ -2811,6 +2823,27 @@ function HouseChatTab({ houseId, houseName, user }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '500px', background: '#ffffff', borderRadius: 10, overflow: 'hidden', border: '1px solid #c9c9cf' }}>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '10px 16px', borderBottom: '1px solid #c9c9cf', flexShrink: 0 }}>
+        <button onClick={() => setShowMembers(s => !s)}
+          style={{ background: showMembers ? '#dbeafe' : '#f7f7f9', border: '1px solid #c9c9cf', color: '#2563eb', borderRadius: '8px', padding: '5px 12px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          👥 {chatMembers.length} member{chatMembers.length === 1 ? '' : 's'}
+        </button>
+        {showMembers && (
+          <div style={{ position: 'absolute', top: '100%', right: '16px', marginTop: '6px', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', padding: '10px 0', minWidth: '240px', maxHeight: '320px', overflowY: 'auto', zIndex: 50 }}>
+            <div style={{ padding: '2px 16px 8px', fontSize: '12px', fontWeight: '700', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #f0f0f0', marginBottom: '4px' }}>
+              In {houseName}'s chat
+            </div>
+            {chatMembers.length === 0 ? (
+              <p style={{ padding: '6px 16px', fontSize: '13px', color: '#71717a' }}>No members yet.</p>
+            ) : chatMembers.map((m) => (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '6px 16px' }}>
+                <span style={{ fontSize: '14px', color: '#18181b' }}>{m.id === user.id ? 'You' : (m.full_name || m.email || 'Member')}</span>
+                <span style={{ fontSize: '12px', color: m.role === 'resident' ? '#9333ea' : '#2563eb', background: m.role === 'resident' ? '#f3e8ff' : '#dbeafe', borderRadius: '10px', padding: '2px 8px', whiteSpace: 'nowrap' }}>{roleLabel(m.role)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column' }}>
         {messages.length === 0 ? (
           <p style={{ color: '#6b7280', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>No messages yet. Say hello! 👋</p>
