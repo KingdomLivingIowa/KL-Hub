@@ -256,6 +256,7 @@ function ClientPayments({ client, onPaymentChange }) {
 
   const [showReceipt, setShowReceipt] = useState(null);
   const [sendingLink, setSendingLink] = useState(false);
+  const [showPayMenu, setShowPayMenu] = useState(false);
 
   const ROOM_TYPE_FEES = {
     'Single': 160, 'Double': 135, 'Houseperson': 110, 'Live-Out': 35, 'Level 4': 10,
@@ -378,8 +379,9 @@ function ClientPayments({ client, onPaymentChange }) {
     if (onPaymentChange) onPaymentChange();
   };
 
-  const handlePayOnline = async () => {
+  const handlePayOnline = async (method) => {
     if (balance <= 0) { alert('This client has no outstanding balance.'); return; }
+    setShowPayMenu(false);
     setSendingLink(true);
     try {
       const response = await fetch('/api/create-payment-link', {
@@ -391,12 +393,19 @@ function ClientPayments({ client, onPaymentChange }) {
           paymentType: 'weekly_fee',
           description: `Kingdom Living — Balance due for ${client.full_name}`,
           chargeId: null,
+          paymentMethod: method, // 'card' or 'ach' — the server adds the Stripe processing fee on top so the client covers it, not us
         }),
       });
       const result = await response.json();
       if (!response.ok) { alert('Error creating payment link: ' + result.error); return; }
       await navigator.clipboard.writeText(result.url);
-      alert(`Payment link copied to clipboard!\n\nSend this to ${client.full_name}:\n${result.url}`);
+      const methodLabel = method === 'ach' ? 'bank transfer (ACH)' : 'card';
+      alert(
+        `Payment link copied to clipboard!\n\nSend this to ${client.full_name}:\n${result.url}\n\n` +
+        `Balance owed: ${formatCurrency(result.amount)}\n` +
+        `+ ${methodLabel} processing fee: ${formatCurrency(result.fee)}\n` +
+        `Client will be charged: ${formatCurrency(result.total)}`
+      );
     } catch {
       alert('Network error. Please try again.');
     } finally {
@@ -452,10 +461,24 @@ function ClientPayments({ client, onPaymentChange }) {
           </button>
         )}
         {balance > 0 && (
-          <button onClick={handlePayOnline} disabled={sendingLink}
-            style={{ background: 'transparent', border: '1px solid #2563eb', color: '#2563eb', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', marginLeft: 'auto' }}>
-            {sendingLink ? 'Getting link...' : '🔗 Send Pay Link'}
-          </button>
+          <div style={{ position: 'relative', marginLeft: 'auto' }}>
+            <button onClick={() => setShowPayMenu(v => !v)} disabled={sendingLink}
+              style={{ background: 'transparent', border: '1px solid #2563eb', color: '#2563eb', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
+              {sendingLink ? 'Getting link...' : '🔗 Send Pay Link ▾'}
+            </button>
+            {showPayMenu && (
+              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '4px', background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.12)', zIndex: 10, minWidth: '220px', overflow: 'hidden' }}>
+                <button onClick={() => handlePayOnline('card')}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderBottom: '1px solid #e4e4e7', color: '#18181b', padding: '10px 14px', fontSize: '13px', cursor: 'pointer' }}>
+                  💳 Card <span style={{ color: '#71717a' }}>(+2.9% + $0.30 fee)</span>
+                </button>
+                <button onClick={() => handlePayOnline('ach')}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', color: '#18181b', padding: '10px 14px', fontSize: '13px', cursor: 'pointer' }}>
+                  🏦 Bank transfer (ACH) <span style={{ color: '#71717a' }}>(+0.8%, max $5 fee)</span>
+                </button>
+              </div>
+            )}
+          </div>
         )}
         <InvoiceButton client={client} style={{ background: 'transparent', border: '1px solid #0d9488', color: '#16a34a', padding: '8px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '500', marginLeft: balance > 0 ? '8px' : 'auto' }} />
         {hasFullAccess && (charges.length > 0 || payments.length > 0) && (
