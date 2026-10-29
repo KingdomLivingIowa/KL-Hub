@@ -120,12 +120,25 @@ function Messaging() {
           .eq('conversation_id', conv.id);
         const otherId = (members || []).find(m => m.user_id !== user.id)?.user_id;
         if (otherId) {
-          const { data: profile } = await supabase
+          // user_profiles is the STAFF table — a DM from a resident's
+          // auth_user_id will never match here, which is why this always
+          // fell back to the literal "Staff" for any client-initiated DM.
+          // Check clients too before giving up.
+          const { data: staffProfile } = await supabase
             .from('user_profiles')
             .select('full_name, email')
             .eq('id', otherId)
-            .single();
-          dmNameMap[conv.id] = profile?.full_name || profile?.email || 'Staff';
+            .maybeSingle();
+          if (staffProfile?.full_name || staffProfile?.email) {
+            dmNameMap[conv.id] = staffProfile.full_name || staffProfile.email;
+          } else {
+            const { data: clientProfile } = await supabase
+              .from('clients')
+              .select('full_name, email')
+              .eq('auth_user_id', otherId)
+              .maybeSingle();
+            dmNameMap[conv.id] = clientProfile?.full_name || clientProfile?.email || 'Member';
+          }
         }
       }
     }
