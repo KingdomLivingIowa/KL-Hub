@@ -1864,6 +1864,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         .order('created_at', { ascending: false }),
     ]);
 
+    // Temporary diagnostics: these queries used to silently swallow errors
+    // (data || []), so a bad column name would just show up as "no results"
+    // with no clue why. Log anything that comes back as an error so we can
+    // see it in the browser console instead of guessing.
+    if (timelineRes.error) console.error('[StayHistory] timeline error:', timelineRes.error);
+    if (overnightRes.error) console.error('[StayHistory] overnight error:', overnightRes.error);
+    if (welcomeRes.error) console.error('[StayHistory] welcomePacket error:', welcomeRes.error);
+    if (checkinRes.error) console.error('[StayHistory] checkins error:', checkinRes.error);
+    if (chargesRes.error) console.error('[StayHistory] charges error:', chargesRes.error);
+    if (paymentsRes.error) console.error('[StayHistory] payments error:', paymentsRes.error);
+
     const result = {
       timeline: (timelineRes.data || []).filter(e => e.entry_type !== 'Weekly Check-In'),
       overnights: overnightRes.data || [],
