@@ -668,14 +668,14 @@ function MoveHouseModal({ client, houses, onClose, onSuccess }) {
       const { data: toHouseData } = await supabase.from('houses').select('occupied_beds').eq('id', toHouseId).single();
       if (toHouseData) await supabase.from('houses').update({ occupied_beds: (toHouseData.occupied_beds || 0) + 1 }).eq('id', toHouseId);
 
-      if (client.email) {
-        const { data: fromAuthUser } = await supabase.from('user_profiles').select('id').eq('email', client.email).maybeSingle();
-        if (fromAuthUser?.id) {
-          const { data: fromConv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
-          if (fromConv) await supabase.from('conversation_members').delete().eq('conversation_id', fromConv.id).eq('user_id', fromAuthUser.id);
-          const { data: toConv } = await supabase.from('conversations').select('id').eq('house_id', toHouseId).maybeSingle();
-          if (toConv) await supabase.from('conversation_members').upsert({ conversation_id: toConv.id, user_id: fromAuthUser.id, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
-        }
+      // client.auth_user_id (not a user_profiles lookup — that table is staff-only
+      // and a client's email will never be found there, which used to make this
+      // silently no-op and leave the client in their old house's chat).
+      if (client.auth_user_id) {
+        const { data: fromConv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
+        if (fromConv) await supabase.from('conversation_members').delete().eq('conversation_id', fromConv.id).eq('user_id', client.auth_user_id);
+        const { data: toConv } = await supabase.from('conversations').select('id').eq('house_id', toHouseId).maybeSingle();
+        if (toConv) await supabase.from('conversation_members').upsert({ conversation_id: toConv.id, user_id: client.auth_user_id, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
       }
 
       const noteText = note.trim() ? ` — ${note.trim()}` : '';
@@ -1590,11 +1590,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     setHouses(data || []);
   }, []);
 
-  const addClientToHouseChat = async (clientId, houseId, clientEmail) => {
-    if (!houseId || !clientEmail) return;
-    const { data: authUsers } = await supabase.from('user_profiles').select('id').eq('email', clientEmail).maybeSingle();
-    let authUserId = authUsers?.id;
-    if (!authUserId) return;
+  // NOTE: user_profiles is the STAFF table. Resident/client portal accounts live
+  // on clients.auth_user_id instead, so looking a client up in user_profiles by
+  // email always comes back empty and these used to silently no-op — meaning a
+  // discharged client was never actually removed from their house chat. Pass the
+  // client's own auth_user_id (already present on the client record since it's
+  // fetched with select('*')) instead of doing a lookup.
+  const addClientToHouseChat = async (clientId, houseId, authUserId) => {
+    if (!houseId || !authUserId) return;
     const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
     if (!conv) return;
     await supabase.from('conversation_members').upsert({
@@ -1602,13 +1605,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     }, { onConflict: 'conversation_id,user_id' });
   };
 
-  const removeClientFromHouseChat = async (clientEmail, houseId) => {
-    if (!houseId || !clientEmail) return;
-    const { data: authUser } = await supabase.from('user_profiles').select('id').eq('email', clientEmail).maybeSingle();
-    if (!authUser?.id) return;
+  const removeClientFromHouseChat = async (authUserId, houseId) => {
+    if (!houseId || !authUserId) return;
     const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
     if (!conv) return;
-    await supabase.from('conversation_members').delete().eq('conversation_id', conv.id).eq('user_id', authUser.id);
+    await supabase.from('conversation_members').delete().eq('conversation_id', conv.id).eq('user_id', authUserId);
   };
 
   useEffect(() => { fetchHouses(); }, [fetchHouses]);
@@ -1849,12 +1850,18 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         .eq('entry_type', 'Weekly Check-In')
         .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
         .order('created_at', { ascending: false }),
+      // Scoped by created_at (when the charge was actually assessed), not due_date —
+      // due_date can legitimately fall before move-in (setup) or after discharge
+      // (e.g. a weekly fee due the following Sunday), which was causing real
+      // charges from the stay to silently disappear from this report.
       supabase.from('charges').select('*').eq('client_id', client.id)
-        .gte('due_date', start).lte('due_date', end)
-        .order('due_date', { ascending: false }),
+        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
+        .order('created_at', { ascending: false }),
+      // Same fix for payments: scope by created_at, not payment_date, which a
+      // staff member can backdate or postdate independent of when it was logged.
       supabase.from('payments').select('*').eq('client_id', client.id)
-        .gte('payment_date', start).lte('payment_date', end)
-        .order('payment_date', { ascending: false }),
+        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
+        .order('created_at', { ascending: false }),
     ]);
 
     const result = {
@@ -1925,11 +1932,11 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       updates.early_admission = statusForm.early_admission || false;
       if (statusForm.room_type) updates.room_type = statusForm.room_type;
       const activeHouseId = statusForm.house_id || client.house_id;
-      if (client.house_id && activeHouseId && client.house_id !== activeHouseId && client.email) {
-        await removeClientFromHouseChat(client.email, client.house_id);
+      if (client.house_id && activeHouseId && client.house_id !== activeHouseId && client.auth_user_id) {
+        await removeClientFromHouseChat(client.auth_user_id, client.house_id);
       }
-      if (activeHouseId && client.email) {
-        await addClientToHouseChat(client.id, activeHouseId, client.email);
+      if (activeHouseId && client.auth_user_id) {
+        await addClientToHouseChat(client.id, activeHouseId, client.auth_user_id);
       }
       updates.expected_move_in_date = null;
       const houseId = statusForm.house_id || client.house_id;
@@ -1954,8 +1961,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
     if (newStatus === 'Discharged') {
       if (!statusForm.discharge_reason) { alert('Please select a reason for discharge.'); return; }
-      if (client.house_id && client.email) {
-        await removeClientFromHouseChat(client.email, client.house_id);
+      if (client.house_id && client.auth_user_id) {
+        await removeClientFromHouseChat(client.auth_user_id, client.house_id);
       }
       const today = new Date().toISOString().split('T')[0];
       updates.discharge_date = statusForm.discharge_date || today;
