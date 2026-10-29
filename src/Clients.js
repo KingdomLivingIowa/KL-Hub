@@ -1843,8 +1843,12 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
       supabase.from('overnight_requests').select('*').eq('client_id', client.id)
         .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
         .order('created_at', { ascending: false }),
+      // No date-range filter here — welcome_packets doesn't have a created_at
+      // column the server will accept that filter on (confirmed via a 400
+      // "Bad Request" in the console), and a client only ever submits one
+      // packet anyway, so client_id alone is enough — same pattern already
+      // used successfully elsewhere in this file for this same table.
       supabase.from('welcome_packets').select('*').eq('client_id', client.id)
-        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
         .maybeSingle(),
       supabase.from('client_timeline').select('*').eq('client_id', client.id)
         .eq('entry_type', 'Weekly Check-In')
