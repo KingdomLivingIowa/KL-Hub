@@ -511,6 +511,78 @@ const reverseGeocode = async (lat, lng) => {
   } catch { return null; }
 };
 
+// Distance between two lat/lng points, in meters.
+const haversineMeters = (lat1, lng1, lat2, lng2) => {
+  const R = 6371000;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// Turns a location_sessions row + its location_pings rows into the numbers
+// the Meeting timeline card shows: how long they stayed, whether they left
+// the geofenced area and how many times, and how far they got.
+//
+// Honesty note: if a session is still "active" but hasn't gotten a ping in
+// over 20 minutes, the phone almost certainly lost signal or the tab got
+// killed by the OS (true background tracking isn't reliable from a web
+// app) — this is shown as "Lost signal" using the last known ping as the
+// effective end, rather than pretending we know what happened after that.
+const STALE_SESSION_MS = 20 * 60 * 1000;
+
+const computeMeetingStats = (session, pings) => {
+  const radius = session.radius_m || 100;
+  const origin = session.origin_lat != null && session.origin_lng != null
+    ? { lat: session.origin_lat, lng: session.origin_lng }
+    : pings[0] ? { lat: pings[0].lat, lng: pings[0].lng } : null;
+
+  let exits = 0;
+  let wasInside = true;
+  let maxDeparture = 0;
+  pings.forEach((p) => {
+    if (!origin) return;
+    const d = haversineMeters(origin.lat, origin.lng, p.lat, p.lng);
+    const inside = d <= radius;
+    if (!inside) {
+      maxDeparture = Math.max(maxDeparture, d);
+      if (wasInside) exits += 1;
+      wasInside = false;
+    } else {
+      wasInside = true;
+    }
+  });
+
+  const lastPing = pings[pings.length - 1] || null;
+  const now = Date.now();
+  const startedAt = new Date(session.started_at).getTime();
+  const lastPingAt = lastPing ? new Date(lastPing.recorded_at).getTime() : startedAt;
+  const isStale = session.status === 'active' && (now - lastPingAt) > STALE_SESSION_MS;
+
+  let endedAt;
+  if (session.status === 'ended') endedAt = new Date(session.ended_at).getTime();
+  else if (isStale) endedAt = lastPingAt;
+  else endedAt = now;
+
+  const durationMin = Math.max(0, Math.round((endedAt - startedAt) / 60000));
+  const currentlyInside = wasInside;
+
+  let statusLabel, statusColor;
+  if (session.status === 'active' && !isStale) {
+    statusLabel = currentlyInside ? 'Tracking — here now' : 'Tracking — away from area';
+    statusColor = '#16a34a';
+  } else if (isStale) {
+    statusLabel = 'Lost signal';
+    statusColor = '#c2410c';
+  } else {
+    statusLabel = currentlyInside ? 'Completed' : 'Left the area';
+    statusColor = currentlyInside ? '#16a34a' : '#dc2626';
+  }
+
+  return { session, pings, origin, durationMin, exits, maxDeparture: Math.round(maxDeparture), statusLabel, statusColor, lastPing, isStale };
+};
+
 const getWeekStart = (date) => {
   const d = new Date(date);
   const day = d.getDay();
@@ -1477,6 +1549,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   const [choreRecords, setChoreRecords] = useState([]);
 
   const [locationLabels, setLocationLabels] = useState({});
+  const [meetingSessions, setMeetingSessions] = useState({}); // timeline_entry_id -> computed tracking summary
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [showTimelinePDFModal, setShowTimelinePDFModal] = useState(false);
   const [pdfRange, setPdfRange] = useState({ startDate: '', endDate: '', eventType: 'All' });
@@ -1640,6 +1713,29 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
           if (address) setLocationLabels(prev => ({ ...prev, [entry.id]: address }));
         }
       });
+
+      // Pull in any location-tracking sessions tied to this page's Meeting
+      // entries (one batched query for the sessions, one for their pings,
+      // rather than a query per entry) and reduce each into the numbers the
+      // Meeting card needs.
+      const meetingEntryIds = entries.filter(e => e.entry_type === 'Meeting').map(e => e.id);
+      if (meetingEntryIds.length > 0) {
+        const { data: sessions } = await supabase.from('location_sessions').select('*').in('timeline_entry_id', meetingEntryIds);
+        if (sessions && sessions.length > 0) {
+          const sessionIds = sessions.map(s => s.id);
+          const { data: pings } = await supabase.from('location_pings').select('*').in('session_id', sessionIds).order('recorded_at', { ascending: true });
+          const byEntry = {};
+          sessions.forEach(s => {
+            const sessionPings = (pings || []).filter(p => p.session_id === s.id);
+            byEntry[s.timeline_entry_id] = computeMeetingStats(s, sessionPings);
+          });
+          setMeetingSessions(prev => (append ? { ...prev, ...byEntry } : byEntry));
+        } else if (!append) {
+          setMeetingSessions({});
+        }
+      } else if (!append) {
+        setMeetingSessions({});
+      }
     } catch (err) { console.error(err); }
     finally { setTimelineLoading(false); setTimelineLoadingMore(false); }
   };
@@ -2077,9 +2173,43 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const dropPin = () => {
     if (!navigator.geolocation) { alert('Geolocation is not supported by your browser.'); return; }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setEntryForm(p => ({ ...p, latitude: pos.coords.latitude.toString(), longitude: pos.coords.longitude.toString(), pinDropped: true })),
-      () => alert('Unable to get location. Please allow location access.')
+    // Take several readings over a few seconds and keep the most accurate
+    // one, instead of a single getCurrentPosition call — a single reading
+    // (especially the first one a device reports) is often rough and can
+    // land the pin a house or two off, even standing in the same spot.
+    // Matches the approach already used on the KL Portal side.
+    let bestAccuracy = Infinity;
+    let bestLat = null;
+    let bestLng = null;
+    let attempts = 0;
+    let watchId = null;
+
+    const finish = (lat, lng) => {
+      if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+      if (lat != null) {
+        setEntryForm(p => ({ ...p, latitude: lat.toString(), longitude: lng.toString(), pinDropped: true }));
+      } else {
+        alert('Unable to get location. Please allow location access.');
+      }
+    };
+
+    const fallback = setTimeout(() => finish(bestLat, bestLng), 12000);
+
+    watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        attempts++;
+        if (pos.coords.accuracy < bestAccuracy) {
+          bestAccuracy = pos.coords.accuracy;
+          bestLat = pos.coords.latitude;
+          bestLng = pos.coords.longitude;
+        }
+        if (pos.coords.accuracy <= 30 || attempts >= 5) {
+          clearTimeout(fallback);
+          finish(pos.coords.latitude, pos.coords.longitude);
+        }
+      },
+      () => { clearTimeout(fallback); finish(bestLat, bestLng); },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 5000 }
     );
   };
   const saveTimelineEntry = async () => {
@@ -2304,6 +2434,46 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     );
   };
 
+  // Meeting entries that have a location-tracking session (client dropped a
+  // pin from KL Portal and tracking started) show this instead of the plain
+  // LocationPin — how long they stayed, whether/how many times they left the
+  // pinned area, and how far. Meeting entries without a session (older
+  // entries, or no pin dropped) fall back to the plain pin.
+  const MeetingLocationSummary = ({ entryId, fallbackLat, fallbackLng, fallbackTime }) => {
+    const info = meetingSessions[entryId];
+    if (!info) {
+      return fallbackLat && fallbackLng ? <LocationPin entryId={entryId} lat={fallbackLat} lng={fallbackLng} time={fallbackTime} /> : null;
+    }
+    const { session, durationMin, exits, maxDeparture, statusLabel, statusColor, origin, pings } = info;
+    const hrs = Math.floor(durationMin / 60);
+    const mins = durationMin % 60;
+    const durationLabel = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} min`;
+    const address = locationLabels[entryId];
+    const mapsUrl = origin ? `https://www.google.com/maps?q=${origin.lat},${origin.lng}` : null;
+    const pathUrl = pings.length > 1 ? `https://www.google.com/maps/dir/${pings.map(p => `${p.lat},${p.lng}`).join('/')}` : null;
+
+    return (
+      <div style={{ background: '#f7f7f9', borderRadius: '8px', padding: '10px 12px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>📍</span>
+            <span style={{ fontSize: '14px', color: '#52525b', lineHeight: '1.4' }}>{address || (origin ? `${origin.lat.toFixed(4)}, ${origin.lng.toFixed(4)}` : '—')}</span>
+          </div>
+          <span style={{ fontSize: '12px', fontWeight: '700', color: statusColor, background: '#ffffff', border: `1px solid ${statusColor}`, borderRadius: '10px', padding: '2px 8px', whiteSpace: 'nowrap' }}>{statusLabel}</span>
+        </div>
+        <div style={{ fontSize: '13px', color: '#71717a' }}>
+          Stayed about {durationLabel}
+          {exits > 0 ? ` · ${exits} brief exit${exits > 1 ? 's' : ''}` : ''}
+          {maxDeparture > (session.radius_m || 100) ? ` · Departure distance: ${maxDeparture} m` : ''}
+        </div>
+        <div style={{ display: 'flex', gap: '14px', marginTop: '6px' }}>
+          {mapsUrl && <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'none' }}>Open in Maps →</a>}
+          {pathUrl && <a href={pathUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '13px', color: '#2563eb', textDecoration: 'none' }}>View path →</a>}
+        </div>
+      </div>
+    );
+  };
+
   const MeetingWeek = ({ weekStart, entries }) => {
     const key = weekStart.toISOString();
     const isExpanded = expandedWeeks[key];
@@ -2332,7 +2502,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     <span style={{ fontSize: '14px', color: '#2563eb', fontWeight: '500' }}>{m.meeting_name || 'Meeting'}</span>
                     <span style={{ fontSize: '14px', color: '#52525b' }}>by {m.author}</span>
                   </div>
-                  {m.latitude && m.longitude && <LocationPin entryId={m.id} lat={m.latitude} lng={m.longitude} time={m.created_at} />}
+                  <MeetingLocationSummary entryId={m.id} fallbackLat={m.latitude} fallbackLng={m.longitude} fallbackTime={m.created_at} />
                   {m.notes && <p style={{ color: '#52525b', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.4' }}>{m.notes}</p>}
                 </div>
                 <span style={{ fontSize: '14px', color: '#52525b', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDateShort(m.created_at)}</span>
@@ -3104,7 +3274,9 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 <button onClick={() => deleteTimelineEntry(entry.id)} style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#4b5563', borderRadius: '4px', padding: '2px 8px', fontSize: '14px', cursor: 'pointer' }}>×</button>
                               </div>
                             </div>
-                            {entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />}
+                            {entry.entry_type === 'Meeting'
+                              ? <MeetingLocationSummary entryId={entry.id} fallbackLat={entry.latitude} fallbackLng={entry.longitude} fallbackTime={entry.created_at} />
+                              : (entry.latitude && entry.longitude && <LocationPin entryId={entry.id} lat={entry.latitude} lng={entry.longitude} />)}
                             {entry.entry_type === 'Weekly Reflection'
                               ? <WeeklyReflectionCard entry={entry} />
                               : entry.entry_type === 'Weekly Check-In'
