@@ -3259,8 +3259,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                   </button>
                                   <button
                                     onClick={async () => {
+                                      // Use loadStayHistory's return value directly instead of
+                                      // re-reading the `stayHistory` state variable right after
+                                      // awaiting it: setState from inside loadStayHistory doesn't
+                                      // update this closure's `stayHistory` until the next render,
+                                      // so this always saw the stale (pre-load) value and silently
+                                      // fell through to an all-empty report on the very first click
+                                      // for any given stay — which is every report, since each stay
+                                      // is only ever generated once. This was the actual cause of
+                                      // every "No charges / No timeline entries" result so far.
                                       let h = stayHistory[stay.id];
-                                      if (!h) { await loadStayHistory(stay, selected); h = stayHistory[stay.id]; }
+                                      if (!h) { h = await loadStayHistory(stay, selected); }
                                       const img = new Image();
                                       img.crossOrigin = 'anonymous';
                                       img.onload = () => {
