@@ -743,11 +743,31 @@ function MoveHouseModal({ client, houses, onClose, onSuccess }) {
       // client.auth_user_id (not a user_profiles lookup — that table is staff-only
       // and a client's email will never be found there, which used to make this
       // silently no-op and leave the client in their old house's chat).
+      //
+      // Also: look up the conversation with order+limit instead of
+      // .maybeSingle() — .maybeSingle() errors out (and the result was never
+      // checked here) if a house ever ends up with more than one
+      // conversations row, which would silently skip the "remove from old
+      // house chat" half while the "add to new house chat" half (a clean
+      // single-row match for the destination) still goes through. That's
+      // indistinguishable from "added to the new chat, never removed from
+      // the old one" — exactly the symptom this was causing.
       if (client.auth_user_id) {
-        const { data: fromConv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
-        if (fromConv) await supabase.from('conversation_members').delete().eq('conversation_id', fromConv.id).eq('user_id', client.auth_user_id);
-        const { data: toConv } = await supabase.from('conversations').select('id').eq('house_id', toHouseId).maybeSingle();
-        if (toConv) await supabase.from('conversation_members').upsert({ conversation_id: toConv.id, user_id: client.auth_user_id, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
+        const { data: fromConvRows, error: fromConvErr } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).order('created_at', { ascending: false }).limit(1);
+        if (fromConvErr) console.error('[transfer] from-house conversation lookup error:', fromConvErr);
+        const fromConvId = fromConvRows?.[0]?.id;
+        if (fromConvId) {
+          const { error: removeErr } = await supabase.from('conversation_members').delete().eq('conversation_id', fromConvId).eq('user_id', client.auth_user_id);
+          if (removeErr) console.error('[transfer] remove from old house chat error:', removeErr);
+        }
+
+        const { data: toConvRows, error: toConvErr } = await supabase.from('conversations').select('id').eq('house_id', toHouseId).order('created_at', { ascending: false }).limit(1);
+        if (toConvErr) console.error('[transfer] to-house conversation lookup error:', toConvErr);
+        const toConvId = toConvRows?.[0]?.id;
+        if (toConvId) {
+          const { error: addErr } = await supabase.from('conversation_members').upsert({ conversation_id: toConvId, user_id: client.auth_user_id, last_read_at: new Date().toISOString() }, { onConflict: 'conversation_id,user_id' });
+          if (addErr) console.error('[transfer] add to new house chat error:', addErr);
+        }
       }
 
       const noteText = note.trim() ? ` — ${note.trim()}` : '';
@@ -1669,20 +1689,38 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
   // discharged client was never actually removed from their house chat. Pass the
   // client's own auth_user_id (already present on the client record since it's
   // fetched with select('*')) instead of doing a lookup.
+  // .maybeSingle() errors out (and silently returns no data, since callers
+  // here never checked .error) if more than one conversations row happens
+  // to exist for a house — a leftover from any past house-seeding hiccup
+  // would make a "remove from old house chat" call quietly no-op while an
+  // "add to new house chat" call (a clean single-row match) still succeeds.
+  // That looks exactly like "added to the new house chat, never removed
+  // from the old one." This looks up the most recent matching conversation
+  // instead, so a duplicate row can't silently break the lookup, and logs
+  // if something still goes wrong so it's visible instead of silent.
+  const findHouseConversationId = async (houseId) => {
+    if (!houseId) return null;
+    const { data, error } = await supabase.from('conversations').select('id').eq('house_id', houseId).order('created_at', { ascending: false }).limit(1);
+    if (error) { console.error('[houseChat] conversation lookup error:', error); return null; }
+    return data?.[0]?.id || null;
+  };
+
   const addClientToHouseChat = async (clientId, houseId, authUserId) => {
     if (!houseId || !authUserId) return;
-    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
-    if (!conv) return;
-    await supabase.from('conversation_members').upsert({
-      conversation_id: conv.id, user_id: authUserId, last_read_at: new Date().toISOString(),
+    const convId = await findHouseConversationId(houseId);
+    if (!convId) return;
+    const { error } = await supabase.from('conversation_members').upsert({
+      conversation_id: convId, user_id: authUserId, last_read_at: new Date().toISOString(),
     }, { onConflict: 'conversation_id,user_id' });
+    if (error) console.error('[houseChat] add member error:', error);
   };
 
   const removeClientFromHouseChat = async (authUserId, houseId) => {
     if (!houseId || !authUserId) return;
-    const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
-    if (!conv) return;
-    await supabase.from('conversation_members').delete().eq('conversation_id', conv.id).eq('user_id', authUserId);
+    const convId = await findHouseConversationId(houseId);
+    if (!convId) return;
+    const { error } = await supabase.from('conversation_members').delete().eq('conversation_id', convId).eq('user_id', authUserId);
+    if (error) console.error('[houseChat] remove member error:', error);
   };
 
   useEffect(() => { fetchHouses(); }, [fetchHouses]);
