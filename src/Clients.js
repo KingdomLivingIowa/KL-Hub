@@ -1854,18 +1854,21 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         .eq('entry_type', 'Weekly Check-In')
         .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
         .order('created_at', { ascending: false }),
-      // Scoped by created_at (when the charge was actually assessed), not due_date —
-      // due_date can legitimately fall before move-in (setup) or after discharge
-      // (e.g. a weekly fee due the following Sunday), which was causing real
-      // charges from the stay to silently disappear from this report.
+      // A charge belongs to this stay if EITHER its due_date falls in the
+      // window (the date staff deliberately assign it to — including
+      // backdated/corrected entries and imported historical records, where
+      // due_date is the only date that reflects reality) OR its created_at
+      // does (for a charge logged in real time with a due_date that lands
+      // outside the stay, e.g. a weekly fee due the Sunday after discharge).
+      // Matching on only one of these was dropping real charges either way.
       supabase.from('charges').select('*').eq('client_id', client.id)
-        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
-        .order('created_at', { ascending: false }),
-      // Same fix for payments: scope by created_at, not payment_date, which a
-      // staff member can backdate or postdate independent of when it was logged.
+        .or(`and(due_date.gte.${start},due_date.lte.${end}),and(created_at.gte.${start}T00:00:00,created_at.lte.${end}T23:59:59)`)
+        .order('due_date', { ascending: false }),
+      // Same fix for payments: match on payment_date OR created_at, for the
+      // same reasons as charges above.
       supabase.from('payments').select('*').eq('client_id', client.id)
-        .gte('created_at', start + 'T00:00:00').lte('created_at', end + 'T23:59:59')
-        .order('created_at', { ascending: false }),
+        .or(`and(payment_date.gte.${start},payment_date.lte.${end}),and(created_at.gte.${start}T00:00:00,created_at.lte.${end}T23:59:59)`)
+        .order('payment_date', { ascending: false }),
     ]);
 
     // Temporary diagnostics: these queries used to silently swallow errors
