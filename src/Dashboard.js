@@ -45,7 +45,7 @@ const WAITING_LISTS = [
 ];
 
 function DashboardHome({ counts, currentUser }) {
-  const { isHouseManagerRole, assignedHouseIds, loadingRole } = useUser();
+  const { isHouseManagerRole, assignedHouseIds } = useUser();
 
   const [houses, setHouses] = useState([]);
   const [alerts, setAlerts] = useState([]);
@@ -85,18 +85,7 @@ function DashboardHome({ counts, currentUser }) {
     } finally {
       setLoadingDashboard(false);
     }
-    // isHouseManagerRole/assignedHouseIds MUST be in this dependency array.
-    // fetchHouses/fetchAlerts/fetchOpenCharges below are plain functions
-    // redefined every render, closing over whatever isHouseManagerRole and
-    // assignedHouseIds were AT THAT RENDER. With an empty dependency array
-    // here, this callback — and the functions it closes over — would stay
-    // permanently frozen on their very first render's values. Since the
-    // role/house assignments load asynchronously (they start as
-    // isHouseManagerRole=false, assignedHouseIds=[] before UserContext
-    // finishes loading), that first render would wrongly be treated as
-    // "not a house manager" forever, silently showing org-wide data to a
-    // house manager no matter how the role data came in afterward.
-  }, [isHouseManagerRole, assignedHouseIds]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-fetch notifications whenever currentUser becomes available
   useEffect(() => {
@@ -165,14 +154,8 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchHouses = async () => {
-    // A house manager with no houses assigned yet should see nothing here —
-    // not every house in the org. Skip the query entirely in that case.
-    if (isHouseManagerRole && assignedHouseIds.length === 0) {
-      setHouses([]);
-      return;
-    }
     let query = supabase.from('houses').select('*').order('name');
-    if (isHouseManagerRole) query = query.in('id', assignedHouseIds);
+    if (isHouseManagerRole && assignedHouseIds.length > 0) query = query.in('id', assignedHouseIds);
     const { data: housesData } = await query;
     const { data: clientsData } = await supabase.from('clients').select('house_id, status').in('status', ['Active', 'Pending']);
     const enriched = (housesData || []).map(h => ({
@@ -189,14 +172,9 @@ function DashboardHome({ counts, currentUser }) {
     const iso = sevenDaysAgo.toISOString();
 
     const { data: crises } = await supabase.from('client_timeline').select('id, severity, created_at, notes, clients(full_name, house_id)').eq('entry_type', 'Crisis').gte('created_at', iso).order('created_at', { ascending: false });
-    // A house manager with no houses assigned yet should see no crises or
-    // check-in alerts at all — not the whole org's.
-    const hasNoAssignedHouses = isHouseManagerRole && assignedHouseIds.length === 0;
-    const filteredCrises = hasNoAssignedHouses
-      ? []
-      : isHouseManagerRole
-        ? (crises || []).filter(c => assignedHouseIds.includes(c.clients?.house_id))
-        : (crises || []);
+    const filteredCrises = isHouseManagerRole && assignedHouseIds.length > 0
+      ? (crises || []).filter(c => assignedHouseIds.includes(c.clients?.house_id))
+      : (crises || []);
 
     const now = new Date();
     const dayOfWeek = now.getDay();
@@ -205,13 +183,9 @@ function DashboardHome({ counts, currentUser }) {
     weekStart.setDate(now.getDate() + diffToMonday);
     weekStart.setHours(0, 0, 0, 0);
 
-    let activeClients = [];
-    if (!hasNoAssignedHouses) {
-      let clientQuery = supabase.from('clients').select('id, full_name, house_id').eq('status', 'Active');
-      if (isHouseManagerRole) clientQuery = clientQuery.in('house_id', assignedHouseIds);
-      const { data } = await clientQuery;
-      activeClients = data || [];
-    }
+    let clientQuery = supabase.from('clients').select('id, full_name, house_id').eq('status', 'Active');
+    if (isHouseManagerRole && assignedHouseIds.length > 0) clientQuery = clientQuery.in('house_id', assignedHouseIds);
+    const { data: activeClients } = await clientQuery;
 
     const { data: checkIns } = await supabase.from('client_timeline').select('client_id').in('entry_type', ['Check-In', 'House Check-In']).gte('created_at', weekStart.toISOString());
     const checkedInIds = new Set((checkIns || []).map(c => c.client_id));
@@ -239,16 +213,9 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchOpenCharges = async () => {
-    // A house manager with no houses assigned yet should see no open
-    // charges at all — not the whole org's.
-    if (isHouseManagerRole && assignedHouseIds.length === 0) {
-      setOpenCharges([]);
-      setTotalOutstanding(0);
-      return;
-    }
     const { data } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, status, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true });
     let charges = (data || []).filter(c => c.clients?.status === 'Active');
-    if (isHouseManagerRole) {
+    if (isHouseManagerRole && assignedHouseIds.length > 0) {
       charges = charges.filter(c => assignedHouseIds.includes(c.clients?.house_id));
     }
     const total = charges.reduce((sum, c) => sum + (parseFloat(c.amount) - parseFloat(c.amount_paid || 0)), 0);
@@ -256,13 +223,7 @@ function DashboardHome({ counts, currentUser }) {
     setTotalOutstanding(total);
   };
 
-  useEffect(() => {
-    // Wait until the role/house assignments have finished loading before
-    // fetching — otherwise this would run once with isHouseManagerRole
-    // still false (role unknown) and cache/show unscoped org-wide data.
-    if (loadingRole) return;
-    fetchDashboardData();
-  }, [fetchDashboardData, loadingRole]);
+  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
 
   // Write to cache after data settles so next visit is instant
   useEffect(() => {
@@ -909,17 +870,11 @@ function NotificationSettingsPage({ currentUser }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Email change state
-  const [newEmail, setNewEmail] = useState('');
-  const [emailSaving, setEmailSaving] = useState(false);
-  const [emailMsg, setEmailMsg] = useState(null);
-
   // Password reset state
   const [pwSaving, setPwSaving] = useState(false);
   const [pwMsg, setPwMsg] = useState(null);
 
   // Collapsible section state
-  const [openEmail, setOpenEmail] = useState(false);
   const [openPassword, setOpenPassword] = useState(false);
   const [openNotif, setOpenNotif] = useState(false);
 
@@ -962,44 +917,10 @@ function NotificationSettingsPage({ currentUser }) {
     <div style={{ maxWidth: '540px' }}>
       <p style={{ color: '#4b5563', fontSize: '14px', margin: '0 0 28px 0' }}>Manage your notification preferences. Changes apply to your account only.</p>
 
-      <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
-        <button onClick={() => setOpenEmail(o => !o)} style={sectionHeaderBtn}>
-          <div>
-            <p style={{ color: '#18181b', fontSize: '15px', fontWeight: '600', margin: 0 }}>Change Email</p>
-            <p style={{ color: '#6b7280', fontSize: '13px', margin: '4px 0 0 0' }}>Current: <span style={{ color: '#3f3f46' }}>{currentUser?.email}</span></p>
-          </div>
-          {chevron(openEmail)}
-        </button>
-        {openEmail && (
-          <div style={{ padding: '0 20px 16px 20px', borderTop: '1px solid #c9c9cf', paddingTop: '16px' }}>
-            <input
-              type="email"
-              placeholder="New email address"
-              value={newEmail}
-              onChange={e => { setNewEmail(e.target.value); setEmailMsg(null); }}
-              style={{ width: '100%', background: '#ffffff', border: '1px solid #b0b0b7', borderRadius: '8px', padding: '9px 12px', color: '#18181b', fontSize: '14px', marginBottom: '10px', boxSizing: 'border-box' }}
-            />
-            {emailMsg && <p style={{ fontSize: '13px', color: emailMsg.ok ? '#16a34a' : '#dc2626', margin: '0 0 10px 0' }}>{emailMsg.text}</p>}
-            <button
-              onClick={async () => {
-                if (!newEmail.trim()) return;
-                setEmailSaving(true);
-                setEmailMsg(null);
-                const { error } = await supabase.auth.updateUser({ email: newEmail.trim() }, { emailRedirectTo: window.location.origin });
-                if (error) {
-                  setEmailMsg({ ok: false, text: 'Error: ' + error.message });
-                } else {
-                  setEmailMsg({ ok: true, text: 'Confirmation link sent to ' + newEmail.trim() + '. Click the link in that email to confirm — your email will update after you confirm.' });
-                  setNewEmail('');
-                }
-                setEmailSaving(false);
-              }}
-              disabled={emailSaving || !newEmail.trim()}
-              style={actionBtnStyle(emailSaving || !newEmail.trim())}>
-              {emailSaving ? 'Saving...' : 'Update Email'}
-            </button>
-          </div>
-        )}
+      <div style={{ background: '#f7f7f9', border: '1px solid #c9c9cf', borderRadius: '12px', padding: '14px 20px', marginBottom: '12px' }}>
+        <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>Logged in as</p>
+        <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '600', margin: '2px 0 0 0', wordBreak: 'break-all' }}>{currentUser?.email}</p>
+        <p style={{ color: '#71717a', fontSize: '12px', margin: '6px 0 0 0' }}>Need this changed? Ask an admin to update it.</p>
       </div>
 
       <div style={{ background: '#ffffff', border: '1px solid #c9c9cf', borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
