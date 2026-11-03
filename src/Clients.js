@@ -1113,6 +1113,30 @@ function ClientDocumentsTab({ client }) {
   );
 }
 
+// Imported Sobriety Hub entries list extra photos in their notes as
+// "[More photos: url , url]". Split those out so they show as thumbnails.
+function splitPhotoNotes(notes) {
+  if (!notes) return { text: notes, extras: [] };
+  const m = notes.match(/\[More photos: ([^\]]+)\]/);
+  if (!m) return { text: notes, extras: [] };
+  const extras = m[1].split(',').map(u => u.trim()).filter(u => u.startsWith('http'));
+  const text = notes.replace(m[0], '').replace(/\s+$/, '').trim();
+  return { text: text || null, extras };
+}
+
+function EntryPhotos({ photoUrl, extras, onOpen }) {
+  const urls = [photoUrl, ...(extras || [])].filter(Boolean);
+  if (urls.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+      {urls.map(u => (
+        <img key={u} src={u} alt="" onClick={() => onOpen(u)}
+          style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #b8b8bf', cursor: 'pointer' }} />
+      ))}
+    </div>
+  );
+}
+
 function WeeklyCheckInCard({ entry }) {
   const Row = ({ label, value }) => value != null && value !== '' ? (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #c9c9cf' }}>
@@ -2924,6 +2948,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {uaRecords.map(ua => {
                           const col = uaResultColor(ua.event_name);
+                          const uaPhotos = splitPhotoNotes(ua.notes);
                           return (
                             <div key={ua.id} style={{ padding: '10px 14px', background: '#ffffff', borderRadius: '8px', border: '1px solid #c9c9cf' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
@@ -2934,7 +2959,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                                 </div>
                                 <span style={{ color: '#52525b', fontSize: '14px', flexShrink: 0 }}>{formatDateShort(ua.created_at)}</span>
                               </div>
-                              {ua.notes && <p style={{ color: '#4b5563', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.4', wordBreak: 'break-word' }}>{ua.notes}</p>}
+                              {uaPhotos.text && <p style={{ color: '#4b5563', fontSize: '14px', margin: '6px 0 0 0', lineHeight: '1.4', wordBreak: 'break-word' }}>{uaPhotos.text}</p>}
+                              <EntryPhotos photoUrl={ua.photo_url} extras={uaPhotos.extras} onOpen={setLightboxUrl} />
                             </div>
                           );
                         })}
@@ -3332,11 +3358,8 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                               ? <WeeklyReflectionCard entry={entry} />
                               : entry.entry_type === 'Weekly Check-In'
                               ? <WeeklyCheckInCard entry={entry} />
-                              : entry.notes && <p style={{ color: '#52525b', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{entry.notes}</p>}
-                            {entry.photo_url && (
-                                <img src={entry.photo_url} alt="" onClick={() => setLightboxUrl(entry.photo_url)}
-                                  style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px', border: '1px solid #b8b8bf', cursor: 'pointer' }} />
-                              )}
+                              : splitPhotoNotes(entry.notes).text && <p style={{ color: '#52525b', fontSize: '14px', margin: '4px 0 0 0', lineHeight: '1.5' }}>{splitPhotoNotes(entry.notes).text}</p>}
+                            <EntryPhotos photoUrl={entry.photo_url} extras={splitPhotoNotes(entry.notes).extras} onOpen={setLightboxUrl} />
                             {entry.author && <p style={{ color: '#52525b', fontSize: '14px', margin: '6px 0 0 0' }}>By {entry.author}</p>}
                           </div>
                         ))}
