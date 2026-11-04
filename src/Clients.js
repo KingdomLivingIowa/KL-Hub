@@ -277,15 +277,17 @@ function generateStayHistoryPDF(stay, client, history, logoSrc) {
   win.document.write(html);
   win.document.close();
 }
-function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, checkIn, logoSrc) {
+function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecords, stays, checkIn, logoSrc, extras = {}) {
   const name = client.full_name || '—';
   const logoHtml = logoSrc ? `<img src="${logoSrc}" style="width:70px;height:70px;object-fit:contain;" />` : `<div style="width:70px;height:70px;border:2px solid #8b1c1c;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#8b1c1c;">KL</div>`;
   const fmtDate = (d) => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+  const fmtShort = (ts) => ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const fmtMoney = (n) => '$' + Math.abs(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const today = new Date();
   const generatedDate = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
   const soberDays = client.sober_date ? Math.floor((today - new Date(client.sober_date + 'T12:00:00')) / (1000*60*60*24)) : null;
-
   const daysInProgram = client.start_date ? Math.floor((today - new Date(client.start_date + 'T12:00:00')) / (1000*60*60*24)) : null;
 
   const fourWeeksAgo = new Date(today); fourWeeksAgo.setDate(today.getDate() - 28);
@@ -297,33 +299,42 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   const posUAs = uaRecords.filter(u => u.event_name === 'Positive').length;
   const lastUA = uaRecords[0];
 
-  const fourWeeksAgoStr = fourWeeksAgo.toISOString().split('T')[0];
-  const todayStr = today.toISOString().split('T')[0];
-  let choreExpectedDays = 0;
-  let choreCompletedDays = 0;
-  (choreRecords || []).forEach(r => {
-    const windowStart = r.period_start > fourWeeksAgoStr ? r.period_start : fourWeeksAgoStr;
-    const windowEnd = r.period_end < todayStr ? r.period_end : todayStr;
-    if (windowEnd < windowStart) return;
-    const completedSet = new Set(r.completed_dates || []);
-    let d = new Date(windowStart + 'T12:00:00');
-    const last = new Date(windowEnd + 'T12:00:00');
-    while (d <= last) {
-      const iso = d.toISOString().split('T')[0];
-      choreExpectedDays++;
-      if (completedSet.has(iso)) choreCompletedDays++;
-      d.setDate(d.getDate() + 1);
-    }
-  });
-  const choreMissedDays = Math.max(choreExpectedDays - choreCompletedDays, 0);
+  // Extra data passed in by the Progress Report button
+  const checkIns = extras.checkIns || [];
+  const recent = extras.recentTimeline || [];
+  const balance = extras.balance;                 // charges minus payments: positive = owed
+  const houseCheckIns = recent.filter(e => e.entry_type === 'Check-In');
+  const missedCheckIns = houseCheckIns.filter(e => /not here/i.test(e.notes || '') && !/\(approved\)/i.test(e.notes || ''));
+  const infractions = recent.filter(e => e.entry_type === 'Infraction' || e.entry_type === 'Crisis');
 
-  const fmtCheckInDate = checkIn?.created_at ? new Date(checkIn.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const employed = checkIn ? checkIn.checkin_employed : null;
+  const employer = checkIn ? checkIn.checkin_employer : null;
 
   const section = (title) => `<div style="font-size:13px;font-weight:700;color:#b22222;text-transform:uppercase;letter-spacing:0.08em;margin:24px 0 10px;border-left:4px solid #b22222;padding-left:10px;">${title}</div>`;
-  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#18181b'};">${value}</span></div>`;
+  const row = (label, value, highlight = '') => `<div style="display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #c9c9cf;"><span style="font-size:14px;color:#71717a;">${label}</span><span style="font-size:14px;font-weight:600;color:${highlight || '#18181b'};text-align:right;">${value}</span></div>`;
+
+  const checkInTable = checkIns.length === 0 ? '<p style="color:#6b7280;font-size:14px;padding:8px 0;">No weekly check-ins on record.</p>' : `
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f5f5f5;">
+      <th style="text-align:left;padding:8px;border-bottom:2px solid #c9c9cf;">Date</th>
+      <th style="text-align:center;padding:8px;border-bottom:2px solid #c9c9cf;">Meetings</th>
+      <th style="text-align:center;padding:8px;border-bottom:2px solid #c9c9cf;">Sponsor contacts</th>
+      <th style="text-align:center;padding:8px;border-bottom:2px solid #c9c9cf;">Step</th>
+      <th style="text-align:center;padding:8px;border-bottom:2px solid #c9c9cf;">Employed</th>
+    </tr></thead>
+    <tbody>
+      ${checkIns.map(c => `<tr>
+        <td style="padding:8px;border-bottom:1px solid #e4e4e7;">${fmtShort(c.created_at)}</td>
+        <td style="text-align:center;padding:8px;border-bottom:1px solid #e4e4e7;">${c.checkin_meetings ?? '—'}</td>
+        <td style="text-align:center;padding:8px;border-bottom:1px solid #e4e4e7;">${c.checkin_sponsor_contacts ?? '—'}</td>
+        <td style="text-align:center;padding:8px;border-bottom:1px solid #e4e4e7;">${esc(c.checkin_step || '—')}</td>
+        <td style="text-align:center;padding:8px;border-bottom:1px solid #e4e4e7;">${c.checkin_employed === true ? 'Yes' : c.checkin_employed === false ? 'No' : '—'}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
-  <title>Progress Report – ${name}</title>
+  <title>Progress Report – ${esc(name)}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; color: #18181b; background: #ffffff; padding: 40px; max-width: 800px; margin: 0 auto; }
@@ -335,7 +346,7 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
     .report-sub { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
     .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 8px; }
     .stat-box { background: #f5f5f5; border-radius: 8px; padding: 14px; text-align: center; }
-    .stat-num { font-size: 28px; font-weight: 700; color: #f4f4f6; }
+    .stat-num { font-size: 28px; font-weight: 700; color: #18181b; }
     .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
     .checkin-box { background: #f5f5f5; border-radius: 8px; padding: 14px; margin-top: 8px; }
     .print-btn { position: fixed; top: 16px; right: 16px; padding: 10px 20px; background: #8b1c1c; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
@@ -348,14 +359,16 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
   <div class="report-sub">Generated ${generatedDate}</div>
 
   ${section('Client Information')}
-  ${row('Name', name)}
-  ${row('House', client.house_name || '—')}
-  ${row('Status', client.status || '—')}
+  ${row('Name', esc(name))}
+  ${row('House', esc(client.house_name || '—'))}
+  ${row('Status', esc(client.status || '—'))}
   ${row('Level', client.level ? `Level ${client.level}` : '—')}
   ${row('Move-In Date', fmtDate(client.start_date))}
   ${daysInProgram !== null ? row('Days in Program', `${daysInProgram} days`) : ''}
-  ${row('PO Name', client.po_name || '—')}
-  ${row('Recovery Meetings', client.recovery_meetings || '—')}
+  ${row('PO Name', esc(client.po_name || '—'))}
+  ${row('Recovery Meetings', esc(client.recovery_meetings || '—'))}
+  ${row('Employed', employed === true ? 'Yes' : employed === false ? 'No' : '—')}
+  ${employer ? row('Employer', esc(employer)) : ''}
 
   ${section('Recovery')}
   ${row('Recovery Date', fmtDate(client.sober_date))}
@@ -367,7 +380,7 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
     <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${negUAs}</div><div class="stat-label">Negative</div></div>
     <div class="stat-box"><div class="stat-num" style="color:${posUAs > 0 ? '#dc2626' : '#16a34a'};">${posUAs}</div><div class="stat-label">Positive</div></div>
   </div>
-  ${lastUA ? row('Most Recent UA', `${lastUA.event_name} — ${new Date(lastUA.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, lastUA.event_name === 'Negative' ? '#16a34a' : '#dc2626') : row('Most Recent UA', 'No UAs on record')}
+  ${lastUA ? row('Most Recent UA', `${esc(lastUA.event_name || 'Unknown')} — ${fmtShort(lastUA.created_at)}`, lastUA.event_name === 'Negative' ? '#16a34a' : '#dc2626') : row('Most Recent UA', 'No UAs on record')}
 
   ${section('Meeting Attendance')}
   <div class="stat-grid">
@@ -376,27 +389,27 @@ function generateProgressReportPDF(client, uaRecords, meetingRecords, choreRecor
     <div class="stat-box"><div class="stat-num" style="color:${recentMeetings.length >= 16 ? '#16a34a' : recentMeetings.length >= 8 ? '#b45309' : '#dc2626'};">${Math.round(recentMeetings.length / 4 * 10) / 10}</div><div class="stat-label">Avg / Week</div></div>
   </div>
 
-  ${section('Chore Compliance (Last 4 Weeks)')}
+  ${section('Activity (Last 30 Days)')}
   <div class="stat-grid">
-    <div class="stat-box"><div class="stat-num">${choreExpectedDays}</div><div class="stat-label">Expected Days</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:#16a34a;">${choreCompletedDays}</div><div class="stat-label">Completed</div></div>
-    <div class="stat-box"><div class="stat-num" style="color:${choreMissedDays > 0 ? '#dc2626' : '#16a34a'};">${choreMissedDays}</div><div class="stat-label">Missed</div></div>
+    <div class="stat-box"><div class="stat-num">${houseCheckIns.length}</div><div class="stat-label">House Check-Ins</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${missedCheckIns.length > 0 ? '#dc2626' : '#16a34a'};">${missedCheckIns.length}</div><div class="stat-label">Unapproved Absences</div></div>
+    <div class="stat-box"><div class="stat-num" style="color:${infractions.length > 0 ? '#dc2626' : '#16a34a'};">${infractions.length}</div><div class="stat-label">Infractions</div></div>
   </div>
+  ${infractions.map(e => row(`${fmtShort(e.created_at)} · ${esc(e.entry_type)}`, esc((e.notes || '').slice(0, 160)), '#dc2626')).join('')}
 
-  ${section('Latest Weekly Check-In')}
-  ${!checkIn ? '<p style="color:#6b7280;font-size:14px;padding:8px 0;">No weekly check-ins on record.</p>' : `
+  ${section('Weekly Check-Ins (Last 4)')}
+  ${checkInTable}
+  ${checkIn ? `
   <div class="checkin-box">
-    <div style="font-size:12px;color:#b22222;font-weight:600;margin-bottom:10px;">Submitted ${fmtCheckInDate}${checkIn.author ? ` by ${checkIn.author}` : ''}</div>
-    ${checkIn.checkin_meetings != null ? row('Meetings attended', checkIn.checkin_meetings) : ''}
-    ${checkIn.checkin_sponsor_contacts != null ? row('Sponsor contacts', checkIn.checkin_sponsor_contacts) : ''}
-    ${checkIn.checkin_step ? row('Step', checkIn.checkin_step) : ''}
-    ${checkIn.checkin_chore ? row('Assigned chore', checkIn.checkin_chore) : ''}
-    ${checkIn.checkin_chore_completed != null ? row('Chore completed', checkIn.checkin_chore_completed ? 'Yes ✓' : 'No ✗', checkIn.checkin_chore_completed ? '#16a34a' : '#dc2626') : ''}
-    ${checkIn.checkin_employed != null ? row('Employed', checkIn.checkin_employed ? 'Yes' : 'No') : ''}
-    ${checkIn.checkin_employer ? row('Employer', checkIn.checkin_employer) : ''}
-    ${checkIn.checkin_payment_plan ? row('Payment plan', checkIn.checkin_payment_plan) : ''}
-    ${checkIn.notes ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #3f3f46;"><div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Weekly reflection</div><div style="font-size:14px;color:#c9c9cf;line-height:1.6;">${checkIn.notes}</div></div>` : ''}
-  </div>`}
+    <div style="font-size:12px;color:#b22222;font-weight:600;margin-bottom:10px;">Latest — submitted ${fmtShort(checkIn.created_at)}${checkIn.author ? ` by ${esc(checkIn.author)}` : ''}</div>
+    ${checkIn.checkin_payment_plan ? row('Payment plan', esc(checkIn.checkin_payment_plan)) : ''}
+    ${checkIn.notes ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid #c9c9cf;"><div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Weekly reflection</div><div style="font-size:14px;color:#3f3f46;line-height:1.6;">${esc(checkIn.notes)}</div></div>` : ''}
+  </div>` : ''}
+
+  ${balance != null ? `
+  ${section('Payment Standing')}
+  ${row('Current Balance', balance > 0 ? `${fmtMoney(balance)} owed` : balance < 0 ? `${fmtMoney(balance)} credit` : 'Paid in full', balance > 0 ? '#dc2626' : '#16a34a')}
+  ${row('Standing', balance > 0 ? 'Balance owed' : 'Good standing', balance > 0 ? '#dc2626' : '#16a34a')}` : ''}
 
   <div style="margin-top:32px;text-align:center;color:#52525b;font-size:12px;">Kingdom Living Iowa · Non-Profit Recovery Community<br>Generated ${generatedDate}</div>
   </body></html>`;
@@ -2824,16 +2837,26 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                       <p style={{ fontSize: '14px', color: '#71717a', margin: 0, fontStyle: 'italic' }}>Click any field to edit.</p>
                     </div>
                     {hasFullAccess && (
-                      <button onClick={() => {
+                      <button onClick={async () => {
+                        const since = new Date(); since.setDate(since.getDate() - 30);
+                        const [{ data: ciData }, { data: recentData }] = await Promise.all([
+                          supabase.from('client_timeline').select('*').eq('client_id', selected.id)
+                            .eq('entry_type', 'Weekly Check-In').order('created_at', { ascending: false }).limit(4),
+                          supabase.from('client_timeline').select('entry_type, notes, created_at').eq('client_id', selected.id)
+                            .in('entry_type', ['Check-In', 'Infraction', 'Crisis']).gte('created_at', since.toISOString())
+                            .order('created_at', { ascending: false }),
+                        ]);
+                        const extras = { checkIns: ciData || [], recentTimeline: recentData || [], balance: clientBalance };
+                        const reportCheckIn = (ciData && ciData[0]) || latestCheckIn;
                         const img = new Image();
                         img.crossOrigin = 'anonymous';
                         img.onload = () => {
                           const canvas = document.createElement('canvas');
                           canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
                           canvas.getContext('2d').drawImage(img, 0, 0);
-                          generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, latestCheckIn, canvas.toDataURL('image/jpeg'));
+                          generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, reportCheckIn, canvas.toDataURL('image/jpeg'), extras);
                         };
-                        img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, latestCheckIn, null);
+                        img.onerror = () => generateProgressReportPDF(selected, uaRecords, meetingRecords, choreRecords, stays, reportCheckIn, null, extras);
                         img.src = klLogo;
                       }} style={{ padding: '5px 12px', background: '#fee2e2', border: '1px solid #b22222', borderRadius: '6px', color: '#b22222', fontSize: '13px', cursor: 'pointer', fontWeight: '500', whiteSpace: 'nowrap' }}>
                         📄 Progress Report
