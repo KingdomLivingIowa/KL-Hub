@@ -39,9 +39,11 @@ function Timesheets() {
   staff.forEach(s => { nameMap[s.id] = s.full_name || s.email || 'Staff'; });
 
   const fetchStaff = useCallback(async () => {
-    const { data, error } = await supabase.from('user_profiles').select('id, full_name, email').order('full_name');
+    // Parole Officers get Hub accounts for messaging/visibility but don't
+    // clock in/out — leave them off the staff filter dropdown.
+    const { data, error } = await supabase.from('user_profiles').select('id, full_name, email, role').order('full_name');
     if (error) console.error('[timesheets] staff fetch error:', error);
-    setStaff(data || []);
+    setStaff((data || []).filter(s => s.role !== 'parole_officer'));
   }, []);
 
   const fetchEntries = useCallback(async () => {
