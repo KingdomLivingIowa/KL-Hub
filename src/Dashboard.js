@@ -15,6 +15,8 @@ import Resources from './Resources';
 import EmailSettings from './EmailSettings';
 import PODashboard from './PODashboard';
 import Maintenance from './Maintenance';
+import Timesheets from './Timesheets';
+import { TimeClockWidget } from './TimeClock';
 import klLogo from './kingdom-living-logo.jpg';
 
 const DEFAULT_NOTIF_PREFS = {
@@ -694,6 +696,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage },
     { id: 'calendars', label: 'Calendars', show: true },
     { id: 'resources', label: 'Resources', show: true },
+    { id: 'timesheets', label: 'Timesheets', show: hasFullAccess },
   ].filter(item => item.show);
 
   const settingsItems = [
@@ -778,6 +781,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
             </div>
           )}
         </nav>
+        <TimeClockWidget currentUser={user} />
         <div style={styles.sidebarBottom}>
           {role && <p style={styles.userRole}>{roleDisplayName(role)}</p>}
           <p style={styles.userEmail}>{user?.email}</p>
@@ -818,6 +822,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
           {activePage === 'maintenance' && canSeeMaintenancePage && <Maintenance />}
           {activePage === 'calendars' && <Calendars />}
           {activePage === 'resources' && <Resources />}
+          {activePage === 'timesheets' && hasFullAccess && <Timesheets />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
           {activePage === 'email_settings' && <EmailSettings />}
           {activePage === 'profile' && <NotificationSettingsPage currentUser={user} />}
