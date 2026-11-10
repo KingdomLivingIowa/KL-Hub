@@ -2759,7 +2759,20 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h2 style={st.modalName}>{selected.full_name}</h2>
+                {editingField?.field === 'full_name' ? (
+                  <input autoFocus value={editingField.value}
+                    onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))}
+                    onBlur={saveField}
+                    onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
+                    style={{ ...st.modalName, background: '#ffffff', border: '1px solid #71717a', borderRadius: '6px', padding: '2px 8px', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+                ) : (
+                  <h2 onClick={() => startEdit('full_name', selected.full_name)} title="Click to edit"
+                    style={{ ...st.modalName, cursor: 'text', borderRadius: '6px', border: '1px solid transparent', padding: '2px 6px', margin: '-2px 0 0 -6px', display: 'inline-block' }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = '#c9c9cf'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
+                    {selected.full_name}
+                  </h2>
+                )}
                 <p style={st.modalSub}>{selected.house_name || 'No house assigned'} &nbsp;·&nbsp; {selected.start_date ? `Started ${selected.start_date}` : 'No start date'}</p>
                 <div style={st.badges}>
                   <span style={{ ...st.badge, background: statusColor(selected.status).bg, color: statusColor(selected.status).color }}>{selected.status || 'Applied'}</span>
