@@ -664,11 +664,22 @@ function InvitePortalButton({ client }) {
         await supabase.from('clients').update({ auth_user_id: result.user.id }).eq('id', client.id);
         if (client.house_id) {
           setTimeout(async () => {
-            const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', client.house_id).maybeSingle();
-            if (conv) {
-              await supabase.from('conversation_members').upsert({
-                conversation_id: conv.id, user_id: result.user.id, last_read_at: new Date().toISOString(),
+            // Same duplicate-safe lookup used everywhere else house chat
+            // membership is touched in this file (order + limit instead of
+            // .maybeSingle(), which throws/no-ops unlogged if more than one
+            // conversations row exists for the house). Without this, a
+            // client who accepts their portal invite can silently never get
+            // added to their house's chat, with no error anywhere to show it.
+            const { data: convRows, error: convErr } = await supabase
+              .from('conversations').select('id').eq('house_id', client.house_id)
+              .order('created_at', { ascending: false }).limit(1);
+            if (convErr) { console.error('[invite] conversation lookup error:', convErr); return; }
+            const convId = convRows?.[0]?.id;
+            if (convId) {
+              const { error: addErr } = await supabase.from('conversation_members').upsert({
+                conversation_id: convId, user_id: result.user.id, last_read_at: new Date().toISOString(),
               }, { onConflict: 'conversation_id,user_id' });
+              if (addErr) console.error('[invite] add to house chat error:', addErr);
             }
           }, 2000);
         }
