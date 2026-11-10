@@ -696,7 +696,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage },
     { id: 'calendars', label: 'Calendars', show: true },
     { id: 'resources', label: 'Resources', show: true },
-    { id: 'timesheets', label: 'Timesheets', show: hasFullAccess },
+    { id: 'timesheets', label: hasFullAccess ? 'Timesheets' : 'My Timesheet', show: true },
   ].filter(item => item.show);
 
   const settingsItems = [
@@ -822,7 +822,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
           {activePage === 'maintenance' && canSeeMaintenancePage && <Maintenance />}
           {activePage === 'calendars' && <Calendars />}
           {activePage === 'resources' && <Resources />}
-          {activePage === 'timesheets' && hasFullAccess && <Timesheets />}
+          {activePage === 'timesheets' && <Timesheets currentUser={user} hasFullAccess={hasFullAccess} />}
           {activePage === 'users' && canSeeUserManagement && <UserManagement currentUser={user} />}
           {activePage === 'email_settings' && <EmailSettings />}
           {activePage === 'profile' && <NotificationSettingsPage currentUser={user} />}

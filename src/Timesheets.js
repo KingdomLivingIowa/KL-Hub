@@ -23,12 +23,14 @@ const fromLocalInput = (val) => (val ? new Date(val).toISOString() : null);
 const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—';
 const fmtHours = (h) => h == null ? '—' : h.toFixed(2);
 
-function Timesheets() {
+function Timesheets({ currentUser, hasFullAccess }) {
   const todayStr = new Date().toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(mondayOf(new Date()));
   const [endDate, setEndDate] = useState(todayStr);
   const [staff, setStaff] = useState([]);
-  const [staffFilter, setStaffFilter] = useState('');
+  // Regular staff are locked to their own records; only Admin/Upper
+  // Management (hasFullAccess) can pick "All staff" or another person.
+  const [staffFilter, setStaffFilter] = useState(hasFullAccess ? '' : (currentUser?.id || ''));
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -40,11 +42,15 @@ function Timesheets() {
 
   const fetchStaff = useCallback(async () => {
     // Parole Officers get Hub accounts for messaging/visibility but don't
-    // clock in/out — leave them off the staff filter dropdown.
-    const { data, error } = await supabase.from('user_profiles').select('id, full_name, email, role').order('full_name');
+    // clock in/out — leave them off the staff filter dropdown. Regular
+    // staff only need their own profile here (for name display); the
+    // dropdown itself is hidden for them below.
+    let query = supabase.from('user_profiles').select('id, full_name, email, role').order('full_name');
+    if (!hasFullAccess && currentUser?.id) query = query.eq('id', currentUser.id);
+    const { data, error } = await query;
     if (error) console.error('[timesheets] staff fetch error:', error);
     setStaff((data || []).filter(s => s.role !== 'parole_officer'));
-  }, []);
+  }, [hasFullAccess, currentUser?.id]);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -52,12 +58,16 @@ function Timesheets() {
       .gte('clock_in', new Date(startDate + 'T00:00:00').toISOString())
       .lte('clock_in', new Date(endDate + 'T23:59:59').toISOString())
       .order('clock_in', { ascending: false });
-    if (staffFilter) query = query.eq('user_id', staffFilter);
+    // Non-full-access staff are hard-locked to their own entries even if
+    // staffFilter were ever cleared — belt-and-suspenders alongside the
+    // hidden dropdown below.
+    const effectiveFilter = hasFullAccess ? staffFilter : (currentUser?.id || '');
+    if (effectiveFilter) query = query.eq('user_id', effectiveFilter);
     const { data, error } = await query;
     if (error) console.error('[timesheets] entries fetch error:', error);
     setEntries(data || []);
     setLoading(false);
-  }, [startDate, endDate, staffFilter]);
+  }, [startDate, endDate, staffFilter, hasFullAccess, currentUser?.id]);
 
   useEffect(() => { fetchStaff(); }, [fetchStaff]);
   useEffect(() => { fetchEntries(); }, [fetchEntries]);
@@ -141,13 +151,15 @@ function Timesheets() {
           <label style={lbl}>To</label>
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={inp} />
         </div>
-        <div>
-          <label style={lbl}>Staff</label>
-          <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={inp}>
-            <option value="">All staff</option>
-            {staff.map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
-          </select>
-        </div>
+        {hasFullAccess && (
+          <div>
+            <label style={lbl}>Staff</label>
+            <select value={staffFilter} onChange={e => setStaffFilter(e.target.value)} style={inp}>
+              <option value="">All staff</option>
+              {staff.map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
+            </select>
+          </div>
+        )}
         <button onClick={exportCSV} disabled={entries.length === 0}
           style={{ background: 'transparent', border: '1px solid #0d9488', color: '#16a34a', padding: '9px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '500', cursor: entries.length === 0 ? 'default' : 'pointer', opacity: entries.length === 0 ? 0.5 : 1 }}>
           📄 Export CSV
@@ -181,10 +193,12 @@ function Timesheets() {
                     )}
                     <div style={{ fontSize: '13px', fontWeight: '600', color: '#16a34a' }}>{fmtHours(hours)} hrs</div>
                     {entry.note && <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>"{entry.note}"</div>}
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
-                      <button onClick={() => startEdit(entry)} style={smallBtn}>Edit</button>
-                      <button onClick={() => deleteEntry(entry.id)} style={{ ...smallBtn, borderColor: '#dc2626', color: '#dc2626' }}>Delete</button>
-                    </div>
+                    {hasFullAccess && (
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+                        <button onClick={() => startEdit(entry)} style={smallBtn}>Edit</button>
+                        <button onClick={() => deleteEntry(entry.id)} style={{ ...smallBtn, borderColor: '#dc2626', color: '#dc2626' }}>Delete</button>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div>
