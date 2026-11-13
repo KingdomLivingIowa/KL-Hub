@@ -16,6 +16,7 @@ import EmailSettings from './EmailSettings';
 import PODashboard from './PODashboard';
 import Maintenance from './Maintenance';
 import Timesheets from './Timesheets';
+import Vouchers from './Vouchers';
 import { TimeClockWidget } from './TimeClock';
 import klLogo from './kingdom-living-logo.jpg';
 
@@ -288,6 +289,8 @@ function DashboardHome({ counts, currentUser }) {
     if (type === 'vacation_request') return '🏖️';
     if (type === 'new_application') return '📝';
     if (type === 'weekly_charges') return '💵';
+    if (type === 'voucher_upload') return '📎';
+    if (type === 'voucher_update') return '🧾';
     return '•';
   };
 
@@ -664,6 +667,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     canSeeUserManagement,
     isParoleOfficer,
     canSeeMaintenancePage,
+    isHouseManagerRole,
   } = useUser();
 
   useEffect(() => {
@@ -692,6 +696,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     { id: 'clients', label: 'Clients', show: true },
     { id: 'messages', label: 'Messages', show: true },
     { id: 'payments', label: 'Payments', show: hasFullAccess },
+    { id: 'vouchers', label: 'Vouchers', show: hasFullAccess || isHouseManagerRole },
     { id: 'reports', label: 'Reports', show: canSeeReports },
     { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage },
     { id: 'calendars', label: 'Calendars', show: true },
@@ -817,6 +822,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
             />
           )}
           {activePage === 'payments' && hasFullAccess && <Payments />}
+          {activePage === 'vouchers' && (hasFullAccess || isHouseManagerRole) && <Vouchers />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'reports' && canSeeReports && <Reports />}
           {activePage === 'maintenance' && canSeeMaintenancePage && <Maintenance />}
