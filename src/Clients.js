@@ -1277,11 +1277,12 @@ function ClientFormsTab({ client }) {
         ${row('Program', p.program)}
         ${row('Phone', p.phone)}
         ${row('Email', p.email)}
+        ${row('Email Consent', p.agree_email_consent)}
+        ${row('SMS Consent', p.agree_sms_consent)}
         ${row('Knows House Manager', p.know_house_manager)}
         ${row('Knows Head House Manager', p.know_head_house_manager)}
         ${row('Knows Houseperson', p.know_houseperson)}
         ${row('Assigned Mentor', p.assigned_mentor)}
-        ${row('On Band App', p.on_band_app)}
         ${section('Level 1 Agreements')}
         ${row('Agrees to Employment Requirements', p.agree_employment)}
         ${row('Agrees to Sponsor Requirements', p.agree_sponsor)}
@@ -1292,6 +1293,7 @@ function ClientFormsTab({ client }) {
         ${row('Commits to Positive Financial Balance', p.agree_financial_balance)}
         ${row('Understands Level Requirements', p.understand_level_requirements)}
         ${section('Program Policies')}
+        ${row('Understands Level 4 Live-Out Fee', p.understand_level4_fee)}
         ${row('Agrees to Levels', p.agree_levels)}
         ${row('Agrees to Rules', p.agree_rules)}
         ${row('Understands Services', p.understand_services)}
@@ -1341,7 +1343,7 @@ function ClientFormsTab({ client }) {
   const Row = ({ label, value }) => (
     <div style={{ padding: '8px 0', borderBottom: '1px solid #cfcfd4' }}>
       <p style={labelStyle}>{label}</p>
-      <p style={{ ...valueStyle, color: value === 'Yes' ? '#16a34a' : value === 'No' ? '#dc2626' : '#3f3f46' }}>{value || '—'}</p>
+      <p style={{ ...valueStyle, color: (value === 'Yes' || value === 'I agree') ? '#16a34a' : (value === 'No' || value === 'I disagree') ? '#dc2626' : '#3f3f46' }}>{value || '—'}</p>
     </div>
   );
 
@@ -1381,11 +1383,12 @@ function ClientFormsTab({ client }) {
       <Row label="Program" value={packet.program} />
       <Row label="Phone" value={packet.phone} />
       <Row label="Email" value={packet.email} />
+      <Row label="Email Consent" value={packet.agree_email_consent} />
+      <Row label="SMS Consent" value={packet.agree_sms_consent} />
       <Row label="Knows House Manager" value={packet.know_house_manager} />
       <Row label="Knows Head House Manager" value={packet.know_head_house_manager} />
       <Row label="Knows Houseperson" value={packet.know_houseperson} />
       <Row label="Assigned Mentor" value={packet.assigned_mentor} />
-      <Row label="On Band App" value={packet.on_band_app} />
 
       <Section title="Level 1 Agreements" />
       <Row label="Employment Requirements" value={packet.agree_employment} />
@@ -1398,6 +1401,7 @@ function ClientFormsTab({ client }) {
       <Row label="Understands Level Requirements" value={packet.understand_level_requirements} />
 
       <Section title="Program Policies" />
+      <Row label="Understands Level 4 Live-Out Fee" value={packet.understand_level4_fee} />
       <Row label="Agrees to Levels" value={packet.agree_levels} />
       <Row label="Agrees to Rules" value={packet.agree_rules} />
       <Row label="Understands Services" value={packet.understand_services} />
