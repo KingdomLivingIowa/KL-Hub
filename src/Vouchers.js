@@ -83,6 +83,9 @@ function Vouchers() {
   const [filesFor, setFilesFor] = useState(null); // voucher row
   const [historyFor, setHistoryFor] = useState(null); // voucher row
   const [showSettings, setShowSettings] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  // Archived rows are read-only until restored
+  const editable = canEdit && !showArchived;
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -111,6 +114,7 @@ function Vouchers() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter(r => {
+      if (showArchived ? !r.archived_at : r.archived_at) return false;
       const name = (clientName(r.clients) || r.resident_name || '').toLowerCase();
       const house = r.house_label || houseNumber(r.clients?.houses?.name);
       if (q && !name.includes(q) && !(r.notes || '').toLowerCase().includes(q)) return false;
@@ -119,7 +123,7 @@ function Vouchers() {
       if (monthFilter !== 'All' && (r.ls_date || '').slice(0, 7) !== monthFilter) return false;
       return true;
     });
-  }, [rows, search, stageFilter, houseFilter, monthFilter]);
+  }, [rows, search, stageFilter, houseFilter, monthFilter, showArchived]);
 
   const totals = useMemo(() => {
     const t = { count: filtered.length, paid: 0 };
@@ -156,7 +160,7 @@ function Vouchers() {
   };
 
   const startEdit = (row, field) => {
-    if (!canEdit) return;
+    if (!editable) return;
     let value = row[field] ?? '';
     if (['ls_date', 'approval_date', 'payment_date'].includes(field)) value = fmtDate(row[field]);
     setEditing({ id: row.id, field, value: String(value) });
@@ -170,7 +174,7 @@ function Vouchers() {
   };
 
   const toggleFlag = async (row) => {
-    if (!canEdit) return;
+    if (!editable) return;
     await saveField(row, 'flagged', !row.flagged);
   };
 
@@ -200,12 +204,38 @@ function Vouchers() {
     setRows(prev => prev.map(r => (r.id === row.id ? data : r)));
   };
 
-  const deleteRow = async (row) => {
-    if (!window.confirm(`Delete the voucher row for ${clientName(row.clients) || row.resident_name || 'this resident'}? This can't be undone.`)) return;
+  const archiveRow = async (row) => {
+    const who = clientName(row.clients) || row.resident_name || 'this resident';
+    if (!window.confirm(`Archive the voucher row for ${who}? You can find it later under "Archived" and restore it.`)) return;
+    setSaveError(null);
+    const { data, error } = await supabase.from('vouchers')
+      .update({ archived_at: new Date().toISOString(), archived_by: user?.id || null })
+      .eq('id', row.id).select('*, clients(id, full_name, first_name, last_name, status, house_id, houses(name)), voucher_files(id, file_name, storage_path, uploaded_by_role, kind, created_at)').single();
+    if (error) { setSaveError(error.message); return; }
+    setRows(prev => prev.map(r => (r.id === row.id ? data : r)));
+  };
+
+  const restoreRow = async (row) => {
+    setSaveError(null);
+    const { data, error } = await supabase.from('vouchers')
+      .update({ archived_at: null, archived_by: null })
+      .eq('id', row.id).select('*, clients(id, full_name, first_name, last_name, status, house_id, houses(name)), voucher_files(id, file_name, storage_path, uploaded_by_role, kind, created_at)').single();
+    if (error) { setSaveError(error.message); return; }
+    setRows(prev => prev.map(r => (r.id === row.id ? data : r)));
+  };
+
+  const deleteForever = async (row) => {
+    const who = clientName(row.clients) || row.resident_name || 'this resident';
+    if (!window.confirm(`Permanently delete the archived voucher for ${who}? This removes it and its files for good and can't be undone.`)) return;
+    setSaveError(null);
+    const paths = (row.voucher_files || []).map(f => f.storage_path).filter(Boolean);
+    if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
     const { error } = await supabase.from('vouchers').delete().eq('id', row.id);
     if (error) { setSaveError(error.message); return; }
     setRows(prev => prev.filter(r => r.id !== row.id));
   };
+
+  const archivedCount = rows.filter(r => r.archived_at).length;
 
   const exportCsv = () => {
     const head = ['Resident Name', 'House', 'Landlord Statement Date', 'Approval Date', 'Payment Date', 'Amount', 'Expected Payment', 'Stage', 'Files', 'Notes', 'Linked to Client'];
@@ -226,7 +256,7 @@ function Vouchers() {
   const cell = (row, field, display, opts = {}) => {
     const warn = rowWarnings(row)[field];
     const isEditing = editing && editing.id === row.id && editing.field === field;
-    const base = { ...vs.td, ...(opts.style || {}), ...(warn ? vs.warnCell : {}), cursor: canEdit ? 'text' : 'default' };
+    const base = { ...vs.td, ...(opts.style || {}), ...(warn ? vs.warnCell : {}), cursor: editable ? 'text' : 'default' };
     if (isEditing) {
       return (
         <td style={{ ...base, padding: 0 }}>
@@ -257,15 +287,26 @@ function Vouchers() {
       <div style={vs.header}>
         <div>
           <h1 style={vs.title}>Vouchers</h1>
-          <p style={vs.sub}>Rent voucher tracking · {canEdit ? 'Click any cell to edit. Dates can be typed like 9.15.26.' : 'View only.'}</p>
+          <p style={vs.sub}>
+            {showArchived
+              ? 'Archived voucher records · read only. Restore a row to edit it again.'
+              : <>Rent voucher tracking · {canEdit ? 'Click any cell to edit. Dates can be typed like 9.15.26.' : 'View only.'}</>}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {canEdit && <button style={vs.primaryBtn} onClick={() => setPickerFor('new')}>+ Add Voucher</button>}
+          {editable && <button style={vs.primaryBtn} onClick={() => setPickerFor('new')}>+ Add Voucher</button>}
+          <button style={showArchived ? vs.primaryBtn : vs.btn} onClick={() => { setShowArchived(a => !a); setEditing(null); setStageFilter('All'); }}>
+            {showArchived ? '← Back to Vouchers' : `🗄 Archived (${archivedCount})`}
+          </button>
           <button style={vs.btn} onClick={exportCsv}>⬇ Export to Excel</button>
           {canEdit && <button style={vs.btn} onClick={() => setShowSettings(true)}>Portal Instructions</button>}
           <button style={vs.btn} onClick={fetchRows}>↻ Refresh</button>
         </div>
       </div>
+
+      {showArchived && (
+        <div style={vs.archiveBanner}>🗄 You're viewing <strong>archived</strong> vouchers. These are hidden from the tracker and from residents' portals.</div>
+      )}
 
       {/* Summary */}
       <div style={vs.summary}>
@@ -320,12 +361,12 @@ function Vouchers() {
                 <th style={{ ...vs.th, width: '110px' }}>Stage</th>
                 <th style={{ ...vs.th, width: '44px' }} title="Files">📎</th>
                 <th style={{ ...vs.th, minWidth: '260px' }}>Notes</th>
-                {canEdit && <th style={{ ...vs.th, width: '56px' }}></th>}
+                {canEdit && <th style={{ ...vs.th, width: showArchived ? '120px' : '56px' }}></th>}
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={canEdit ? 12 : 11} style={{ ...vs.td, textAlign: 'center', color: '#71717a', padding: '24px' }}>No vouchers match.</td></tr>
+                <tr><td colSpan={canEdit ? 12 : 11} style={{ ...vs.td, textAlign: 'center', color: '#71717a', padding: '24px' }}>{showArchived ? 'No archived vouchers.' : 'No vouchers match.'}</td></tr>
               )}
               {filtered.map(r => {
                 const name = clientName(r.clients) || r.resident_name || '';
@@ -336,18 +377,23 @@ function Vouchers() {
                 const rowStyle = r.flagged ? vs.flagRow : {};
                 return (
                   <tr key={r.id} style={rowStyle}>
-                    <td style={{ ...vs.td, textAlign: 'center', cursor: canEdit ? 'pointer' : 'default' }} onClick={() => toggleFlag(r)} title={canEdit ? 'Highlight this row' : ''}>
+                    <td style={{ ...vs.td, textAlign: 'center', cursor: editable ? 'pointer' : 'default' }} onClick={() => toggleFlag(r)} title={editable ? 'Highlight this row' : ''}>
                       {r.flagged ? '🟨' : <span style={{ color: '#d4d4d8' }}>▢</span>}
                     </td>
                     <td style={vs.td}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
                         <span style={{ fontWeight: 500, fontStyle: r.client_id ? 'normal' : 'italic', color: r.client_id ? '#18181b' : '#71717a' }}>
                           {name || '—'}
+                          {r.archived_at && (
+                            <span style={{ display: 'block', fontSize: '11px', fontStyle: 'normal', color: '#71717a', fontWeight: 400 }}>
+                              Archived {new Date(r.archived_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                          )}
                         </span>
-                        {!r.client_id && canEdit && (
+                        {!r.client_id && editable && (
                           <button style={vs.linkChip} onClick={() => setPickerFor(r.id)} title="Link this row to a client so it shows in their portal">Link client</button>
                         )}
-                        {r.client_id && canEdit && (
+                        {r.client_id && editable && (
                           <button style={vs.tinyBtn} onClick={() => setPickerFor(r.id)} title="Change client">✎</button>
                         )}
                       </div>
@@ -373,7 +419,14 @@ function Vouchers() {
                     {canEdit && (
                       <td style={{ ...vs.td, whiteSpace: 'nowrap' }}>
                         <button style={vs.tinyBtn} onClick={() => setHistoryFor(r)} title="Change history">🕘</button>
-                        <button style={vs.tinyBtn} onClick={() => deleteRow(r)} title="Delete row">×</button>
+                        {showArchived ? (
+                          <>
+                            <button style={vs.tinyBtn} onClick={() => restoreRow(r)} title="Restore to the tracker">↩ Restore</button>
+                            <button style={{ ...vs.tinyBtn, color: '#b91c1c', borderColor: '#fca5a5' }} onClick={() => deleteForever(r)} title="Delete permanently">🗑</button>
+                          </>
+                        ) : (
+                          <button style={vs.tinyBtn} onClick={() => archiveRow(r)} title="Archive this row">×</button>
+                        )}
                       </td>
                     )}
                   </tr>
@@ -406,7 +459,7 @@ function Vouchers() {
       {filesFor && (
         <FilesModal
           row={rows.find(x => x.id === filesFor.id) || filesFor}
-          canEdit={canEdit}
+          canEdit={editable}
           onClose={() => setFilesFor(null)}
           onChanged={fetchRows}
         />
@@ -546,7 +599,7 @@ function FilesModal({ row, canEdit, onClose, onChanged }) {
 }
 
 // ---------- Change history ----------
-const FIELD_LABELS = { client: 'Client', ls_date: 'LS Date', approval_date: 'Approval Date', payment_date: 'Payment Date', amount: 'Amount', notes: 'Notes' };
+const FIELD_LABELS = { archived: 'Archived', client: 'Client', ls_date: 'LS Date', approval_date: 'Approval Date', payment_date: 'Payment Date', amount: 'Amount', notes: 'Notes' };
 
 function HistoryModal({ row, onClose }) {
   const [items, setItems] = useState(null);
@@ -563,7 +616,7 @@ function HistoryModal({ row, onClose }) {
     })();
   }, [row.id]);
 
-  const show = (field, v) => (['ls_date', 'approval_date', 'payment_date'].includes(field) ? fmtDate(v) : (field === 'client' ? (v ? 'linked' : '—') : v)) || '—';
+  const show = (field, v) => (field === 'archived' ? (v === 'archived' ? 'Archived' : 'Active') : null) || (['ls_date', 'approval_date', 'payment_date'].includes(field) ? fmtDate(v) : (field === 'client' ? (v ? 'linked' : '—') : v)) || '—';
 
   return (
     <div style={vs.overlay} onClick={onClose}>
@@ -656,6 +709,7 @@ const vs = {
   td: { borderBottom: '1px solid #e4e4e7', borderRight: '1px solid #e4e4e7', padding: '6px 8px', verticalAlign: 'middle', height: '34px' },
   cellInput: { width: '100%', height: '34px', border: '2px solid #2563eb', padding: '4px 6px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' },
   warnCell: { background: '#fef9c3' },
+  archiveBanner: { background: '#f4f4f5', border: '1px solid #d4d4d8', color: '#3f3f46', borderRadius: '10px', padding: '10px 14px', fontSize: '14px', marginBottom: '14px' },
   flagRow: { background: '#fef08a' },
   badge: { fontSize: '12px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' },
   btn: { backgroundColor: '#ffffff', border: '1px solid #b8b8bf', color: '#3f3f46', padding: '7px 12px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' },
