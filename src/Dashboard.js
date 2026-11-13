@@ -689,20 +689,23 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
   const handleSignOut = async () => { await supabase.auth.signOut(); };
 
   const navItems = [
-    { id: 'home', label: 'Dashboard', show: true },
-    { id: 'admissions', label: 'Admissions', show: canSeeAdmissions },
-    { id: 'waitinglist', label: 'Waiting Lists', show: canSeeWaitingList },
-    { id: 'houses', label: 'Houses', show: true },
-    { id: 'clients', label: 'Clients', show: true },
-    { id: 'messages', label: 'Messages', show: true },
-    { id: 'payments', label: 'Payments', show: hasFullAccess },
-    { id: 'vouchers', label: 'Vouchers', show: hasFullAccess || isHouseManagerRole },
-    { id: 'reports', label: 'Reports', show: canSeeReports },
-    { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage },
-    { id: 'calendars', label: 'Calendars', show: true },
-    { id: 'resources', label: 'Resources', show: true },
-    { id: 'timesheets', label: hasFullAccess ? 'Timesheets' : 'My Timesheet', show: true },
+    { id: 'home', label: 'Dashboard', show: true, group: null },
+    { id: 'admissions', label: 'Admissions', show: canSeeAdmissions, group: 'Residents' },
+    { id: 'waitinglist', label: 'Waiting Lists', show: canSeeWaitingList, group: 'Residents' },
+    { id: 'clients', label: 'Clients', show: true, group: 'Residents' },
+    { id: 'houses', label: 'Houses', show: true, group: 'Houses' },
+    { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage, group: 'Houses' },
+    { id: 'payments', label: 'Payments', show: hasFullAccess, group: 'Money' },
+    { id: 'vouchers', label: 'Vouchers', show: hasFullAccess || isHouseManagerRole, group: 'Money' },
+    { id: 'reports', label: 'Reports', show: canSeeReports, group: 'Money' },
+    { id: 'messages', label: 'Messages', show: true, group: 'Team' },
+    { id: 'calendars', label: 'Calendars', show: true, group: 'Team' },
+    { id: 'resources', label: 'Resources', show: true, group: 'Team' },
+    { id: 'timesheets', label: hasFullAccess ? 'Timesheets' : 'My Timesheet', show: true, group: 'Team' },
   ].filter(item => item.show);
+
+  // Sidebar sections, in order. A section only shows if it has at least one page this person can see.
+  const NAV_GROUPS = ['Residents', 'Houses', 'Money', 'Team'];
 
   const settingsItems = [
     { id: 'users', label: 'User Management', show: canSeeUserManagement },
@@ -756,24 +759,33 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
           <img src={klLogo} alt="Kingdom Living Iowa" style={{ width: '100%', maxWidth: '160px', borderRadius: '8px', objectFit: 'cover', display: 'block' }} />
         </div>
         <nav style={styles.nav}>
-          {navItems.map(item => (
-            <button key={item.id} onClick={() => setActivePage(item.id)}
-              style={{ ...styles.navItem, ...(activePage === item.id ? styles.navItemActive : {}) }}>
-              {item.label}
-              {item.id === 'admissions' && counts.pending > 0 && (
-                <span style={styles.badge}>{counts.pending}</span>
-              )}
-              {item.id === 'messages' && unreadMessages > 0 && (
-                <span style={styles.badge}>{unreadMessages}</span>
-              )}
-              {item.id === 'maintenance' && counts.maintenanceOpen > 0 && (
-                <span style={styles.badge}>{counts.maintenanceOpen}</span>
-              )}
-              {item.id === 'calendars' && counts.vacationPending > 0 && (
-                <span style={styles.badge}>{counts.vacationPending}</span>
-              )}
-            </button>
-          ))}
+          {[null, ...NAV_GROUPS].map(group => {
+            const items = navItems.filter(item => item.group === group);
+            if (items.length === 0) return null;
+            return (
+              <div key={group || 'top'} style={group ? styles.navGroup : undefined}>
+                {group && <p style={styles.navGroupLabel}>{group}</p>}
+                {items.map(item => (
+                  <button key={item.id} onClick={() => setActivePage(item.id)}
+                    style={{ ...styles.navItem, ...(activePage === item.id ? styles.navItemActive : {}) }}>
+                    {item.label}
+                    {item.id === 'admissions' && counts.pending > 0 && (
+                      <span style={styles.badge}>{counts.pending}</span>
+                    )}
+                    {item.id === 'messages' && unreadMessages > 0 && (
+                      <span style={styles.badge}>{unreadMessages}</span>
+                    )}
+                    {item.id === 'maintenance' && counts.maintenanceOpen > 0 && (
+                      <span style={styles.badge}>{counts.maintenanceOpen}</span>
+                    )}
+                    {item.id === 'calendars' && counts.vacationPending > 0 && (
+                      <span style={styles.badge}>{counts.vacationPending}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
           {settingsItems.length > 0 && (
             <div style={styles.settingsSection}>
               <p style={styles.settingsSectionLabel}>Settings</p>
@@ -861,8 +873,10 @@ const styles = {
   logoText: { color: '#18181b', fontSize: '22px', fontWeight: '700', margin: '0' },
   logoSub: { color: '#52525b', fontSize: '13px', margin: '3px 0 0 0' },
   nav: { display: 'flex', flexDirection: 'column', padding: '12px 0', flex: 1, overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' },
-  navItem: { backgroundColor: 'transparent', border: 'none', color: '#52525b', padding: '13px 20px', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
-  navItemActive: { backgroundColor: '#f7f7f9', color: '#18181b', borderLeft: '3px solid #b22222', fontWeight: '600' },
+  navItem: { backgroundColor: 'transparent', border: 'none', color: '#52525b', padding: '9px 20px', width: '100%', textAlign: 'left', fontSize: '15px', cursor: 'pointer', borderLeft: '3px solid transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', letterSpacing: '0.01em' },
+  navGroup: { marginTop: '10px' },
+  navGroupLabel: { color: '#71717a', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '6px 20px 4px 20px', margin: 0 },
+  navItemActive: { backgroundColor: '#ffffff', color: '#18181b', borderLeft: '3px solid #b22222', fontWeight: '600' },
   badge: { backgroundColor: '#fee2e2', color: '#b22222', border: '1px solid #b22222', borderRadius: '10px', padding: '2px 7px', fontSize: '11px', fontWeight: '700' },
   settingsSection: { marginTop: 'auto', borderTop: '1px solid #c9c9cf', paddingTop: '8px' },
   settingsSectionLabel: { color: '#4b5563', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '8px 20px 4px 20px', margin: 0 },
