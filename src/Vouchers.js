@@ -278,6 +278,7 @@ function Vouchers() {
     return (
       <td style={base} title={warn || ''} onClick={() => startEdit(row, field)}>
         {display}
+        {warn && <div style={vs.warnText}>{warn}</div>}
       </td>
     );
   };
@@ -728,6 +729,7 @@ const vs = {
   td: { borderBottom: '1px solid #e4e4e7', borderRight: '1px solid #e4e4e7', padding: '6px 8px', verticalAlign: 'middle', height: '34px' },
   cellInput: { width: '100%', height: '34px', border: '2px solid #2563eb', padding: '4px 6px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' },
   warnCell: { background: '#fef9c3' },
+  warnText: { fontSize: '10px', color: '#92610c', fontWeight: '600', lineHeight: 1.3, marginTop: '2px', whiteSpace: 'normal' },
   archiveBanner: { background: '#f4f4f5', border: '1px solid #d4d4d8', color: '#3f3f46', borderRadius: '10px', padding: '10px 14px', fontSize: '14px', marginBottom: '14px' },
   flagRow: { background: '#fef08a' },
   badge: { fontSize: '12px', padding: '3px 8px', borderRadius: '20px', fontWeight: '600', whiteSpace: 'nowrap' },
