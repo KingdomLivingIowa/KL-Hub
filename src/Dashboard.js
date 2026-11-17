@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import { getCached, setCached } from './dataCache';
 import { UserProvider, useUser } from './UserContext';
 import Admissions from './Admissions';
+import Kinship from './Kinship';
 import WaitingList from './WaitingList';
 import Clients from './Clients';
 import Houses from './Houses';
@@ -678,12 +679,13 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
 
   const fetchCounts = async () => {
     const { count: pendingCount } = await supabase.from('applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
+    const { count: kinshipPendingCount } = await supabase.from('kinship_applications').select('*', { count: 'exact', head: true }).eq('status', 'pending');
     const { count: housesCount } = await supabase.from('houses').select('*', { count: 'exact', head: true });
     const { count: activeClientsCount } = await supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'Active');
     const { count: waitingListCount } = await supabase.from('waiting_list').select('*', { count: 'exact', head: true }).eq('status', 'waiting');
     const { count: maintenanceOpenCount } = await supabase.from('maintenance_requests').select('*', { count: 'exact', head: true }).eq('status', 'Open');
     const { count: vacationPendingCount } = await supabase.from('vacation_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending');
-    setCounts({ pending: pendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0, maintenanceOpen: maintenanceOpenCount || 0, vacationPending: vacationPendingCount || 0 });
+    setCounts({ pending: pendingCount || 0, kinshipPending: kinshipPendingCount || 0, active: activeClientsCount || 0, houses: housesCount || 0, waitingList: waitingListCount || 0, maintenanceOpen: maintenanceOpenCount || 0, vacationPending: vacationPendingCount || 0 });
   };
 
   const handleSignOut = async () => { await supabase.auth.signOut(); };
@@ -691,6 +693,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
   const navItems = [
     { id: 'home', label: 'Dashboard', show: true, group: null },
     { id: 'admissions', label: 'Admissions', show: canSeeAdmissions, group: 'Residents' },
+    { id: 'kinship', label: 'Keys to Kinship', show: canSeeAdmissions, group: 'Residents' },
     { id: 'waitinglist', label: 'Waiting Lists', show: canSeeWaitingList, group: 'Residents' },
     { id: 'clients', label: 'Clients', show: true, group: 'Residents' },
     { id: 'houses', label: 'Houses', show: true, group: 'Houses' },
@@ -772,6 +775,9 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
                     {item.id === 'admissions' && counts.pending > 0 && (
                       <span style={styles.badge}>{counts.pending}</span>
                     )}
+                    {item.id === 'kinship' && counts.kinshipPending > 0 && (
+                      <span style={styles.badge}>{counts.kinshipPending}</span>
+                    )}
                     {item.id === 'messages' && unreadMessages > 0 && (
                       <span style={styles.badge}>{unreadMessages}</span>
                     )}
@@ -813,6 +819,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
         <div style={styles.content}>
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
           {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
+          {activePage === 'kinship' && canSeeAdmissions && <Kinship />}
           {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList onOpenClient={(id) => setPendingClientId(id)} setActivePage={setActivePage} />}
           {activePage === 'clients' && (
             <Clients

@@ -4,6 +4,7 @@ import { supabase } from './supabaseClient';
 import logo from './kingdom-living-logo.jpg';
 import Dashboard from './Dashboard';
 import ApplicationForm from './ApplicationForm';
+import KinshipApplicationForm from './KinshipApplicationForm';
 
 function App() {
   const [email, setEmail] = useState('');
@@ -166,6 +167,11 @@ function App() {
   // Public application form
   if (window.location.pathname === '/apply') {
     return <ApplicationForm />;
+  }
+
+  // Public Keys to Kinship application form
+  if (window.location.pathname === '/kinship-apply') {
+    return <KinshipApplicationForm />;
   }
 
   // Password reset or staff invite link was used — require a new password
