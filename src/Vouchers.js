@@ -478,24 +478,37 @@ function ClientPicker({ onClose, onPick, allowBlank, onBlank }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
+  // Searches the database directly (instead of fetching every client into
+  // the browser) because this org has well over 1,000 client rows and
+  // Supabase/PostgREST caps any single fetch at 1,000 rows no matter what
+  // .limit() is requested — a plain "fetch everyone, filter in JS" approach
+  // silently drops anything alphabetically past the cap.
   useEffect(() => {
-    supabase.from('clients')
-      .select('id, full_name, first_name, last_name, status, houses(name)')
-      .order('full_name')
-      .limit(2000)
-      .then(({ data, error }) => {
+    let cancelled = false;
+    setLoading(true);
+    setErr(null);
+    const term = q.trim().replace(/[%,()]/g, '');
+    const t = setTimeout(() => {
+      let query = supabase.from('clients')
+        .select('id, full_name, first_name, last_name, status, houses(name)')
+        .not('status', 'in', '(Archived,Denied)')
+        .order('full_name')
+        .limit(50);
+      if (term) query = query.or(`full_name.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%`);
+      query.then(({ data, error }) => {
+        if (cancelled) return;
         if (error) { setErr(error.message); setLoading(false); return; }
-        setClients((data || []).filter(c => c.status !== 'Archived' && c.status !== 'Denied'));
+        setClients(data || []);
         setLoading(false);
       });
-  }, []);
+    }, term ? 250 : 0);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
 
   const shown = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    const list = clients.filter(c => !s || clientName(c).toLowerCase().includes(s));
     const rank = { Active: 0, Pending: 1, Accepted: 2, 'Waiting List': 3, Applied: 4, Discharged: 5 };
-    return list.sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || clientName(a).localeCompare(clientName(b))).slice(0, 50);
-  }, [clients, q]);
+    return [...clients].sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || clientName(a).localeCompare(clientName(b)));
+  }, [clients]);
 
   return (
     <div style={vs.overlay} onClick={onClose}>
