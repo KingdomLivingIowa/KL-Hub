@@ -212,6 +212,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   });
   const [moveInModal, setMoveInModal] = useState(null);
   const [moveInRoomType, setMoveInRoomType] = useState('Double');
+  const [moveInDate, setMoveInDate] = useState('');
   const [savingMoveIn, setSavingMoveIn] = useState(false);
   const [didNotMoveInMode, setDidNotMoveInMode] = useState(false);
   const [didNotMoveInReason, setDidNotMoveInReason] = useState('');
@@ -395,9 +396,13 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   const confirmMoveIn = async () => {
     if (!moveInModal) return;
     setSavingMoveIn(true);
-    const today = new Date().toISOString().split('T')[0];
+    // Use the date staff set in the modal (defaults to the expected move-in
+    // date, not today) so confirming a few days late doesn't shift the
+    // client's actual move-in date to whenever the button happened to get
+    // clicked.
+    const moveInDateValue = moveInDate || new Date().toISOString().split('T')[0];
     const { error } = await supabase.from('clients').update({
-      status: 'Active', start_date: today, room_type: moveInRoomType,
+      status: 'Active', start_date: moveInDateValue, room_type: moveInRoomType,
     }).eq('id', moveInModal.id);
 
     // Remove from waiting list
@@ -407,7 +412,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
       .eq('status', 'waiting');
     if (error) { alert('Error confirming move-in: ' + error.message); setSavingMoveIn(false); return; }
     await supabase.from('charges').insert([{
-      client_id: moveInModal.id, charge_type: 'move_in_fee', amount: 150, due_date: today,
+      client_id: moveInModal.id, charge_type: 'move_in_fee', amount: 150, due_date: moveInDateValue,
       description: 'Move-in fee', status: 'unpaid', amount_paid: 0, created_by: user?.email || null,
     }]);
     await supabase.from('client_timeline').insert([{
@@ -425,7 +430,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         body: JSON.stringify({
           client_name: moveInModal.full_name,
           house_name: selected?.name || 'Unknown House',
-          move_in_date: new Date(today).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+          move_in_date: new Date(moveInDateValue + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
           level: 1,
           early_admission: false,
         }),
@@ -434,6 +439,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
 
     setMoveInModal(null);
     setMoveInRoomType('Double');
+    setMoveInDate('');
     setSavingMoveIn(false);
     loadAllData(true);
     if (selected) fetchResidents(selected.id);
@@ -1085,7 +1091,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                 </div>
                               )}
                               <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); setDidNotMoveInMode(false); }}
+                                <button onClick={e => { e.stopPropagation(); setMoveInModal(r); setMoveInRoomType(r.room_type || 'Double'); setMoveInDate(r.expected_move_in_date || new Date().toISOString().split('T')[0]); setDidNotMoveInMode(false); }}
                                   style={{ background: '#16a34a', border: 'none', color: '#18181b', padding: '7px 16px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600', flex: 2 }}>
                                   ✓ Confirm Move-In
                                 </button>
@@ -1420,7 +1426,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
 
       {/* Confirm Move-In modal */}
       {moveInModal && (
-        <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => { setMoveInModal(null); setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}>
+        <div style={{ ...s.overlay, zIndex: 2000 }} onClick={() => { setMoveInModal(null); setMoveInDate(''); setDidNotMoveInMode(false); setDidNotMoveInReason(''); }}>
           <div style={{ background: '#ffffff', borderRadius: '16px', border: '1px solid #c9c9cf', width: '100%', maxWidth: '400px', marginTop: '120px', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #c9c9cf' }}>
               <h3 style={{ color: '#18181b', margin: 0, fontSize: '16px' }}>{didNotMoveInMode ? 'Did Not Move In' : 'Confirm Move-In'}</h3>
@@ -1437,14 +1443,23 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <option value="Houseperson">Houseperson — $110/week</option>
                     </select>
                   </div>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={s.label}>Move-In Date *</label>
+                    <input type="date" value={moveInDate} onChange={e => setMoveInDate(e.target.value)} style={s.input} />
+                    <p style={{ color: '#71717a', fontSize: '12px', margin: '4px 0 0 0' }}>
+                      {moveInModal.expected_move_in_date
+                        ? "Defaults to the client's expected move-in date, not today — adjust it if they actually moved in on a different day."
+                        : 'No expected move-in date was on file, so this defaults to today — adjust it if needed.'}
+                    </p>
+                  </div>
                   <div style={{ background: '#f7f7f9', borderRadius: '8px', padding: '12px 14px', marginBottom: '16px' }}>
                     <p style={{ color: '#52525b', fontSize: '14px', margin: '0 0 6px 0' }}>This will:</p>
-                    <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with today's move-in date</p>
+                    <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Set status to <strong>Active</strong> with the move-in date above</p>
                     <p style={{ color: '#3f3f46', fontSize: '14px', margin: '0 0 4px 0' }}>✓ Create a <strong>$150 move-in fee</strong> charge</p>
                     <p style={{ color: '#3f3f46', fontSize: '14px', margin: 0 }}>✓ Weekly charges of <strong>{weeklyRateForType(moveInRoomType)}</strong> start next Sunday</p>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                    <button onClick={confirmMoveIn} disabled={savingMoveIn}
+                    <button onClick={confirmMoveIn} disabled={savingMoveIn || !moveInDate}
                       style={{ flex: 2, background: '#16a34a', border: 'none', color: '#18181b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer', fontWeight: '600' }}>
                       {savingMoveIn ? 'Confirming...' : 'Confirm Move-In'}
                     </button>
@@ -1453,7 +1468,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       Did Not Move In
                     </button>
                   </div>
-                  <button onClick={() => setMoveInModal(null)}
+                  <button onClick={() => { setMoveInModal(null); setMoveInDate(''); }}
                     style={{ width: '100%', background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '10px', borderRadius: '8px', fontSize: '14px', cursor: 'pointer' }}>
                     Cancel
                   </button>
