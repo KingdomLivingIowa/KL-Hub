@@ -476,13 +476,18 @@ function ClientPicker({ onClose, onPick, allowBlank, onBlank }) {
   const [clients, setClients] = useState([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
     supabase.from('clients')
       .select('id, full_name, first_name, last_name, status, houses(name)')
-      .not('status', 'in', '("Archived","Denied")')
       .order('full_name')
-      .then(({ data }) => { setClients(data || []); setLoading(false); });
+      .limit(2000)
+      .then(({ data, error }) => {
+        if (error) { setErr(error.message); setLoading(false); return; }
+        setClients((data || []).filter(c => c.status !== 'Archived' && c.status !== 'Denied'));
+        setLoading(false);
+      });
   }, []);
 
   const shown = useMemo(() => {
@@ -501,15 +506,16 @@ function ClientPicker({ onClose, onPick, allowBlank, onBlank }) {
         </div>
         <div style={{ padding: '16px 20px' }}>
           <input autoFocus style={{ ...vs.search, width: '100%', maxWidth: 'none' }} placeholder="Type a name…" value={q} onChange={e => setQ(e.target.value)} />
+          {err && <div style={{ ...vs.error, marginTop: '10px' }}>{err}</div>}
           <div style={{ maxHeight: '360px', overflowY: 'auto', marginTop: '10px' }}>
             {loading && <p style={{ color: '#71717a' }}>Loading clients…</p>}
-            {!loading && shown.map(c => (
+            {!loading && !err && shown.map(c => (
               <button key={c.id} style={vs.pickRow} onClick={() => onPick(c)}>
                 <span style={{ fontWeight: 500 }}>{clientName(c)}</span>
                 <span style={{ color: '#71717a', fontSize: '13px' }}>{c.houses?.name || '—'} · {c.status}</span>
               </button>
             ))}
-            {!loading && shown.length === 0 && <p style={{ color: '#71717a' }}>No clients match.</p>}
+            {!loading && !err && shown.length === 0 && <p style={{ color: '#71717a' }}>No clients match.</p>}
           </div>
           {allowBlank && (
             <button style={{ ...vs.linkBtn, marginTop: '10px' }} onClick={onBlank}>Add a blank row instead (link a client later)</button>
