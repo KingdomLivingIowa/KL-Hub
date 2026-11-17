@@ -62,6 +62,7 @@ export function UserProvider({ user, children }) {
   const isHeadHouseManager = role === 'head_house_manager';
   const isHouseManager = role === 'house_manager';
   const isParoleOfficer = role === 'parole_officer';
+  const isKinshipDirector = role === 'kinship_director';
 
   // Full access roles
   const hasFullAccess = isAdmin || isUpperManagement;
@@ -71,6 +72,10 @@ export function UserProvider({ user, children }) {
 
   // What modules they can see
   const canSeeAdmissions = hasFullAccess;
+  // Same as Admissions, plus the dedicated Kinship Director role — they
+  // review Keys to Kinship applications but shouldn't see the rest of
+  // Admissions' admissions queue.
+  const canSeeKinship = hasFullAccess || isKinshipDirector;
   const canSeeWaitingList = hasFullAccess;
   const canSeeIntake = hasFullAccess;
   const canSeeReportsPage = hasFullAccess || canSeeReports;
@@ -95,6 +100,8 @@ export function UserProvider({ user, children }) {
       hasFullAccess,
       isHouseManagerRole,
       canSeeAdmissions,
+      canSeeKinship,
+      isKinshipDirector,
       canSeeWaitingList,
       canSeeIntake,
       canSeeReports: canSeeReportsPage,

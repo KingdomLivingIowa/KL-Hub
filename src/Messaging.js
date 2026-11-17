@@ -447,7 +447,7 @@ function Messaging() {
 
   const ROLE_LABELS = {
     admin: 'Admin', upper_management: 'Upper Management', head_house_manager: 'Head House Manager',
-    house_manager: 'House Manager', parole_officer: 'Parole Officer', resident: 'Resident',
+    house_manager: 'House Manager', parole_officer: 'Parole Officer', kinship_director: 'Kinship Director', resident: 'Resident',
   };
   const roleLabel = (role) => ROLE_LABELS[role] || 'Staff';
 

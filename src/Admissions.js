@@ -401,6 +401,56 @@ function Admissions() {
     fetchApplications(true);
   };
 
+  // Moves a misfiled application over to the Keys to Kinship pipeline
+  // without ever marking it accepted or denied here — it lands as a new
+  // pending Kinship application, and the original Admissions application
+  // is removed so it doesn't sit around in both places. Only the fields
+  // that have a real equivalent on the Kinship form carry over; family-
+  // specific fields (children, co-applicant, employment, etc.) are left
+  // for staff to fill in once they review it there.
+  const moveToKinship = async (app) => {
+    const fullName = `${app.first_name || ''} ${app.last_name || ''}`.trim();
+    if (!window.confirm(`Move ${fullName || 'this application'} to Keys to Kinship? It will be removed from Admissions.`)) return;
+
+    const payload = {
+      status: 'pending',
+      primary_first_name: app.first_name || null,
+      primary_last_name: app.last_name || null,
+      primary_dob: app.date_of_birth || null,
+      primary_phone: app.phone || null,
+      primary_email: app.email || null,
+      primary_address: app.present_residence || null,
+      drug_of_choice: app.drug_of_choice || null,
+      sober_date: app.sober_date || null,
+      attended_treatment: app.attended_treatment || null,
+      takes_medication: app.takes_medication || null,
+      medication_details: app.medication_details || null,
+      ec_first_name: app.emergency_contact_name || null,
+      ec_relationship: app.emergency_contact_relationship || null,
+      ec_phone: app.emergency_contact_phone || null,
+      on_probation: app.on_probation || null,
+      on_parole: app.on_parole || null,
+      po_name: app.po_name || null,
+      po_phone: app.po_phone || null,
+      criminal_history: app.criminal_history || null,
+      sex_offender: app.sex_offender || null,
+      sex_offense_details: app.sex_offense_details || null,
+      primary_signature: app.signature || null,
+      staff_notes: `Moved from Admissions (originally submitted ${app.created_at ? new Date(app.created_at).toLocaleDateString('en-US') : 'unknown date'}). Family-specific fields (children, co-applicant, employment) were not on the original Admissions application — fill in as needed.`,
+    };
+
+    const { error: insertError } = await supabase.from('kinship_applications').insert([payload]);
+    if (insertError) { alert('Error moving to Kinship: ' + insertError.message); return; }
+
+    const { error: deleteError } = await supabase.from('applications').delete().eq('id', app.id);
+    if (deleteError) {
+      alert('Moved to Kinship, but could not remove the original Admissions application: ' + deleteError.message);
+    }
+    setApplications(prev => prev.filter(a => a.id !== app.id));
+    bustCache();
+    fetchApplications(true);
+  };
+
   const updateStatus = async (id, status) => { // eslint-disable-line no-unused-vars
     const app = applications.find((a) => a.id === id);
     if (!app) { alert('Application not found.'); return; }
@@ -718,6 +768,12 @@ function Admissions() {
                 </div>
               )}
             </div>
+          )}
+          {app.status === 'pending' && (
+            <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #ffedd5', borderRadius: '8px', color: '#c2410c', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}
+              onClick={() => moveToKinship(app)}>
+              → Move to Kinship
+            </button>
           )}
           {isAdmin && (
             <button style={{ padding: '7px 14px', background: 'transparent', border: '1px solid #fee2e2', borderRadius: '8px', color: '#dc2626', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}

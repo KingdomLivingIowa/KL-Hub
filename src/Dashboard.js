@@ -663,6 +663,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     loadingRole,
     hasFullAccess,
     canSeeAdmissions,
+    canSeeKinship,
     canSeeWaitingList,
     canSeeReports,
     canSeeUserManagement,
@@ -693,7 +694,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
   const navItems = [
     { id: 'home', label: 'Dashboard', show: true, group: null },
     { id: 'admissions', label: 'Admissions', show: canSeeAdmissions, group: 'Residents' },
-    { id: 'kinship', label: 'Keys to Kinship', show: canSeeAdmissions, group: 'Residents' },
+    { id: 'kinship', label: 'Keys to Kinship', show: canSeeKinship, group: 'Residents' },
     { id: 'waitinglist', label: 'Waiting Lists', show: canSeeWaitingList, group: 'Residents' },
     { id: 'clients', label: 'Clients', show: true, group: 'Residents' },
     { id: 'houses', label: 'Houses', show: true, group: 'Houses' },
@@ -819,7 +820,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
         <div style={styles.content}>
           {activePage === 'home' && <DashboardHome counts={counts} currentUser={user} />}
           {activePage === 'admissions' && canSeeAdmissions && <Admissions />}
-          {activePage === 'kinship' && canSeeAdmissions && <Kinship />}
+          {activePage === 'kinship' && canSeeKinship && <Kinship />}
           {activePage === 'waitinglist' && canSeeWaitingList && <WaitingList onOpenClient={(id) => setPendingClientId(id)} setActivePage={setActivePage} />}
           {activePage === 'clients' && (
             <Clients

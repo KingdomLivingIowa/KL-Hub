@@ -8,6 +8,7 @@ const ROLES = [
   { value: 'head_house_manager', label: 'Head House Manager' },
   { value: 'house_manager', label: 'House Manager' },
   { value: 'parole_officer', label: 'Parole Officer' },
+  { value: 'kinship_director', label: 'Kinship Director' },
 ];
 
 const ROLE_COLORS = {
@@ -16,6 +17,7 @@ const ROLE_COLORS = {
   head_house_manager: { bg: '#f3e8ff', color: '#9333ea' },
   house_manager: { bg: '#dcfce7', color: '#16a34a' },
   parole_officer: { bg: '#dbeafe', color: '#2563eb' },
+  kinship_director: { bg: '#ffedd5', color: '#c2410c' },
 };
 
 const PRESET_GROUP_NAMES = ["Management", "Men's Move In/Out", "Women's Move In/Out"];
@@ -26,7 +28,7 @@ function UserManagement({ currentUser }) {
   // Roles available to create based on current user's role
   const availableRoles = ROLES.filter(r => {
     if (isAdmin) return true; // admin can create all roles
-    if (isUpperManagement) return ['upper_management', 'head_house_manager', 'house_manager', 'parole_officer'].includes(r.value);
+    if (isUpperManagement) return ['upper_management', 'head_house_manager', 'house_manager', 'parole_officer', 'kinship_director'].includes(r.value);
     return ['head_house_manager', 'house_manager'].includes(r.value); // house managers can only create house manager roles
   });
   const [users, setUsers] = useState([]);
