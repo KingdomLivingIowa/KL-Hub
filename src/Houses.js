@@ -3,6 +3,17 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
+// Pending move-ins stay pinned at the top of a resident list so they're
+// easy to spot and confirm; everyone else — and pending residents among
+// themselves — sorts alphabetically. Once a pending client is confirmed
+// as Active, they simply fall into alphabetical order with the rest.
+function sortResidentsPendingFirst(list) {
+  return [...list].sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'Pending' ? -1 : 1;
+    return (a.full_name || '').localeCompare(b.full_name || '');
+  });
+}
+
 function houseTypeBadgeColor(type) {
   if (type === 'Women') return { bg: '#fce7f3', color: '#db2777' };
   if (type === 'Co-ed') return { bg: '#dcfce7', color: '#16a34a' };
@@ -249,7 +260,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
       }
       const [{ data: housesData }, { data: clientsData }, { data: pendingMoveOuts }, { data: approvedMoveOuts }] = await Promise.all([
         query,
-        supabase.from('clients').select('id, full_name, status, level, start_date, phone, staff_notes, house_id, room_type, room_id, bed_number, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
+        supabase.from('clients').select('id, full_name, first_name, last_name, status, level, start_date, phone, staff_notes, house_id, room_type, room_id, bed_number, expected_move_in_date, photo_url').in('status', ['Active', 'Pending']).order('full_name'),
         supabase.from('move_out_requests').select('house_id').eq('status', 'pending'),
         supabase.from('move_out_requests').select('house_id, requested_move_out_date, clients(full_name)')
           .eq('status', 'approved')
@@ -281,7 +292,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         });
       }
 
-      const clientsWithBalance = (clientsData || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 }));
+      const clientsWithBalance = sortResidentsPendingFirst((clientsData || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 })));
       const enriched = (housesData || []).map(h => ({
         ...h,
         occupied_beds: clientsWithBalance.filter(c => c.house_id === h.id && c.status === 'Active').length,
@@ -332,7 +343,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchResidents = useCallback(async (houseId) => {
-    const { data } = await supabase.from('clients').select('id, full_name, status, level, start_date, room_type, room_id, bed_number, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date, photo_url').eq('house_id', houseId).in('status', ['Active', 'Pending']);
+    const { data } = await supabase.from('clients').select('id, full_name, first_name, last_name, status, level, start_date, room_type, room_id, bed_number, phone, staff_notes, email, date_of_birth, house_id, expected_move_in_date, photo_url').eq('house_id', houseId).in('status', ['Active', 'Pending']);
     const clientIds = (data || []).map(c => c.id);
     let balanceMap = {};
     if (clientIds.length > 0) {
@@ -346,7 +357,7 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
         balanceMap[id] = charged - paid;
       });
     }
-    const residentsWithBalance = (data || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 }));
+    const residentsWithBalance = sortResidentsPendingFirst((data || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 })));
     setResidents(residentsWithBalance);
     const checks = {};
     (residentsWithBalance).forEach(r => { checks[r.id] = { name: r.full_name, value: '' }; });

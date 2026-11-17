@@ -1633,6 +1633,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
     reflection_mood: '5', reflection_challenge: '', reflection_win: '', reflection_goals: '', wci_step: '',
   });
   const [editingField, setEditingField] = useState(null);
+  const [editingName, setEditingName] = useState(null); // { first, last } — first/last are separate fields on the application, so they're edited separately here too
   const [expandedWeeks, setExpandedWeeks] = useState({});
 
   const debounceTimer = useRef(null);
@@ -2427,6 +2428,17 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
 
   const startEdit = (field, currentValue) => setEditingField({ field, value: currentValue || '' });
 
+  const saveName = async () => {
+    if (!editingName) return;
+    const first = editingName.first.trim();
+    const last = editingName.last.trim();
+    const full = `${first} ${last}`.trim();
+    await supabase.from('clients').update({ first_name: first || null, last_name: last || null, full_name: full || null }).eq('id', selected.id);
+    setSelected(prev => ({ ...prev, first_name: first, last_name: last, full_name: full }));
+    setClients(prev => prev.map(c => c.id === selected.id ? { ...c, first_name: first, last_name: last, full_name: full } : c));
+    setEditingName(null);
+  };
+
   const saveField = async () => {
     if (!editingField) return;
     const { field, value } = editingField;
@@ -2738,7 +2750,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
         </>
       )}
       {selected && (
-        <div style={st.overlay} onClick={() => { setSelected(null); setEditingField(null); }}>
+        <div style={st.overlay} onClick={() => { setSelected(null); setEditingField(null); setEditingName(null); }}>
           <div style={st.modal} onClick={e => e.stopPropagation()}>
 
             <div style={st.modalHeader}>
@@ -2763,14 +2775,20 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                 )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                {editingField?.field === 'full_name' ? (
-                  <input autoFocus value={editingField.value}
-                    onChange={e => setEditingField(p => ({ ...p, value: e.target.value }))}
-                    onBlur={saveField}
-                    onKeyDown={e => { if (e.key === 'Enter') saveField(); if (e.key === 'Escape') setEditingField(null); }}
-                    style={{ ...st.modalName, background: '#ffffff', border: '1px solid #71717a', borderRadius: '6px', padding: '2px 8px', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+                {editingName ? (
+                  <div style={{ display: 'flex', gap: '6px' }}
+                    onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) saveName(); }}>
+                    <input autoFocus value={editingName.first} placeholder="First name"
+                      onChange={e => setEditingName(p => ({ ...p, first: e.target.value }))}
+                      onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(null); }}
+                      style={{ ...st.modalName, background: '#ffffff', border: '1px solid #71717a', borderRadius: '6px', padding: '2px 8px', outline: 'none', width: '50%', boxSizing: 'border-box' }} />
+                    <input value={editingName.last} placeholder="Last name"
+                      onChange={e => setEditingName(p => ({ ...p, last: e.target.value }))}
+                      onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditingName(null); }}
+                      style={{ ...st.modalName, background: '#ffffff', border: '1px solid #71717a', borderRadius: '6px', padding: '2px 8px', outline: 'none', width: '50%', boxSizing: 'border-box' }} />
+                  </div>
                 ) : (
-                  <h2 onClick={() => startEdit('full_name', selected.full_name)} title="Click to edit"
+                  <h2 onClick={() => setEditingName({ first: selected.first_name || '', last: selected.last_name || '' })} title="Click to edit"
                     style={{ ...st.modalName, cursor: 'text', borderRadius: '6px', border: '1px solid transparent', padding: '2px 6px', margin: '-2px 0 0 -6px', display: 'inline-block' }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = '#c9c9cf'}
                     onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}>
@@ -2792,14 +2810,14 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {onBackToHouses && (
-                  <button onClick={() => { setSelected(null); setEditingField(null); onBackToHouses(); }}
+                  <button onClick={() => { setSelected(null); setEditingField(null); setEditingName(null); onBackToHouses(); }}
                     style={{ background: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', fontSize: '14px', padding: '5px 10px', borderRadius: '7px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     ← Houses
                   </button>
                 )}
                 {hasFullAccess && <MoveToButton client={selected} onSelect={(ns) => openStatusModal(selected, ns)} />}
                 {selected.email && hasFullAccess && <InvitePortalButton client={selected} />}
-                <button onClick={() => { setSelected(null); setEditingField(null); }} style={st.closeBtn}>×</button>
+                <button onClick={() => { setSelected(null); setEditingField(null); setEditingName(null); }} style={st.closeBtn}>×</button>
               </div>
             </div>
 
@@ -2905,7 +2923,7 @@ function Clients({ pendingClientId, onClientOpened, onBackToHouses }) {
                     </Card>
                     <Card title="House assignment" action={
                       selected.status === 'Active' && selected.house_id && hasFullAccess ? (
-                        <button onClick={() => { setSelected(null); setEditingField(null); setMoveHouseModal(selected); }}
+                        <button onClick={() => { setSelected(null); setEditingField(null); setEditingName(null); setMoveHouseModal(selected); }}
                           style={{ padding: '2px 8px', background: 'transparent', border: 'none', borderRadius: '4px', color: '#2563eb', fontSize: '12px', fontWeight: '500', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                           ⇄ Transfer
                         </button>
