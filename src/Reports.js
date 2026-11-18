@@ -319,16 +319,29 @@ export default function Reports() {
   const womenWaitBreakdown = waitlistBreakdown(waitingList, WEEKLY_WOMEN_LISTS);
 
   const moveInsWeek = clients.filter(c => c.start_date >= week.start && c.start_date <= week.end).length;
-  const dischargedThisWeek = clients.filter(c => c.discharge_date && c.discharge_date >= week.start && c.discharge_date <= week.end);
-  const successfulDischargesWeek = dischargedThisWeek.filter(c => c.successful_discharge === true).length;
+
+  // Every discharge is a stay record (client_stays), so a client discharged more than once
+  // counts each time. "Did Not Move In" is NOT a discharge — it's counted on its own.
+  // Successful discharges (and graduates) are still discharges, and ALSO count as successful.
+  const clientGenderMap = {};
+  clients.forEach(c => { clientGenderMap[c.id] = c.gender; });
+  const isDidNotMoveIn = (st) => (st.discharge_reason || '').trim().toLowerCase() === 'did not move in';
+  const isSuccessful = (st) => st.successful_discharge === true || st.successful_discharge === 'true' || st.graduate === true;
+  const dischargeStays = stays
+    .filter(st => st.discharge_date && !isDidNotMoveIn(st))
+    .map(st => ({ ...st, gender: clientGenderMap[st.client_id] }));
+  const didNotMoveInStays = stays
+    .filter(st => st.discharge_date && isDidNotMoveIn(st))
+    .map(st => ({ ...st, gender: clientGenderMap[st.client_id] }));
+
+  const dischargedThisWeek = dischargeStays.filter(st => st.discharge_date >= week.start && st.discharge_date <= week.end);
+  const successfulDischargesWeek = dischargedThisWeek.filter(isSuccessful).length;
   const paymentsWeekTotal = payments
     .filter(p => p.payment_date && p.payment_date >= week.start && p.payment_date <= week.end)
     .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
   // ── LOS ────────────────────────────────────────────────────────────────────
   const completedStays = stays.filter(s => s.start_date && s.discharge_date);
-  const clientGenderMap = {};
-  clients.forEach(c => { clientGenderMap[c.id] = c.gender; });
 
   function losByGenderAndPeriod(gender, months) {
     const cutoff = new Date();
@@ -347,7 +360,8 @@ export default function Reports() {
   const yearRows = YEARS.map(y => ({
     year: y,
     moveIns: stays.filter(s => s.start_date?.startsWith(String(y))).length,
-    successful: stays.filter(s => s.discharge_date?.startsWith(String(y)) && s.successful_discharge === true).length,
+    discharges: dischargeStays.filter(s => s.discharge_date?.startsWith(String(y))).length,
+    successful: dischargeStays.filter(s => s.discharge_date?.startsWith(String(y)) && isSuccessful(s)).length,
     graduates: stays.filter(s => s.discharge_date?.startsWith(String(y)) && s.graduate === true).length,
   }));
 
@@ -366,11 +380,15 @@ export default function Reports() {
   const intakesMonth = reportHouse === 'combined' ? allIntakesMonth
     : reportHouse === 'men' ? byGender(allIntakesMonth, 'Male') : byGender(allIntakesMonth, 'Female');
 
-  const allExitsMonth = clients.filter(c => c.discharge_date && c.discharge_date >= mStart && c.discharge_date <= mEnd);
+  const allExitsMonth = dischargeStays.filter(st => st.discharge_date >= mStart && st.discharge_date <= mEnd);
   const exitsMonth = reportHouse === 'combined' ? allExitsMonth
     : reportHouse === 'men' ? byGender(allExitsMonth, 'Male') : byGender(allExitsMonth, 'Female');
 
-  const staysExitedThisMonth = stays.filter(s => s.discharge_date >= mStart && s.discharge_date <= mEnd);
+  const staysExitedThisMonth = allExitsMonth;
+  const successfulExitsMonth = exitsMonth.filter(isSuccessful);
+  const allDidNotMoveInMonth = didNotMoveInStays.filter(st => st.discharge_date >= mStart && st.discharge_date <= mEnd);
+  const didNotMoveInMonth = reportHouse === 'combined' ? allDidNotMoveInMonth
+    : reportHouse === 'men' ? byGender(allDidNotMoveInMonth, 'Male') : byGender(allDidNotMoveInMonth, 'Female');
   const staysFiltered = reportHouse === 'combined' ? staysExitedThisMonth
     : staysExitedThisMonth.filter(s => clientGenderMap[s.client_id] === (reportHouse === 'men' ? 'Male' : 'Female'));
   const avgLosMonth = avgArr(staysFiltered.map(s => calcLOS(s.start_date, s.discharge_date)));
@@ -400,7 +418,7 @@ export default function Reports() {
   const exitCounts = {};
   Object.keys(EXIT_LABELS).forEach(k => { exitCounts[k] = 0; });
   exitsMonth.forEach(c => {
-    const reason = c.reason_for_discharge;
+    const reason = c.discharge_reason;
     if (reason && exitCounts[reason] !== undefined) exitCounts[reason]++;
     else if (reason) exitCounts['Other'] = (exitCounts['Other'] || 0) + 1;
   });
@@ -620,10 +638,12 @@ export default function Reports() {
             <MetricCard label="Unique Individuals Housed" value={uniqueHousedFiltered.length} />
             <MetricCard label="OUD / Overdose History" value={oudCount} />
             <MetricCard label="New Intakes" value={intakesMonth.length} />
-            <MetricCard label="New Exits" value={exitsMonth.length} />
+            <MetricCard label="New Exits (Discharges)" value={exitsMonth.length} />
+            <MetricCard label="Successful Discharges" value={successfulExitsMonth.length} color="#16a34a" />
             <MetricCard label="Graduates" value={graduatesMonthFiltered.length} color="#16a34a" />
             <MetricCard label="Avg Length of Stay (days)" value={avgLosMonth ?? '—'} />
             <MetricCard label="On Waiting List" value={waitListCount} />
+            <MetricCard label="Did Not Move In" value={didNotMoveInMonth.length} color="#b45309" />
           </div>
 
           {reportHouse === 'combined' && (
@@ -631,15 +651,19 @@ export default function Reports() {
               <Row label="Men's — Unique Individuals Housed" value={byGender(uniqueHoused, 'Male').length} />
               <Row label="Men's — Intakes" value={byGender(allIntakesMonth, 'Male').length} />
               <Row label="Men's — Exits" value={byGender(allExitsMonth, 'Male').length} />
+              <Row label="Men's — Successful Discharges" value={byGender(allExitsMonth, 'Male').filter(isSuccessful).length} />
               <Row label="Men's — Graduates" value={menGraduatesMonth} />
               <Row label="Men's — Avg Length of Stay (days)" value={avgArr(menStaysMonth.map(s => calcLOS(s.start_date, s.discharge_date))) ?? '—'} />
               <Row label="Men's — On Waiting List" value={menWaitList} />
+              <Row label="Men's — Did Not Move In" value={byGender(allDidNotMoveInMonth, 'Male').length} />
               <Row label="Women's — Unique Individuals Housed" value={byGender(uniqueHoused, 'Female').length} />
               <Row label="Women's — Intakes" value={byGender(allIntakesMonth, 'Female').length} />
               <Row label="Women's — Exits" value={byGender(allExitsMonth, 'Female').length} />
+              <Row label="Women's — Successful Discharges" value={byGender(allExitsMonth, 'Female').filter(isSuccessful).length} />
               <Row label="Women's — Graduates" value={womenGraduatesMonth} />
               <Row label="Women's — Avg Length of Stay (days)" value={avgArr(womenStaysMonth.map(s => calcLOS(s.start_date, s.discharge_date))) ?? '—'} />
               <Row label="Women's — On Waiting List" value={womenWaitList} />
+              <Row label="Women's — Did Not Move In" value={byGender(allDidNotMoveInMonth, 'Female').length} />
             </Section>
           )}
 
@@ -689,9 +713,9 @@ export default function Reports() {
             rows={yearRows.map(r => ({ year: r.year, values: [r.moveIns] }))}
           />
           <YearTable
-            title="Successful Discharges & Graduates by Year"
-            columns={['Successful', 'Graduates']}
-            rows={yearRows.map(r => ({ year: r.year, values: [r.successful, r.graduates] }))}
+            title="Discharges, Successful Discharges & Graduates by Year"
+            columns={['Discharges', 'Successful', 'Graduates']}
+            rows={yearRows.map(r => ({ year: r.year, values: [r.discharges, r.successful, r.graduates] }))}
           />
         </div>
       )}
