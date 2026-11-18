@@ -178,9 +178,19 @@ Deno.serve(async (req) => {
     // Matching rules: SSN match alone = duplicate, name+email = duplicate,
     // name+DOB = duplicate. Email alone is NOT enough (prevents false positives).
     {
-      const { data: allClients } = await supabase
-        .from('clients')
-        .select('id, full_name, email, date_of_birth, ssn, not_allowed_back, needs_review_before_readmit');
+      // Read every client a page at a time — the database sends at most 1,000 rows
+      // per request, and there are more clients than that since the migration.
+      const allClients = [];
+      for (let from = 0; from < 200000; from += 1000) {
+        const { data: page, error: pageErr } = await supabase
+          .from('clients')
+          .select('id, full_name, email, date_of_birth, ssn, balance, not_allowed_back, needs_review_before_readmit')
+          .order('id')
+          .range(from, from + 999);
+        if (pageErr) { console.error('clients page error:', pageErr); break; }
+        allClients.push(...(page || []));
+        if (!page || page.length < 1000) break;
+      }
 
       const existingClients = (allClients || []).filter(c => {
         const nameMatch = c.full_name?.toLowerCase().trim() === fullName.toLowerCase().trim();
@@ -219,7 +229,12 @@ Deno.serve(async (req) => {
         const { data: payments } = await supabase.from('payments').select('amount').eq('client_id', existingClient.id);
         const totalCharged = (charges || []).reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
         const totalPaid = (payments || []).reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-        const totalPastBalance = Math.max(0, totalCharged - totalPaid);
+        // Owed on the Payments tab (charges minus payments), or an old balance carried over
+        // from Sobriety Hub / Airtable in clients.balance (NEGATIVE there = owes).
+        // Use the larger of the two so old debt isn't counted twice.
+        const paymentsTabOwed = Math.max(0, totalCharged - totalPaid);
+        const oldBalanceOwed = Math.max(0, -(parseFloat(existingClient.balance) || 0));
+        const totalPastBalance = Math.max(paymentsTabOwed, oldBalanceOwed);
 
         if (totalPastBalance > 0) {
           flags.push('past_balance');
