@@ -22,7 +22,10 @@ function WaitingList({ onOpenClient, setActivePage }) {
       .from('waiting_list')
       .select('*')
       .eq('status', 'waiting')
-      .order('ready_date', { ascending: true, nullsFirst: false });
+      // No ready date yet goes to the TOP, then earliest ready date first.
+      // Ties (and everyone with no date) stay in the order they were added.
+      .order('ready_date', { ascending: true, nullsFirst: true })
+      .order('created_at', { ascending: true });
     setWaitingClients(data || []);
     setLoading(false);
   }, []);
