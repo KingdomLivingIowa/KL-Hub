@@ -4,6 +4,20 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import ClientPayments from './ClientPayments';
 
+// Balances are added up in the database (client_balances view) — one row per client.
+// Asked for in chunks so long client lists don't hit request-size or 1,000-row limits.
+async function fetchBalanceRows(ids) {
+  const rows = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await supabase.from('client_balances')
+      .select('client_id, total_charged, total_paid, balance')
+      .in('client_id', ids.slice(i, i + 200));
+    if (error) console.error('Balances fetch error:', error);
+    rows.push(...(data || []));
+  }
+  return rows;
+}
+
 const ROOM_TYPE_COLORS = {
   'Single':      { bg: '#dbeafe', color: '#2563eb' },
   'Double':      { bg: '#f3e8ff', color: '#9333ea' },
@@ -35,34 +49,33 @@ function Payments() {
     }
     setLoading(true);
 
-    let query = supabase
-      .from('clients')
-      .select('id, full_name, email, photo_url, status, level, room_type, house_id, start_date, houses(name)')
-      .order('full_name');
-
-    if (viewFilter === 'current') {
-      query = query.eq('status', 'Active');
-    } else {
-      query = query.in('status', ['Active', 'Pending', 'Discharged']);
+    // Clients, a page of 1,000 at a time (the database sends at most 1,000 rows per request)
+    const data = [];
+    for (let from = 0; from < 20000; from += 1000) {
+      let query = supabase
+        .from('clients')
+        .select('id, full_name, email, photo_url, status, level, room_type, house_id, start_date, houses(name)')
+        .order('full_name')
+        .order('id')
+        .range(from, from + 999);
+      if (viewFilter === 'current') {
+        query = query.eq('status', 'Active');
+      } else {
+        query = query.in('status', ['Active', 'Pending', 'Discharged']);
+      }
+      const { data: page } = await query;
+      data.push(...(page || []));
+      if (!page || page.length < 1000) break;
     }
-
-    const { data } = await query;
-    const enriched = (data || []).map(c => ({ ...c, house_name: c.houses?.name || null }));
+    const enriched = data.map(c => ({ ...c, house_name: c.houses?.name || null }));
     setClients(enriched);
 
     const balanceMap = {};
-    // Fetch balances for all clients
     if (enriched.length > 0) {
       const ids = enriched.map(c => c.id);
-
-      const [chargesRes, paymentsRes] = await Promise.all([
-        supabase.from('charges').select('client_id, amount').in('client_id', ids),
-        supabase.from('payments').select('client_id, amount').in('client_id', ids),
-      ]);
-
       ids.forEach(id => { balanceMap[id] = { charged: 0, paid: 0 }; });
-      (chargesRes.data || []).forEach(c => { balanceMap[c.client_id].charged += parseFloat(c.amount || 0); });
-      (paymentsRes.data || []).forEach(p => { balanceMap[p.client_id].paid += parseFloat(p.amount || 0); });
+      const rows = await fetchBalanceRows(ids);
+      rows.forEach(b => { balanceMap[b.client_id] = { charged: parseFloat(b.total_charged || 0), paid: parseFloat(b.total_paid || 0) }; });
       setBalances(balanceMap);
     }
 

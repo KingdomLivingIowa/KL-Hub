@@ -3,6 +3,20 @@ import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 import { HouseCalendarTab } from './Calendars';
 
+// Balances are added up in the database (client_balances view) — one row per client.
+// Asked for in chunks so long client lists don't hit request-size or 1,000-row limits.
+async function fetchBalanceRows(ids) {
+  const rows = [];
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data, error } = await supabase.from('client_balances')
+      .select('client_id, total_charged, total_paid, balance')
+      .in('client_id', ids.slice(i, i + 200));
+    if (error) console.error('Balances fetch error:', error);
+    rows.push(...(data || []));
+  }
+  return rows;
+}
+
 // Pending move-ins stay pinned at the top of a resident list so they're
 // easy to spot and confirm; everyone else — and pending residents among
 // themselves — sorts alphabetically. Once a pending client is confirmed
@@ -279,17 +293,9 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
       const clientIds = (clientsData || []).map(c => c.id);
       let balanceMap = {};
       if (clientIds.length > 0) {
-        const [{ data: chargesData, error: chargesErr }, { data: paymentsData, error: paymentsErr }] = await Promise.all([
-          supabase.from('charges').select('client_id, amount').in('client_id', clientIds),
-          supabase.from('payments').select('client_id, amount').in('client_id', clientIds),
-        ]);
-        if (chargesErr) console.error('Charges fetch error:', chargesErr);
-        if (paymentsErr) console.error('Payments fetch error:', paymentsErr);
-        clientIds.forEach(id => {
-          const charged = (chargesData || []).filter(c => c.client_id === id).reduce((s, c) => s + parseFloat(c.amount || 0), 0);
-          const paid = (paymentsData || []).filter(p => p.client_id === id).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
-          balanceMap[id] = charged - paid;
-        });
+        // Balances are added up in the database (client_balances view), one row per client
+        const balData = await fetchBalanceRows(clientIds);
+        balData.forEach(b => { balanceMap[b.client_id] = parseFloat(b.balance || 0); });
       }
 
       const clientsWithBalance = sortResidentsPendingFirst((clientsData || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 })));
@@ -347,15 +353,8 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
     const clientIds = (data || []).map(c => c.id);
     let balanceMap = {};
     if (clientIds.length > 0) {
-      const [{ data: chargesData }, { data: paymentsData }] = await Promise.all([
-        supabase.from('charges').select('client_id, amount').in('client_id', clientIds),
-        supabase.from('payments').select('client_id, amount').in('client_id', clientIds),
-      ]);
-      clientIds.forEach(id => {
-        const charged = (chargesData || []).filter(c => c.client_id === id).reduce((s, c) => s + parseFloat(c.amount || 0), 0);
-        const paid = (paymentsData || []).filter(p => p.client_id === id).reduce((s, p) => s + parseFloat(p.amount || 0), 0);
-        balanceMap[id] = charged - paid;
-      });
+      const balData = await fetchBalanceRows(clientIds);
+      balData.forEach(b => { balanceMap[b.client_id] = parseFloat(b.balance || 0); });
     }
     const residentsWithBalance = sortResidentsPendingFirst((data || []).map(c => ({ ...c, balance: balanceMap[c.id] ?? 0 })));
     setResidents(residentsWithBalance);
@@ -890,6 +889,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                     <div style={s.houseGroupHeader}>
                       <span style={s.houseGroupName}>{house.name}</span>
                       <span style={{ ...s.typeBadge, background: houseTypeBadgeColor(house.type).bg, color: houseTypeBadgeColor(house.type).color }}>{house.type}</span>
+                      {(() => {
+                        const open = Math.max((house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0), 0);
+                        return (
+                          <span style={{ ...s.typeBadge, background: open > 0 ? '#dcfce7' : '#f4f4f5', color: open > 0 ? '#16a34a' : '#71717a' }}>
+                            {open} bed{open !== 1 ? 's' : ''} available
+                          </span>
+                        );
+                      })()}
                       <span style={s.houseGroupCount}>{houseResidents.length} resident{houseResidents.length !== 1 ? 's' : ''}</span>
                     </div>
                     <div style={s.residentTable}>

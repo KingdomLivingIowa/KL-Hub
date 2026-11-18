@@ -270,14 +270,25 @@ export default function Reports() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    // The database sends at most 1,000 rows per request, so read each table a page at a time
+    const fetchAllRows = async (table, columns) => {
+      const rows = [];
+      for (let from = 0; from < 200000; from += 1000) {
+        const { data, error } = await supabase.from(table).select(columns).order('id').range(from, from + 999);
+        if (error) { console.error(table + ' fetch error:', error); break; }
+        rows.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
+      return { data: rows };
+    };
     const [clientsRes, staysRes, paymentsRes, waitingRes, housesRes, appsRes, maintRes] = await Promise.all([
-      supabase.from('clients').select('*'),
-      supabase.from('client_stays').select('*'),
-      supabase.from('payments').select('*'),
-      supabase.from('waiting_list').select('*'),
-      supabase.from('houses').select('*'),
-      supabase.from('applications').select('id, gender, created_at, status'),
-      supabase.from('maintenance_requests').select('*'),
+      fetchAllRows('clients', '*'),
+      fetchAllRows('client_stays', '*'),
+      fetchAllRows('payments', '*'),
+      fetchAllRows('waiting_list', '*'),
+      fetchAllRows('houses', '*'),
+      fetchAllRows('applications', 'id, gender, created_at, status'),
+      fetchAllRows('maintenance_requests', '*'),
     ]);
     setClients(clientsRes.data || []);
     setStays(staysRes.data || []);

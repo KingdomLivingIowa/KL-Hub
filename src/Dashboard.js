@@ -217,8 +217,14 @@ function DashboardHome({ counts, currentUser }) {
   };
 
   const fetchOpenCharges = async () => {
-    const { data } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, status, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true });
-    let charges = (data || []).filter(c => c.clients?.status === 'Active');
+    // Read open charges a page at a time (the database sends at most 1,000 rows per request)
+    const data = [];
+    for (let from = 0; from < 100000; from += 1000) {
+      const { data: page } = await supabase.from('charges').select('id, client_id, amount, amount_paid, due_date, clients(id, full_name, house_id, status, houses(id, name))').in('status', ['unpaid', 'partial']).order('due_date', { ascending: true }).order('id').range(from, from + 999);
+      data.push(...(page || []));
+      if (!page || page.length < 1000) break;
+    }
+    let charges = data.filter(c => c.clients?.status === 'Active');
     if (isHouseManagerRole && assignedHouseIds.length > 0) {
       charges = charges.filter(c => assignedHouseIds.includes(c.clients?.house_id));
     }

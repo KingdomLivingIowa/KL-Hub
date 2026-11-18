@@ -687,8 +687,15 @@ function Admissions() {
                     // exact, case-sensitive email/full_name lookup, which could miss the
                     // very client the server had already matched (e.g. an SSN-only match)
                     // and silently fall through to a placeholder "unknown" client below.
-                    const { data: allClients, error } = await supabase.from('clients').select('*');
-                    if (error) throw error;
+                    // Read every client a page at a time — the database sends at most
+                    // 1,000 rows per request, and there are more clients than that.
+                    const allClients = [];
+                    for (let from = 0; from < 200000; from += 1000) {
+                      const { data: page, error } = await supabase.from('clients').select('*').order('id').range(from, from + 999);
+                      if (error) throw error;
+                      allClients.push(...(page || []));
+                      if (!page || page.length < 1000) break;
+                    }
                     const firstLower = (app.first_name || '').toLowerCase().trim();
                     const lastLower = (app.last_name || '').toLowerCase().trim();
                     const appEmail = (app.email || '').toLowerCase().trim();
