@@ -912,7 +912,6 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <span style={{ flex: 1 }}>Status</span>
                         <span style={{ flex: 1 }}>Start Date</span>
                         <span style={{ flex: 1 }}>Balance</span>
-                        <span style={{ flex: 1 }}>Phone</span>
                         <span style={{ flex: 2 }}>Notes</span>
                       </div>
                       {houseResidents.map(r => (
@@ -938,9 +937,18 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                           <span style={{ flex: 1 }}>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
                           </span>
-                          <span style={{ flex: 1, color: '#52525b', fontSize: '14px' }}>{r.start_date || '—'}</span>
+                          {r.status === 'Pending' ? (
+                            // Pending residents haven't moved in yet — show their expected move-in date
+                            <span style={{ flex: 1, fontSize: '14px', color: (r.expected_move_in_date || r.start_date) ? '#b45309' : '#71717a' }}
+                              title="Expected move-in">
+                              {(r.expected_move_in_date || r.start_date)
+                                ? `Exp. ${r.expected_move_in_date || r.start_date}`
+                                : <span style={{ fontStyle: 'italic' }}>No date set</span>}
+                            </span>
+                          ) : (
+                            <span style={{ flex: 1, color: '#52525b', fontSize: '14px' }}>{r.start_date || '—'}</span>
+                          )}
                           <span style={{ flex: 1, color: parseFloat(r.balance) > 0 ? '#dc2626' : '#16a34a', fontSize: '14px', fontWeight: '500' }}>{formatBalance(r.balance)}</span>
-                          <span style={{ flex: 1, color: '#52525b', fontSize: '14px' }}>{r.phone || '—'}</span>
                           <div style={{ flex: 2 }} onClick={e => e.stopPropagation()}>
                             {editingNotes.hasOwnProperty(r.id) ? (
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
