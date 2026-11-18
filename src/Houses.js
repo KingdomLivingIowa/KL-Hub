@@ -765,7 +765,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
     return room ? `${room.name} · Bed ${r.bed_number}` : `Bed ${r.bed_number}`;
   };
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  const formatBalance = (b) => { if (b == null) return '—'; const num = parseFloat(b); return (num < 0 ? '-$' : '$') + Math.abs(num).toFixed(2); };
+  // Balance owed = charges minus payments. Positive = owes (red). Negative = paid ahead,
+  // shown as a credit in green without a minus sign.
+  const formatBalance = (b) => {
+    if (b == null) return '—';
+    const num = parseFloat(b);
+    if (num < -0.004) return '$' + Math.abs(num).toFixed(2) + ' credit';
+    return '$' + Math.max(num, 0).toFixed(2);
+  };
 
   const LocationPin = ({ entryId, lat, lng }) => {
     const address = locationLabels[entryId];
