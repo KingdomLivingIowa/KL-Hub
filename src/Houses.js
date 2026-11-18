@@ -916,7 +916,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <span style={{ flex: 2 }}>Notes</span>
                       </div>
                       {houseResidents.map(r => (
-                        <div key={r.id} style={{ ...s.residentTableRow, cursor: 'pointer' }} onClick={() => openClientProfile(r)}>
+                        <div key={r.id} style={s.residentTableRow}>
                           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={s.resAvatar}>
                               {r.photo_url
@@ -924,7 +924,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                 : initials(r.full_name)}
                             </div>
                             <div>
-                              <p style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0 }}>{r.full_name}</p>
+                              <span role="button" tabIndex={0} title="Open profile"
+                                onClick={() => openClientProfile(r)}
+                                onKeyDown={e => { if (e.key === 'Enter') openClientProfile(r); }}
+                                onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; e.currentTarget.style.color = '#b22222'; }}
+                                onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; e.currentTarget.style.color = '#18181b'; }}
+                                style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0, cursor: 'pointer', display: 'inline-block' }}>
+                                {r.full_name}
+                              </span>
                               <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
                           </div>
