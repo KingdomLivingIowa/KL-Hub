@@ -175,15 +175,20 @@ function Admissions() {
 
   const fetchClients = useCallback(async () => {
     try {
-      const { data: cls, error: clientsError } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name, date_of_birth, ssn, email, application_id, status');
-
-      if (clientsError) {
-        console.error('Error loading clients:', clientsError);
-      } else {
-        setClients(cls || []);
+      // Read every client a page at a time (the database sends at most 1,000 rows
+      // per request) so the "Possible Duplicate" check sees all of them.
+      const cls = [];
+      for (let from = 0; from < 200000; from += 1000) {
+        const { data: page, error: clientsError } = await supabase
+          .from('clients')
+          .select('id, first_name, last_name, date_of_birth, ssn, email, application_id, status')
+          .order('id')
+          .range(from, from + 999);
+        if (clientsError) { console.error('Error loading clients:', clientsError); break; }
+        cls.push(...(page || []));
+        if (!page || page.length < 1000) break;
       }
+      setClients(cls);
     } catch (error) {
       console.error('Unexpected fetchClients error:', error);
     }
