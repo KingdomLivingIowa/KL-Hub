@@ -18,6 +18,7 @@ import PODashboard from './PODashboard';
 import Maintenance from './Maintenance';
 import Timesheets from './Timesheets';
 import Vouchers from './Vouchers';
+import SorGrant from './SorGrant';
 import { TimeClockWidget } from './TimeClock';
 import klLogo from './kingdom-living-logo.jpg';
 
@@ -298,6 +299,9 @@ function DashboardHome({ counts, currentUser }) {
     if (type === 'weekly_charges') return '💵';
     if (type === 'voucher_upload') return '📎';
     if (type === 'voucher_update') return '🧾';
+    if (type === 'sor_submitted') return '📝';
+    if (type === 'sor_upload') return '📎';
+    if (type === 'sor_suprt') return '📋';
     return '•';
   };
 
@@ -707,6 +711,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
     { id: 'maintenance', label: 'Maintenance', show: canSeeMaintenancePage, group: 'Houses' },
     { id: 'payments', label: 'Payments', show: hasFullAccess, group: 'Money' },
     { id: 'vouchers', label: 'Vouchers', show: hasFullAccess || isHouseManagerRole, group: 'Money' },
+    { id: 'sor', label: 'SOR Grant', show: hasFullAccess || isHouseManagerRole, group: 'Money' },
     { id: 'reports', label: 'Reports', show: canSeeReports, group: 'Money' },
     { id: 'messages', label: 'Messages', show: true, group: 'Team' },
     { id: 'calendars', label: 'Calendars', show: true, group: 'Team' },
@@ -849,6 +854,7 @@ const memberships = allMemberships.filter(m => !houseConvIds.has(m.conversation_
           )}
           {activePage === 'payments' && hasFullAccess && <Payments />}
           {activePage === 'vouchers' && (hasFullAccess || isHouseManagerRole) && <Vouchers />}
+          {activePage === 'sor' && (hasFullAccess || isHouseManagerRole) && <SorGrant />}
           {activePage === 'messages' && <Messaging />}
           {activePage === 'reports' && canSeeReports && <Reports />}
           {activePage === 'maintenance' && canSeeMaintenancePage && <Maintenance />}
