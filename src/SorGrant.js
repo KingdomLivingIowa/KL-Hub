@@ -179,6 +179,13 @@ function ScreenerModal({ row, suprt, canEdit, onClose, onChanged }) {
   const name = clientName(row.clients);
   const st = STATUS[row.status] || STATUS.submitted;
 
+  // Esc closes the screener
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   const answers = [
     ['1. Kingdom Living move-in date', fmtDate(row.move_in_date)],
     ['   Address', row.address || '—'],
@@ -251,7 +258,7 @@ function ScreenerModal({ row, suprt, canEdit, onClose, onChanged }) {
               {row.reviewed_at && <> · reviewed by {row.reviewed_by_name || 'staff'} on {fmtDate(row.reviewed_at)}</>}
             </div>
           </div>
-          <button style={sg.closeBtn} onClick={onClose}>×</button>
+          <button style={sg.backBtn} onClick={onClose}>← Back to list</button>
         </div>
 
         <div style={sg.tabs}>
@@ -260,7 +267,7 @@ function ScreenerModal({ row, suprt, canEdit, onClose, onChanged }) {
           ))}
         </div>
 
-        <div style={{ padding: '16px 20px', maxHeight: '62vh', overflowY: 'auto' }}>
+        <div style={{ padding: '16px 20px', flex: 1, overflowY: 'auto' }}>
           {tab === 'screener' && (
             <>
               {answers.map(([q, a]) => (
@@ -330,6 +337,9 @@ function ScreenerModal({ row, suprt, canEdit, onClose, onChanged }) {
           {tab === 'suprt' && <SuprtView suprt={suprt} status={row.status} canEdit={canEdit} onChanged={onChanged} />}
 
           {msg && <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: msg.ok ? '#16a34a' : '#b91c1c' }}>{msg.text}</div>}
+        </div>
+        <div style={sg.modalFooter}>
+          <button style={sg.btn} onClick={onClose}>← Back to list</button>
         </div>
       </div>
     </div>
@@ -449,10 +459,12 @@ const sg = {
   smallBtn: { backgroundColor: '#ffffff', border: '1px solid #c9c9cf', color: '#3f3f46', padding: '3px 10px', borderRadius: 6, fontSize: 12, cursor: 'pointer' },
   decBtn: { border: '1px solid', padding: '8px 16px', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontWeight: 600 },
   error: { background: '#fee2e2', color: '#b91c1c', padding: '8px 12px', borderRadius: 8, fontSize: 14, marginBottom: 10 },
-  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 16px', zIndex: 1000, overflowY: 'auto' },
-  modal: { background: '#ffffff', borderRadius: 14, border: '1px solid #c9c9cf', width: '100%', maxWidth: 760, overflow: 'hidden' },
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', zIndex: 2000 },
+  modal: { background: '#ffffff', borderRadius: 14, border: '1px solid #c9c9cf', width: '100%', maxWidth: 760, maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
   modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '14px 20px', borderBottom: '2px solid #fee2e2', gap: 12 },
   modalTitle: { margin: 0, fontSize: 18, fontWeight: 700 },
+  backBtn: { backgroundColor: '#ffffff', border: '1px solid #b8b8bf', color: '#3f3f46', padding: '7px 12px', borderRadius: 8, fontSize: 14, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' },
+  modalFooter: { padding: '10px 20px', borderTop: '1px solid #e4e4e7', display: 'flex', justifyContent: 'flex-end' },
   closeBtn: { width: 30, height: 30, borderRadius: '50%', border: '1px solid #b8b8bf', background: 'transparent', cursor: 'pointer', color: '#52525b', fontSize: 18, flexShrink: 0 },
   tabs: { display: 'flex', gap: 4, padding: '8px 20px 0', borderBottom: '1px solid #e4e4e7' },
   tabBtn: { background: 'transparent', border: 'none', borderBottom: '2px solid transparent', padding: '8px 12px', fontSize: 14, cursor: 'pointer', color: '#52525b' },
