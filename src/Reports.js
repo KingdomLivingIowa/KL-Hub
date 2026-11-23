@@ -95,6 +95,41 @@ function WaitlistStatCard({ label, breakdown, accent }) {
   );
 }
 
+// Short date like 11/23/2026 from a YYYY-MM-DD or ISO string (no time-zone shifting)
+function fmtShortDate(v) {
+  if (!v) return '';
+  const d = String(v).slice(0, 10);
+  const [y, m, day] = d.split('-');
+  return y && m && day ? `${parseInt(m, 10)}/${parseInt(day, 10)}/${y}` : d;
+}
+
+// A stat card that opens (like the Waiting List cards) to show the names behind the number.
+// items: [{ key, name, detail }]
+function NameListStatCard({ label, items, accent, emptyText }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div onClick={() => setExpanded(e => !e)} style={{ background: '#f7f7f9', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent}`, minWidth: 0, cursor: 'pointer' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+        <span style={{ fontSize: 11, color: '#71717a' }}>{expanded ? '▲' : '▼'}</span>
+      </div>
+      <div style={{ fontSize: 32, fontWeight: 700, color: '#18181b', lineHeight: 1.1 }}>{items.length}</div>
+      {expanded && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #c9c9cf', display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 260, overflowY: 'auto' }}>
+          {items.length === 0 ? (
+            <div style={{ fontSize: 14, color: '#71717a' }}>{emptyText || 'None this week'}</div>
+          ) : items.map(it => (
+            <div key={it.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 14 }}>
+              <span style={{ color: '#18181b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</span>
+              {it.detail && <span style={{ color: '#4b5563', whiteSpace: 'nowrap', fontSize: 13 }}>{it.detail}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StatCard({ label, value, sub, accent }) {
   return (
     <div style={{ background: '#f7f7f9', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent || '#b22222'}`, minWidth: 0 }}>
@@ -287,7 +322,7 @@ export default function Reports() {
       fetchAllRows('payments', '*'),
       fetchAllRows('waiting_list', '*'),
       fetchAllRows('houses', '*'),
-      fetchAllRows('applications', 'id, gender, created_at, status'),
+      fetchAllRows('applications', 'id, gender, created_at, status, first_name, last_name, full_name'),
       fetchAllRows('maintenance_requests', '*'),
     ]);
     setClients(clientsRes.data || []);
@@ -308,8 +343,15 @@ export default function Reports() {
   const appsThisWeek = applications.filter(a =>
     a.created_at && a.created_at.split('T')[0] >= week.start && a.created_at.split('T')[0] <= week.end
   );
-  const maleAppsWeek = appsThisWeek.filter(a => a.gender === 'Male').length;
-  const femaleAppsWeek = appsThisWeek.filter(a => a.gender === 'Female').length;
+  const appName = (a) => (a.full_name || `${a.first_name || ''} ${a.last_name || ''}`).trim() || 'Unknown';
+  const appItem = (a) => ({
+    key: a.id,
+    name: appName(a),
+    detail: `${fmtShortDate(a.created_at)}${a.status ? ' · ' + a.status.charAt(0).toUpperCase() + a.status.slice(1) : ''}`,
+  });
+  const byCreated = (a, b) => (a.created_at || '').localeCompare(b.created_at || '');
+  const maleAppsWeekItems = appsThisWeek.filter(a => a.gender === 'Male').sort(byCreated).map(appItem);
+  const femaleAppsWeekItems = appsThisWeek.filter(a => a.gender === 'Female').sort(byCreated).map(appItem);
 
   const activeClients = clients.filter(c => c.status === 'Active');
   const inProgram = activeClients.length + clients.filter(c => c.status === 'Pending').length;
@@ -318,7 +360,19 @@ export default function Reports() {
   const menWaitBreakdown = waitlistBreakdown(waitingList, WEEKLY_MEN_LISTS);
   const womenWaitBreakdown = waitlistBreakdown(waitingList, WEEKLY_WOMEN_LISTS);
 
-  const moveInsWeek = clients.filter(c => c.start_date >= week.start && c.start_date <= week.end).length;
+  const clientNameMap = {};
+  clients.forEach(c => { clientNameMap[c.id] = (c.full_name || `${c.first_name || ''} ${c.last_name || ''}`).trim() || 'Unknown'; });
+  const houseNameMap = {};
+  houses.forEach(h => { houseNameMap[h.id] = h.name || h.house_name || ''; });
+
+  const moveInsWeekItems = clients
+    .filter(c => c.start_date >= week.start && c.start_date <= week.end)
+    .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
+    .map(c => ({
+      key: c.id,
+      name: clientNameMap[c.id],
+      detail: [fmtShortDate(c.start_date), houseNameMap[c.house_id]].filter(Boolean).join(' · '),
+    }));
 
   // Every discharge is a stay record (client_stays), so a client discharged more than once
   // counts each time. "Did Not Move In" is NOT a discharge — it's counted on its own.
@@ -335,7 +389,14 @@ export default function Reports() {
     .map(st => ({ ...st, gender: clientGenderMap[st.client_id] }));
 
   const dischargedThisWeek = dischargeStays.filter(st => st.discharge_date >= week.start && st.discharge_date <= week.end);
-  const successfulDischargesWeek = dischargedThisWeek.filter(isSuccessful).length;
+  const stayItem = (st) => ({
+    key: st.id,
+    name: clientNameMap[st.client_id] || 'Unknown',
+    detail: [fmtShortDate(st.discharge_date), st.discharge_reason].filter(Boolean).join(' · '),
+  });
+  const byDischarge = (a, b) => (a.discharge_date || '').localeCompare(b.discharge_date || '');
+  const dischargedThisWeekItems = [...dischargedThisWeek].sort(byDischarge).map(stayItem);
+  const successfulDischargesWeekItems = dischargedThisWeek.filter(isSuccessful).sort(byDischarge).map(stayItem);
   const paymentsWeekTotal = payments
     .filter(p => p.payment_date && p.payment_date >= week.start && p.payment_date <= week.end)
     .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
@@ -595,19 +656,19 @@ export default function Reports() {
             )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
-            <StatCard label="Male Applicants" value={maleAppsWeek} accent="#2563eb" />
-            <StatCard label="Female Applicants" value={femaleAppsWeek} accent="#db2777" />
+            <NameListStatCard label="Male Applicants" items={maleAppsWeekItems} accent="#2563eb" emptyText="No male applicants this week" />
+            <NameListStatCard label="Female Applicants" items={femaleAppsWeekItems} accent="#db2777" emptyText="No female applicants this week" />
             <WaitlistStatCard label="Men's Waiting List" breakdown={menWaitBreakdown} accent="#2563eb" />
             <WaitlistStatCard label="Women's Waiting List" breakdown={womenWaitBreakdown} accent="#db2777" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
             <StatCard label="Total in Program" value={inProgram} sub={`${totalBeds} beds total`} accent="#b22222" />
             <StatCard label="People in Beds" value={activeClients.length} accent="#0d9488" />
-            <StatCard label="Move Ins This Week" value={moveInsWeek} accent="#16a34a" />
+            <NameListStatCard label="Move Ins This Week" items={moveInsWeekItems} accent="#16a34a" emptyText="No move ins this week" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
-            <StatCard label="Discharges This Week" value={dischargedThisWeek.length} accent="#b45309" />
-            <StatCard label="Successful Discharges" value={successfulDischargesWeek} accent="#16a34a" />
+            <NameListStatCard label="Discharges This Week" items={dischargedThisWeekItems} accent="#b45309" emptyText="No discharges this week" />
+            <NameListStatCard label="Successful Discharges" items={successfulDischargesWeekItems} accent="#16a34a" emptyText="No successful discharges this week" />
             <StatCard label="Payments This Week" value={fmtMoney(paymentsWeekTotal)} accent="#7c3aed" />
           </div>
 
