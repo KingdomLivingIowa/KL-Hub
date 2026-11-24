@@ -244,6 +244,51 @@ function Houses({ onOpenClient, reopenHouseId, onHouseReopened }) {
   const [houseChatUnread, setHouseChatUnread] = useState({});
   const [houseFormsPending, setHouseFormsPending] = useState({});
 
+  // ── Search (highlights only — nothing is hidden) ──
+  const [search, setSearch] = useState('');
+  const firstMatchRef = useRef(null);
+  const term = search.trim().toLowerCase();
+  const textHas = (v) => !!term && (v || '').toString().toLowerCase().includes(term);
+  const residentMatches = (r) => !!term && [r.full_name, r.first_name, r.last_name, r.email, r.phone].some(textHas);
+  const matchingResidentsIn = (houseId) => term ? allResidents.filter(r => r.house_id === houseId && residentMatches(r)) : [];
+  const houseMatches = (h) => !!term && ([h.name, h.address, h.city, h.house_manager].some(textHas) || matchingResidentsIn(h.id).length > 0);
+  const matchedHouseCount = term ? houses.filter(houseMatches).length : 0;
+  const matchedResidentCount = term ? allResidents.filter(r => houses.some(h => h.id === r.house_id) && residentMatches(r)).length : 0;
+  const firstMatchKey = !term ? null
+    : mainView === 'houses' ? (houses.find(houseMatches)?.id || null)
+    : (allResidents.find(r => houses.some(h => h.id === r.house_id) && residentMatches(r))?.id || null);
+
+  // Inside an open house: bring the first highlighted resident into view
+  const modalMatchRef = useRef(null);
+  const firstModalMatchId = term ? (residents.find(residentMatches)?.id || null) : null;
+  useEffect(() => {
+    if (term && modalMatchRef.current) {
+      modalMatchRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [term, selected, firstModalMatchId]);
+
+  // Bring the first highlighted house / resident into view
+  useEffect(() => {
+    if (term && firstMatchRef.current) {
+      firstMatchRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [term, mainView, firstMatchKey]);
+
+  // Wraps the matching part of the text in a yellow highlight
+  const highlight = (text) => {
+    if (!term || !text) return text;
+    const str = String(text);
+    const i = str.toLowerCase().indexOf(term);
+    if (i === -1) return str;
+    return (
+      <>
+        {str.slice(0, i)}
+        <mark style={{ background: '#fde047', color: '#18181b', padding: '0 1px', borderRadius: 2 }}>{str.slice(i, i + term.length)}</mark>
+        {str.slice(i + term.length)}
+      </>
+    );
+  };
+
   const fetchHouseChatUnread = useCallback(async (houseId) => {
     if (!user?.id) return;
     const { data: conv } = await supabase.from('conversations').select('id').eq('house_id', houseId).maybeSingle();
@@ -812,6 +857,30 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
         </div>
       </div>
 
+      {/* Search (highlights only) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Escape') setSearch(''); }}
+          placeholder="Search houses or residents by name..."
+          style={{ ...s.input, maxWidth: 420 }}
+        />
+        {term && (
+          <>
+            <span style={{ fontSize: 13, color: (matchedHouseCount || matchedResidentCount) ? '#18181b' : '#b22222' }}>
+              {matchedHouseCount === 0 && matchedResidentCount === 0
+                ? 'No matches'
+                : `${matchedHouseCount} house${matchedHouseCount === 1 ? '' : 's'} · ${matchedResidentCount} resident${matchedResidentCount === 1 ? '' : 's'}`}
+            </span>
+            <button onClick={() => setSearch('')}
+              style={{ backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' }}>
+              Clear
+            </button>
+          </>
+        )}
+      </div>
+
       {showAdd && hasFullAccess && (
         <div style={s.addForm}>
           <p style={s.addTitle}>New House</p>
@@ -835,12 +904,17 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
           {mainView === 'houses' && (
             houses.length === 0 ? <p style={{ color: '#52525b' }}>{isHouseManagerRole ? 'No houses have been assigned to you yet.' : 'No houses yet.'}</p> : (
               <div style={s.houseGrid}>
-                {houses.map(house => (
-                  <div key={house.id} style={s.houseCard} onClick={() => openHouse(house)}>
+                {houses.map(house => {
+                  const hMatch = houseMatches(house);
+                  const hResMatches = matchingResidentsIn(house.id);
+                  return (
+                  <div key={house.id} ref={house.id === firstMatchKey ? firstMatchRef : null}
+                    style={{ ...s.houseCard, ...(hMatch ? { background: '#fef9c3', border: '2px solid #eab308' } : {}) }}
+                    onClick={() => openHouse(house)}>
                     <div style={s.houseCardTop}>
                       <div>
-                        <p style={s.houseName}>{house.name}</p>
-                        <p style={s.houseAddress}>{house.address}{house.city ? `, ${house.city}` : ''}</p>
+                        <p style={s.houseName}>{highlight(house.name)}</p>
+                        <p style={s.houseAddress}>{highlight(house.address)}{house.city ? <>, {highlight(house.city)}</> : ''}</p>
                       </div>
                       <span style={{ ...s.typeBadge, background: houseTypeBadgeColor(house.type).bg, color: houseTypeBadgeColor(house.type).color }}>{house.type}</span>
                     </div>
@@ -852,9 +926,14 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <span style={s.statItem}><span style={{ ...s.statNum, color: '#16a34a' }}>{(house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0)}</span><span style={s.statLbl}>Available</span></span>
                     </div>
                     <div style={{ marginTop: '6px', paddingRight: hasFullAccess ? '28px' : 0 }}>
+                      {hResMatches.length > 0 && (
+                        <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#18181b' }}>
+                          👤 {hResMatches.map((r, i) => <span key={r.id}>{i > 0 ? ', ' : ''}{highlight(r.full_name)}</span>)}
+                        </p>
+                      )}
                       {house.house_manager && (
                         <>
-                          <p style={s.manager}>Manager: {house.house_manager}</p>
+                          <p style={s.manager}>Manager: {highlight(house.house_manager)}</p>
                           {house.phone && <p style={s.managerPhone}>{house.phone}</p>}
                         </>
                       )}
@@ -881,7 +960,8 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                       <button onClick={e => deleteHouse(e, house.id)} style={s.deleteHouseBtn} title="Delete house" aria-label="Delete house">✕</button>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )
           )}
@@ -894,7 +974,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                 return (
                   <div key={house.id} style={s.houseGroup}>
                     <div style={s.houseGroupHeader}>
-                      <span style={s.houseGroupName}>{house.name}</span>
+                      <span style={s.houseGroupName}>{highlight(house.name)}</span>
                       <span style={{ ...s.typeBadge, background: houseTypeBadgeColor(house.type).bg, color: houseTypeBadgeColor(house.type).color }}>{house.type}</span>
                       {(() => {
                         const open = Math.max((house.total_beds || 0) - (house.occupied_beds || 0) - (house.pending_count || 0), 0);
@@ -915,7 +995,8 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                         <span style={{ flex: 2 }}>Notes</span>
                       </div>
                       {houseResidents.map(r => (
-                        <div key={r.id} style={s.residentTableRow}>
+                        <div key={r.id} ref={r.id === firstMatchKey ? firstMatchRef : null}
+                          style={{ ...s.residentTableRow, ...(residentMatches(r) ? { background: '#fef9c3', borderLeft: '4px solid #eab308' } : {}) }}>
                           <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={s.resAvatar}>
                               {r.photo_url
@@ -929,7 +1010,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                 onMouseEnter={e => { e.currentTarget.style.textDecoration = 'underline'; e.currentTarget.style.color = '#b22222'; }}
                                 onMouseLeave={e => { e.currentTarget.style.textDecoration = 'none'; e.currentTarget.style.color = '#18181b'; }}
                                 style={{ color: '#18181b', fontSize: '14px', fontWeight: '500', margin: 0, cursor: 'pointer', display: 'inline-block' }}>
-                                {r.full_name}
+                                {highlight(r.full_name)}
                               </span>
                               <p style={{ color: '#4b5563', fontSize: '14px', margin: '2px 0 0 0' }}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}</p>
                             </div>
@@ -1107,7 +1188,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                   {residents.length === 0 ? <p style={{ color: '#4b5563', fontSize: '14px' }}>No current residents.</p> : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       {residents.map(r => (
-                        <div key={r.id} style={{ ...s.residentCard, cursor: 'pointer' }} onClick={() => { setSelected(null); openClientProfile(r); }}>
+                        <div key={r.id} ref={r.id === firstModalMatchId ? modalMatchRef : null} style={{ ...s.residentCard, cursor: 'pointer', ...(residentMatches(r) ? { background: '#fef9c3', border: '2px solid #eab308' } : {}) }} onClick={() => { setSelected(null); openClientProfile(r); }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: r.status === 'Pending' ? '10px' : '0' }}>
                             <div style={s.resAvatar}>
                               {r.photo_url
@@ -1115,7 +1196,7 @@ const { error: insertError } = await supabase.from('house_timeline').insert([{
                                 : initials(r.full_name)}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <p style={s.resName}>{r.full_name}</p>
+                              <p style={s.resName}>{highlight(r.full_name)}</p>
                               <p style={s.resMeta}>{r.status === 'Active' && r.level ? `Level ${r.level}` : '—'}{bedLabel(r) ? ` · ${bedLabel(r)}` : (r.room_type ? ` · ${r.room_type}` : '')}</p>
                             </div>
                             <span style={{ ...s.typeBadge, background: statusColor(r.status).bg, color: statusColor(r.status).color }}>{r.status}</span>
