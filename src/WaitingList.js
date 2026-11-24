@@ -13,7 +13,6 @@ function WaitingList({ onOpenClient, setActivePage }) {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
-  const [pastMoves, setPastMoves] = useState([]); // [{ list_type, days }] — people who left the list and moved in
   const firstMatchRef = useRef(null);
 
   const LIST_TYPES = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
@@ -35,54 +34,26 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
   useEffect(() => { fetchWaitingList(); }, [fetchWaitingList]);
 
-  // Average wait time = the day someone was ADDED to this waiting list → the day they MOVED IN.
-  // Based on people who have already left the list and moved in.
-  const fetchWaitData = useCallback(async () => {
-    const removed = [];
-    for (let from = 0; from < 200000; from += 1000) {
-      const { data, error } = await supabase.from('waiting_list')
-        .select('id, client_id, list_type, created_at')
-        .eq('status', 'removed')
-        .not('client_id', 'is', null)
-        .order('id').range(from, from + 999);
-      if (error) { console.error('waiting_list history error:', error); break; }
-      removed.push(...(data || []));
-      if (!data || data.length < 1000) break;
-    }
-    const clientIds = [...new Set(removed.map(r => r.client_id))];
-    const clientById = {};
-    for (let i = 0; i < clientIds.length; i += 200) {
-      const { data } = await supabase.from('clients')
-        .select('id, start_date, status')
-        .in('id', clientIds.slice(i, i + 200));
-      (data || []).forEach(c => { clientById[c.id] = c; });
-    }
-    const moves = [];
-    removed.forEach(r => {
-      const c = clientById[r.client_id];
-      const st = (c?.status || '').toLowerCase();
-      if (!c?.start_date || ['pending', 'accepted', 'waiting list', 'applied'].includes(st)) return;
-      const added = (r.created_at || '').slice(0, 10);
-      if (!added || c.start_date < added) return; // moved in before this list entry — not a wait from this list
-      const days = Math.round((new Date(c.start_date + 'T12:00:00') - new Date(added + 'T12:00:00')) / 86400000);
-      if (days <= 730) moves.push({ list_type: r.list_type, days });
-    });
-    setPastMoves(moves);
-  }, []);
-
-  useEffect(() => { fetchWaitData(); }, [fetchWaitData]);
 
   const clients = waitingClients.filter(c => c.list_type === activeList);
   const menCount = waitingClients.filter(c => MEN_LISTS.includes(c.list_type)).length;
   const womenCount = waitingClients.filter(c => WOMEN_LISTS.includes(c.list_type)).length;
   const totalCount = waitingClients.length;
 
-  // ── Average wait times ──
-  const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
-  const fmtDays = (n) => n === null ? '—' : n < 14 ? `${n} day${n === 1 ? '' : 's'}` : n < 60 ? `${Math.round(n / 7)} weeks (${n} days)` : `${(n / 30).toFixed(1)} months (${n} days)`;
-  const pastFor = (list) => pastMoves.filter(m => m.list_type === list).map(m => m.days);
-  const activePast = pastFor(activeList);
-  const activePastAvg = avg(activePast);
+  // ── Estimated wait time ──
+  // Takes the FIRST person on the list (top row): from their Ready Date
+  // (or the day they were added, if no ready date) to today, in weeks,
+  // then adds 2 weeks for a range.  Ex: ready 11/9 → today 11/24 = 2 weeks → "2–4 weeks".
+  const firstOnList = clients[0] || null;
+  const waitFrom = firstOnList ? (firstOnList.ready_date || (firstOnList.created_at || '').slice(0, 10)) : null;
+  let waitRange = null;
+  if (waitFrom) {
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    const days = Math.round((today - new Date(waitFrom + 'T12:00:00')) / 86400000);
+    const weeks = Math.max(0, Math.floor(days / 7));
+    waitRange = weeks === 0 ? 'Up to 2 weeks' : `${weeks}–${weeks + 2} weeks`;
+  }
+  const fmtShort = (d) => { const [y, m, dd] = d.split('-'); return `${parseInt(m, 10)}/${parseInt(dd, 10)}/${y}`; };
 
   // Search only HIGHLIGHTS — nobody is hidden. Matches name, email, phone or notes.
   const term = search.trim().toLowerCase();
@@ -211,9 +182,11 @@ function WaitingList({ onOpenClient, setActivePage }) {
         <div>
           <p style={styles.listCount}>{clients.length} on {activeList} list</p>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 6 }}>
-            <span style={styles.waitStat} title="Average time from the day someone was added to this waiting list to the day they moved in">
-              ⏱ Avg wait time: <strong style={{ color: '#18181b' }}>{activePastAvg === null ? 'not enough data yet' : fmtDays(activePastAvg)}</strong>
-              {activePast.length > 0 && <span style={{ color: '#71717a' }}> (added to list → moved in, based on {activePast.length} {activePast.length === 1 ? 'person' : 'people'})</span>}
+            <span style={styles.waitStat} title="From the first person on this list's ready date (or the day they were added) to today, plus 2 weeks">
+              ⏱ Estimated wait time: <strong style={{ color: '#18181b' }}>{waitRange || '—'}</strong>
+              {firstOnList && waitFrom && (
+                <span style={{ color: '#71717a' }}> (first on list: {firstOnList.full_name}, {firstOnList.ready_date ? 'ready' : 'added'} {fmtShort(waitFrom)})</span>
+              )}
             </span>
           </div>
         </div>
