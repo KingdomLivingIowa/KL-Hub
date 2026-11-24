@@ -13,6 +13,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
+  const [pastMoves, setPastMoves] = useState([]); // [{ list_type, days }] — people who left the list and moved in
   const firstMatchRef = useRef(null);
 
   const LIST_TYPES = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
@@ -34,10 +35,63 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
   useEffect(() => { fetchWaitingList(); }, [fetchWaitingList]);
 
+  // Past wait times: people taken OFF a list who then moved in.
+  // Wait = date they were added to the list → their move-in date.
+  const fetchPastMoves = useCallback(async () => {
+    const rows = [];
+    for (let from = 0; from < 200000; from += 1000) {
+      const { data, error } = await supabase.from('waiting_list')
+        .select('id, client_id, list_type, created_at')
+        .eq('status', 'removed')
+        .not('client_id', 'is', null)
+        .order('id').range(from, from + 999);
+      if (error) { console.error('waiting_list history error:', error); break; }
+      rows.push(...(data || []));
+      if (!data || data.length < 1000) break;
+    }
+    const ids = [...new Set(rows.map(r => r.client_id))];
+    const startById = {};
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data } = await supabase.from('clients')
+        .select('id, start_date, status')
+        .in('id', ids.slice(i, i + 200));
+      (data || []).forEach(c => {
+        const st = (c.status || '').toLowerCase();
+        if (c.start_date && !['pending', 'accepted', 'waiting list', 'applied'].includes(st)) startById[c.id] = c.start_date;
+      });
+    }
+    const moves = [];
+    rows.forEach(r => {
+      const start = startById[r.client_id];
+      if (!start || !r.created_at) return;
+      const added = r.created_at.slice(0, 10);
+      if (start < added) return; // moved in before this list entry — not a wait from this list
+      const days = Math.round((new Date(start + 'T12:00:00') - new Date(added + 'T12:00:00')) / 86400000);
+      if (days <= 730) moves.push({ list_type: r.list_type, days });
+    });
+    setPastMoves(moves);
+  }, []);
+
+  useEffect(() => { fetchPastMoves(); }, [fetchPastMoves]);
+
   const clients = waitingClients.filter(c => c.list_type === activeList);
   const menCount = waitingClients.filter(c => MEN_LISTS.includes(c.list_type)).length;
   const womenCount = waitingClients.filter(c => WOMEN_LISTS.includes(c.list_type)).length;
   const totalCount = waitingClients.length;
+
+  // ── Average wait times ──
+  const avg = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+  const daysSince = (iso) => {
+    if (!iso) return null;
+    const today = new Date(); today.setHours(12, 0, 0, 0);
+    return Math.max(0, Math.round((today - new Date(iso.slice(0, 10) + 'T12:00:00')) / 86400000));
+  };
+  const fmtDays = (n) => n === null ? '—' : n < 14 ? `${n} day${n === 1 ? '' : 's'}` : n < 60 ? `${Math.round(n / 7)} weeks (${n} days)` : `${(n / 30).toFixed(1)} months (${n} days)`;
+  const waitSoFarFor = (list) => avg(waitingClients.filter(c => c.list_type === list).map(c => daysSince(c.created_at)).filter(n => n !== null));
+  const pastFor = (list) => pastMoves.filter(m => m.list_type === list).map(m => m.days);
+  const activeWaitSoFar = waitSoFarFor(activeList);
+  const activePast = pastFor(activeList);
+  const activePastAvg = avg(activePast);
 
   // Search only HIGHLIGHTS — nobody is hidden. Matches name, email, phone or notes.
   const term = search.trim().toLowerCase();
@@ -163,7 +217,18 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
       {/* Header */}
       <div style={styles.listHeader}>
-        <p style={styles.listCount}>{clients.length} on {activeList} list</p>
+        <div>
+          <p style={styles.listCount}>{clients.length} on {activeList} list</p>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', marginTop: 6 }}>
+            <span style={styles.waitStat} title="Average time the people on this list right now have been waiting, counted from the day they were added">
+              ⏱ Avg wait so far: <strong style={{ color: '#18181b' }}>{fmtDays(activeWaitSoFar)}</strong>
+            </span>
+            <span style={styles.waitStat} title="Average time from being added to this list to moving in, for people who have already moved in from it">
+              🏠 Avg time to move in: <strong style={{ color: '#18181b' }}>{activePastAvg === null ? 'not enough data yet' : fmtDays(activePastAvg)}</strong>
+              {activePast.length > 0 && <span style={{ color: '#71717a' }}> (from {activePast.length} move-in{activePast.length === 1 ? '' : 's'})</span>}
+            </span>
+          </div>
+        </div>
         {hasFullAccess && (
           <button style={styles.addBtn} onClick={() => setShowAdd(!showAdd)}>
             {showAdd ? 'Cancel' : '+ Add to List'}
@@ -306,6 +371,7 @@ const styles = {
   input: { backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '6px', padding: '8px 12px', color: '#18181b', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
   empty: { color: '#71717a', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
+  waitStat: { fontSize: '13px', color: '#52525b' },
   clearBtn: { backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
   matchBadge: { marginLeft: 6, background: '#fde047', color: '#18181b', borderRadius: 10, padding: '0 7px', fontSize: 12, fontWeight: 700 },
 };
