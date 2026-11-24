@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { useUser } from './UserContext';
 
@@ -12,6 +12,8 @@ function WaitingList({ onOpenClient, setActivePage }) {
   const [editingId, setEditingId] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const firstMatchRef = useRef(null);
 
   const LIST_TYPES = ['DOC Men', 'Community Men', 'Treatment Men', 'DOC Women', 'Community Women', 'Treatment Women'];
   const MEN_LISTS = ['DOC Men', 'Community Men', 'Treatment Men'];
@@ -36,6 +38,37 @@ function WaitingList({ onOpenClient, setActivePage }) {
   const menCount = waitingClients.filter(c => MEN_LISTS.includes(c.list_type)).length;
   const womenCount = waitingClients.filter(c => WOMEN_LISTS.includes(c.list_type)).length;
   const totalCount = waitingClients.length;
+
+  // Search only HIGHLIGHTS — nobody is hidden. Matches name, email, phone or notes.
+  const term = search.trim().toLowerCase();
+  const isMatch = (c) => !!term && [c.full_name, c.email, c.phone, c.notes]
+    .some(v => (v || '').toLowerCase().includes(term));
+  const matchCountFor = (list) => waitingClients.filter(c => c.list_type === list && isMatch(c)).length;
+  const matchesHere = clients.filter(isMatch).length;
+  const totalMatches = term ? waitingClients.filter(isMatch).length : 0;
+  const firstMatchId = clients.find(isMatch)?.id;
+
+  // Bring the first highlighted person into view when the search or list changes
+  useEffect(() => {
+    if (term && firstMatchRef.current) {
+      firstMatchRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [term, activeList, firstMatchId]);
+
+  // Wraps the matching part of the text in a yellow highlight
+  const highlight = (text) => {
+    if (!term || !text) return text;
+    const str = String(text);
+    const i = str.toLowerCase().indexOf(term);
+    if (i === -1) return str;
+    return (
+      <>
+        {str.slice(0, i)}
+        <mark style={{ background: '#fde047', color: '#18181b', padding: '0 1px', borderRadius: 2 }}>{str.slice(i, i + term.length)}</mark>
+        {str.slice(i + term.length)}
+      </>
+    );
+  };
 
   const addToList = async () => {
     if (!addForm.full_name.trim()) return alert('Name is required.');
@@ -95,14 +128,37 @@ function WaitingList({ onOpenClient, setActivePage }) {
         </div>
       </div>
 
+      {/* Search (highlights only) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Escape') setSearch(''); }}
+          placeholder="Search waiting lists by name, email, phone or notes..."
+          style={{ ...styles.input, maxWidth: 420 }}
+        />
+        {term && (
+          <>
+            <span style={{ fontSize: 13, color: totalMatches ? '#18181b' : '#b22222' }}>
+              {totalMatches === 0 ? 'No matches' : `${totalMatches} match${totalMatches === 1 ? '' : 'es'}${matchesHere !== totalMatches ? ` (${matchesHere} on this list)` : ''}`}
+            </span>
+            <button onClick={() => setSearch('')} style={styles.clearBtn}>Clear</button>
+          </>
+        )}
+      </div>
+
       {/* List tabs */}
       <div style={styles.tabs}>
-        {LIST_TYPES.map(list => (
-          <button key={list} onClick={() => setActiveList(list)}
-            style={{ ...styles.tab, ...(activeList === list ? styles.tabActive : {}) }}>
-            {list}
-          </button>
-        ))}
+        {LIST_TYPES.map(list => {
+          const n = term ? matchCountFor(list) : 0;
+          return (
+            <button key={list} onClick={() => setActiveList(list)}
+              style={{ ...styles.tab, ...(activeList === list ? styles.tabActive : {}), ...(n > 0 ? { boxShadow: '0 0 0 2px #fde047' } : {}) }}>
+              {list}
+              {n > 0 && <span style={styles.matchBadge}>{n}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Header */}
@@ -165,8 +221,10 @@ function WaitingList({ onOpenClient, setActivePage }) {
 
           {clients.map((client, idx) => {
             const badge = readyBadge(client.ready_date);
+            const matched = isMatch(client);
             return (
-              <div key={client.id} style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: idx % 2 === 0 ? 'transparent' : '#f7f7f9', borderBottom: '1px solid #c9c9cf' }}>
+              <div key={client.id} ref={client.id === firstMatchId ? firstMatchRef : null}
+                style={{ display: 'grid', gridTemplateColumns: '28px 2fr 180px 2fr auto', gap: 8, padding: '10px 14px', alignItems: 'center', background: matched ? '#fef9c3' : (idx % 2 === 0 ? 'transparent' : '#f7f7f9'), borderBottom: '1px solid #c9c9cf', borderLeft: matched ? '4px solid #eab308' : '4px solid transparent' }}>
                 <span style={{ fontSize: 13, color: '#71717a', fontWeight: 600 }}>{idx + 1}</span>
 
                 {/* Name */}
@@ -180,9 +238,10 @@ function WaitingList({ onOpenClient, setActivePage }) {
                       }
                     }}
                   >
-                    {client.full_name}
+                    {highlight(client.full_name)}
                   </div>
-                  {client.email && <div style={{ fontSize: 12, color: '#71717a' }}>{client.email}</div>}
+                  {client.email && <div style={{ fontSize: 12, color: '#71717a' }}>{highlight(client.email)}</div>}
+                  {term && client.phone && (client.phone || '').toLowerCase().includes(term) && <div style={{ fontSize: 12, color: '#71717a' }}>{highlight(client.phone)}</div>}
                 </div>
 
                 {/* Ready Date - inline editable */}
@@ -213,7 +272,7 @@ function WaitingList({ onOpenClient, setActivePage }) {
                   ) : (
                     <span onClick={() => hasFullAccess && setEditingNoteId(client.id)}
                       style={{ fontSize: 13, color: client.notes ? '#52525b' : '#b0b0b7', cursor: hasFullAccess ? 'pointer' : 'default' }}>
-                      {client.notes || (hasFullAccess ? '+ Add note' : '—')}
+                      {client.notes ? highlight(client.notes) : (hasFullAccess ? '+ Add note' : '—')}
                     </span>
                   )}
                 </div>
@@ -247,6 +306,8 @@ const styles = {
   input: { backgroundColor: '#ffffff', border: '1px solid #b8b8bf', borderRadius: '6px', padding: '8px 12px', color: '#18181b', fontSize: '14px', width: '100%', boxSizing: 'border-box' },
   removeBtn: { backgroundColor: 'transparent', border: '1px solid #dc2626', color: '#dc2626', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer', whiteSpace: 'nowrap' },
   empty: { color: '#71717a', fontSize: '14px', padding: '32px 0', textAlign: 'center' },
+  clearBtn: { backgroundColor: 'transparent', border: '1px solid #b8b8bf', color: '#52525b', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', cursor: 'pointer' },
+  matchBadge: { marginLeft: 6, background: '#fde047', color: '#18181b', borderRadius: 10, padding: '0 7px', fontSize: 12, fontWeight: 700 },
 };
 
 export default WaitingList;
