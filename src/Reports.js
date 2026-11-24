@@ -105,7 +105,7 @@ function fmtShortDate(v) {
 
 // A stat card that opens (like the Waiting List cards) to show the names behind the number.
 // items: [{ key, name, detail }]
-function NameListStatCard({ label, items, accent, emptyText }) {
+function NameListStatCard({ label, items, accent, emptyText, footnote }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div onClick={() => setExpanded(e => !e)} style={{ background: '#f7f7f9', borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${accent}`, minWidth: 0, cursor: 'pointer' }}>
@@ -124,6 +124,7 @@ function NameListStatCard({ label, items, accent, emptyText }) {
               {it.detail && <span style={{ color: '#4b5563', whiteSpace: 'nowrap', fontSize: 13 }}>{it.detail}</span>}
             </div>
           ))}
+          {footnote && <div style={{ fontSize: 12, color: '#71717a', marginTop: 4, fontStyle: 'italic' }}>{footnote}</div>}
         </div>
       )}
     </div>
@@ -302,6 +303,7 @@ export default function Reports() {
   const [houses, setHouses] = useState([]);
   const [applications, setApplications] = useState([]);
   const [maintenanceRequests, setMaintenanceRequests] = useState([]);
+  const [weeklyCheckIns, setWeeklyCheckIns] = useState([]);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -316,14 +318,29 @@ export default function Reports() {
       }
       return { data: rows };
     };
-    const [clientsRes, staysRes, paymentsRes, waitingRes, housesRes, appsRes, maintRes] = await Promise.all([
+    // Weekly Check-Ins only (for the "employed?" answer), a page at a time
+    const fetchCheckIns = async () => {
+      const rows = [];
+      for (let from = 0; from < 200000; from += 1000) {
+        const { data, error } = await supabase.from('client_timeline')
+          .select('id, client_id, created_at, checkin_employed')
+          .eq('entry_type', 'Weekly Check-In')
+          .order('id').range(from, from + 999);
+        if (error) { console.error('client_timeline fetch error:', error); break; }
+        rows.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
+      return { data: rows };
+    };
+    const [clientsRes, staysRes, paymentsRes, waitingRes, housesRes, appsRes, maintRes, checkInsRes] = await Promise.all([
       fetchAllRows('clients', '*'),
       fetchAllRows('client_stays', '*'),
       fetchAllRows('payments', '*'),
       fetchAllRows('waiting_list', '*'),
       fetchAllRows('houses', '*'),
-      fetchAllRows('applications', 'id, gender, created_at, status, first_name, last_name, full_name'),
+      fetchAllRows('applications', 'id, gender, created_at, status, first_name, last_name, full_name, date_of_birth, email, employment_status, on_disability'),
       fetchAllRows('maintenance_requests', '*'),
+      fetchCheckIns(),
     ]);
     setClients(clientsRes.data || []);
     setStays(staysRes.data || []);
@@ -332,6 +349,7 @@ export default function Reports() {
     setHouses(housesRes.data || []);
     setApplications(appsRes.data || []);
     setMaintenanceRequests(maintRes.data || []);
+    setWeeklyCheckIns(checkInsRes.data || []);
     setLoading(false);
   }, []);
 
@@ -365,8 +383,27 @@ export default function Reports() {
   const houseNameMap = {};
   houses.forEach(h => { houseNameMap[h.id] = h.name || h.house_name || ''; });
 
+  // Only people who ACTUALLY moved in: not Pending / Accepted / Waiting List (their
+  // start date is only an expected date) and not marked "Did Not Move In".
+  const NOT_MOVED_IN_STATUSES = ['pending', 'accepted', 'applied', 'waiting list', 'archived'];
+  const dnmiClientIds = new Set(
+    stays.filter(st => (st.discharge_reason || '').trim().toLowerCase() === 'did not move in').map(st => st.client_id)
+  );
+  const actuallyMovedIn = (c) => {
+    const status = (c.status || '').trim().toLowerCase();
+    if (NOT_MOVED_IN_STATUSES.includes(status)) return false;
+    if ((c.discharge_reason || '').trim().toLowerCase() === 'did not move in') return false;
+    if (status !== 'active' && dnmiClientIds.has(c.id)) {
+      // Discharged/other with a Did Not Move In record dated on/after this start date
+      const dnmiAfterStart = stays.some(st => st.client_id === c.id
+        && (st.discharge_reason || '').trim().toLowerCase() === 'did not move in'
+        && (!st.discharge_date || st.discharge_date >= c.start_date));
+      if (dnmiAfterStart) return false;
+    }
+    return true;
+  };
   const moveInsWeekItems = clients
-    .filter(c => c.start_date >= week.start && c.start_date <= week.end)
+    .filter(c => c.start_date >= week.start && c.start_date <= week.end && actuallyMovedIn(c))
     .sort((a, b) => (a.start_date || '').localeCompare(b.start_date || ''))
     .map(c => ({
       key: c.id,
@@ -397,6 +434,61 @@ export default function Reports() {
   const byDischarge = (a, b) => (a.discharge_date || '').localeCompare(b.discharge_date || '');
   const dischargedThisWeekItems = [...dischargedThisWeek].sort(byDischarge).map(stayItem);
   const successfulDischargesWeekItems = dischargedThisWeek.filter(isSuccessful).sort(byDischarge).map(stayItem);
+  // ── Active clients NOT employed and NOT on disability ──────────────────────
+  // Employment: latest Weekly Check-In answer, otherwise their application's
+  // Employment Status, otherwise "Employment: ..." from the Sobriety Hub import notes.
+  // Disability: "On Disability?" from their application (must be marked No).
+  const latestCheckIn = {};
+  weeklyCheckIns.forEach(w => {
+    if (w.checkin_employed === null || w.checkin_employed === undefined) return;
+    const prev = latestCheckIn[w.client_id];
+    if (!prev || (w.created_at || '') > (prev.created_at || '')) latestCheckIn[w.client_id] = w;
+  });
+  const appById = {};
+  const appsByNameDob = {};
+  const appsByEmail = {};
+  const newer = (a, b) => (!b || (a.created_at || '') > (b.created_at || '')) ? a : b;
+  applications.forEach(a => {
+    appById[a.id] = a;
+    const nk = `${(a.first_name || '').trim().toLowerCase()}|${(a.last_name || '').trim().toLowerCase()}|${a.date_of_birth || ''}`;
+    if (a.date_of_birth) appsByNameDob[nk] = newer(a, appsByNameDob[nk]);
+    const ek = (a.email || '').trim().toLowerCase();
+    if (ek) appsByEmail[ek] = newer(a, appsByEmail[ek]);
+  });
+  const findApp = (c) => {
+    if (c.application_id && appById[c.application_id]) return appById[c.application_id];
+    const nk = `${(c.first_name || '').trim().toLowerCase()}|${(c.last_name || '').trim().toLowerCase()}|${c.date_of_birth || ''}`;
+    if (c.date_of_birth && appsByNameDob[nk]) return appsByNameDob[nk];
+    const ek = (c.email || '').trim().toLowerCase();
+    return ek ? appsByEmail[ek] : null;
+  };
+  const NOT_EMPLOYED_WORDS = ['unemployed', 'none', 'unable to work', 'not employed', 'n/a', 'na'];
+  const employmentInfo = (c, app) => {
+    const ci = latestCheckIn[c.id];
+    if (ci) return { employed: ci.checkin_employed === true, source: `Check-in ${fmtShortDate(ci.created_at)}` };
+    const es = (app?.employment_status || '').trim().toLowerCase();
+    if (es) return { employed: !NOT_EMPLOYED_WORDS.includes(es), source: 'Application' };
+    const m = (c.staff_notes || '').match(/Employment:\s*([^\n—]+)/i);
+    if (m) {
+      const v = m[1].trim().toLowerCase();
+      return { employed: !NOT_EMPLOYED_WORDS.includes(v), source: 'SH import' };
+    }
+    return null;
+  };
+  let noAnswerCount = 0;
+  const notEmployedNoDisabilityItems = activeClients
+    .map(c => {
+      const app = findApp(c);
+      const emp = employmentInfo(c, app);
+      const dis = (app?.on_disability || '').trim().toLowerCase();
+      if (emp?.employed || dis === 'yes') return null;   // employed, or on disability
+      if (!emp || dis !== 'no') { noAnswerCount += 1; return null; } // could qualify, but an answer is missing
+      return { key: c.id, name: clientNameMap[c.id], detail: [houseNameMap[c.house_id], emp.source].filter(Boolean).join(' · ') };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const notEmployedNoAnswer = noAnswerCount;
+
   const paymentsWeekTotal = payments
     .filter(p => p.payment_date && p.payment_date >= week.start && p.payment_date <= week.end)
     .reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
@@ -665,6 +757,8 @@ export default function Reports() {
             <StatCard label="Total in Program" value={inProgram} sub={`${totalBeds} beds total`} accent="#b22222" />
             <StatCard label="People in Beds" value={activeClients.length} accent="#0d9488" />
             <NameListStatCard label="Move Ins This Week" items={moveInsWeekItems} accent="#16a34a" emptyText="No move ins this week" />
+            <NameListStatCard label="Not Employed & Not on Disability" items={notEmployedNoDisabilityItems} accent="#dc2626" emptyText="No active clients in this group"
+              footnote={notEmployedNoAnswer > 0 ? `${notEmployedNoAnswer} other active client${notEmployedNoAnswer === 1 ? '' : 's'} not counted: missing a job or disability answer` : null} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 28 }}>
             <NameListStatCard label="Discharges This Week" items={dischargedThisWeekItems} accent="#b45309" emptyText="No discharges this week" />
